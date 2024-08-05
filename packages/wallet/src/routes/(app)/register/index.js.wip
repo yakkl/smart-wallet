@@ -1,0 +1,210 @@
+import * as bip39 from '@scure/bip39';
+import { wordlist } from '@scure/bip39/wordlists/english.js';
+import { HDKey } from '@scure/bip32';
+import { keccak256 } from '@ethersproject/keccak256';
+import { ethers } from "ethers";
+
+// import Wallet from 'ethereumjs-wallet';
+// import { hdkey as hdk } from 'ethereumjs-wallet';
+
+// Generate x random words. Uses Cryptographically-Secure Random Number Generator.
+const mn = bip39.generateMnemonic(wordlist);
+// const mn = 'lesson move win design hole bounce wing mad stone bag unique spell'
+// const mn = 'certain dust pave crane renew multiply stone stuff proud flee fancy knee'
+console.log(mn);
+
+// let wallet = ethers.Wallet.createRandom("m/44'/60'/0'/0/0")
+let wallet = ethers.Wallet.fromMnemonic(mn, "m/44'/60'/0'/0/0");
+console.log(wallet.mnemonic.phrase)
+console.log(wallet.mnemonic.path)
+console.log(wallet.getAddress())
+console.log(wallet.privateKey)
+console.log(wallet.publicKey)
+
+let wallet2 = new ethers.Wallet("25c6170eca404e7f4110752115d17218d296d74f00be075b06ee5cedca9258d5")
+console.log(wallet2)
+
+// let message = "solidity-class"
+// let sig0 = wallet.signMessage(message) //await wallet.signMessage(message)
+// console.log(sig0)
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// console.log(ethers.utils.verifyMessage(message,sig0))
+// let messageHash=  ethers.utils.hashMessage(message)
+// console.log(messageHash)
+
+// sig = await wallet.signMessage(messageHash)
+
+// Signature r,s,v
+// const r = sig.slice(0, 66);
+// const s = '0x' + sig.slice(66, 130);
+// const v = '0x' + sig.slice(130, 132);
+
+// Have not tested the block
+// let signer = await ethers.provider.getSigner()
+// send_address = await signer.getAddress()
+// to_address = wallet.address
+// nonce = await signer.getTransactionCount()
+// gas_price = await signer.getGasPrice()
+// gas_limit = ethers.utils.hexlify(21000)
+// value = ethers.utils.parseUnits('100.0')
+// tx = {
+//   from: send_address,
+//   to: to_address,
+//   value: value,
+//   nonce: nonce,
+//   gasLimit: gas_limit,
+//   gasPrice: gas_price,
+// }
+// await signer.sendTransaction(tx)
+// await ethers.provider.getBalance(wallet.address).then(result=>ethers.utils.formatEther(result))
+// end of block
+
+//lesson move win design hole bounce wing mad stone bag unique spell - mnemonic
+//0x9a0304B79c942514dB94f2A7C55EF315a84ACaf4 - account
+//25c6170eca404e7f4110752115d17218d296d74f00be075b06ee5cedca9258d5 - private
+
+// Reversible: Converts mnemonic string to raw entropy in form of byte array.
+// const ent = bip39.mnemonicToEntropy(mn, wordlist)
+// console.log(ent)
+
+// Reversible: Converts raw entropy in form of byte array to mnemonic string.
+// let a = bip39.entropyToMnemonic(ent, wordlist);
+// console.log(a);
+
+// Validates mnemonic for being 12-24 words contained in `wordlist`.
+// let b = bip39.validateMnemonic(mn, wordlist);
+// console.log(b);
+
+// Irreversible: Uses KDF to derive 64 bytes of key data from mnemonic + optional password.
+//await 
+// console.log(bip39.mnemonicToSeed(mn));
+
+console.log('-------------------');
+
+let seed = bip39.mnemonicToSeedSync(mn);
+console.log(seed);
+
+// console.log(seed.toString());
+// let enc = new TextDecoder("utf-8");
+// console.log(enc.decode(seed));
+
+//hdkey1 is Wallet
+
+// console.log(fromHexString('000102030405060708090a0b0c0d0e0f'))
+// const hdkey1 = HDKey.fromMasterSeed(fromHexString('000102030405060708090a0b0c0d0e0f')); //seed);
+const hdkey1 = HDKey.fromMasterSeed(seed);
+console.log(hdkey1);
+const hdkey2 = HDKey.fromExtendedKey(hdkey1.privateExtendedKey);
+console.log(hdkey2);
+const hdkey3 = HDKey.fromJSON({ xpriv: hdkey2.toJSON().xpriv.toString() });
+console.log(hdkey3);
+console.log('hdkey3');
+
+// props
+console.log([hdkey1.depth, hdkey1.index, hdkey1.chainCode]);
+console.log(hdkey2.privateKey, hdkey2.publicKey);//hdkey2
+
+let arr = toHexString(hdkey1.publicKey);
+let hex_arr = toHexString(hdkey1.publicKey);
+let hash_arr = toHexString(hdkey1.pubKeyHash);
+// let bn = BigNumber.from("0x" + arr);
+
+console.log(arr);
+console.log(hex_arr);
+console.log(hash_arr);
+
+console.log('-1-1-1-1-1-1');
+let derivedHDKey = hdkey1.derive("m/44'/60'/0'/0");//hdkey3   m/0/2147483647'/1    ...(0x80000000) = 2147483647
+console.log(derivedHDKey)
+console.log(derivedHDKey.pubKeyHash.toString())
+console.log(derivedHDKey.publicKey.toString())
+
+console.log('START - 22222222222')
+let arr2 = toHexString(derivedHDKey.publicKey);
+let hex_arr2 = toHexString(derivedHDKey.publicKey);
+let hash_arr2 = toHexString(derivedHDKey.pubKeyHash);
+
+console.log(arr2);
+console.log(hex_arr2);
+console.log(hash_arr2);
+console.log('END - 22222222222')
+
+console.log(keccak256(derivedHDKey.pubKeyHash))
+console.log(keccak256(derivedHDKey.identifier))
+console.log(keccak256(derivedHDKey.publicKey))
+console.log(keccak256(derivedHDKey.privateKey))//.slice(-20))
+
+let derivedHDKey1 = hdkey1.derive("m/44'/60'/0'/0/0");//hdkey3   m/0/2147483647'/1    ...(0x80000000) = 2147483647
+console.log(derivedHDKey1)
+console.log(derivedHDKey1.pubKeyHash)
+console.log(toHexString(derivedHDKey1.pubKeyHash))
+console.log(keccak256(derivedHDKey1.pubKeyHash))
+console.log(keccak256(derivedHDKey1.identifier))
+console.log(keccak256(derivedHDKey1.publicKey))
+console.log(keccak256(derivedHDKey1.privateKey))//.slice(-20))
+
+// let child = derivedHDKey.deriveChild(1)
+// console.log(child);
+
+// console.log(wallet);
+// let address = wallet.getAddressString();
+// console.log(address);
+
+const sig = hdkey1.sign(hdkey2.privateKey);
+console.log(sig);
+console.log(hdkey3.verify(hdkey2.privateKey, sig));
+
+
+// Creating 20 addresses
+// let mnemonic='myth like bonus scare over problem client lizard pioneer submit female collect'
+
+// let hdnode = ethers.utils.HDNode.fromMnemonic(mnemonic)
+// let basepathstr = "m/44'/60'/0'/0/"
+// for(i=0;i<20;i++){console.log(hdnode.derivePath(basepathstr+i.toString()).address)}
+
+
+///////////////////////////
+
+// derive2("m/44'/60'/0'/0");
+
+// If given a hex for seed
+const fromHexString = hexString =>
+  new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+function toHex(buffer) {
+  return Array.from(buffer)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+}
+
+function toHexString(byteArray) {
+    return Array.from(byteArray, function(byte) {
+      return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+    }).join('')
+}
+
+
+function derive2(path)  {
+  const parts = path.replace(/^[mM]'?\//, '').split('/');
+  console.log(parts)
+  // tslint:disable-next-line
+  for (const c of parts) {
+    console.log(c);
+    const m = /^(\d+)('?)$/.exec(c);
+    console.log('m - ' + m)
+    if (!m || m.length !== 3) {
+      throw new Error(`Invalid child index: ${c}`);
+    }
+    let idx = +m[1];
+    console.log('idx - ' + idx);
+    if (!Number.isSafeInteger(idx) || idx >= 2147483647) {
+      throw new Error('Invalid index');
+    }
+    // hardened key
+    if (m[2] === "'") {
+      idx += 2147483647;
+    }
+    console.log(idx);
+  }
+}

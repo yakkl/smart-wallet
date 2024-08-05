@@ -1,0 +1,28 @@
+<script>
+import "@carbon/styles/css/styles.css";
+import "@carbon/charts/styles.css";
+import { LineChart } from "@carbon/charts-svelte";
+</script>
+
+<div>
+  <LineChart
+  data={[
+    { date: new Date(2023, 2, 10, 23, 59, 15), value: 1599 },
+    { date: new Date(2023, 2, 10, 23, 59, 30), value: 1550 },
+    { date: new Date(2023, 2, 10, 23, 59, 45), value: 1689 },
+    { date: new Date(2023, 2, 11, 0, 0, 0), value: 1900 },
+    { date: new Date(2023, 2, 11, 0, 0, 15), value: 1830 },
+    { date: new Date(2023, 2, 11, 0, 0, 30), value: 1710 },
+    { date: new Date(2023, 2, 11, 0, 0, 45), value: 1530 },
+  ]}
+  options={{
+    axes: {
+      left: {},
+      bottom: { scaleType: "time" },
+    },
+    legend: {
+		  clickable: false,
+	  },
+  }}
+/>
+</div>

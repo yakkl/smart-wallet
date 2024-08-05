@@ -1,0 +1,60 @@
+/* eslint-disable no-debugger */
+/* eslint-disable no-undef */
+  // import {browser as browserSvelte} from '$app/environment';
+  // import { PATH_LOGIN, PATH_REGISTER } from '$lib/plugins/common/constants';
+  // import { getYakklSettings } from '$lib/storage/local/stores';
+  import { sequence } from '@sveltejs/kit/hooks';
+  // import { posthog } from 'posthog-js';
+  // import posthog from '../node_modules/posthog-js/dist/module.js';
+  // import '../node_modules/posthog-js/dist/array.full.js';
+  // import '../node_modules/posthog-js/dist/es.js';
+  // import '../node_modules/posthog-js/dist/recorder.js';
+  // import '../node_modules/posthog-js/dist/recorder-v2.js';
+  import * as Sentry from '@sentry/sveltekit';
+  import { handleErrorWithSentry } from '@sentry/sveltekit';
+  
+  /** @type {import('@sveltejs/kit').HandleClientError} */
+  export async function handleFirstError({ error, event }) {
+    const errorId = crypto.randomUUID();
+
+    console.log('hook-error',error);
+    console.log('hook-event',event);
+
+    return {
+        message: 'Whoops!',
+        errorId
+    };
+  }
+
+  const myErrorHandler = (({ error, event }) => {
+    console.error('An error occurred on the client side:', error, event);
+  });
+ 
+  export const handleError = handleErrorWithSentry(myErrorHandler);
+  // or alternatively, if you don't have a custom error handler:
+  // export const handleError = handleErrorWithSentry();
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DNS,
+    tracesSampleRate: 1.0,
+    // For instance, initialize Session Replay:
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    integrations: [new Sentry.Replay()],
+    debug: false,
+  });
+  // May address looking at a global guard at some point or continue putting it into specific pages
+  // if (browserSvelte) {
+  //   let settings;
+  //   getYakklSettings().then(result => {
+  //     settings = result;
+  //   });
+
+    // Below logic caused an issue loading... - It seems goto does not work in hooks!
+    // import { goto } from '$app/navigation';
+    // if (settings && !settings.init) goto(PATH_REGISTER);
+    // if (settings && !settings.isLocked) goto(PATH_LOGIN);
+  // }
+
+  export const handle = sequence(handleFirstError, handleErrorWithSentry);
+
+  // posthog.init(import.meta.env.VITE_POSTHOG_API_KEY,{api_host:import.meta.env.VITE_POSTHOG_API_HOST,persistence:'localStorage'});

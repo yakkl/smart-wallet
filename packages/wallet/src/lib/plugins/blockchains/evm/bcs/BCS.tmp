@@ -1,0 +1,49 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// BSC.ts
+import type { EthereumTransaction, MetaData, TransactionReceipt, TransactionResponse } from '$lib/common';
+import { AbstractBlockchain } from '$plugins/Blockchain';
+import type { Provider } from '$plugins/Provider';
+
+export class BSC extends AbstractBlockchain<EthereumTransaction> {
+  _options: MetaData | undefined;
+
+  constructor(providers: Provider[], options: { [key: string]: MetaData } = {}, overrideAll: boolean = false) {
+    super('BSC', 56, providers); // BSC Mainnet
+    this.chainId = 56;
+    this.options = options;
+    this._updateOptions(options, overrideAll);
+    this._options = this.getOptions('bsc');
+  }
+
+  async getBalance(address: string): Promise<bigint> {
+    if (!this.provider) {
+      throw new Error('Provider not initialized');
+    }
+    return await this.provider.getBalance(address);
+  }
+
+  isAddress(address: string): boolean {
+    return /^(0x)?[0-9a-fA-F]{40}$/.test(address);
+  }
+
+  async isSmartContract(address: string): Promise<boolean> {
+    const code = await this.provider.getCode(address);
+    return code !== '0x';
+  }
+
+  async sendTransaction(tx: any): Promise<any> {
+    return this.provider.request('eth_sendTransaction', [tx]);
+  }
+
+  async sendRawTransaction(tx: string): Promise<TransactionResponse> {
+    return this.provider.request('eth_sendRawTransaction', [tx]);
+  }
+
+  async getTransaction(hash: string): Promise<EthereumTransaction> {
+    return this.provider.request('eth_getTransactionByHash', [hash]);
+  }
+
+  async getTransactionReceipt(hash: string): Promise<TransactionReceipt> {
+    return this.provider.request('eth_getTransactionReceipt', [hash]);
+  }
+}

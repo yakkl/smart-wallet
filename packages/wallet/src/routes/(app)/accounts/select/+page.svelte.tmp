@@ -1,0 +1,89 @@
+<script>
+// Launch page for creating 
+export const prerender = true;
+  import { browser as browserSvelte } from '$app/environment';
+  import browser from 'webextension-polyfill?client';
+  import { Button, Card, Hr, Input, Label, Modal } from 'flowbite-svelte';
+  import { getYakklSettings, yakklMiscStore } from '$lib/storage/local/stores';
+  import { goto } from '$app/navigation';
+  import { PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_RECOVERY, PATH_LOGIN, PATH_WELCOME } from '../../../plugins/common/constants';
+
+  let yakklSettings;
+  let init = false;
+  let reset = false;
+
+  if ( browserSvelte ) {
+    yakklSettings = getYakklSettings().then();
+    init = yakklSettings.init;
+  }
+
+  function handleCancel(e) {
+    let path = PATH_WELCOME;
+
+    if (!$yakklMiscStore) {
+      path = PATH_LOGIN;
+    }
+    goto(path);
+  }
+
+  $: console.log($yakklMiscStore);
+
+  // NOTE: Had to shim tailwind css for 'Card' due to library
+</script>
+
+<Modal bind:open={init}>
+  <div class="text-center">
+      <svg aria-hidden="true" class="mx-auto mb-4 w-14 h-14 text-gray-400 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400"><span class="font-bold">WARNING!</span> Your Wallet has already been initialized! Any additional initialization would RESET your wallet and create a new Secret Key and base account! You can only have <span class="font-bold">ONE Secret Phrase</span> wallet since it is used to derive any additional accounts you wish to create after initialization.</h3>
+      <Button on:click={() => reset = true } color="red" class="mr-2">Yes, I'm sure</Button>
+      <Button on:click={() => goto(PATH_WELCOME) } color='alternative'>No, cancel</Button>
+  </div>
+</Modal>
+
+<Modal bind:open={reset}>
+  <Card>
+    <form class="flex flex-col space-y-6">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white p-0">Enter your credentials</h3>
+      <Label class="space-y-2">
+        <span>Username</span>
+        <Input type="email" placeholder="Username" required />
+      </Label>
+      <Label class="space-y-2">
+        <span>Your password</span>
+        <Input type="password" name="password" placeholder="Password" required />
+      </Label>
+      <div class="flex items-start">
+        <span>Are you really sure? One last check.</span>
+      </div>
+      <Button type="submit" class="w-full1">Yes, I'm sure</Button>
+      <Button on:click={handleCancel} color='alternative'>No, cancel</Button>
+    </form>
+  </Card>
+</Modal>
+
+<span class="text-center font-extrabold text-2xl text-black dark:text-white m-4">STEP 2</span>
+<span class="text-center font-extrabold text-2xl text-black dark:text-white m-4">Pick which token you want to initialize below</span>
+
+<Hr class="my-4 mx-auto md:my-10" width="w-48" height="h-1"/>
+
+<div role="button" on:click={() => goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY) } class="bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg  border border-gray-200 dark:border-gray-700 shadow-md flex max-w-sm flex-col md:flex-row md:max-w-xl p-6 flex-row xs:flex-row sm:flex-row p-0 xs:p-0 sm:p-0 md:p-0 mt-4 ml-1">
+  <img class="object-cover rounded-l-lg w-32" src="/images/ethereum-198.png" alt="">
+  <div class="flex flex-col justify-between p-1 leading-normal">
+    <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Ethereum</h5>
+    <p class="mb-3 font-normal text-gray-700 dark:text-gray-400 leading-tight">
+      <span class="font-bold">Click here</span> to create and initialize your base Ethereum Account! Super easy!
+    </p>
+  </div>
+</div>
+
+<Card href="#!" class="flex-row-reverse xs:flex-row-reverse sm:flex-row-reverse p-0 xs:p-0 sm:p-0 md:p-0 mt-4 ml-1" horizontal reverse={false}>
+  <img class="object-cover rounded-r-lg w-32" src="/images/solana-198.png" alt="">
+  <div class="flex flex-col justify-between p-1 leading-normal">
+    <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Solana</h5>
+    <p class="mb-3 font-normal text-gray-700 dark:text-gray-400 leading-tight">
+      <span class="font-bold">(SOLANA IS NOT ACTIVE IN THIS RELEASE - STAY TUNED)</span> Solana option will be available very soon!
+    </p>
+  </div>
+</Card>
+
+<p class="w-full items-center justify-center px-4 text-sm">or </p><div role="button" on:click={() => goto(PATH_IMPORT_RECOVERY)} class="text-indigo-500 font-extrabold">import using secret recovery phrase</div>

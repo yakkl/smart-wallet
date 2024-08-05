@@ -1,0 +1,125 @@
+{
+  "name": "__MSG_extensionName__",
+  "short_name": "YAKKL®",
+  "description": "The YAKKL® Smart Wallet is not a typical crypto wallet, it's a Secure Wallet - a sophisticated guardian of Crypto & Digital Assets.",
+  "version": "{{version}}",
+  "manifest_version": 3,
+  "author": "YAKKL Inc",
+  "default_locale": "en",
+  "homepage_url": "https://yakkl.com/?utm_source=chrome_store",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "notifications",
+    "background",
+    "idle",
+    "alarms",
+    "tabs"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "/images/logoBullLock16x16.png",
+      "32": "/images/logoBullLock32x32.png",
+      "48": "/images/logoBullLock48x48.png",
+      "128": "/images/logoBullLock128x128.png"
+    },
+    "theme_icons": [
+      {
+        "light": {
+          "16": "/images/logoBullLock16x16.png",
+          "32": "/images/logoBullLock32x32.png",
+          "48": "/images/logoBullLock48x48.png",
+          "128": "/images/logoBullLock128x128.png"
+        },
+        "dark": {
+          "16": "/images/logoBullLock-BW16x16.png",
+          "32": "/images/logoBullLock-BW32x32.png",
+          "48": "/images/logoBullLock-BW48x48.png",
+          "128": "/images/logoBullLock-BW128x128.png"
+        },
+        "size": "16"
+      },
+      {
+        "light": {
+          "32": "/images/logoBullLock32x32.png"
+        },
+        "dark": {
+          "32": "/images/logoBullLock-BW32x32.png"
+        },
+        "size": "32"
+      },
+      {
+        "light": {
+          "48": "/images/logoBullLock48x48.png"
+        },
+        "dark": {
+          "48": "/images/logoBullLock-BW48x48.png"
+        },
+        "size": "48"
+      },
+      {
+        "light": {
+          "128": "/images/logoBullLock128x128.png"
+        },
+        "dark": {
+          "128": "/images/logoBullLock-BW128x128.png"
+        },
+        "size": "128"
+      }
+    ],
+    "default_title": "YAKKL® Smart Wallet",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "/js/background-wrapper.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "/js/browser-polyfill.js",
+        "/js/content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": [
+      "/js/inpage.js",
+      "/js/data/lists.json",
+      "/index.html",
+      "*.jpg",
+      "*.png",
+      "*.js",
+      "*.json"
+      ],
+    "matches": ["<all_urls>"]
+  }],
+  "icons": {
+    "16": "/images/logoBull16x16.png",
+    "32": "/images/logoBull32x32.png",
+    "48": "/images/logoBull48x48.png",
+    "128": "/images/logoBull128x128.png"
+  },
+  "omnibox": {
+    "keyword": "crypto wallet secure ethereum bitcoin yakkl"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "MacCtrl+Shift+Y"
+      },
+      "description": "Opens YAKKL® Smart Wallet"
+    }
+  },
+ "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; frame-ancestors 'none';"
+  },
+  "externally_connectable": {
+    "matches": ["https://yakkl.com/*"],
+    "ids": ["*"]
+  }  
+}

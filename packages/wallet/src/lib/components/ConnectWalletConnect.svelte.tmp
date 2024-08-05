@@ -1,0 +1,23 @@
+<script>
+  import { walletConnectStore } from '$lib/plugins/network/walletConnectStore.js';
+
+  async function connectWallet() {
+    await $walletConnectStore.connect();
+  }
+</script>
+
+<button on:click={connectWallet}>Connect with WalletConnect</button>
+
+
+<!-- 
+Example usage:
+<script>
+  import ConnectWallet from '$lib/components/ConnectWalletConnect.svelte';
+</script>
+
+<main>
+  <h1>WalletConnect Example</h1>
+  <ConnectWallet />
+</main> 
+-->
+

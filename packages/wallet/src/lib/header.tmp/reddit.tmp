@@ -1,0 +1,30 @@
+<!-- Place this code where you want the Reddit share button to appear -->
+<div id="reddit-btn"></div>
+
+<!-- Replace "YOUR_SUBREDDIT_NAME" with the name of the subreddit you want to post to -->
+<!-- Replace "YOUR_TITLE" with the title of your post -->
+<!-- Replace "YOUR_URL" with the URL you want to share -->
+<script type="text/javascript">
+  // Define the Reddit share function
+  function shareOnReddit() {
+    var subreddit = 'YOUR_SUBREDDIT_NAME';
+    var title = 'YOUR_TITLE';
+    var url = 'YOUR_URL';
+
+    var postUrl = 'https://www.reddit.com/r/' + subreddit + '/submit?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent(title);
+
+    window.open(postUrl, '_blank');
+  }
+
+  // Initialize the Reddit share button
+  function initRedditButton() {
+    // Replace "YOUR_BUTTON_IMAGE_URL" with the URL of your button image
+    var buttonHtml = '<img src="YOUR_BUTTON_IMAGE_URL" alt="Share on Reddit" onclick="shareOnReddit()" style="cursor: pointer;">';
+    document.getElementById('reddit-btn').innerHTML = buttonHtml;
+  }
+
+  // Call the initRedditButton function once the page is loaded
+  window.onload = function() {
+    initRedditButton();
+  };
+</script>

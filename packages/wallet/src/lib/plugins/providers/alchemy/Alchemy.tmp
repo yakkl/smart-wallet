@@ -1,0 +1,215 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type { BlockTag, BigNumberish, Deferrable, Listener, TransactionResponse, TransactionRequest, Block, BlockWithTransactions, TransactionReceipt, Filter, Log, EventType } from '$lib/common';
+import eventManager from '$plugins/EventManager';
+import { AbstractProvider, type Provider } from '$plugins/Provider';
+import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings } from "alchemy-sdk";
+import { EthereumSigner } from '$plugins/blockchains/evm/ethereum/EthereumSigner';
+
+export class Alchemy extends AbstractProvider {
+  private config: AlchemySettings | undefined;
+  private alchemy: AlchemyAPI | null = null;
+
+  constructor(privateKey: string | null, blockchains: string[] = ['Ethereum', 'Solana', 'Optimism', 'Polygon', 'Base', 'Arbitrum', 'Avalanche', 'Celo']) {
+    super('Alchemy');
+    this.blockchain = blockchains[0] ?? 'Ethereum';
+    this.chainId = 1;
+    this.setBlockchains(blockchains);
+    this.config = getConfig(this.chainId);
+    this.alchemy = new AlchemyAPI(this.config);
+    if (privateKey) this.signer = new EthereumSigner(privateKey);
+  }
+
+  async connect(blockchain: string, chainId: number): Promise<void> {
+    this.blockchain = blockchain;
+    this.chainId = chainId;
+    this.config = getConfig(chainId);
+    this.alchemy = new AlchemyAPI(this.config);
+  }
+
+  call(transaction: Deferrable<TransactionRequest>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+
+  estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
+    throw new Error('Method not implemented.');
+  }
+
+  async getBlockNumber(): Promise<number> {
+    const blockNumber = await this.alchemy!.core.getBlockNumber();
+    eventManager.emit('blockNumber', { blockNumber });
+    return blockNumber;
+  }
+
+  async getGasPrice(): Promise<bigint> {
+    const price = await this.alchemy!.core.getGasPrice();
+    eventManager.emit('gasPrice', { price });
+    return price as unknown as bigint;
+  }
+
+  async getBalance(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<bigint> {
+    const balance = await this.alchemy!.core.getBalance(addressOrName);
+    eventManager.emit('balanceFetched', { addressOrName, balance });
+    return balance as unknown as bigint;
+  }
+
+  async getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
+    const code = await this.alchemy!.core.getCode(addressOrName);
+    return Promise.resolve(code);
+  }
+
+  getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+
+  async sendRawTransaction(signedTransaction: string): Promise<TransactionResponse> {
+    const response = await this.alchemy!.transact.sendTransaction(signedTransaction);
+    eventManager.emit('sendRawTransaction', { signedTransaction, response });
+    return response as unknown as TransactionResponse;
+  }
+
+  async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
+    if (transaction.nonce === undefined) {
+      transaction.nonce = await this.alchemy!.core.getTransactionCount(transaction.from as string);
+    }
+    const signedTransaction = await this.signer!.signTransaction(transaction);
+    const response = await this.alchemy!.transact.sendTransaction(signedTransaction);
+    eventManager.emit('sendTransaction', { signedTransaction, response });
+    return response as unknown as TransactionResponse;
+  }
+
+  async getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<Block> {
+    const block = await this.alchemy!.core.getBlock(blockHashOrBlockTag);
+    eventManager.emit('block', { blockHashOrBlockTag, block });
+    return block as unknown as Block;
+  }
+
+  async getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<BlockWithTransactions> {
+    const block = await this.alchemy!.core.getBlockWithTransactions(blockHashOrBlockTag);
+    eventManager.emit('blockWithTransactions', { blockHashOrBlockTag, block });
+    return block as unknown as BlockWithTransactions;
+  }
+
+  async getTransaction(transactionHash: string): Promise<TransactionResponse> {
+    const trans = await this.alchemy!.core.getTransaction(transactionHash);
+    return Promise.resolve(trans as unknown as TransactionResponse);
+  }
+
+  async getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number> {
+    const count = await this.alchemy!.core.getTransactionCount(addressOrName);
+    return Promise.resolve(count as unknown as number);
+  }
+
+  async getTransactionHistory(hash: string): Promise<any> {
+    const trans = await this.alchemy!.core.getTransaction(hash);
+    return Promise.resolve(trans as unknown as TransactionResponse);
+  }
+
+  async getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
+    const receipt = await this.alchemy!.core.getTransactionReceipt(transactionHash);
+    return Promise.resolve(receipt as unknown as TransactionReceipt);
+  }
+
+  getLogs(filter: Filter): Promise<Log[]> {
+    throw new Error('Method not implemented.');
+  }
+
+  async resolveName(name: string): Promise<string | null> {
+    const address = await this.alchemy!.core.resolveName(name);
+    eventManager.emit('resolveName', { name, address });
+    return address;
+  }
+
+  lookupAddress(address: string | Promise<string>): Promise<string | null> {
+    throw new Error('Method not implemented.');
+  }
+
+  on(eventName: EventType, listener: Listener): Provider {
+    throw new Error('Method not implemented.');
+  }
+
+  once(eventName: EventType, listener: Listener): Provider {
+    throw new Error('Method not implemented.');
+  }
+
+  emit(eventName: EventType, ...args: any[]): boolean {
+    throw new Error('Method not implemented.');
+  }
+
+  listenerCount(eventName?: EventType): number {
+    throw new Error('Method not implemented.');
+  }
+
+  listeners(eventName?: EventType): Listener[] {
+    throw new Error('Method not implemented.');
+  }
+
+  off(eventName: EventType, listener?: Listener): Provider {
+    throw new Error('Method not implemented.');
+  }
+
+  removeAllListeners(eventName?: EventType): Provider {
+    throw new Error('Method not implemented.');
+  }
+
+  async request(method: string, params: any[]): Promise<any> {
+    const result = await this.alchemy!.core.send(method, params);
+    eventManager.emit('requestMade', { provider: this.name, method, params, result });
+    return result;
+  }
+
+  setSigner(privateKey: string): void {
+    if (privateKey) {
+      this.signer = new EthereumSigner(privateKey);
+    } else {
+      throw new Error("Invalid private key - setSigner.");
+    }
+  }
+}
+
+function getConfig(chainId: number, kval = undefined): AlchemySettings | undefined {
+  try {
+    let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;
+    let network = AlchemyNetwork.ETH_SEPOLIA;
+
+    switch (chainId) {
+      case 11155111:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM;
+        network = AlchemyNetwork.ETH_SEPOLIA;
+        break;
+      case 10:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_OPTIMISM_PROD;
+        network = AlchemyNetwork.OPT_MAINNET;
+        break;
+      case 69:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_OPTIMISM;
+        network = AlchemyNetwork.OPT_SEPOLIA;
+        break;
+      case 137:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_POLYGON_PROD;
+        network = AlchemyNetwork.MATIC_MAINNET;
+        break;
+      case 80001:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_POLYGON;
+        network = AlchemyNetwork.MATIC_MAINNET;
+        break;
+      case 42161:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ARBITRUM_PROD;
+        network = AlchemyNetwork.ARB_MAINNET;
+        break;
+      case 421611:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ARBITRUM;
+        network = AlchemyNetwork.ARB_SEPOLIA;
+        break;
+      case 1:
+      default:
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;
+        network = AlchemyNetwork.ETH_MAINNET;
+        break;
+    }
+    return { apiKey: api, network: network };
+  } catch (e) {
+    console.log(e);
+    return undefined;
+  }
+}

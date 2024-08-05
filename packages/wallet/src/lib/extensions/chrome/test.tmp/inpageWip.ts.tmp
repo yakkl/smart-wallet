@@ -1,0 +1,66 @@
+// inpage.ts
+
+import { EventEmitter } from 'events';
+
+// YakklWalletProvider object with required methods, extending EventEmitter
+class YakklWalletProvider extends EventEmitter {
+  private isEnabled: boolean;
+
+  constructor() {
+    super();
+    this.isEnabled = false;
+  }
+
+  async enable(): Promise<string[]> {
+    this.isEnabled = true;
+    // Add logic to enable the wallet and return the user's Ethereum addresses
+    this.emit('connect');
+    return ['0x12345...'];
+  }
+
+  // Implement other required methods here, such as sendTransaction, etc.
+}
+
+interface Providers {
+  [key: string]: any;
+}
+
+class EthereumProviderManager {
+  private providers: Providers;
+  private currentProvider: string;
+
+  constructor() {
+    const ethereumDescriptor = Object.getOwnPropertyDescriptor(window, 'ethereum');
+    const isWritableAndConfigurable =
+      (!ethereumDescriptor || (ethereumDescriptor.writable && ethereumDescriptor.configurable));
+
+    this.providers = {
+      metamask: (window as any).ethereum,
+      yakklWallet: new YakklWalletProvider(),
+    };
+
+    // If window.ethereum is not writable and configurable, copy the providers array if it exists
+    if (!isWritableAndConfigurable && (window as any).ethereum.providers) {
+      this.providers = {
+        ...this.providers,
+        ...(window as any).ethereum.providers,
+      };
+    }
+
+    this.currentProvider = 'yakklWallet';
+  }
+
+  getProvider(): any {
+    return this.providers[this.currentProvider];
+  }
+
+  swapProvider(providerName: string): void {
+    if (!this.providers[providerName]) {
+      console.error(`Provider "${providerName}" not found.`);
+      return;
+    }
+    this.currentProvider = providerName;
+  }
+}
+
+(window as any).EthereumProviderManager = EthereumProviderManager;

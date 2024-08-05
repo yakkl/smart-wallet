@@ -1,0 +1,64 @@
+{
+  "networks": [
+      {
+          "network": "Ethereum",
+          "providers": [
+              {
+                  "provider": "Infura",
+                  "mainnet": [
+                      {
+                          "mainnet": 
+                              {
+                                  "chainId": "0x1",
+                                  "protocols": [
+                                      {
+                                          "protocol": "https",
+                                          "endpoint": "https://mainnet.infura.io/v3/"
+                                      },
+                                      {
+                                          "protocol": "wss",
+                                          "endpoint": "wss://mainnet.infura.io/ws/v3/"
+                                      }
+                                  ]
+                              }
+                      }
+                  ],
+                  "testnets": [
+                      {
+                          "Sepolia": 
+                              {
+                                  "chainId": "0xaa36a7",
+                                  "protocols": [
+                                      {
+                                          "protocol": "https",
+                                          "endpoint": "https://sepolia.infura.io/v3/"
+                                      },
+                                      {
+                                          "protocol": "wss",
+                                          "endpoint": "wss://sepolia.infura.io/ws/v3/"
+                                      }
+                                  ]
+                              }
+                      },
+                      {
+                          "Gorli": 
+                              {
+                                  "chainId": "0x5",
+                                  "protocols": [
+                                      {
+                                          "protocol": "https",
+                                          "endpoint": "https://gorli.infura.io/v3/"
+                                      },
+                                      {
+                                          "protocol": "wss",
+                                          "endpoint": "wss://gorli.infura.io/ws/v3/"
+                                      }
+                                  ]
+                              }
+                      }
+                  ]
+              }
+          ]
+      }
+  ]
+}

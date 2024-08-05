@@ -1,0 +1,56 @@
+{
+  "name": "yakklAssets",
+  "collection":
+    [
+      {
+        "name": "Ethereum", 
+        "class": "Token",
+        "subClass": ""
+      },
+      {
+        "name": "Ethereum", 
+        "class": "NFT",
+        "subClass": ""
+      },
+      {
+        "name": "Ethereum", 
+        "class": "RWA",
+        "subClass": "unknown"
+      },
+      {
+        "name": "Polygon", 
+        "class": "Token",
+        "subClass": ""
+      },
+      {
+        "name": "Polygon", 
+        "class": "NFT",
+        "subClass": ""
+      },
+      {
+        "name": "Polygon", 
+        "class": "RWA",
+        "subClass": "unknown"
+      },
+      {
+        "name": "Bitcoin", 
+        "class": "Token",
+        "subClass": ""
+      },
+      {
+        "name": "Optimism", 
+        "class": "Token",
+        "subClass": ""
+      },
+      {
+        "name": "Optimism", 
+        "class": "NFT",
+        "subClass": ""
+      },
+      {
+        "name": "Optimism", 
+        "class": "RWA",
+        "subClass": "unknown"
+      }
+    ]
+}

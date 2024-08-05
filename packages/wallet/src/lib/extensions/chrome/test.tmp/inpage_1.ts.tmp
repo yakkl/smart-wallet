@@ -1,0 +1,153 @@
+// inpage.ts pieces...
+
+class YakklWalletProvider extends EventEmitter {
+  private messageId: number;
+
+  constructor() {
+    super();
+    this.messageId = 0;
+  }
+
+  async request(method: string, params?: any[]): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const requestId = this.messageId++;
+      const message = {
+        id: requestId,
+        method,
+        params,
+      };
+      window.postMessage(message, '*');
+
+      const responseListener = (event: MessageEvent) => {
+        if (event.source !== window) return;
+
+        if (event.data && event.data.type === 'YAKKL_RESPONSE' && event.data.id === requestId) {
+          window.removeEventListener('message', responseListener);
+
+          if (event.data.error) {
+            reject(event.data.error);
+          } else if (event.data.rejected) {
+            this.requestRejected(event.data);
+            reject(event.data);
+          } else {
+            resolve(event.data.result);
+          }
+        }
+      };
+
+      window.addEventListener('message', responseListener);
+    });
+  }
+
+  requestRejected(data: any): void {
+    // Send rejection data back to dApp so that it can handle the rejection
+    // You can customize the rejection handling logic based on your requirements
+    console.warn('Request rejected:', data);
+  }
+}
+
+
+// background.ts piece to match above
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'YAKKL_PORT') {
+    port.onMessage.addListener(async (message) => {
+      const { id, method, params } = message;
+
+      // Example: handle `eth_accounts`
+      if (method === 'eth_accounts') {
+        try {
+          const accounts = await getConnectedAccounts();
+          port.postMessage({ id, result: accounts, type: 'YAKKL_RESPONSE' });
+        } catch (error) {
+          port.postMessage({ id, error: { message: error.message, code: -32000 }, type: 'YAKKL_RESPONSE' });
+        }
+      }
+
+      // Handle other methods similarly
+      // ...
+    });
+  }
+});
+
+
+// inpage.ts - multple calls at the same time
+class YakklWalletProvider extends EventEmitter {
+  private messageId: number;
+
+  constructor() {
+    super();
+    this.messageId = 0;
+  }
+
+  async request(method: string, params?: any[]): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const requestId = this.messageId++;
+      const message = {
+        id: requestId,
+        method,
+        params,
+        
+      };
+      window.postMessage(message, '*');
+
+      const responseListener = (event: MessageEvent) => {
+        if (event.source !== window) return;
+
+        // Check if the response has the expected requestId
+        if (event.data && event.data.type === 'YAKKL_RESPONSE' && event.data.id === requestId) {
+          window.removeEventListener('message', responseListener);
+
+          if (event.data.error) {
+            reject(event.data.error);
+          } else {
+            resolve(event.data.result);
+          }
+        }
+      };
+
+      window.addEventListener('message', responseListener);
+    });
+  }
+}
+
+
+// content.ts - matching piece for above inpage example
+
+window.addEventListener('message', async (event) => {
+  if (event.source !== window || event.data.type !== 'YAKKL_REQUEST') return;
+
+  const port = chrome.runtime.connect({ name: 'YAKKL_PORT' });
+
+  port.postMessage({
+    id: event.data.id,
+    method: event.data.method,
+    params: event.data.params,
+  });
+
+  port.onMessage.addListener((response) => {
+    window.postMessage({ ...response, type: 'YAKKL_RESPONSE', id: event.data.id }, '*');
+  });
+});
+
+
+// background.ts - matching piece for above content.ts example
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'YAKKL_PORT') {
+    port.onMessage.addListener(async (message) => {
+      // Process the message and communicate with the wallet
+      const { id, method, params } = message;
+
+      // Implement wallet-specific logic to handle different Ethereum JSON-RPC methods
+      // Example: handle `eth_accounts`
+      if (method === 'eth_accounts') {
+        const accounts = await getConnectedAccounts();
+        port.postMessage({ id, result: accounts });
+      }
+      // Handle other methods similarly
+    });
+  }
+});
+
+

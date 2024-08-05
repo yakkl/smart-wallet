@@ -1,0 +1,69 @@
+import { writable } from 'svelte/store';
+import WalletConnect from '@walletconnect/client';
+import QRCodeModal from '@walletconnect/qrcode-modal';
+
+const createWalletConnectStore = () => {
+  const { subscribe, set, update } = writable({
+    connector: null,
+    connected: false,
+    address: null,
+    chainId: null,
+  });
+
+  const initWalletConnect = () => {
+    const connector = new WalletConnect({
+      bridge: 'https://bridge.walletconnect.org',
+      qrcodeModal: QRCodeModal,
+    });
+
+    connector.on('connect', (error, payload) => {
+      if (error) {
+        throw error;
+      }
+
+      const { accounts, chainId } = payload.params[0];
+      set({ connector, connected: true, address: accounts[0], chainId });
+    });
+
+    connector.on('session_update', (error, payload) => {
+      if (error) {
+        throw error;
+      }
+
+      const { accounts, chainId } = payload.params[0];
+      update((state) => ({ ...state, address: accounts[0], chainId }));
+    });
+
+    connector.on('disconnect', (error, payload) => {
+      if (error) {
+        throw error;
+      }
+
+      set({ connector: null, connected: false, address: null, chainId: null });
+    });
+
+    return connector;
+  };
+
+  return {
+    subscribe,
+    connect: async () => {
+      update((state) => {
+        if (!state.connector) {
+          const connector = initWalletConnect();
+          return { ...state, connector };
+        }
+        return state;
+      });
+
+      update(async (state) => {
+        if (!state.connected) {
+          await state.connector.createSession();
+        }
+        return state;
+      });
+    },
+  };
+};
+
+export const WalletConnectStore = createWalletConnectStore();

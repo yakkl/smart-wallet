@@ -1,0 +1,39 @@
+{
+  "name": "yakklWatchList",
+  "collection":
+    [
+      {
+        "id": "",
+        "network": "Ethereum",
+        "name": "Watcher 1",
+        "tags": ["Binance 8", "Uniswap"],
+        "value": "0",
+        "includeInPortfolio": true,
+        "url": "",
+        "address": "0xf977814e90da44bfa03b6295a0616a897441acec",
+        "addressAlias": ""
+      },
+      {
+        "id": "",
+        "network": "Ethereum",
+        "name": "Watcher 2",
+        "tags": ["Vb", "Token holdings"],
+        "value": "0",
+        "includeInPortfolio": false,
+        "url": "https://etherscan.io/tokenholdings?a=0xab5801a7d398351b8be11c439e05c5b3259aec9b",
+        "address": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+        "addressAlias": "Vb"
+      },
+      {
+        "id": "",
+        "network": "Ethereum",
+        "name": "Watcher 3",
+        "tags": ["barmstrong.eth", "coinbase", "address"],
+        "value": "0",
+        "includeInPortfolio": false,
+        "url": "https://etherscan.io/address/0x5b76f5b8fc9d700624f78208132f91ad4e61a1f0",
+        "address": "0x5b76f5B8fc9D700624F78208132f91AD4e61a1f0",
+        "addressAlias": "barmstrong.eth"
+      }
+    ]
+}

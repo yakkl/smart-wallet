@@ -1,0 +1,4 @@
+<div class="sign-up-fields">
+  <span id="affiliate-homepage-first-name"><span class="default">First Name *</span></span>
+  <input id="affiliate-homepage-first-name" type="text" name="first_name" value="" data-np-autofill-type="firstName" data-np-uid="7a1a912f-c45c-4357-bbea-b51614e29acf">
+<span data-np-uid="7a1a912f-c45c-4357-bbea-b51614e29acf" style="width: 24px; min-width: 24px; height: 24px; background-image: url(&quot;chrome-extension://fooolghllnmhmmndgjiamiiodkpenpbb/assets/manifestIcons/icon.svg&quot;); background-repeat: no-repeat; background-position: left center; background-size: auto; border: none; display: inline-block; visibility: visible; position: absolute; cursor: pointer; z-index: 998; padding: 0px; transition: none 0s ease 0s; pointer-events: all; right: 0px; left: 245px; top: 223.5px; min-height: 24px;"></span></div>

@@ -1,0 +1,21 @@
+<script>
+  import TypingEffect from "./TypingEffect.svelte";
+  import { openai } from "./your-openai-api-integration.js"; // Import your OpenAI API integration module
+
+  let input = "";
+  let response = "";
+
+  async function getChatCompletion() {
+    const chatCompletion = await openai.createChatCompletion(input);
+    response = chatCompletion.choices[0].text.trim();
+  }
+</script>
+
+<div>
+  <input type="text" bind:value="{input}" placeholder="Type your message..." />
+  <button on:click="{getChatCompletion}">Send</button>
+</div>
+<div>
+  <h2>Response:</h2>
+  <TypingEffect text="{response}" typingSpeed="{30}" />
+</div>

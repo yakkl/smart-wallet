@@ -1,0 +1,363 @@
+import { get } from "svelte/store";
+import { yakklGasTransStore } from "../storage/local/stores";
+import { yakklConnectionStore } from "../storage/local/stores";
+
+// NOTE: polygon gas - https://gasstation-mainnet.matic.network/v2
+
+// NOTE: See example and doc info at bottom!!
+const now = () => +Date.now() / 1000;
+
+let gasPriceIntervalID=undefined;
+let providerGasCB = null;
+let gasFeeTrend = []; // {'blocknumber': 14630322, 'baseFee': 77.23, maxPriorityFeePerGas: 2, maxFeePerGas: 109.92, timestamp: ...}
+
+async function checkGasPricesCB() {
+  try {
+    if (gasPriceIntervalID) {
+      if (get(yakklConnectionStore) === true) {
+        await fetchBlocknativeData().then(results => {
+            yakklGasTransStore.set({provider: providerGasCB, id: gasPriceIntervalID, results: results});
+        });
+      }
+    }
+  } catch(error) {
+    console.log(error);
+  }
+}
+
+function setGasCBProvider(provider) {
+  providerGasCB = provider;
+}
+
+// Use this function instead of -1 in checkPrices
+export function stopCheckGasePrices() {
+  try {
+    if (gasPriceIntervalID && Number(gasPriceIntervalID) > 0) {
+      clearInterval(gasPriceIntervalID);
+      setGasCBProvider(null);
+      gasPriceIntervalID = undefined;
+    }
+  } catch(error) {
+    console.log(error);
+  }
+}
+
+export function startCheckGasPrices(provider='blocknative', seconds=5) {
+  try {
+    if (seconds > 0) {
+      if (gasPriceIntervalID && Number(gasPriceIntervalID) > 0) {
+        return; // Already running
+      }
+
+      setGasCBProvider(provider);
+
+      if (!gasPriceIntervalID) {
+        gasPriceIntervalID = setInterval(
+          checkGasPricesCB,
+          1000*seconds);
+      }
+    }
+  } catch(error) {
+    console.log(error);
+  }
+}
+
+const memoizeAsync = (fn) => {
+  try {
+    const CACHE_DURATION = 10;
+
+    let lastRunTs = 0;
+    let cache;
+
+    return async () => {
+      const isCacheExpired = now() - lastRunTs > CACHE_DURATION;
+
+      if (isCacheExpired) {
+        lastRunTs = now();
+        cache = await fn();
+      }
+
+      return cache;
+    };
+  // eslint-disable-next-line no-unreachable
+  } catch(error) {
+    console.log(error);
+  }
+};
+
+const debounce = (fn) => {
+  try {
+    let timeoutId;
+
+    return () =>
+      new Promise((resolve) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => resolve(fn()), 500);
+      });
+  // eslint-disable-next-line no-unreachable
+  } catch(error) {
+    console.log(error);
+  }
+};
+
+const getBlocknativeData = memoizeAsync(async () =>
+  (
+    await fetch(
+      "https://api.blocknative.com/gasprices/blockprices?confidenceLevels=99&confidenceLevels=95&confidenceLevels=90&confidenceLevels=80&confidenceLevels=70",
+    )
+  ).json(),  
+);
+
+const getEtherscanData = memoizeAsync(async () =>
+  (
+    await fetch(
+      "https://api.etherscan.io/api?module=gastracker&action=gasoracle",
+    )
+  ).json(),
+);
+
+// The data from these guys are not up to the same level as the others
+const getEGSData = memoizeAsync(async () =>
+  (
+    await fetch(
+      `https://ethgasstation.info/api/ethgasAPI.json?api-key=3923e07fd996632e1fbc897c859aa90a1f604bab3a2c22efa2780109db6f`,
+    )
+  ).json(),
+);
+
+export { debounce, getBlocknativeData, getEtherscanData, getEGSData };
+
+// Refactor below - maybe???
+
+// const fetchPrices = () => {
+//   fetchBlocknativeData()
+//     .catch((err) => {
+//       console.error(err);
+
+//       return [
+//         [null, null, null],
+//         [null, null, null],
+//       ];
+//     }) // Default to null if network error
+//     .then(([prices, prices1559]) => {
+//       saveFetchedPricesForProvider("blocknative1559", prices1559);
+//       saveFetchedPricesForProvider("blocknative", prices);
+//     });
+
+//   fetchEtherscanData()
+//     .catch((err) => {
+//       console.error(err);
+
+//       return [null, null, null];
+//     }) // Default to null if network error
+//     .then((prices) => saveFetchedPricesForProvider("etherscan", prices));
+
+//   fetchEGSData()
+//     .catch((err) => {
+//       console.error(err);
+
+//       return [null, null, null];
+//     }) // Default to null if network error
+//     .then((prices) => saveFetchedPricesForProvider("egs", prices));
+// };
+
+export const fetchBlocknativeData = debounce(async () => {
+  try {
+    const response = await getBlocknativeData();
+    if (response?.blockPrices) {
+      const blockPrices = response.blockPrices[0];
+      const estimatedPrices = response.blockPrices[0].estimatedPrices;
+
+      const fastest = estimatedPrices.find(({ confidence }) => confidence === 99);
+      const faster = estimatedPrices.find(({ confidence }) => confidence === 95);
+      const fast = estimatedPrices.find(({ confidence }) => confidence === 90);
+      const standard = estimatedPrices.find(({ confidence }) => confidence === 80);
+      const slow = estimatedPrices.find(({ confidence }) => confidence === 70);
+
+      if (gasFeeTrend.length > 4) {
+        gasFeeTrend.shift();
+      }
+      gasFeeTrend.push({blocknumber: blockPrices.blockNumber, baseFeePerGas: blockPrices.baseFeePerGas, maxPriorityFeePerGas: fastest.maxPriorityFeePerGas, maxFeePerGas: fastest.maxFeePerGas, timestamp: now()});
+
+      const sum = gasFeeTrend.reduce((accumulator, currentValue) => accumulator + currentValue.baseFeePerGas,0);
+      const avg = sum/gasFeeTrend.length;
+
+      return (
+        {
+          blockNumber: blockPrices.blockNumber,
+          estimatedTransactionCount: blockPrices.estimatedTransactionCount,
+          gasProvider: 'blocknative',
+          actual: {
+            baseFeePerGas: blockPrices.baseFeePerGas,
+            fastest: {maxPriorityFeePerGas: fastest.maxPriorityFeePerGas, maxFeePerGas: fastest.maxFeePerGas},
+            faster: {maxPriorityFeePerGas: faster.maxPriorityFeePerGas, maxFeePerGas: faster.maxFeePerGas},
+            fast: {maxPriorityFeePerGas: fast.maxPriorityFeePerGas, maxFeePerGas: fast.maxFeePerGas},
+            standard: {maxPriorityFeePerGas: standard.maxPriorityFeePerGas, maxFeePerGas: standard.maxFeePerGas},
+            slow: {maxPriorityFeePerGas: slow.maxPriorityFeePerGas, maxFeePerGas: slow.maxFeePerGas},
+          },
+          gasFeeTrend: {
+            baseFeePerGasAvg: avg,
+            mostRecentFees: gasFeeTrend
+          }
+        });
+    }
+    else {
+      return {};
+    }
+  } catch(error) {
+    console.log(error);
+    return {};
+  }
+});
+
+export const fetchEtherscanData = debounce(async () => {
+  try {
+    const {
+      result: { SafeGasPrice, ProposeGasPrice, FastGasPrice },
+    } = await getEtherscanData();
+
+    return [
+      parseInt(FastGasPrice, 10),
+      parseInt(ProposeGasPrice, 10),
+      parseInt(SafeGasPrice, 10),
+    ];
+  } catch(error) {
+    console.log(error);
+    return [0,0,0];
+  }
+});
+
+export const fetchEGSData = debounce(async () => {
+  try {    
+    const { fast, safeLow, average } = await getEGSData();
+
+    return [fast / 10, average / 10, safeLow / 10];
+  } catch (error) {
+    console.log(error);
+    return [0,0,0];      
+  }
+});
+
+
+
+
+// Example json returned for blocknative
+// {
+//   "system": "ethereum",
+//   "network": "main",
+//   "unit": "gwei",
+//   "maxPrice": 120,
+//   "currentBlockNumber": 14630321,
+//   "msSinceLastBlock": 14653,
+//   "blockPrices": [
+//       {
+//           "blockNumber": 14630322,
+//           "estimatedTransactionCount": 224,
+//           "baseFeePerGas": 77.233467826,
+//           "estimatedPrices": [
+//               {
+//                   "confidence": 99,
+//                   "price": 79,
+//                   "maxPriorityFeePerGas": 2,
+//                   "maxFeePerGas": 109.93
+//               },
+//               {
+//                   "confidence": 95,
+//                   "price": 78,
+//                   "maxPriorityFeePerGas": 1.52,
+//                   "maxFeePerGas": 109.45
+//               },
+//               {
+//                   "confidence": 90,
+//                   "price": 78,
+//                   "maxPriorityFeePerGas": 1.5,
+//                   "maxFeePerGas": 109.43
+//               },
+//               {
+//                   "confidence": 80,
+//                   "price": 78,
+//                   "maxPriorityFeePerGas": 1.27,
+//                   "maxFeePerGas": 109.2
+//               },
+//               {
+//                   "confidence": 70,
+//                   "price": 78,
+//                   "maxPriorityFeePerGas": 1.07,
+//                   "maxFeePerGas": 109
+//               }
+//           ]
+//       }
+//   ],
+//   "estimatedBaseFees": [
+//       {
+//           "pending+1": [
+//               {
+//                   "confidence": 99,
+//                   "baseFee": 86.89
+//               }
+//           ]
+//       },
+//       {
+//           "pending+2": [
+//               {
+//                   "confidence": 99,
+//                   "baseFee": 97.74
+//               }
+//           ]
+//       },
+//       {
+//           "pending+3": [
+//               {
+//                   "confidence": 99,
+//                   "baseFee": 106.19
+//               }
+//           ]
+//       },
+//       {
+//           "pending+4": [
+//               {
+//                   "confidence": 99,
+//                   "baseFee": 105.99
+//               }
+//           ]
+//       },
+//       {
+//           "pending+5": [
+//               {
+//                   "confidence": 99,
+//                   "baseFee": 107.93
+//               }
+//           ]
+//       }
+//   ]
+// }
+
+// Type0 and Type2 Transactions
+// Type0 transactions (Pre EIP-1559) should utilize the Price number under each confidence level. Type2 transactions (EIP-1559) should utilize the values for maxPriorityFeePerGas (also known as the "tip") and maxFeePerGas .
+// Description of Terms
+// maxPrice
+// Highest priced transaction in the mempool
+// currentBlockNumber
+// Block number at the time of prediction
+// msSinceLastBlock
+// Milliseconds since the last block was mined relative to when data was computed
+// blockNumber
+// Block this prediction is for
+// baseFeePerGas
+// Base fee per gas for current block in gwei. (Only type2 transactions Post EIP-1559 have this value and it's burned by the network upon transaction success).
+// estimatedTransactionCount
+// Number of items we estimate will be included in next block based on mempool snapshot
+// estimatedPrices -> confidence
+// The likelihood the next block will contain a transaction with a price >= to the listed price
+// estimatedPrices -> price
+// Price in Gwei (used for type0 transactions: Pre EIP-1559)
+// estimatedPrices -> maxPriorityFeePerGas
+// Max priority fee per gas in gwei also known as the "tip" (used for type2 transactions: EIP-1559)
+// estimatedPrices -> maxFeePerGas
+// Max fee per gas in gwei (used for type2 transactions: EIP-1559). maxFeePerGas is computed from baseFeePerGas prediction 5 blocks after the current pending block + maxPriorityFeePerGas
+// estimatedBaseFees -> pending+n
+// The nth block after the current pending block for the associated baseFee prediction. Currently the next 5 blocks after the current pending block are provided
+// estimatedBaseFees -> confidence
+// The likelihood the specified future block will have a baseFee <= to the listed baseFee. Currently only the 99% confidence level is provided
+// estimatedBaseFees -> baseFee
+// The estimated baseFee of the specified future block (pending+n) at the indicated confidence level. Currently only the 99% confidence level is provided

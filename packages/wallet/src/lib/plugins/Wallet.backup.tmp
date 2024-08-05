@@ -1,0 +1,289 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Provider } from '$plugins/Provider';
+import type { Blockchain } from '$plugins/Blockchain';
+import { isYakklPrimaryAccount, type AccountInfo, type Token, type Transaction, type TransactionRequest, type TransactionResponse, type TypedDataDomain, type TypedDataField, type YakklAccount, type YakklPrimaryAccount } from '$lib/common';
+import eventManager from '$plugins/EventManager';
+import ProviderFactory from '$plugins/ProviderFactory';
+import BlockchainFactory from '$plugins/BlockchainFactory';
+import { Signer } from '$plugins/Signer';
+import { EthereumSigner } from '$plugins/blockchains';
+import { OptimismSigner } from './blockchains/evm/optimism/OptimismSigner';
+import { AvalancheSigner } from './blockchains/evm/avalanche/AvalancheSigner';
+import { PolygonSigner } from './blockchains/evm/polygon/PolygonSigner';
+import { ArbitrumSigner } from './blockchains/evm/arbitrum/ArbitrumSigner';
+import { BaseSigner } from './blockchains/evm/base/BaseSigner';
+import { CeloSigner } from './blockchains/evm/celo/CeloSigner';
+// Have other signers for other blockchains
+
+export class Wallet {
+  private provider: Provider | null = null;
+  private blockchain: Blockchain | null = null;
+  private signer: Signer | null = null;
+  private portfolio: Token[] = [];
+  private currentToken: Token | null = null;
+  private accounts: YakklAccount[] = [];
+  private currentAccount: YakklAccount | null = null;
+  private privateKey: string | null = null;
+
+  constructor(private providerNames: string[], private blockchainNames: string[], privateKey?: string) {
+    this.privateKey = privateKey ?? null;  // Set the private key if provided else use setPrivateKey method before attempting to send transactions
+    this.initialize();
+  }
+
+  public addTokenToPortfolio(token: Token): void {
+    this.portfolio.push(token);
+  }
+
+  // YakklAccount or YakklPrimaryAccount or null
+  public async createAccount<T>(accountToDeriveFrom: YakklPrimaryAccount | null = null, accountInfo: AccountInfo): Promise<T> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    const newAccount = await this.blockchain.createAccount<T>(accountToDeriveFrom, accountInfo);
+    if (isYakklPrimaryAccount(newAccount)) {
+      this.addAccount(newAccount as unknown as YakklPrimaryAccount);
+    } else {
+      this.addAccount(newAccount as unknown as YakklAccount);
+    }    
+    return newAccount;
+  }
+
+  public async estimateGas(transaction: Transaction): Promise<bigint> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.estimateGas(transaction);
+  }
+
+  async getBalance(address: string): Promise<bigint> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.getBalance(address);
+  }
+
+  public getBlockchain(): Blockchain | null {
+    return this.blockchain;
+  }
+
+  public getCurrentToken(): Token | null {
+    return this.currentToken;
+  }
+
+  public getPortfolio(): Token[] {
+    return this.portfolio;
+  }
+
+  public getProvider(): Provider | null {
+    return this.provider;
+  }
+
+  // Utility Methods
+  public async getTransactionHistory(address: string): Promise<Transaction[]> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.getTransactionHistory(address);
+  }
+
+  private initialize(): void {
+    if (this.providerNames.length > 0) {
+      this.provider = ProviderFactory.createProvider(this.providerNames[0]);
+    }
+    if (this.blockchainNames.length > 0) {
+      const providers = this.providerNames.map(name => ProviderFactory.createProvider(name));
+      this.blockchain = BlockchainFactory.createBlockchain(this.blockchainNames[0], providers);
+    }
+    this.setupEventListeners();
+  }
+
+  private onProviderConnected(data: { provider: string, blockchain: string, chainId: number }): void {
+    console.log(`Connected to ${data.provider} on ${data.blockchain} with chainId ${data.chainId}`);
+  }
+
+  private onBalanceFetched(data: { address: string, balance: bigint }): void {
+    console.log(`Balance fetched for ${data.address}: ${data.balance.toString()}`);
+  }
+
+  private onProviderSwitched(data: { oldProvider: string, newProvider: string }): void {
+    console.log(`Provider switched from ${data.oldProvider} to ${data.newProvider}`);
+  }
+
+  private onError(data: { provider: string, method: string, error: any }): void {
+    console.error(`Error in provider ${data.provider}, method ${data.method}:`, data.error);
+  }
+
+  private onRequestMade(data: { provider: string, method: string, params: any[], result: any }): void {
+    console.log(`Request made to ${data.provider} with method ${data.method}:`, data.result);
+  }
+
+  // This can be used to set the private key for the wallet
+  setPrivateKey(privateKey: string): void {
+    this.privateKey = privateKey;
+    this.setSigner();  
+  }
+
+  // Allows you to add a token to the portfolio. The objective is to not care about the blockchain or provider. YAKKL will handle that.
+  public setCurrentToken(tokenAddress: string): void {
+    const token = this.portfolio.find(t => t.address === tokenAddress);
+    if (!token) {
+      throw new Error(`Token with address ${tokenAddress} not found in portfolio`);
+    }
+    this.currentToken = token;
+    this.provider = token.provider;
+    this.blockchain = token.blockchain;
+    this.setSigner();
+  }
+
+  private setupEventListeners(): void {
+    eventManager.on('balanceFetched', this.onBalanceFetched.bind(this));
+    eventManager.on('error', this.onError.bind(this));
+    eventManager.on('providerConnected', this.onProviderConnected.bind(this));
+    eventManager.on('providerSwitched', this.onProviderSwitched.bind(this));
+    eventManager.on('requestMade', this.onRequestMade.bind(this));
+  }
+
+  private setSigner(): void {
+    if (!this.currentToken) {
+      throw new Error('Current token is not set');
+    }
+
+    if (!this.privateKey) {
+      throw new Error('Private key is not set. Set it using setPrivateKey method before sending transactions.');
+    }
+
+    switch (this.currentToken.blockchain.name) {
+      case 'Ethereum':
+        this.signer = new EthereumSigner(this.privateKey);
+        break;
+      case 'Polygon': 
+        this.signer = new PolygonSigner(this.privateKey);
+        break;
+      case 'Optimism':
+        this.signer = new OptimismSigner(this.privateKey);
+        break;
+      case 'Arbitrum':
+        this.signer = new ArbitrumSigner(this.privateKey);
+        break;           
+      case 'Avalanche':
+        this.signer = new AvalancheSigner(this.privateKey);
+        break;        
+      case 'Base':
+        this.signer = new BaseSigner(this.privateKey);
+        break;        
+      case 'Celo':
+        this.signer = new CeloSigner(this.privateKey);
+        break;        
+      case 'Bitcoin':
+        // this.signer = new BitcoinSigner(this.privateKey);
+        break;
+      case 'Solana':
+        // this.signer = new SolanaSigner(Uint8Array.from(Buffer.from(this.privateKey, 'base64')));
+        break;
+      case 'Aptos':
+        // this.signer = new AptosSigner(this.privateKey);
+        break;
+      default:
+        throw new Error(`Unsupported blockchain: ${this.currentToken.blockchain.name}`);
+    }
+  }
+
+  public switchProvider(): void {
+    if (!this.blockchain || !this.provider) {
+      throw new Error('Blockchain or Provider not initialized');
+    }
+
+    const availableProviders = this.providerNames.map(name => ProviderFactory.createProvider(name))
+      .filter(provider => provider.blockchains.includes(this.blockchain!.name));
+
+    const newProvider = availableProviders.find(provider => provider !== this.provider);
+    if (newProvider) {
+      const chainId: number = this.provider.chainId;
+      const oldProviderName: string = this.provider.name;
+
+      this.provider = newProvider;
+      this.blockchain.connect(newProvider, chainId);
+      eventManager.emit('providerSwitched', { oldProvider: oldProviderName, newProvider: newProvider.name });
+    }
+  }
+
+  public switchToProvider(providerOrName: string | Provider): void {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+
+    let newProvider: Provider | null | undefined = null;
+
+    if (typeof providerOrName === 'string') {
+      const availableProviders = this.providerNames.map(name => ProviderFactory.createProvider(name))
+        .filter(provider => provider.blockchains.includes(this.blockchain!.name));
+      if (!availableProviders.length) {
+        throw new Error('No available providers for this blockchain');
+      }
+      newProvider = availableProviders.find(provider => provider !== this.provider);
+      if (!newProvider) {
+        newProvider = ProviderFactory.createProvider(providerOrName);
+      }
+    } else {
+      newProvider = providerOrName;
+    }
+
+    if (!newProvider) {
+      throw new Error(`Provider ${typeof providerOrName === 'string' ? providerOrName : 'unknown'} could not be created or is invalid.`);
+    }
+
+    if (!newProvider.blockchains.includes(this.blockchain.name)) {
+      throw new Error(`Provider ${newProvider.name} does not support blockchain ${this.blockchain.name}`);
+    }
+
+    if (newProvider !== this.provider) {
+      const chainId: number = this.provider?.chainId || this.blockchain.chainId;
+      const oldProvider = this.provider;
+      this.provider = newProvider;
+      this.blockchain.connect(newProvider, chainId);
+      eventManager.emit('providerSwitched', { oldProvider: oldProvider?.name, newProvider: newProvider.name });
+    }
+  }
+
+  async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
+    if (!this.blockchain || !this.provider) {
+      throw new Error('Blockchain or Provider not initialized');
+    }
+
+    const signedTransaction = await this.signer!.signTransaction(transaction);
+    return await this.blockchain.sendRawTransaction(signedTransaction);
+  }
+
+  public async signTypedData(domain: TypedDataDomain, types: Record<string, TypedDataField[]>, value: Record<string, any>): Promise<string> {
+    if (!this.signer) {
+      throw new Error('Signer not initialized');
+    }
+
+    if (typeof (this.signer as any).signTypedData === 'function') {
+      return await (this.signer as EthereumSigner).signTypedData(domain, types, value);
+    } else {
+      throw new Error('signTypedData is not supported for the current blockchain signer');
+    }
+  }
+
+   // Methods to manage accounts
+  public addAccount(account: YakklAccount | YakklPrimaryAccount): void {
+    if (isYakklPrimaryAccount(account)) {
+      // If it's a primary account, add its main account part
+      this.accounts.push(account.account);
+      // account.subAccounts.forEach(subAccount => this.accounts.push(subAccount));
+    } else {
+      // If it's a regular account
+      this.accounts.push(account);
+    }
+  }
+
+  public getAccount(address: string): YakklAccount | undefined {
+    return this.accounts.find(account => account.address === address);
+  }
+
+  public removeAccount(address: string): void {
+    this.accounts = this.accounts.filter(account => account.address !== address);
+  }
+
+}

@@ -1,0 +1,125 @@
+import EventEmitter from 'events';
+
+// class EthereumProvider {
+//   constructor(name) {
+//     this.name = name;
+//   }
+// }
+
+class YakklWalletProvider extends EventEmitter { //EthereumProvider {
+  constructor() {
+    super("YakklWalletProvider");
+
+    this.chainId = '';
+    this.icon = '';
+    this.isMetaMask = false;
+    this.isWeb3 = false;
+    this.isYakkl = true;
+    this.label = '';
+    this.selectedAddresses = [];
+  }
+
+  send() {
+    // Implement the send method logic here
+  }
+
+  enable() {
+    // Implement the enable method logic here
+  }
+
+  isConnected() {
+    // Implement the isConnected method logic here
+  }
+}
+
+// Object.setPrototypeOf(YakklWalletProvider.prototype, EventEmitter.prototype);
+
+class EthereumProviderManager {
+  constructor() {
+    this.providers = new Map();
+
+    if (typeof window !== "undefined") {
+      if (window.ethereum) {
+        if (this._isProxy(window.ethereum)) {
+          const descriptor = Object.getOwnPropertyDescriptor(window, "ethereum");
+
+          if (descriptor.writable && descriptor.configurable) {
+            this._replaceProvider(new YakklWalletProvider());
+          } else {
+            this._removeProxyAndReplaceProvider(new YakklWalletProvider());
+          }
+        } else if (!(window.ethereum instanceof YakklWalletProvider)) {
+          this.addProvider(window.ethereum);
+          this._replaceProvider(new YakklWalletProvider());
+        }
+      }
+    }
+  }
+
+  addProvider(provider) {
+    if (provider && provider.name) {
+      this.providers.set(provider.name, provider);
+    } else {
+      throw new Error("The provider must have a name property.");
+    }
+  }
+
+  removeProvider(providerName) {
+    if (this.providers.has(providerName)) {
+      this.providers.delete(providerName);
+    } else {
+      throw new Error(`Provider with name '${providerName}' not found.`);
+    }
+  }
+
+  swapProvider(providerName) {
+    if (this.providers.has(providerName)) {
+      const newProvider = this.providers.get(providerName);
+      this._replaceProvider(newProvider);
+    } else {
+      throw new Error(`Provider with name '${providerName}' not found.`);
+    }
+  }
+
+  _isProxy(obj) {
+    try {
+      Proxy.revocable(obj, {});
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  _replaceProvider(provider) {
+    const handler = {
+      get: (target, prop, receiver) => {
+        return Reflect.get(target, prop, receiver);
+      },
+      set: (target, prop, value, receiver) => {
+        return Reflect.set(target, prop, value, receiver);
+      },
+      deleteProperty: (target, prop) => {
+        return true;
+      },
+    };
+
+    const proxy = new Proxy(provider, handler);
+    Object.defineProperty(window, 'ethereum', {
+      value: proxy,
+      writable: true,
+      configurable: true,
+    });
+  }
+
+  _removeProxyAndReplaceProvider(provider) {
+    if (!delete window.ethereum) {
+      window.ethereum.__proto__ = null;
+      delete window.ethereum.__proto__;
+    }
+    this._replaceProvider(provider);
+  }
+}
+
+const ethereumProviderManager = new EthereumProviderManager();
+
+// Add any additional functionality or event listeners as needed

@@ -1,0 +1,122 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  BaseTransaction,
+  TransactionReceipt,
+  AbstractBlockchain
+} from './AbstractBlockchainInterfaces';
+import {
+  SolanaTransaction,
+  SolanaInstruction
+} from './SolanaTransactionInterfaces';
+import { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+
+class Solana extends AbstractBlockchain<SolanaTransaction> {
+  private connection: Connection;
+
+  constructor(rpcUrl: string) {
+      super();
+      this.connection = new Connection(rpcUrl, 'confirmed');
+  }
+
+  async sendTransaction(tx: SolanaTransaction): Promise<string> {
+      const transaction = new Transaction();
+
+      if (tx.recentBlockhash) {
+          transaction.recentBlockhash = tx.recentBlockhash;
+      }
+
+      if (tx.instructions) {
+          tx.instructions.forEach(instruction => {
+              const keys = instruction.keys.map(key => ({
+                  pubkey: new PublicKey(key.pubkey),
+                  isSigner: key.isSigner,
+                  isWritable: key.isWritable
+              }));
+              const transactionInstruction = new TransactionInstruction({
+                  keys,
+                  programId: new PublicKey(instruction.programId),
+                  data: Buffer.from(instruction.data, 'hex')
+              });
+              transaction.add(transactionInstruction);
+          });
+      }
+
+      if (tx.from && tx.to && tx.value) {
+          transaction.add(SystemProgram.transfer({
+              fromPubkey: new PublicKey(tx.from),
+              toPubkey: new PublicKey(tx.to),
+              lamports: tx.value.toNumber()
+          }));
+      }
+
+      const signedTransaction = await this.signTransaction(transaction, tx.from);
+      const txId = await this.connection.sendRawTransaction(signedTransaction.serialize());
+      return txId;
+  }
+
+  async getTransaction(hash: string): Promise<SolanaTransaction> {
+      const tx = await this.connection.getTransaction(hash);
+      if (!tx) {
+          throw new Error('Transaction not found');
+      }
+
+      const solanaTransaction: SolanaTransaction = {
+          hash: hash,
+          blockNumber: tx.slot,
+          timestamp: tx.blockTime ? tx.blockTime * 1000 : undefined,
+          from: tx.transaction.message.accountKeys[0].toBase58(),
+          to: tx.transaction.message.accountKeys[1].toBase58(),
+          value: tx.meta?.postBalances ? tx.meta.postBalances[0] : 0,
+          gasLimit: BigNumber.from(0),
+          gasPrice: BigNumber.from(0),
+          data: tx.transaction.serializeMessage().toString('hex'),
+          chainId: 1,  // Solana mainnet
+          type: null,
+          accessList: [],
+          customData: {},
+          ccipReadEnabled: false,
+          recentBlockhash: tx.transaction.recentBlockhash
+      };
+
+      return solanaTransaction;
+  }
+
+  async getTransactionReceipt(hash: string): Promise<TransactionReceipt> {
+      const tx = await this.connection.getTransaction(hash);
+      if (!tx) {
+          throw new Error('Transaction not found');
+      }
+
+      const receipt: TransactionReceipt = {
+          transactionHash: hash,
+          transactionIndex: 0,
+          blockNumber: tx.slot,
+          blockHash: '',
+          cumulativeGasUsed: BigNumber.from(0),
+          gasUsed: BigNumber.from(0),
+          contractAddress: null,
+          logs: [],
+          status: true,
+          logsBloom: ''
+      };
+
+      return receipt;
+  }
+
+  private async signTransaction(transaction: Transaction, from: string): Promise<Transaction> {
+      // Sign the transaction with the sender's private key
+      // This function needs to be implemented based on your wallet solution
+      // Example: using @solana/web3.js's Keypair for signing
+      const senderKeypair = this.getSenderKeypair(from);
+      transaction.sign(senderKeypair);
+      return transaction;
+  }
+
+  private getSenderKeypair(from: string): Keypair {
+      // Retrieve the sender's Keypair based on the 'from' address
+      // This function needs to be implemented based on your key management solution
+      // Example:
+      // return Keypair.fromSecretKey(Uint8Array.from([...]));
+      throw new Error('getSenderKeypair method needs to be implemented');
+  }
+}

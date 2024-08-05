@@ -1,0 +1,8 @@
+{ 
+  "name": "yakklNetworks", 
+  "collection":
+    [
+      {"name": "Ethereum", "symbol": "ETH", "icon": "/images/ethereum.svg", "types": [ {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x1"} ], "explorer": "https://etherscan.io"}
+    
+    ]
+}

@@ -1,0 +1,30 @@
+0000000000000000000000000000000000000000 69beec2d73542798452d66656ca1f1cf13fb3563 hanscj1 <cjones@cloudm2.com> 1715620693 -0400	commit (initial): first commit
+69beec2d73542798452d66656ca1f1cf13fb3563 69beec2d73542798452d66656ca1f1cf13fb3563 hanscj1 <cjones@cloudm2.com> 1715620693 -0400	Branch: renamed refs/heads/main to refs/heads/main
+69beec2d73542798452d66656ca1f1cf13fb3563 986fda021b2daf571310c2b175c301fb302b3ff7 hanscj1 <cjones@cloudm2.com> 1715784982 -0400	commit: Beginning of v2 conversion
+986fda021b2daf571310c2b175c301fb302b3ff7 6e1ebfc5f3a5f8ef1f5b3c5d65b1f5008a6f5d0f hanscj1 <cjones@cloudm2.com> 1715807996 -0400	commit: Moving to typescript first before refactoring areas
+6e1ebfc5f3a5f8ef1f5b3c5d65b1f5008a6f5d0f e78806f75247d875724ef90bf865c0998c9563b4 hanscj1 <cjones@cloudm2.com> 1716154920 -0400	commit: Moved directories, worked on TS, and cleaned up code
+e78806f75247d875724ef90bf865c0998c9563b4 b49ee00db6ad0477f79959f14b50bb9b2a86a76c hanscj1 <cjones@cloudm2.com> 1716488581 -0400	commit: Updated primary and account files to ts
+b49ee00db6ad0477f79959f14b50bb9b2a86a76c ad65289b2b00046aff855dc5d631cc764a2fe02c hanscj1 <cjones@cloudm2.com> 1716668935 -0400	commit: Added new abstract Blockchain and Provider classes plus architecture documents
+ad65289b2b00046aff855dc5d631cc764a2fe02c 350524d2062ffc7f1a46a5ce747647769492c452 hanscj1 <cjones@cloudm2.com> 1717534512 -0400	commit: Moving things around for the different providers and blockchains
+350524d2062ffc7f1a46a5ce747647769492c452 68fbed5aeeb352af49a889a9a8a0b9dce5309496 hanscj1 <cjones@cloudm2.com> 1717632387 -0400	commit: Organized around EVM and non-evm
+68fbed5aeeb352af49a889a9a8a0b9dce5309496 86f2b44e24b4a96992a5950c1935d75cb19c57ab hanscj1 <cjones@cloudm2.com> 1717794145 -0400	commit: Added flexibility to the plugins
+86f2b44e24b4a96992a5950c1935d75cb19c57ab 0fafd92bda4a0b8326cab8c0be6e3c050b9c9999 hanscj1 <cjones@cloudm2.com> 1718152327 -0400	commit: Added other blockchains and reorganized
+0fafd92bda4a0b8326cab8c0be6e3c050b9c9999 31380585cadc0f7477d39fe836a56007734184c8 hanscj1 <cjones@cloudm2.com> 1718235678 -0400	commit: First iteration of blockchain class code is ready for testing
+31380585cadc0f7477d39fe836a56007734184c8 cb28bb3349c25d559b6a726e2e0847ba182d7549 hanscj1 <cjones@cloudm2.com> 1718241174 -0400	commit: Added JSDocs
+cb28bb3349c25d559b6a726e2e0847ba182d7549 03c33aadb1901bfbf448b4351529aa403ceab2f5 hanscj1 <cjones@cloudm2.com> 1718831357 -0400	commit: Modifying to TS and enabling abstract wallets
+03c33aadb1901bfbf448b4351529aa403ceab2f5 e3be1dd33136e679ccdd3864d6e3fecd5b05822e hanscj1 <cjones@cloudm2.com> 1719160950 -0400	commit: Added enhanced emergencykit
+e3be1dd33136e679ccdd3864d6e3fecd5b05822e ed9cd663081ecb700aec4dc38084ce3395db61bf hanscj1 <cjones@cloudm2.com> 1719354274 -0400	commit: Updating from plain javascript to typescript and adding new utility functions
+ed9cd663081ecb700aec4dc38084ce3395db61bf 592ce3fee535a2a27f2ee2ddee6b7936ac300410 hanscj1 <cjones@cloudm2.com> 1719879250 -0400	commit: Testing all of the typescript changes as well as data storage changes
+592ce3fee535a2a27f2ee2ddee6b7936ac300410 e26c110f53d2e62fdbd6154ea7c4184b5c0016b6 hanscj1 <cjones@cloudm2.com> 1720208536 -0400	commit: Added many new enhancements to types and processes
+e26c110f53d2e62fdbd6154ea7c4184b5c0016b6 ad4b1a0bdbeda8433e49cca88109b67541774a42 hanscj1 <cjones@cloudm2.com> 1720452856 -0400	commit: Updated 'currentlySelected' and other global values'
+ad4b1a0bdbeda8433e49cca88109b67541774a42 61ab3c5aa6be931b83b2c47085ab489869bf80ed hanscj1 <cjones@cloudm2.com> 1721228795 -0400	commit: Updated with BigNumber and continue to test and removing old code
+61ab3c5aa6be931b83b2c47085ab489869bf80ed 1b7898e0c923224110ccfe2f63f514bf2a8323bf hanscj1 <cjones@cloudm2.com> 1721510887 -0400	commit: Made changes to Card.svelte and BigNumber...
+1b7898e0c923224110ccfe2f63f514bf2a8323bf 935a5edb323220f4ff05a234fb0f4de858e67e1f hanscj1 <cjones@cloudm2.com> 1721765727 -0400	commit: Added new types and much more
+935a5edb323220f4ff05a234fb0f4de858e67e1f 80933e650d62540f5fe8b7bbbc2ecf238eda0fd7 hanscj1 <cjones@cloudm2.com> 1721827360 -0400	commit: Removed some await functions
+80933e650d62540f5fe8b7bbbc2ecf238eda0fd7 8ae76ebbaa7a3038a2e478aaf0196f06e206218b hanscj1 <cjones@cloudm2.com> 1722005578 -0400	commit: Changed paths to use alias and enhanced deepCopy for more complex objects
+8ae76ebbaa7a3038a2e478aaf0196f06e206218b 199d0dacdadee325366cc877594d4275cccbfbdd hanscj1 <cjones@cloudm2.com> 1722294998 -0400	commit: Enhancing the signer and transactions
+199d0dacdadee325366cc877594d4275cccbfbdd 926547fd1ccac312796f59825b816a6260e3cb3c hanscj1 <cjones@cloudm2.com> 1722541198 -0400	commit: Corrected bignumber gwei and wei calculations
+926547fd1ccac312796f59825b816a6260e3cb3c 75f3a2573048d00b08af0cfd8d3142f93f7fccfe hanscj1 <cjones@cloudm2.com> 1722552248 -0400	commit: Modified derived accounts to access currently selected primary account
+75f3a2573048d00b08af0cfd8d3142f93f7fccfe 24548159a44c9a2ff84fe69ac003e3b58522932e hanscj1 <cjones@cloudm2.com> 1722812635 -0400	commit: Added Uniswap and Sushiswap features
+24548159a44c9a2ff84fe69ac003e3b58522932e cad80fbad88b0aab2e8bcac50afdb01f0b9bcb4e hanscj1 <cjones@cloudm2.com> 1722871135 -0400	commit: Updating send and helpers
+cad80fbad88b0aab2e8bcac50afdb01f0b9bcb4e be06e501ad8d0b0fb2890dd216764c85ab1a7db5 hanscj1 <cjones@cloudm2.com> 1722873941 -0400	commit: Changed repo to support multiple packages

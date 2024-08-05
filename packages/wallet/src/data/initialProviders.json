@@ -1,0 +1,10 @@
+{
+  "name": "yakklProviders",
+  "collection": 
+    [
+      {"provider": "Infura", "network": "Ethereum", "name": "Mainnet", "chainId": "0x1", "weight": 5, "protocols": [{"type": "https", "url": "{{name}}.infura.io/v3/{{key}}"}, {"type": "wss", "url": "{{name}}.infura.io/ws/v3/{{key}}"}]},
+      {"provider": "Infura",  "network": "Ethereum", "name": "Sepolia", "chainId": "0xaa36a7", "weight": 0, "protocols": [{"type": "https", "url": "{{name}}.infura.io/v3/{{key}}"}, {"type": "wss", "url": "{{name}}.infura.io/ws/v3/{{key}}"}]},
+      {"provider": "Infura", "network": "Polygon", "name": "Mainnet", "chainId": "0x89", "weight": 5, "protocols": [{"type": "https", "url": "{{network}}-{{name}}.infura.io/v3/{{key}}"}, {"type": "wss", "url": "{{network}}-{{name}}.infura.io/ws/v3/{{key}}"}]},
+      {"provider": "Infura",  "network": "Polygon", "name": "Mumbai", "chainId": "0x13881", "weight": 0, "protocols": [{"type": "https", "url": "{{network}}-{{name}}.infura.io/v3/{{key}}"}, {"type": "wss", "url": "{{network}}-{{name}}.infura.io/ws/v3/{{key}}"}]}
+    ]
+}

@@ -1,0 +1,42 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "axe/name-role-value": [
+      "default",
+      {
+        "button-name": "off"
+      }
+    ],
+    "no-inline-styles": "off",
+    "axe/text-alternatives": [
+      "default",
+      {
+        "document-title": "off"
+      }
+    ],
+    "compat-api/css": [
+      "default",
+      {
+        "ignore": [
+          "@page",
+          "-moz-appearance"
+        ]
+      }
+    ],
+    "typescript-config/strict": "off",
+    "typescript-config/consistent-casing": "off"
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not and_chr <= 114",
+    "not chrome <= 114",
+    "not edge <= 114",
+    "not ios_saf <= 16.5",
+    "not opera <= 99",
+    "not safari <= 16.5",
+    "not samsung <= 21"
+  ]
+}

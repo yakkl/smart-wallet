@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- Removed the 'dark' class and daisyui should handle it going forward but test and then remove this comment -->
+<html lang="en" class="h-full bg-base-100 bg-dotted-spacing-1 bg-dotted-gray-600 no-js dark" style="overscroll-behavior-x: none;" data-theme="yakkl">
+	<head>
+		 
+		<!-- <meta http-equiv="Content-Type" content="text/html" charset="utf-8" /> -->
+
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, viewport-fit=cover" />
+		
+		<!-- <meta http-equiv="content-security-policy" content="script-src 'self' ; script-src-elem 'self' "> -->
+
+		<link rel="shortcut icon" href="/images/favicon.png" />
+		<link rel="stylesheet" type="text/css" href="/css/inter.css">
+
+		<style>
+		@media print {
+			@page {
+					margin-top: 0;
+					margin-bottom: 0;
+			}
+			body {
+					padding-top: 72px;
+					padding-bottom: 72px ;
+			}
+		}
+
+		/* Turns off spinners on number inputs */
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+				-webkit-appearance: none;
+				margin: 0;
+		}
+	
+		/*
+		input[type=number]{
+			-moz-appearance: textfield;
+		}
+		*/
+		
+		::-webkit-scrollbar{
+			display: none;
+		}
+		
+		body {
+			-ms-overflow-style: none;  /* IE and Edge */
+			scrollbar-width: none;  /* Firefox */
+		}
+		</style>
+
+		
+
+		%sveltekit.head%
+
+	</head>
+	<!-- dark:bg-[url('/images/background_1.png')] -->
+	<!-- overscroll-behavior-x: none; -->
+	<!-- min-h-[926px] -->
+	<body style="resize: none; overflow: hidden;" class="text-base-content font-inter antialiased h-full w-full overscroll-hidden selection:bg-fuchsia-300 selection:text-fuchsia-900" >
+
+		<div id="sk-body" style="display: contents">%sveltekit.body%</div>
+
+		<script src="/js/helpers.js"></script>
+		<script src="/js/fontawesome-8d8e5192b2.js"></script>
+		<script src="/js/darkmode.js"></script>
+		<script src="/js/clipboard.min.js"></script>
+		<script src="/js/index.min.js"></script>
+		<script src="/js/popper.min.js"></script>
+		<script src="/js/console.js"></script>
+		<!-- <script src="/js/in/in.js" type="text/javascript">lang: en_US</script> -->
+		<!-- <script src="js/fb/sdk.js"></script> -->
+		<!-- <script src="/js/snow.prod.js"></script>
+		<script src="/js/use-snow.js"></script> -->
+
+	</body>
+</html>

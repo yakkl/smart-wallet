@@ -1,0 +1,159 @@
+{
+  "name": "yakklAssets",
+  "collection":
+    [
+      {
+        "name": "Ethereum", 
+        "class": "Token",
+        "subClass": "", 
+        "description": "Ethereum crypto",
+        "status": "enabled",
+        "icon": "/images/ethereum.svg",
+        "symbol": "ETH",
+        "network": {
+          "network": "Ethereum", 
+          "symbol": "ETH",
+          "icon": "/images/ethereum.svg",
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x1"}, 
+            {"type": "testnet", "release": "Test", "name": "Sepolia", "chainId": "0xaa36a7"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Ethereum", 
+        "class": "NFT",
+        "subClass": "", 
+        "description": "Ethereum NFT",
+        "status": "enabled",
+        "icon": "/images/ethereum.svg",
+        "symbol": "ETH",
+        "network": {
+          "network": "Ethereum", 
+          "symbol": "ETH",
+          "icon": "/images/ethereum.svg",
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x1"}, 
+            {"type": "testnet", "release": "Test", "name": "Sepolia", "chainId": "0xaa36a7"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Ethereum", 
+        "class": "RWA",
+        "subClass": "", 
+        "description": "Ethereum RWA (Real World Asset)",
+        "status": "enabled",
+        "icon": "/images/ethereum.svg",
+        "symbol": "ETH",
+        "network": {
+          "network": "Ethereum", 
+          "symbol": "ETH",
+          "icon": "/images/ethereum.svg",
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x1"}, 
+            {"type": "testnet", "release": "Test", "name": "Sepolia", "chainId": "0xaa36a7"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Polygon", 
+        "class": "Token",
+        "subClass": "", 
+        "description": "Polygon crypto",
+        "status": "enabled",
+        "icon": "/images/polygon.svg",
+        "symbol": "MATIC",
+        "networks": { 
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x89"},
+            {"type": "testnet", "release": "Test", "name": "Mumbai", "chainId": "0x13881"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Polygon", 
+        "class": "NFT",
+        "subClass": "", 
+        "description": "Polygon NFT",
+        "status": "enabled",
+        "icon": "/images/polygon.svg",
+        "symbol": "MATIC",
+        "networks": { 
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x89"},
+            {"type": "testnet", "release": "Test", "name": "Mumbai", "chainId": "0x13881"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Polygon", 
+        "class": "RWA",
+        "subClass": "", 
+        "description": "Polygon RWA (Real World Asset)",
+        "status": "enabled",
+        "icon": "/images/polygon.svg",
+        "symbol": "MATIC",
+        "networks": { 
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0x89"},
+            {"type": "testnet", "release": "Test", "name": "Mumbai", "chainId": "0x13881"}
+          ],
+          "explorer": "https://etherscan.io"
+        }
+      },
+      {
+        "name": "Optimism", 
+        "class": "Token",
+        "subClass": "", 
+        "description": "Optimism crypto",
+        "status": "enabled",
+        "icon": "/images/optimism.svg",
+        "symbol": "",
+        "network": {
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0xA"},
+            {"type": "testnet", "release": "Test", "name": "Kovan", "chainId": "0x45"}
+          ],
+          "explorer": ""
+        }
+      },
+      {
+        "name": "Optimism", 
+        "class": "NFT",
+        "subClass": "", 
+        "description": "Optimism NFT",
+        "status": "enabled",
+        "icon": "/images/optimism.svg",
+        "symbol": "",
+        "network": {
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0xA"},
+            {"type": "testnet", "release": "Test", "name": "Kovan", "chainId": "0x45"}
+          ],
+          "explorer": ""
+        }
+      },
+      {
+        "name": "Optimism", 
+        "class": "RWA",
+        "subClass": "", 
+        "description": "Optimism RWA (Real World Asset)",
+        "status": "enabled",
+        "icon": "/images/optimism.svg",
+        "symbol": "",
+        "network": {
+          "types": [
+            {"type": "mainnet", "release": "Production", "name": "Mainnet", "chainId": "0xA"},
+            {"type": "testnet", "release": "Test", "name": "Kovan", "chainId": "0x45"}
+          ],
+          "explorer": ""
+        }
+      }
+    ]
+}

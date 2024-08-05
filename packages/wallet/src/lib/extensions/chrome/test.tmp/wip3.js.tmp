@@ -1,0 +1,11 @@
+// Dangerous: Delete window.ethereum by modifying window's prototype
+if (Object.getOwnPropertyDescriptor(window, 'ethereum')) {
+  try {
+    delete window.__proto__.ethereum;
+  } catch (error) {
+    console.error('Failed to delete window.ethereum:', error);
+  }
+}
+
+// Recreate window.ethereum
+window.ethereum = /* new Ethereum provider */;

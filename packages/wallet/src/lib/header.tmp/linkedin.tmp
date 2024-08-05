@@ -1,0 +1,41 @@
+// Example from LinkedIn for using dynamic button!
+// <!-- Place this code where you want the LinkedIn share button to appear -->
+// <div id="linkedin-btn"></div>
+
+// <!-- Include the LinkedIn SDK script -->
+// <script src="https://platform.linkedin.com/in.js" type="text/javascript">lang: en_US</script>
+
+// <!-- Replace "YOUR_MESSAGE" and "YOUR_POST_URL" with the message and URL you want to share -->
+// <script type="text/javascript">
+//   // Define the LinkedIn share function
+//   function shareOnLinkedIn() {
+//     var shareUrl = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent("YOUR_POST_URL") + "&title=" + encodeURIComponent("YOUR_MESSAGE");
+//     window.open(shareUrl, "_blank");
+//   }
+
+//   // Initialize the LinkedIn share button
+//   function initLinkedInButton() {
+//     IN.UI.Share().params({
+//       url: "YOUR_POST_URL",
+//       title: "YOUR_MESSAGE"
+//     }).place("#linkedin-btn");
+//   }
+
+//   // Load the LinkedIn SDK asynchronously
+//   (function(d, s, id) {
+//     var js, fjs = d.getElementsByTagName(s)[0];
+//     if (d.getElementById(id)) return;
+//     js = d.createElement(s);
+//     js.id = id;
+//     js.src = "https://platform.linkedin.com/in.js";
+//     js.async = true;
+//     js.defer = true;
+//     fjs.parentNode.insertBefore(js, fjs);
+//   }(document, "script", "linkedin-sdk"));
+
+//   // Call the initLinkedInButton function once the LinkedIn SDK is loaded
+//   window.onload = function() {
+//     initLinkedInButton();
+//   };
+//</script>
+

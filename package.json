@@ -1,0 +1,16 @@
+{
+  "name": "yakkl-smart-wallet",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:wallet": "npm run dev -w wallet",
+    "build:wallet": "npm run build -w wallet",
+    "preview:wallet": "npm run preview -w wallet",
+    "test:wallet": "npm run test -w wallet",
+    "build:contracts": "npm run build -w contracts",
+    "test:contracts": "npm run test -w contracts"
+  }
+}
+

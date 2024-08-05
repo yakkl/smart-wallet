@@ -1,0 +1,182 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { resolveProperties, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type EventType, type FeeData, type Filter, type Listener, type Log, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type Transaction } from '$lib/common';
+import { getBigInt } from '$lib/common/math';
+import { Signer } from '$plugins/Signer';
+
+export interface Provider {
+  name: string; // Name of the provider
+  blockchains: string[];  // List of blockchains supported by this provider
+  blockchain: string; // Current blockchain
+  chainId: number; // Chain ID
+  signer?: Signer;
+
+  connect(blockchain: string, chainId: number): Promise<void>;
+  // createAccount(accountToDeriveFrom: string | null): Promise<string | null>; // If accountToDeriveFrom is null, create a new account else derive a new account from the provided account - This depends on the blockchain.
+
+  // getNetwork(): Promise<Network>;
+  getBlockNumber(): Promise<number>;
+  getGasPrice(): Promise<bigint>;
+  getFeeData(): Promise<any>;
+
+  getBalance(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<bigint>;
+  getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> ;
+  getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+
+  // Execution
+  sendRawTransaction(signedTransaction: string): Promise<TransactionResponse>;
+  sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse>;
+  signTransaction(transaction: TransactionRequest): Promise<string>;
+  signMessage(message: string): Promise<string>;
+
+  call(transaction: Deferrable<TransactionRequest>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint>;
+
+  // Queries
+  getBlock(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<Block>;
+  getBlockWithTransactions(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<BlockWithTransactions>;
+  getTransaction(transactionHash: string): Promise<TransactionResponse>;
+  getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number>;
+  getTransactionHistory( address: string ): Promise<any>;
+  getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+
+  // Bloom-filter Queries
+  getLogs(filter: Filter): Promise<Array<Log>>;
+
+  // ENS
+  resolveName(name: string | Promise<string>): Promise<null | string>;
+  lookupAddress(address: string | Promise<string>): Promise<null | string>;
+
+  // Event Emitter (ish)
+  on(eventName: EventType, listener: Listener): Provider;
+  once(eventName: EventType, listener: Listener): Provider;
+  emit(eventName: EventType, ...args: Array<any>): boolean
+  listenerCount(eventName?: EventType): number;
+  listeners(eventName?: EventType): Array<Listener>;
+  off(eventName: EventType, listener?: Listener): Provider;
+  removeAllListeners(eventName?: EventType): Provider;
+
+  // Must be implemented by the provider
+  request<T>(method: string, params: any[]): Promise<any>;
+}
+
+export abstract class AbstractProvider implements Provider {
+  blockchains: string[] = [];  // List of blockchains supported by this provider
+  blockchain: string = 'Ethereum'; // Default to Ethereum
+  chainId: number = 1; // Ethereum Mainnet
+  name: string;
+  signer?: Signer;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+
+  // abstract createAccount(accountToDeriveFrom: string | null): Promise<string | null>;
+
+  // Latest State
+  abstract getBlockNumber(): Promise<number>;
+  abstract getGasPrice(): Promise<bigint>;
+
+  // Account
+  abstract getBalance(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<bigint>;
+  abstract getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> ;
+  abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+
+  // Execution
+  abstract sendRawTransaction(signedTransaction: string): Promise<TransactionResponse>;
+  abstract sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse>;
+  
+  async signTransaction(transaction: TransactionRequest): Promise<string> {
+    if (!this.signer) {
+      throw new Error('Signer not initialized');
+    }
+    return await this.signer.signTransaction(transaction);
+  }
+
+  // abstract signMessage(message: string): Promise<string>;
+  async signMessage(message: string): Promise<string> {
+    if (!this.signer) {
+      throw new Error('Signer not initialized');
+    }
+    return await this.signer.signMessage(message);
+  }
+
+  abstract call(transaction: Deferrable<TransactionRequest>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  abstract estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint>;
+
+  // Queries
+  abstract getBlock(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<Block>;
+  abstract getBlockWithTransactions(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<BlockWithTransactions>;
+  abstract getTransaction(transactionHash: string): Promise<TransactionResponse>;
+  abstract getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number>;
+  abstract getTransactionHistory( address: string ): Promise<any>; // Only for Etherscan
+  abstract getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+
+  // Bloom-filter Queries
+  abstract getLogs(filter: Filter): Promise<Array<Log>>;
+
+  // ENS
+  abstract resolveName(name: string | Promise<string>): Promise<null | string>;
+  abstract lookupAddress(address: string | Promise<string>): Promise<null | string>;
+
+  // Event Emitter (ish)
+  abstract on(eventName: EventType, listener: Listener): Provider;
+  abstract once(eventName: EventType, listener: Listener): Provider;
+  abstract emit(eventName: EventType, ...args: Array<any>): boolean
+  abstract listenerCount(eventName?: EventType): number;
+  abstract listeners(eventName?: EventType): Array<Listener>;
+  abstract off(eventName: EventType, listener?: Listener): Provider;
+  abstract removeAllListeners(eventName?: EventType): Provider;
+
+  abstract connect(blockchain: string, chainId: number): Promise<void>;
+
+  // Must be implemented by the provider
+  abstract request(method: string, params: any[]): Promise<any>;
+
+  // Defined methods...
+  async getFeeData(): Promise<FeeData> {
+    const { block, gasPrice } = await resolveProperties({
+        block: this.getBlock("latest"),
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        gasPrice: this.getGasPrice().catch((error) => {
+            // @TODO: Why is this now failing on Calaveras?
+            //console.log(error);
+            return null;
+        })
+    });
+
+    let lastBaseFeePerGas: BigNumberish = null, maxFeePerGas: BigNumberish = null, maxPriorityFeePerGas: BigNumberish = null;
+
+    if (block && block.baseFeePerGas) {
+        // We may want to compute this more accurately in the future,
+        // using the formula "check if the base fee is correct".
+        // See: https://eips.ethereum.org/EIPS/eip-1559
+        lastBaseFeePerGas = getBigInt(block.baseFeePerGas);
+        maxPriorityFeePerGas = BigInt("1500000000");
+        maxFeePerGas = BigInt(block.baseFeePerGas) * 2n + maxPriorityFeePerGas;
+    }
+
+    return { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice };
+  }
+
+  // Alias for "on"
+  addListener(eventName: EventType, listener: Listener): Provider {
+      return this.on(eventName, listener);
+  }
+
+  // Alias for "off"
+  removeListener(eventName: EventType, listener: Listener): Provider {
+      return this.off(eventName, listener);
+  }  
+
+  getBlockchains(): string[] {
+    return this.blockchains;
+  }
+
+  // Sets the blockchains supported by this provider
+  setBlockchains(blockchains: string[]): void { 
+    this.blockchains = blockchains;
+  }
+}
