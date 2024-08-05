@@ -1,5 +1,0 @@
-<script>
-    import Register from "./Register/+page.svelte";
-</script>  
-
-<Register/>
