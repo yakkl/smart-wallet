@@ -1,0 +1,8 @@
+{
+  "name": "contracts",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test"
+  }
+}
+

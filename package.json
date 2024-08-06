@@ -5,12 +5,30 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:wallet": "npm run dev -w wallet",
-    "build:wallet": "npm run build -w wallet",
+    "dev:wallet": "npm run dev:chrome -w wallet",
+    "build:wallet": "npm run build:chrome -w wallet",
     "preview:wallet": "npm run preview -w wallet",
     "test:wallet": "npm run test -w wallet",
+    "build:wallet:chrome": "npm run build:chrome -w wallet",
+    "build:wallet:chrome:manifest": "npm run build:chrome:manifest -w wallet",
+    "build:wallet:constants": "npm run build:constants -w wallet",
+    "build:wallet:variables": "npm run build:variables -w wallet",
+    "build:wallet:clean": "npm run build:clean -w wallet",
+    "build:wallet:tsc": "npm run build:tsc -w wallet",
+    "build:wallet:debug": "npm run build:debug -w wallet",
+    "package:wallet": "npm run package -w wallet",
+    "chrome_store_zip:wallet": "npm run chrome_store_zip -w wallet",
+    "firefox_store_zip:wallet": "npm run firefox_store_zip -w wallet",
+    "check:wallet": "npm run check -w wallet",
+    "check:watch:wallet": "npm run check:watch -w wallet",
+    "lint:wallet": "npm run lint -w wallet",
+    "format:wallet": "npm run format -w wallet",
     "build:contracts": "npm run build -w contracts",
-    "test:contracts": "npm run test -w contracts"
-  }
+    "test:contracts": "npm run test -w contracts"  },
+  "version": "1.0.0",
+  "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
-
