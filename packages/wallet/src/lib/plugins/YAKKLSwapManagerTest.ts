@@ -59,4 +59,4 @@ async function main() {
 main();
 
 // Usage:
-// npx ts-node test-swap.ts [uniswap|sushiswap]
+// npx ts-node YAKKLSwapManagerTest.ts [uniswap|sushiswap]
