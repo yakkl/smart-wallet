@@ -110,19 +110,19 @@ export class UniswapService extends SwapManager {
 // services/swapService.ts
 // import { ethers } from 'ethers';
 // import { UniswapService } from './UniswapService';
-// // Import other DEX services as needed
+// Import other DEX services as needed
 
-// // Choose either Alchemy or Infura
+// Choose either Alchemy or Infura
 // const ALCHEMY_API_KEY = 'YOUR_ALCHEMY_API_KEY';
 // const INFURA_PROJECT_ID = 'YOUR_INFURA_PROJECT_ID';
 
-// // Use Alchemy
+// Use Alchemy
 // const provider = new ethers.AlchemyProvider('mainnet', ALCHEMY_API_KEY);
 
-// // Or use Infura
-// // const provider = new ethers.InfuraProvider('mainnet', INFURA_PROJECT_ID);
+// Or use Infura
+// const provider = new ethers.InfuraProvider('mainnet', INFURA_PROJECT_ID);
 
-// // You'll need to implement a way to get the signer, possibly through a wallet connection
+// You'll need to implement a way to get the signer, possibly through a wallet connection
 // const signer = provider.getSigner();
 
 // export const uniswapService = new UniswapService(
