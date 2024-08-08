@@ -13,7 +13,7 @@ module.exports = {
   mode: 'production',
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, 'static/_js'),
+    path: path.resolve(__dirname, 'static/ext'),
   },
   optimization: {
     minimize: false,
@@ -85,7 +85,7 @@ module.exports = {
       patterns: [
         { 
           from: path.resolve(__dirname, '../../node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
-          to: path.resolve(__dirname, 'static/_js/browser-polyfill.min.js')
+          to: path.resolve(__dirname, 'static/ext/browser-polyfill.min.js')
         },
       ],
     }),

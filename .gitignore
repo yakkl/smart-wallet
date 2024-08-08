@@ -37,7 +37,9 @@ packages/wallet/*.zip
 packages/wallet/providers.json
 packages/wallet/test*.json
 packages/wallet/src/routes/(app)/ai/
+packages/wallet/src/routes/(app)/activities/
 packages/wallet/src/routes/(app)/components/
+packages/wallet/src/routes/(app)/dashboard/
 packages/wallet/src/routes/(app)/import/import-emergencykit/
 packages/wallet/src/routes/(app)/markets/
 packages/wallet/src/routes/(app)/nfts/
@@ -48,7 +50,7 @@ packages/wallet/src/routes/(app)/university/
 
 # Static files
 packages/wallet/static/manifest.json
-packages/wallet/static/_js/
+packages/wallet/static/ext/
 
 # Specific file patterns in subdirectories
 packages/wallet/src/lib/**/*.tmp

@@ -1,7 +1,7 @@
 // IMPORTANT NOTE: Edit 'constants.mustache' since it is the template for 'constants.ts'
 
 // Global shared constants. Network specifics are in the network/<whatever>/contants.js file
-export const VERSION = "1.0.0";
+export const VERSION = "0.99.5";
 
 export const YEAR = "2024"; // Instead of computing year since user can change date on system - use a constant
 
@@ -53,14 +53,10 @@ export const STORAGE_YAKKL_REGISTERED_DATA = "yakklRegisteredData";
 
 export const STORAGE_YAKKL_PROFILE = "profile";
 export const STORAGE_YAKKL_PROFILES = "profiles";  
-//export const STORAGE_YAKKL_ASSETKEYS = "yakklAssetKeys";
-//export const STORAGE_YAKKL_ASSETS = "yakklAssets";
-//export const STORAGE_YAKKL_PROVIDERS = "yakklProviders";
 export const STORAGE_YAKKL_ACCOUNTS = "yakklAccounts";
 export const STORAGE_YAKKL_PRIMARY_ACCOUNTS = "yakklPrimaryAccounts";
 export const STORAGE_YAKKL_CONTACTS = "yakklContacts";
 export const STORAGE_YAKKL_CHATS = "yakklChats";
-//export const STORAGE_YAKKL_NETWORKS = "yakklNetworks";
 export const STORAGE_YAKKL_WATCHLIST = "yakklWatchList";
 export const STORAGE_YAKKL_BLOCKEDLIST = "yakklBlockedList";
 export const STORAGE_YAKKL_CONNECTED_DOMAINS = "yakklConnectedDomains";
@@ -69,9 +65,6 @@ export const STORAGE_YAKKL_WALLET_PROVIDERS = "yakklWalletProviders";
 export const STORAGE_YAKKL_WALLET_BLOCKCHAINS = "yakklWalletBlockchains";
 
 export const STORAGE_YAKKL_MEMPOOL = "yakklMemPool";
-//export const STORAGE_YAKKL_TRANSACTIONS = "yakklTransactions";
-//export const STORAGE_YAKKL_ACTIVITYLOGS = "yakklActivityLogs";
-//export const STORAGE_YAKKL_KYC = "yakklKYC";
 
 export const PASSKEY_HINTS_MIN = 3;
 
@@ -198,87 +191,9 @@ export const OS_TYPES = {
     IOS: "iOS",
 };
 
-// Transactions...
-// These types are agnostic. Network specific can be found in the networks/<whatever network>/constants.ts file
-/*
-export const TRANSACTION_TYPES = {
-    CANCEL: 'cancel',
-    CONTRACT_INTERACTION: 'contractInteraction',
-    DAO_INTERACTION: 'daoInteraction',
-    DEPLOY_CONTRACT: 'contractDeployment',
-    DECRYPT: 'decrypt',
-    GET_ENCRYPTION_PUBLIC_KEY: 'getEncryptionPulicKey',
-    INCOMING: 'incoming',
-    NFT: 'contractInteraction',
-    PERSONAL_SIGN: 'personalSign',
-    RETRY: 'retry',
-    SIGN: 'sign',
-    SIGN_TYPED_DATA: 'signTypedData',
-    SIMPLE_SEND: 'simpleSend',
-    SMART: 'smart',
-    SWAP: 'swap',
-    SWAP_APPROVAL: 'swapApproval',
-    TOKEN_METHOD_APPROVE: 'approve',
-    TOKEN_METHOD_SAFE_TRANSFER_FROM: 'safeTransferFrom',
-    TOKEN_METHOD_TRANSFER: 'transfer',
-    TOKEN_METHOD_TRANSFER_FROM: 'transferfrom',
-    TOKEN_METHOD_SET_APPROVAL_FOR_ALL: 'setApprovalForAll',
-};
-
-export const TRANSACTION_STATUSES = {
-    UNAPPROVED: 'unapproved',
-    APPROVED: 'approved',
-    REJECTED: 'rejected',
-    SIGNED: 'signed',
-    SUBMITTED: 'submitted',
-    FAILED: 'failed',
-    DROPPED: 'dropped',
-    CONFIRMED: 'confirmed',
-    PENDING: 'pending',
-};
-
-export const IN_PROGRESS_TRANSACTION_STATUSES = [
-    TRANSACTION_STATUSES.UNAPPROVED,
-    TRANSACTION_STATUSES.APPROVED,
-    TRANSACTION_STATUSES.SIGNED,
-    TRANSACTION_STATUSES.SUBMITTED,
-    TRANSACTION_STATUSES.PENDING,
-];
-
-export const TRANSACTION_GROUP_STATUSES = {
-    CANCELLED: 'cancelled',
-    PENDING: 'pending',
-};
-*/
 export const SMART_TRANSACTION_STATUSES = {
     CANCELLED: 'cancelled',
     PENDING: 'pending',
     SUCCESS: 'success',
 };
 
-/*
-export const TRANSACTION_GROUP_CATEGORIES = {
-    APPROVAL: 'approval',
-    INTERACTION: 'interaction',
-    RECEIVE: 'receive',
-    SEND: 'send',
-    SIGNATURE_REQUEST: 'signature-request',
-    SWAP: 'swap',
-};
-  
-export const TRANSACTION_EVENTS = {
-    ADDED: 'Transaction Added',
-    APPROVED: 'Transaction Approved',
-    FINALIZED: 'Transaction Finalized',
-    REJECTED: 'Transaction Rejected',
-    SUBMITTED: 'Transaction Submitted',
-};
-
-export const ASSET_TYPES = {
-    COLLECTIBLE: 'Collectaible',
-    MEME: 'Meme', // May need to be a collectible...
-    NATIVE: 'Native',
-    TOKEN: 'Token',
-    UNKNOWN: 'Unknown',
-};
-*/

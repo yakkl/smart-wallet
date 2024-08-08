@@ -123,10 +123,10 @@
   }
 
 
-  // function handleRestore() {
-  //   continueOption = false;
-  //   goto(PATH_IMPORT_PHRASE);
-  // }
+  function handleRestore() {
+    continueOption = false;
+    goto(PATH_IMPORT_PHRASE);
+  }
 
   
   // checkRegistration();
@@ -153,18 +153,18 @@
         currentlySelected.data = await decryptData(currentlySelected.data, digest) as CurrentlySelectedData;
       }
 
-      try {
-        const port = browser_ext.runtime.connect({ name: YAKKL_INTERNAL });
-        if (port) {
-          port.onMessage.addListener(async (event: any) => {
-            console.log(event);
-          });
-          port.postMessage({ method: 'providers', params: [PROVIDERS.ALCHEMY, (currentlySelected.data as CurrentlySelectedData).providerKey] });
-          port.disconnect();
-        }
-      } catch (e) {
-        console.log(`Register: register - ${e}`);
-      }
+      // try {
+      //  const port = browser_ext.runtime.connect({ name: YAKKL_INTERNAL });
+      //   if (port) {
+      //     port.onMessage.addListener(async (event: any) => {
+      //       console.log(event);
+      //     });
+      //     port.postMessage({ method: 'providers', params: [PROVIDERS.ALCHEMY, (currentlySelected.data as CurrentlySelectedData).apiKey] });
+      //     port.disconnect();
+      //   }
+      // } catch (e) {
+      //   console.log(`Register: register - ${e}`);
+      // }
 
       profile = await getProfile() || profileDefaults;
       if (isEncryptedData(profile.data)) {
@@ -274,217 +274,6 @@
 }
 
 
-
-
-  // async function register(userName: string, password: string, pincode: string, accountName: string, email: string): Promise<void> {
-  //   try {
-  //     if (browserSvelte) {
-  //       let pinPass = pincode;
-  //       let digest = $yakklMiscStore = await digestMessage(userName+password);
-  //       pincode = $yakklVeryStore = await digestMessage(pincode);
-
-  //       if (pinPass === pincode) {
-  //         error = true;
-  //         errorValue = "Pin code encryption failed!";
-  //         return;
-  //       }
-  //       // Initialize CurrentlySelected
-
-  //       console.log('CurrentlySelectedStore 1: ', currentlySelected);
-
-  //       let currentlySelected = await getYakklCurrentlySelected();
-        
-  //       console.log('CurrentlySelectedStore 2: ', currentlySelected);
-
-  //       if (!currentlySelected) {
-  //         currentlySelected = yakklCurrentlySelectedDefaults;
-  //       }
-
-  //       console.log('CurrentlySelectedStore 3: ', currentlySelected);
-
-  //       // One more check...
-  //       if (isEncryptedData(currentlySelected.data)) {
-  //         await decryptData(currentlySelected.data, $yakklMiscStore).then(result=> {
-  //           currentlySelected.data = result as CurrentlySelectedData;
-  //         });
-  //       }
-
-  //       currentlySelected = currentlySelected;
-  //       console.log('CurrentlySelectedStore 4: ', currentlySelected);
-
-  //       // currentlySelected.data.providerKey = import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD; // Default
-
-  //       try {
-  //         const port = browser_ext.runtime.connect({name: YAKKL_INTERNAL}); // TODO: REVIEW Registration data on profiledata
-          
-  //         if (port) {  // Add the others later...
-  //           let params = [];
-            
-  //           // TODO: Maybe remove later - logging to console for now
-  //           port.onMessage.addListener(async(event: any) => {
-  //             console.log(event);
-  //           });
-
-  //           params[0] = PROVIDERS.ALCHEMY; // Remove this hardcode later...
-  //           params[1] = (currentlySelected.data as CurrentlySelectedData).providerKey; // Not currently valid
-
-  //           console.log('Params: ', params);
-
-  //           port.postMessage({method: 'providers', params: params});
-  //           port.disconnect();
-  //         }
-  //       } catch(e) {
-  //         console.log(e);
-  //       }
-
-  //       // profile MUST be present - backward compatible but we are only ever going to have one 
-  //       profile = await getProfile();
-  //       if (profile === null) {
-  //         profile = profileDefaults;
-  //       } else {
-  //         if (isEncryptedData(profile.data)) {
-  //           await decryptData(profile.data, digest).then(result => {
-  //             (profile as Profile).data = result as ProfileData;
-  //           });
-  //         }
-  //       }
-
-  //       let profileData: ProfileData = profile.data as ProfileData;
-
-  //       console.log('ProfileData: ', profileData);
-  //       // NOTE: Only support one profile now!
-        
-  //       $yakklUserNameStore = currentlySelected.shortcuts.profile.userName = userName;
-
-  //       console.log('ProfileStore 1: ', profile);
-  //       console.log('CurrentlySelectedStore 5: ', currentlySelected);
-  //       console.log('CurrentlySelectedStore 6: ', currentlySelected);
-  //       console.log('$yakklUserNameStore: ', $yakklUserNameStore);
-
-  //       profile.userName = userName;
-  //       profile.id = crypto.randomUUID();
-  //       profile.createDate = dateString();
-  //       profile.updateDate = profile.createDate;
-
-  //       if (!profile.preferences) {
-  //           profile.preferences = yakklPreferencesDefaults;
-  //       }
-  //       profile.preferences.screenWidth = screen.width;
-  //       profile.preferences.screenHeight = screen.height;
-  //       profile.preferences.locale = navigator.language;
-  //       profile.preferences.currency.code = getCurrencyCode(navigator.language);
-  //       profile.preferences.currency.symbol = getCurrencySymbol(navigator.language, profile.preferences.currency.code);
-
-  //       console.log('ProfileData digest: ', profileData);
-  //       profileData.digest = digest;
-  //       console.log('ProfileData digest: ', profileData.digest);
-
-  //       profileData.pincode = pincode;
-  //       profileData.email = email;
-
-  //       // DURING FREE - REMOVE LATER
-  //       if (date < promoDate) {
-  //         if (profileData.registered) {
-  //           profileData.registered.type = RegistrationType.PREMIER;
-  //           profileData.registered.key = RegistrationType.PREMIER; // TODO: Will need to be actual key before launch
-  //           profileData.registered.version = VERSION;
-  //           profileData.registered.createDate = dateString();
-  //           profileData.registered.updateDate = profileData.registered.createDate;
-  //         }
-  //       }
-  //       ////
-  //       if (!accountName) accountName = YAKKL_ZERO_ACCOUNT_NAME;
-
-  //       profileData.meta = {'accountName': accountName};; //{'password': password, 'accountName': accountName};
-
-  //       currentlySelected.id = profile.id;
-  //       currentlySelected.preferences.locale = profile.preferences.locale;
-  //       currentlySelected.preferences.currency.code = profile.preferences.currency.code;
-  //       currentlySelected.preferences.currency.symbol = profile.preferences.currency.symbol;
-
-  //       password = ''; // Clear it
-  //       pincode = ''; // Clear it
-
-  //       let profileDataEnc: EncryptedData = {
-	// 				data: '',
-	// 				iv: '',
-  //         salt: ''
-	// 			};
-
-  //       await encryptData(profileData, digest).then(result => {
-  //         profileDataEnc = result;
-  //       });
-
-  //       profile.data = profileDataEnc;
-
-  //       (currentlySelected.data as CurrentlySelectedData).profile = deepCopy(profile);
-
-  //       $profileStore = profile;
-  //       setProfileStorage(profile);
-        
-  //       currentlySelected.shortcuts.legal = true;
-  //       currentlySelected.shortcuts.address = YAKKL_ZERO_ADDRESS; // Set as default so we know to create one
-  //       currentlySelected.shortcuts.accountName = accountName; // Set as default so we know to create one
-  //       currentlySelected = currentlySelected;
-
-  //       console.log('CurrentlySelectedStore 7: ', currentlySelected);
-  //       console.log('CurrentlySelectedStore 8: ', currentlySelected);
-
-  //       // Set to initial alchemy provider to begin with. Later add weighted pick inside of setProvider - maybe
-  //       // currentlySelected.shortcuts.providerObject = setProvider(PROVIDERS.ALCHEMY, BLOCKCHAINS.ETHEREUM, "0x1",  currentlySelected.data.providerKey); 
-
-  //       let currentDeepCopy = deepCopy(currentlySelected);
-  //       await setYakklCurrentlySelectedStorage(currentlySelected);
-  //       currentlySelected = currentDeepCopy;
-
-  //       console.log('CurrentlySelectedStore 9: ', currentlySelected);
-
-  //       let preferences = await getPreferences();
-  //       if (!preferences) {
-  //         preferences = yakklPreferencesDefaults;
-  //       }
-  //       preferences.screenWidth = screen.width;
-  //       preferences.screenHeight = screen.height;
-  //       await setPreferencesStorage(preferences);
-        
-  //       await browser_ext.runtime.setUninstallURL(encodeURI("https://yakkl.com/cta/bye?userName="+ userName +"&utm_source=yakkl&utm_medium=extension&utm_campaign=uninstall&utm_content=" + `${VERSION}` + "&utm_term=extension"));
-
-  //       await loadCheckCurrentlySelectedStore(); // Double check encryption
-  //       // $yakklNetworksStore = await getYakklNetworks();
-
-  //       let settings: Settings | null = await getSettings();
-  //       if (settings !== null) {
-  //         settings.id = profile.id;
-
-  //         // DURING BETA - CHANGE LATER
-  //         settings.registeredType = RegistrationType.PREMIER; //'Standard';
-  //         ////
-
-  //         settings.lastAccessDate = settings.updateDate = profile.createDate;
-  //         settings.init = init = true; // The defaults have been set so set init to true. 
-  //         settings.isLocked = false;
-
-  //         if (currentlySelected !== null) {
-  //           currentlySelected.shortcuts.init = true;
-  //           currentlySelected.shortcuts.isLocked = false;
-  //         }
-
-  //         await setSettings(settings);
-  //         await setSettingsStorage(settings);
-  //       }
-  //       continueOption = true; // Show the options to import Emergency Kit or create new account
-  //       return;
-  //     }
-  //   } catch (e) {
-  //     // Cause encrypt, decrypt, digest to all fail. Make sure no critical data is leaking through
-  //     let er = (!$yakklMiscStore? String(e) : String(e).replace($yakklMiscStore, "REDACTED"));
-  //     errorValue = `Following error occurred: ${er}`;
-  //     error = true;
-  //     console.log(errorValue);
-  //   }
-  // }
-
-
   // .required('Please enter what you want your portfolio account to be named. At least 3 characters')
   // Removed required from accountName for now 
 
@@ -539,7 +328,7 @@
       }
   }
 
-  async function handleGOTO() {
+  async function handleGOTO() { // Make sure the user is logged in before routing to import
     await goto(PATH_IMPORT_PHRASE);
   }
 

@@ -1,2 +1,2 @@
-import '/_js/browser-polyfill.min.js';
-import '/_js/background.js';
+import '/ext/browser-polyfill.min.js';
+import '/ext/background.js';
