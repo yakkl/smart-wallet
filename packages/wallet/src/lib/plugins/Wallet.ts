@@ -216,7 +216,7 @@ export class Wallet {
    * @param data - Data containing address and balance.
    */
   private onBalanceFetched(data: { address: string, balance: bigint }): void {
-    console.log(`onBalance event for fetched ${data.address}: ${data.balance.toString()}`, this.chainId);
+    console.log(`onBalance event for fetched ${data.address}: XXXXXXXX`, this.chainId);
     Wallet.setInstance(this);
   }
 
@@ -445,17 +445,6 @@ export class Wallet {
 
     console.log('Sending transaction to provider:', transaction);
     const response = await this.provider.sendTransaction(transaction);
-
-    // console.log('Sending transaction:', transaction);
-    // console.log('Signer:', this.signer);
-
-    // const signedTransaction = await this.signer!.signTransaction(transaction);
-    
-    // console.log('Signed transaction:', signedTransaction);
-
-    // const response = await this.blockchain.sendRawTransaction(signedTransaction);
-    
-    // console.log('Transaction response:', response);
 
     Wallet.setInstance(this);
     return response;

@@ -19,14 +19,6 @@ class WalletManager {
     walletStore.set(null); // Ensure the store is in sync
   }
 
-  // public static async getBalance(address: string): Promise<bigint> {
-  //   const wallet = WalletManager.instance;
-  //   if (!wallet) {
-  //     throw new Error('Wallet not initialized');
-  //   }
-  //   return await wallet.getBalance(address);
-  // }
-  
   public static setInstance(instance: Wallet): void {
     WalletManager.instance = instance;
     walletStore.set(instance);

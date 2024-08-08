@@ -191,37 +191,19 @@ export class Alchemy extends AbstractProvider {
    */
   async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
     try {
-      console.log('---------------------------------');
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       if (transaction.nonce === undefined || transaction.nonce < 0) {
         transaction.nonce = await this.alchemy!.core.getTransactionCount(transaction.from);
-
-        console.log('Transaction nonce:', transaction.nonce);
       }
 
       // Test gas estimate:
-      const gasEstimate = await this.alchemy!.core.estimateGas({to: transaction.to, value: transaction.value?.valueOf() as bigint, data: transaction.data});
-      console.log('Gas estimate:', gasEstimate.toBigInt(), gasEstimate.toString(), gasEstimate.toNumber());
+      // const gasEstimate = await this.alchemy!.core.estimateGas({to: transaction.to, value: transaction.value?.valueOf() as bigint, data: transaction.data});
 
       // Test gas price:
-      const gasPrice = await this.alchemy!.core.getGasPrice();
-      console.log('Gas price:', gasPrice.toBigInt(), gasPrice.toString(), gasPrice.toNumber());
-
-      console.log('Utils.parseEther:', Utils.parseEther(transaction.value?.toString() ?? '0'));
-
-      console.log('Transaction:', transaction);
-
-      console.log('Provider - Signer:', this.signer);
+      // const gasPrice = await this.alchemy!.core.getGasPrice();
 
       const signedTransaction = await this.signer!.signTransaction(transaction);
-
-      console.log('Signed transaction:', signedTransaction);
-
       const response = await this.alchemy!.transact.sendTransaction(signedTransaction);
-
-      console.log('Response:', response);
-      console.log('---------------------------------');
-
       eventManager.emit('sendTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
