@@ -65,6 +65,9 @@ export const STORAGE_YAKKL_WATCHLIST = "yakklWatchList";
 export const STORAGE_YAKKL_BLOCKEDLIST = "yakklBlockedList";
 export const STORAGE_YAKKL_CONNECTED_DOMAINS = "yakklConnectedDomains";
 
+export const STORAGE_YAKKL_WALLET_PROVIDERS = "yakklWalletProviders";
+export const STORAGE_YAKKL_WALLET_BLOCKCHAINS = "yakklWalletBlockchains";
+
 export const STORAGE_YAKKL_MEMPOOL = "yakklMemPool";
 //export const STORAGE_YAKKL_TRANSACTIONS = "yakklTransactions";
 //export const STORAGE_YAKKL_ACTIVITYLOGS = "yakklActivityLogs";

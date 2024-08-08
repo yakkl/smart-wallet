@@ -15,5 +15,6 @@ module.exports = {
   },
   transformIgnorePatterns: [
     '<rootDir>/node_modules/(?!(webextension-polyfill)/)', // Ignore node_modules except webextension-polyfill
+    '<rootDir>../../node_modules/(?!(webextension-polyfill)/)', // Ignore node_modules except webextension-polyfill
   ],
 };

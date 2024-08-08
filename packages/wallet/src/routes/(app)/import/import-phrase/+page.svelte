@@ -5,7 +5,7 @@
   import * as yup from 'yup';
   import {onMount} from 'svelte';
   import { goto } from "$app/navigation";
-  import { incrementProperty, setDefinedProperty } from '$lib/utilities';
+  import { incrementProperty } from '$lib/utilities';
   import { getWallet } from '$lib/utilities/ethereum';
   // import { getTransactionCount, setProvider } from '$lib/plugins/networks/ethereum/providers';
   import { deepCopy, getSymbol } from '$lib/utilities';
@@ -15,7 +15,7 @@
   import { DEFAULT_DERIVED_PATH_ETH, PATH_WELCOME, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, YAKKL_ZERO_ADDRESS } from '$lib/common/constants';
   import Cancel from '$lib/components/Cancel.svelte';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-	import { AccountTypeCategory, isEncryptedData, type CurrentlySelectedData, type PreferencesShort, type PrimaryAccountData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
+	import { AccountTypeCategory, isEncryptedData, type CurrentlySelectedData, type PrimaryAccountData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
 
   let currentlySelected: YakklCurrentlySelected;

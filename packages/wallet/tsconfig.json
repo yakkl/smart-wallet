@@ -1,7 +1,7 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./",
     "paths": {
       "$lib": ["src/lib"],
       "$lib/*": ["src/lib/*"],
@@ -26,11 +26,12 @@
     "types": ["svelte", "chrome", "webextension-polyfill"]
   },
   "include": [
+    "src",
     "src/**/*.d.ts",
     "src/**/*.ts",
     "src/**/*.js",
     "src/**/*.svelte",
     "src/lib/browser-polyfill.d.ts"
-, "research/common/evm-researchonly.ts", "src/lib/common/uniswap.ts"  ],
-  "exclude": ["node_modules"]
+  ],
+  "exclude": ["node_modules", "../../node_modules"]
 }

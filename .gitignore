@@ -10,6 +10,7 @@ packages/wallet/build/
 packages/wallet/node_modules/
 
 # Contracts build artifacts
+packages/contracts/lib/
 packages/contracts/out/
 packages/contracts/cache/
 packages/contracts/node_modules/
@@ -35,16 +36,19 @@ packages/wallet/*.crx
 packages/wallet/*.zip
 packages/wallet/providers.json
 packages/wallet/test*.json
+packages/wallet/src/routes/(app)/ai/
+packages/wallet/src/routes/(app)/components/
+packages/wallet/src/routes/(app)/import/import-emergencykit/
+packages/wallet/src/routes/(app)/markets/
+packages/wallet/src/routes/(app)/nfts/
+packages/wallet/src/routes/(app)/security/
+packages/wallet/src/routes/(app)/settings/
+packages/wallet/src/routes/(app)/smartContracts/
+packages/wallet/src/routes/(app)/university/
 
 # Static files
 packages/wallet/static/manifest.json
-packages/wallet/static/js/background.js
-packages/wallet/static/js/content.ts
-packages/wallet/static/js/inpage.js
-packages/wallet/static/js/inpage.js.LICENSE.txt
-packages/wallet/static/js/696.js
-packages/wallet/static/js/785.js
-packages/wallet/static/js/425.js
+packages/wallet/static/_js/
 
 # Specific file patterns in subdirectories
 packages/wallet/src/lib/**/*.tmp
@@ -52,50 +56,3 @@ packages/wallet/src/lib/**/*.tmp
 # Optional: Specific patterns to match nested directories (alternative approach)
 **/*.tmp
 **/*.wip
-
-
-
-# .DS_Store
-# node_modules/
-
-# # Wallet
-# packages/wallet/.svelte-kit/
-# packages/wallet/build/
-# packages/wallet/node_modules/
-
-# # Contracts
-# packages/contracts/out/
-# packages/contracts/cache/
-# packages/contracts/node_modules/
-
-# packages/wallet/package
-# packages/wallet/deadcode
-# packages/wallet/research
-# packages/wallet/*.http
-# packages/wallet/.env
-# packages/wallet/.env.*
-# packages/wallet/!.env.example
-# packages/wallet/*.tmp
-# packages/wallet/*.wip
-# packages/wallet/src/lib/**.tmp
-
-# packages/wallet/test-data-keyring.json
-# packages/wallet//wip-colors
-
-# packages/wallet/background.js.LICENSE.txt
-# packages/wallet/background-no-edit.ts
-# packages/wallet/*.pem
-# packages/wallet/*.crx
-# packages/wallet/*.zip
-# packages/wallet/providers.json
-# packages/wallet/test*.json
-# packages/wallet/static/manifest.json
-# packages/wallet/static/js/background.js
-# packages/wallet/static/js/content.ts
-# packages/wallet/static/js/inpage.js
-# packages/wallet/static/js/inpage.js.LICENSE.txt
-# packages/wallet/static/js/696.js
-# packages/wallet/static/js/785.js
-# packages/wallet/static/js/425.js
-
-

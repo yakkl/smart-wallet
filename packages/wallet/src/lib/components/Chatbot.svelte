@@ -59,42 +59,6 @@
   //////// Toast
 
  
-  // function formatTimestamp(timestamp: string | number | Date | undefined): string {
-  //   try {
-  //     if (!timestamp || (typeof timestamp === 'number' && Number.isNaN(timestamp))) {
-  //       return '------';
-  //     }
-
-  //     let date: Date;
-
-  //     if (typeof timestamp === 'string') {
-  //       // Attempt to parse the string as a Date
-  //       date = new Date(timestamp);
-  //       // Check if the string was parsed to a valid date
-  //       if (isNaN(date.getTime())) {
-  //         return '------';
-  //       }
-  //     } else if (typeof timestamp === 'number') {
-  //       date = new Date(timestamp);
-  //     } else if (timestamp instanceof Date) {
-  //       date = timestamp;
-  //     } else {
-  //       return '------';
-  //     }
-
-  //     return new Intl.DateTimeFormat('en-US', {
-  //       month: 'short',
-  //       day: 'numeric',
-  //       hour: '2-digit',
-  //       minute: '2-digit',
-  //     }).format(date);
-  //   } catch (e) {
-  //     console.error(e);
-  //     return '------';
-  //   }
-  // }
-
-
   async function clearMessages() {
     try {
       warning = false;

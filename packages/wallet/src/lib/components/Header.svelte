@@ -1,9 +1,4 @@
 <script lang="ts">
-
-
-  // import { browser as browserSvelte } from '$app/environment';
-  // // import browser from 'webextension-polyfill';
-
   // NOTE: tw-elements alpha is what we are using. The latest version changed the data elements which caused the UI elements not to work. If we decide to continue using tw-elements then we will need to change from data-bs-xxxx to data-te-xxxx after upgrading.
 
   // NOTE: This impacts the dropdown for networks, top right and top left header options (offcanvas), and tooltips

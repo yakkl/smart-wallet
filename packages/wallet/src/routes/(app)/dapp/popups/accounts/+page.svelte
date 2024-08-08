@@ -104,7 +104,7 @@
               name: account.name, 
               alias: account.alias, 
               blockchain: currentlySelected.shortcuts.blockchain,
-              chainId: currentlySelected.shortcuts.chainId,
+              chainId: currentlySelected.shortcuts.chainId as number,
               checked: false,
             }); // Only add if not already there for a given blockchain
           }
@@ -391,8 +391,8 @@
       let localAddresses: AccountAddress[] = [];
       for (const item of accounts) {
         if (!localAddresses.find((address) => {address.address === item.address})) {
-          localAddresses.push({address: item.address, name: item.name, alias: item.alias, blockchain: currentlySelected!.shortcuts.blockchain,
-            chainId: currentlySelected!.shortcuts.chainId});
+          localAddresses.push({address: item.address, name: item.name, alias: item.alias, blockchain: currentlySelected!.shortcuts.blockchain as string,
+            chainId: currentlySelected!.shortcuts.chainId as number});
         }
       };
 

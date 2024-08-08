@@ -2,8 +2,8 @@
   import {browser as browserSvelte} from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { yakklConnectedDomainsStore, getSettings, yakklDappConnectRequestStore, setYakklConnectedDomainsStorage, setYakklAccountsStorage, getYakklAccounts, yakklAccountsStore } from '$lib/common/stores';
-  import { PATH_LOGIN, YAKKL_DAPP, PATH_DAPP_ACCOUNTS, PATH_LOGOUT } from '$lib/common/constants';
+  import { yakklConnectedDomainsStore, getSettings, yakklDappConnectRequestStore } from '$lib/common/stores';
+  import { PATH_LOGIN, YAKKL_DAPP, PATH_DAPP_ACCOUNTS } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
   
   import type { Browser, Runtime } from 'webextension-polyfill';

@@ -1,16 +1,6 @@
 // import { encodeJSON } from '$lib/utilities';
 import { DEV_BASE_DELAY, DEV_MAX_RETRIES } from ".";
 
-// function getChainType(chainId) {
-//   if (chainId === MAINNET_CHAIN_ID) {
-//     return 'mainnet';
-//   } else if (TEST_CHAINS.includes(chainId)) {
-//     return 'testnet';
-//   }
-//   return 'custom';
-// }
-
-
 /**
  * Performs a RESTful POST request with exponential backoff.
  *
@@ -129,7 +119,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
   });
 }
 
-// // POST Example
+// POST Example
 // const url = 'https://example.com/api/items';
 // const options = {
 //   method: 'POST',
@@ -143,7 +133,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
 //   .catch(error => console.error(error));
 
 
-// // GET Example
+// GET Example
 // const url = 'https://example.com/api/items';
 // const options = {
 //   method: 'GET',

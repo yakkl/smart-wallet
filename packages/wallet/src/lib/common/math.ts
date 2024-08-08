@@ -26,17 +26,17 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     this._value = value;
 //   }
 
-//   // Getter for value
+// Getter for value
 //   get value(): BigNumberish {
 //     return this._value;
 //   }
 
-//   // Setter for value
+// Setter for value
 //   set value(newValue: BigNumberish) {
 //     this._value = newValue;
 //   }
 
-//   // Method to convert the value to a number
+// Method to convert the value to a number
 //   toNumber(): number | null {
 //     if (this._value === null) {
 //       return null;
@@ -53,7 +53,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return null;
 //   }
 
-//   // Method to convert the value to a bigint
+// Method to convert the value to a bigint
 //   toBigInt(): bigint | null {
 //     if (this._value === null) {
 //       return null;
@@ -74,7 +74,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return null;
 //   }
 
-//   // Instance method to convert the value to a string
+// Instance method to convert the value to a string
 //   toString(): string {
 //     const bigintValue = this.toBigInt();
 //     if (bigintValue === null) {
@@ -83,7 +83,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return bigintValue.toString();
 //   }
 
-//   // Instance method to convert the value to a hex string
+// Instance method to convert the value to a hex string
 //   toHex(): string {
 //     const bigintValue = this.toBigInt();
 //     if (bigintValue === null) {
@@ -92,127 +92,127 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return '0x' + bigintValue.toString(16);
 //   }
 
-//   // Instance method to convert the value to Wei (for Ethereum)
+// Instance method to convert the value to Wei (for Ethereum)
 //   toWei(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Instance method to convert the value to Gwei (for Ethereum)
+  // Instance method to convert the value to Gwei (for Ethereum)
 //   toGwei(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Ether (from Wei for Ethereum)
+  // Instance method to convert the value to Ether (from Wei for Ethereum)
 //   toEther(): BigNumber {
 //     return BigNumber.div(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Instance method to convert the value to Satoshi (for Bitcoin)
+  // Instance method to convert the value to Satoshi (for Bitcoin)
 //   toSatoshi(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("100000000"));
 //   }
 
-//   // Instance method to convert the value to Bitcoin (from Satoshi)
+  // Instance method to convert the value to Bitcoin (from Satoshi)
 //   toBitcoin(): BigNumber {
 //     return BigNumber.div(this._value, BigInt("100000000"));
 //   }
 
-//    // Instance method to convert the value to Lamport (for Solana)
+   // Instance method to convert the value to Lamport (for Solana)
 //    toLamport(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to SOL (from Lamport for Solana)
+  // Instance method to convert the value to SOL (from Lamport for Solana)
 //   toSOL(): BigNumber {
 //     return BigNumber.div(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Gwei (for Optimism)
+  // Instance method to convert the value to Gwei (for Optimism)
 //   toGweiOptimism(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Wei (for Optimism)
+  // Instance method to convert the value to Wei (for Optimism)
 //   toWeiOptimism(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Instance method to convert the value to Gwei (for Polygon)
+  // Instance method to convert the value to Gwei (for Polygon)
 //   toGweiPolygon(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Wei (for Polygon)
+  // Instance method to convert the value to Wei (for Polygon)
 //   toWeiPolygon(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Instance method to convert the value to Gwei (for Avalanche)
+  // Instance method to convert the value to Gwei (for Avalanche)
 //   toGweiAvalanche(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Wei (for Avalanche)
+  // Instance method to convert the value to Wei (for Avalanche)
 //   toWeiAvalanche(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Instance method to convert the value to Gwei (for Base)
+  // Instance method to convert the value to Gwei (for Base)
 //   toGweiBase(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000"));
 //   }
 
-//   // Instance method to convert the value to Wei (for Base)
+  // Instance method to convert the value to Wei (for Base)
 //   toWeiBase(): BigNumber {
 //     return BigNumber.mul(this._value, BigInt("1000000000000000000"));
 //   }
 
-//   // Method to set the value
+  // Method to set the value
 //   fromValue(value: BigNumberish): void {
 //     this._value = value;
 //   }
 
-//   // Instance method to get the maximum of the current value and another BigNumberish value
+  // Instance method to get the maximum of the current value and another BigNumberish value
 //   max(other: BigNumberish): BigNumber {
 //     return BigNumber.max(this._value, other);
 //   }
 
-//   // Instance method to get the minimum of the current value and another BigNumberish value
+  // Instance method to get the minimum of the current value and another BigNumberish value
 //   min(other: BigNumberish): BigNumber {
 //     return BigNumber.min(this._value, other);
 //   }
 
-//   // Instance method to add another BigNumberish value to the current value
+  // Instance method to add another BigNumberish value to the current value
 //   add(other: BigNumberish): BigNumber {
 //     return BigNumber.add(this._value, other);
 //   }
 
-//   // Instance method to subtract another BigNumberish value from the current value
+  // Instance method to subtract another BigNumberish value from the current value
 //   sub(other: BigNumberish): BigNumber {
 //     return BigNumber.sub(this._value, other);
 //   }
 
-//   // Instance method to divide the current value by another BigNumberish value
+  // Instance method to divide the current value by another BigNumberish value
 //   div(other: BigNumberish): BigNumber {
 //     return BigNumber.div(this._value, other);
 //   }
 
-//   // Instance method to multiply the current value by another BigNumberish value
+  // Instance method to multiply the current value by another BigNumberish value
 //   mul(other: BigNumberish): BigNumber {
 //     return BigNumber.mul(this._value, other);
 //   }
 
-//   // Instance method to calculate the modulus of the current value by another BigNumberish value
+  // Instance method to calculate the modulus of the current value by another BigNumberish value
 //   mod(other: BigNumberish): BigNumber {
 //     return BigNumber.mod(this._value, other);
 //   }
 
-//   // Static method to create a BigNumber instance
+  // Static method to create a BigNumber instance
 //   static from(value: BigNumberish): BigNumber {
 //     return new BigNumber(value);
 //   }
 
-//   // Static method to convert a BigNumberish to a number
+  // Static method to convert a BigNumberish to a number
 //   static toNumber(value: BigNumberish): number | null {
 //     if (value === null) {
 //       return null;
@@ -229,7 +229,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return null;
 //   }
 
-//   // Static method to convert a BigNumberish to a bigint
+  // Static method to convert a BigNumberish to a bigint
 //   static toBigInt(value: BigNumberish): bigint | null {
 //     if (value === null) {
 //       return null;
@@ -250,7 +250,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return null;
 //   }
 
-//   // Static method to get the maximum of two BigNumberish values
+  // Static method to get the maximum of two BigNumberish values
 //   static max(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -262,7 +262,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 > bigint2 ? bigint1 : bigint2);
 //   }
 
-//   // Static method to get the minimum of two BigNumberish values
+  // Static method to get the minimum of two BigNumberish values
 //   static min(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -274,7 +274,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 < bigint2 ? bigint1 : bigint2);
 //   }
 
-//   // Static method to add two BigNumberish values
+  // Static method to add two BigNumberish values
 //   static add(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -286,7 +286,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 + bigint2);
 //   }
 
-//   // Static method to subtract one BigNumberish value from another
+  // Static method to subtract one BigNumberish value from another
 //   static sub(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -298,7 +298,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 - bigint2);
 //   }
 
-//   // Static method to divide one BigNumberish value by another
+  // Static method to divide one BigNumberish value by another
 //   static div(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -310,7 +310,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 / bigint2);
 //   }
 
-//   // Static method to multiply two BigNumberish values
+  // Static method to multiply two BigNumberish values
 //   static mul(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -322,7 +322,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 * bigint2);
 //   }
 
-//   // Static method to calculate the modulus of one BigNumberish value by another
+  // Static method to calculate the modulus of one BigNumberish value by another
 //   static mod(value1: BigNumberish, value2: BigNumberish): BigNumber {
 //     const bigint1 = BigNumber.toBigInt(value1);
 //     const bigint2 = BigNumber.toBigInt(value2);
@@ -334,7 +334,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return new BigNumber(bigint1 % bigint2);
 //   }
 
-//   // Static method to convert BigNumberish value to hex string
+  // Static method to convert BigNumberish value to hex string
 //   static toHex(value: BigNumberish): string {
 //     const bigintValue = BigNumber.toBigInt(value);
 //     if (bigintValue === null) {
@@ -343,7 +343,7 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 //     return "0x" + bigintValue.toString(16);
 //   }
 
-//   // Static method to create a BigNumber from a hex string
+  // Static method to create a BigNumber from a hex string
 //   static fromHex(hex: string): BigNumber {
 //     if (typeof hex !== "string" || !/^0x[0-9a-fA-F]+$/.test(hex)) {
 //       throw new Error("Invalid hex string");
@@ -365,59 +365,59 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 // let myValue3: number = 5;
 // console.log('Max', BigNumber.max(50n, myValue3).toBigInt()); // Output: 50n
 
-// // Division example
+// Division example
 // console.log('Div', myValue.div("5").toBigInt()); // Output: 2n
 // console.log('Div', BigNumber.div(20n, "4").toBigInt()); // Output: 5n
 
-// // Multiplication example
+// Multiplication example
 // console.log('Mul', myValue.mul(3).toBigInt()); // Output: 30n
 // console.log('Mul', BigNumber.mul(20n, "2").toBigInt()); // Output: 40n
 
-// // Modulus example
+// Modulus example
 // console.log('Mod', myValue.mod(3).toBigInt()); // Output: 1n
 // console.log('Mod', BigNumber.mod(20n, "6").toBigInt()); // Output: 2n
 
-// // Hex conversion example
+// Hex conversion example
 // let hexValue: BigNumber = BigNumber.fromHex("0x1234");
 // console.log('Hex to BigInt:', hexValue.toBigInt()); // Output: 4660n
 // console.log('BigInt to Hex:', BigNumber.toHex(4660n)); // Output: "0x1234"
 
-// // Instance methods toString and toHex
+// Instance methods toString and toHex
 // console.log('Value toString:', myValue.toString()); // Output: "10"
 // console.log('Value toHex:', myValue.toHex()); // Output: "0xa"
 
-// // Ethereum conversions
+// Ethereum conversions
 // let etherValue: BigNumber = BigNumber.from("1");
 // console.log('To Wei:', etherValue.toWei().toBigInt()); // Output: 1000000000000000000n
 // console.log('To Gwei:', etherValue.toGwei().toBigInt()); // Output: 1000000000n
 // console.log('To Ether:', etherValue.toWei().toEther().toBigInt()); // Output: 1n
 
-// // Bitcoin conversions
+// Bitcoin conversions
 // let bitcoinValue: BigNumber = BigNumber.from("1");
 // console.log('To Satoshi:', bitcoinValue.toSatoshi().toBigInt()); // Output: 100000000n
 // console.log('To Bitcoin:', bitcoinValue.toSatoshi().toBitcoin().toBigInt()); // Output: 1n
 
-// // Solana conversions
+// Solana conversions
 // let solValue: BigNumber = BigNumber.from("1");
 // console.log('To Lamport:', solValue.toLamport().toBigInt()); // Output: 1000000000n
 // console.log('To SOL:', solValue.toLamport().toSOL().toBigInt()); // Output: 1n
 
-// // Optimism conversions
+// Optimism conversions
 // let optimismValue: BigNumber = BigNumber.from("1");
 // console.log('To Gwei Optimism:', optimismValue.toGweiOptimism().toBigInt()); // Output: 1000000000n
 // console.log('To Wei Optimism:', optimismValue.toWeiOptimism().toBigInt()); // Output: 1000000000000000000n
 
-// // Polygon conversions
+// Polygon conversions
 // let polygonValue: BigNumber = BigNumber.from("1");
 // console.log('To Gwei Polygon:', polygonValue.toGweiPolygon().toBigInt()); // Output: 1000000000n
 // console.log('To Wei Polygon:', polygonValue.toWeiPolygon().toBigInt()); // Output: 1000000000000000000n
 
-// // Avalanche conversions
+// Avalanche conversions
 // let avalancheValue: BigNumber = BigNumber.from("1");
 // console.log('To Gwei Avalanche:', avalancheValue.toGweiAvalanche().toBigInt()); // Output: 1000000000n
 // console.log('To Wei Avalanche:', avalancheValue.toWeiAvalanche().toBigInt()); // Output: 1000000000000000000n
 
-// // Base conversions
+// Base conversions
 // let baseValue: BigNumber = BigNumber.from("1");
 // console.log('To Gwei Base:', baseValue.toGweiBase().toBigInt()); // Output: 1000000000n
 // console.log('To Wei Base:', baseValue.toWeiBase().toBigInt()); // Output: 1000000000000000000n

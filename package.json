@@ -24,11 +24,16 @@
     "lint:wallet": "npm run lint -w wallet",
     "format:wallet": "npm run format -w wallet",
     "build:contracts": "npm run build -w contracts",
-    "test:contracts": "npm run test -w contracts"  },
+    "test:contracts": "npm run test -w contracts"
+  },
   "version": "1.0.0",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "install": "^0.13.0",
+    "npm": "^10.8.2"
+  }
 }

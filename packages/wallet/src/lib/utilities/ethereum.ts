@@ -2,6 +2,8 @@
 // import EthCrypto from 'eth-crypto';
 import { Wallet } from "alchemy-sdk";
 
+// No longer needed but keeping for now
+
 export function getWallet(prvKey: string) {
   if (prvKey.length > 2 && (prvKey.slice(0,2) !== '0x')) {
     prvKey = '0x' + prvKey;

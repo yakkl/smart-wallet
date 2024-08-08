@@ -34,32 +34,6 @@ async function generateSalt(): Promise<string> {
 }
 
 
-// export async function verifyEncryption<T extends HasData<any>>(value: T | T[]): Promise<T | T[]> {
-//   const miscStore = getMiscStore();
-
-//   if (miscStore) {
-//     // Helper function to process each item
-//     const processItem = async (item: T) => {
-//       if (!isEncryptedData(item.data)) {
-//         const result = await encryptData(item.data, miscStore);
-//         item.data = result as any;
-//       }
-//       return item;
-//     };
-
-//     // If the input value is an array, process each item in the array
-//     if (Array.isArray(value)) {
-//       return Promise.all(value.map(processItem));
-//     } else {
-//       // If the input value is a single item, process it directly
-//       return processItem(value);
-//     }
-//   }
-
-//   return value;
-// }
-
-
 export async function digestMessage(message: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);

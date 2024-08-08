@@ -63,6 +63,13 @@ import {
 
 
 
+// NOTE: Update these two as needed!!
+// WIP - May need to add a dataModel for providers and the blockchains they support. Review interfaces! This could be used for the wallet provider and blockchain combo for the future.
+export let yakklWalletBlockchains = ['Ethereum'];
+export let yakklWalletProviders = ['Alchemy'];
+// WIP - Already have stores and storage defined
+
+
 // Preferences - User specified and defaults
 export let yakklPreferences: Preferences = {
   id: '',
@@ -463,11 +470,17 @@ export const yakklStoredObjects = [
   { key: "settings", value: yakklSettings },
   { key: "yakklCurrentlySelected", value: yakklCurrentlySelected },
   { key: "yakklSecurity", value: yakklSecurity },
+  { key: "yakklWalletBlockchains", value: yakklWalletBlockchains },
+  { key: "yakklWalletProviders", value: yakklWalletProviders },
   { key: "profile", value: profile },
   { key: "yakklBlockedList", value: yakklBlockedList },
   { key: "yakklWatchList", value: sampleWatch },
 ];
   
+
+// Below to be removed at a later date.
+
+
 // initialAssets.json is in the 'data' directory
 // export let defaultYakklAssets = [
 //   {

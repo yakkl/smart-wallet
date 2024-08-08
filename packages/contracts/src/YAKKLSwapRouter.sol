@@ -2,200 +2,135 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "forge-std/console.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-interface IUniswapV2Router02 {
-    function WETH() external pure returns (address);
-    
-    function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
-    
-    function swapExactETHForTokens(
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external payable returns (uint[] memory amounts);
-    
-    function swapExactTokensForETH(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
-}
+contract YAKKLSwapRouter is ReentrancyGuard, Ownable {
+    using SafeERC20 for IERC20;
 
-contract YAKKLSwapRouter is Ownable {
-    IUniswapV2Router02 public uniswapRouter;
-    address public feeCollector;
-    uint256 public feePercentage;  // Fee in basis points (e.g., 87 = 0.87%)
+    ISwapRouter public immutable uniswapRouter;
+    address public immutable WETH9;
+    address public feeRecipient;
+    uint256 public feeBasisPoints;
+    uint256 public constant MAX_FEE_BASIS_POINTS = 1000; // 10%
     uint256 public accumulatedFees;
 
-    event Swapped(address indexed user, address[] path, uint256 amountIn, uint256 amountOut);
-    event FeeUpdated(uint256 newFeePercentage);
-    event FeeCollectorUpdated(address newFeeCollector);
+    event SwapCompleted(address indexed user, uint256 amountIn, uint256 amountOut, uint256 fee);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event FeeBasisPointsUpdated(uint256 oldFeeBasisPoints, uint256 newFeeBasisPoints);
     event FeesWithdrawn(uint256 amount);
+    event TokensRescued(address indexed token, uint256 amount);
+    event ETHRescued(uint256 amount);
 
-    constructor(address _uniswapRouter, address _feeCollector, uint256 _feePercentage) Ownable(msg.sender) {
-        require(_uniswapRouter != address(0), "Invalid Uniswap router address");
-        require(_feeCollector != address(0), "Invalid fee collector address");
-        require(_feePercentage <= 1000, "Fee percentage too high");
+    constructor(address _uniswapRouter, address _WETH9, address _feeRecipient, uint256 _feeBasisPoints)
+        Ownable(msg.sender)
+    {
+        require(_uniswapRouter != address(0), "Invalid Uniswap router");
+        require(_WETH9 != address(0), "Invalid WETH9 address");
+        require(_feeRecipient != address(0), "Invalid fee recipient");
+        require(_feeBasisPoints <= MAX_FEE_BASIS_POINTS, "Fee too high");
+
+        uniswapRouter = ISwapRouter(_uniswapRouter);
+        WETH9 = _WETH9;
+        feeRecipient = _feeRecipient;
+        feeBasisPoints = _feeBasisPoints;
+    }
+
+    receive() external payable {}
+
+    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        require(_feeRecipient != address(0), "Invalid fee recipient");
+        emit FeeRecipientUpdated(feeRecipient, _feeRecipient);
+        feeRecipient = _feeRecipient;
+    }
+
+    function setFeeBasisPoints(uint256 _feeBasisPoints) external onlyOwner {
+        require(_feeBasisPoints <= MAX_FEE_BASIS_POINTS, "Fee too high");
+        emit FeeBasisPointsUpdated(feeBasisPoints, _feeBasisPoints);
+        feeBasisPoints = _feeBasisPoints;
+    }
+
+    function swapExactETHForTokensWithFee(address tokenOut, uint256 amountOutMin, address to, uint256 deadline) 
+        external 
+        payable 
+        nonReentrant 
+    {
+        require(msg.value > 0, "Must send ETH");
+        require(deadline >= block.timestamp, "Transaction too old");
         
-        uniswapRouter = IUniswapV2Router02(_uniswapRouter);
-        feeCollector = _feeCollector;
-        feePercentage = _feePercentage;
+        uint256 fee = (msg.value * feeBasisPoints) / 10000;
+        uint256 amountAfterFee = msg.value - fee;
+        
+        accumulatedFees += fee;
 
-        console.log("YAKKLSwapRouter initialized");
-        console.log("Uniswap router:", _uniswapRouter);
-        console.log("Fee collector:", _feeCollector);
-        console.log("Fee percentage:", _feePercentage);
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: WETH9,
+            tokenOut: tokenOut,
+            fee: 3000,
+            recipient: to,
+            deadline: deadline,
+            amountIn: amountAfterFee,
+            amountOutMinimum: amountOutMin,
+            sqrtPriceLimitX96: 0
+        });
+
+        uint256 amountOut = uniswapRouter.exactInputSingle{value: amountAfterFee}(params);
+
+        emit SwapCompleted(msg.sender, msg.value, amountOut, fee);
     }
 
-    function setFeeCollector(address _feeCollector) external onlyOwner {
-        require(_feeCollector != address(0), "Invalid fee collector address");
-        feeCollector = _feeCollector;
-        emit FeeCollectorUpdated(_feeCollector);
+    function swapExactTokensForTokensWithFee(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOutMin, address to, uint256 deadline) 
+        external 
+        nonReentrant 
+    {
+        require(amountIn > 0, "Amount must be greater than 0");
+        require(deadline >= block.timestamp, "Transaction too old");
+        
+        uint256 fee = (amountIn * feeBasisPoints) / 10000;
+        uint256 amountAfterFee = amountIn - fee;
 
-        console.log("Fee collector updated:", _feeCollector);
-    }
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).safeIncreaseAllowance(address(uniswapRouter), amountAfterFee);
 
-    function setFeePercentage(uint256 _feePercentage) external onlyOwner {
-        require(_feePercentage <= 1000, "Fee too high"); // Max 10% fee
-        feePercentage = _feePercentage;
-        emit FeeUpdated(_feePercentage);
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            fee: 3000,
+            recipient: to,
+            deadline: deadline,
+            amountIn: amountAfterFee,
+            amountOutMinimum: amountOutMin,
+            sqrtPriceLimitX96: 0
+        });
 
-        console.log("Fee percentage updated:", _feePercentage);
-    }
+        uint256 amountOut = uniswapRouter.exactInputSingle(params);
 
-    function swap(
-        address[] calldata path,
-        uint256 amountIn,
-        uint256 amountOutMinimum,
-        address recipient,
-        uint256 deadline
-    ) external payable {
-        console.log("Swap function called");
-        console.log("Path length:", path.length);
-        console.log("First token in path:", path[0]);
-        console.log("Last token in path:", path[path.length - 1]);
-        console.log("Amount In:", amountIn);
-        console.log("Amount Out Minimum:", amountOutMinimum);
-        console.log("Recipient:", recipient);
-        console.log("Deadline:", deadline);
-        console.log("ETH sent:", msg.value);
-        console.log("Contract ETH balance before swap:", address(this).balance);
+        // Transfer fee to fee recipient
+        IERC20(tokenIn).safeTransfer(feeRecipient, fee);
 
-        require(path.length >= 2, "Invalid path");
-        require(amountIn > 1000, "Amount too small");
-        require(recipient != address(0), "Invalid recipient");
-        require(deadline > block.timestamp, "UniswapV2Router: EXPIRED");
-
-        uint256 feeAmount = (amountIn * feePercentage) / 10000;
-        uint256 amountInAfterFee = amountIn - feeAmount;
-
-        uint256[] memory amounts;
-
-        if (path[0] == uniswapRouter.WETH()) {
-            require(msg.value == amountIn, "Insufficient ETH sent");
-            require(address(this).balance >= amountIn, "Insufficient contract ETH balance");
-            
-            try uniswapRouter.swapExactETHForTokens{value: amountInAfterFee}(
-                amountOutMinimum,
-                path,
-                recipient,
-                deadline
-            ) returns (uint256[] memory _amounts) {
-                amounts = _amounts;
-                uint256 actualFeeAmount = address(this).balance;
-                accumulatedFees += actualFeeAmount;
-            } catch {
-                console.log("ETH to Token swap failed");
-                revert("ETH to Token swap failed");
-            }
-        } else {
-            require(IERC20(path[0]).transferFrom(msg.sender, address(this), amountIn), "Token transfer failed");
-            require(IERC20(path[0]).approve(address(uniswapRouter), amountInAfterFee), "Token approval failed");
-
-            if (path[path.length - 1] == uniswapRouter.WETH()) {
-                try uniswapRouter.swapExactTokensForETH(
-                    amountInAfterFee,
-                    amountOutMinimum,
-                    path,
-                    recipient,
-                    deadline
-                ) returns (uint256[] memory _amounts) {
-                    amounts = _amounts;
-                } catch {
-                    console.log("Token to ETH swap failed");
-                    revert("Token to ETH swap failed");
-                }
-            } else {
-                try uniswapRouter.swapExactTokensForTokens(
-                    amountInAfterFee,
-                    amountOutMinimum,
-                    path,
-                    recipient,
-                    deadline
-                ) returns (uint256[] memory _amounts) {
-                    amounts = _amounts;
-                } catch {
-                    console.log("Token to Token swap failed");
-                    revert("Token to Token swap failed");
-                }
-            }
-
-            require(IERC20(path[0]).transfer(feeCollector, feeAmount), "Fee transfer failed");
-        }
-
-        emit Swapped(msg.sender, path, amountIn, amounts[amounts.length - 1]);
-
-        console.log("Swap completed");
-        console.log("Amount Out:", amounts[amounts.length - 1]);
-        console.log("Contract ETH balance after swap:", address(this).balance);
-        console.log("Accumulated fees:", accumulatedFees);
+        emit SwapCompleted(msg.sender, amountIn, amountOut, fee);
     }
 
     function withdrawAccumulatedFees() external onlyOwner {
-        console.log("Withdrawing accumulated fees");
-        console.log("Accumulated fees before withdrawal:", accumulatedFees);
-        console.log("Contract ETH balance before withdrawal:", address(this).balance);
-        console.log("Owner address:", owner());
-
         uint256 amount = accumulatedFees;
         require(amount > 0, "No fees to withdraw");
-        require(address(this).balance >= amount, "Insufficient contract balance for fee withdrawal");
-        
         accumulatedFees = 0;
         (bool success, ) = payable(owner()).call{value: amount}("");
-        if (!success) {
-            accumulatedFees = amount; // Restore the accumulated fees if transfer fails
-            console.log("ETH transfer to owner failed");
-            revert("ETH transfer to owner failed");
-        }
-        
+        require(success, "ETH transfer failed");
         emit FeesWithdrawn(amount);
-
-        console.log("Fees withdrawn successfully");
-        console.log("Amount withdrawn:", amount);
-        console.log("Contract ETH balance after withdrawal:", address(this).balance);
     }
 
     function rescueTokens(address token, uint256 amount) external onlyOwner {
-        require(IERC20(token).transfer(owner(), amount), "Token rescue failed");
+        IERC20(token).safeTransfer(owner(), amount);
+        emit TokensRescued(token, amount);
     }
 
     function rescueETH(uint256 amount) external onlyOwner {
         require(address(this).balance >= amount, "Insufficient ETH balance");
         (bool success, ) = payable(owner()).call{value: amount}("");
         require(success, "ETH rescue failed");
+        emit ETHRescued(amount);
     }
-
-    receive() external payable {}
 }

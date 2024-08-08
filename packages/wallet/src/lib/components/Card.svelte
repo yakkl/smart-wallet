@@ -299,32 +299,6 @@
     }
   }
 
-  // async function getAccounts(): Promise<YakklAccount[]> {
-  //   try {
-  //     if ($yakklCurrentlySelectedStore?.shortcuts.address === YAKKL_ZERO_ADDRESS) {
-  //       return [];
-  //     }
-  //     //await wallet.setChainId($yakklCurrentlySelectedStore?.shortcuts.network.chainId ?? 1);
-  //     let accounts = await getYakklAccounts();
-  //     // let updatedAccounts: YakklAccount[] = [];
-
-  //     // for (let account of accounts) {
-  //     //   account.value = 0n; //await wallet.getBalance(account.address) ?? 0n;
-  //     //   updatedAccounts.push(account);
-  //     // }
-
-  //     if (accounts.length > 0) { //updatedAccounts.length > 0) {
-  //       await setYakklAccountsStorage(accounts); //updatedAccounts);
-  //       return accounts //updatedAccounts;
-  //     } else {
-  //       return accounts;
-  //     }
-  //   } catch (e) {
-  //     console.log(`getAccounts: ${e}`);
-  //     return [];
-  //   }
-  // }
-
   async function getUserName(email: string) {
     try {
       if ($yakklUserNameStore) {
@@ -583,9 +557,6 @@
   }
 
 </script>
-
-
-
 
 
 <ErrorNoAction bind:show={error} bind:value={errorValue} title="ERROR!"/>

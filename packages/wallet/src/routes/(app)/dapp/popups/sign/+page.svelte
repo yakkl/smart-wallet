@@ -77,7 +77,7 @@
         yakklDappConnectRequest = getDappConnectRequestStore(); // Not required any longer but keep for now
         yakklDappConnectRequest = requestId = $page.url.searchParams.get('requestId') as string;
         setDappConnectRequestStore(yakklDappConnectRequest);
-        chainId = currentlySelected.shortcuts.chainId;
+        chainId = currentlySelected.shortcuts.chainId as number;
 
         wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
         

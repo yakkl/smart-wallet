@@ -1,6 +1,6 @@
 <script lang="ts">
   import {browser as browserSvelte} from '$app/environment';
-  import { setYakklAccountsStorage, setYakklCurrentlySelectedStorage, setProfileStorage, getYakklAccounts, getProfile, getYakklCurrentlySelected, getMiscStore, getYakklPrimaryAccounts } from '$lib/common/stores';
+  import { setYakklAccountsStorage, setYakklCurrentlySelectedStorage, setProfileStorage, getYakklAccounts, getProfile, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
   import { yakklAccount as yakklAccountDefault } from '$lib/models/dataModels';
   import Back from '$lib/components/Back.svelte';
   import { getWallet } from '$lib/utilities/ethereum';
@@ -11,7 +11,7 @@
   import { createForm } from "svelte-forms-lib";
   import * as yup from 'yup';
   import { Confetti } from "svelte-confetti";
-	import { AccountTypeCategory, isEncryptedData, NetworkType, type AccountData, type CurrentlySelectedData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
+	import { AccountTypeCategory, isEncryptedData, NetworkType, type AccountData, type CurrentlySelectedData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
 	import { onMount } from 'svelte';

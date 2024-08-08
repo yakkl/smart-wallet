@@ -5,7 +5,7 @@
 
 export const prerender = true;
 
-import { storageChange, yakklSettingsStore } from "$lib/common/stores";
+import { yakklSettingsStore } from "$lib/common/stores";
 import {browser as browserSvelte} from '$app/environment';
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
 import { setIconLock } from '$lib/utilities/utilities.js';
@@ -27,10 +27,11 @@ type RuntimePort = Runtime.Port;
 let port: RuntimePort | undefined = undefined;
 
 async function initializeExtension() {  try {
-    if (browserSvelte) {   // Don't add a listener if already exists
-      if (browser_ext.storage.local.onChanged.hasListener(storageChange) === false) {
-        browser_ext.storage.local.onChanged.addListener(storageChange);
-      }
+    if (browserSvelte) {   
+      // Don't add a listener if already exists - For tracking storage changes
+      // if (browser_ext.storage.local.onChanged.hasListener(storageChange) === false) {
+      //   browser_ext.storage.local.onChanged.addListener(storageChange);
+      // }
       
       port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
       if (port) {

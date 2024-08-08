@@ -81,7 +81,7 @@
     try {
       if (browserSvelte && browser_ext) {
         currentlySelected = await getYakklCurrentlySelected();
-        chainId = currentlySelected.shortcuts.chainId; // Maybe we will make hex calls consistent ;)
+        chainId = currentlySelected.shortcuts.chainId as number; // Maybe we will make hex calls consistent ;)
         port = browser_ext.runtime.connect({name: YAKKL_DAPP});
 
         if (port) {

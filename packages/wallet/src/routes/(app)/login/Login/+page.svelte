@@ -7,7 +7,7 @@
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
   import { PATH_WELCOME, PATH_REGISTER, PATH_DAPP_ACCOUNTS, DEFAULT_TITLE } from '$lib/common/constants';
-  import { deepCopy, setIconLock, setIconUnlock } from '$lib/utilities/utilities';
+  import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
   import { decryptData, encryptData } from '$lib/common/encryption';
   import { onMount } from 'svelte';
   import Copyright from '$lib/components/Copyright.svelte';
@@ -17,9 +17,7 @@
 	import { RegistrationType, isEncryptedData, type ProfileData, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
 	import { verify } from '$lib/common/secuirty';
-  // import WalletManager from '$lib/plugins/WalletManager';
-  // import type { Wallet } from '$lib/plugins/Wallet';
-
+  
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
   let browser_ext: Browser; 

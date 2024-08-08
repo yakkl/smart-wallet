@@ -186,7 +186,7 @@
         alias: alias,
         note: note,
         addressType: 'EOA',
-        blockchain: currentlySelected.shortcuts.blockchain,
+        blockchain: currentlySelected.shortcuts.blockchain as string,
         version: currentlySelected.version,
         createDate: dateString(),
         updateDate: dateString(),

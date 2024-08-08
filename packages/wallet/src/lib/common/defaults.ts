@@ -93,7 +93,7 @@ export async function verify(id: string) {
 //   return obj;
 // }
 
-// // For null or undefined properties, set them to the value passed. Use this to set values for properties that are null or undefined.
+// For null or undefined properties, set them to the value passed. Use this to set values for properties that are null or undefined.
 // export function setDefinedProperty<T extends object, K extends keyof T>(
 //   target: T | undefined,
 //   property: K,

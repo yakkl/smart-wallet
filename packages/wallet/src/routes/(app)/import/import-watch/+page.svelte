@@ -3,7 +3,7 @@
 	import { PATH_WELCOME, VERSION } from "$lib/common/constants";
 	import { createForm } from "svelte-forms-lib";
 	import * as yup from 'yup';
-	import { yakklCurrentlySelectedStore, setProfileStorage, getYakklWatchList, setYakklWatchListStorage, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected, getMiscStore, getSettings } from "$lib/common/stores";
+	import { setProfileStorage, getYakklWatchList, setYakklWatchListStorage, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected, getMiscStore, getSettings } from "$lib/common/stores";
 	import { encryptData, decryptData } from "$lib/common/encryption";
 	import { Button, Modal } from 'flowbite-svelte';
 	import Back from '$lib/components/Back.svelte';

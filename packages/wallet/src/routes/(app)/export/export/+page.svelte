@@ -8,7 +8,7 @@
   import Back from '$lib/components/Back.svelte';
   import { onMount } from 'svelte';
   import { decryptData } from '$lib/common/encryption';
-	import { isEncryptedData, type AccountData, type CurrentlySelectedData, type YakklCurrentlySelected } from '$lib/common';
+	import { isEncryptedData, type AccountData, type CurrentlySelectedData, type EncryptedData, type YakklCurrentlySelected } from '$lib/common';
 	import { verify } from '$lib/common/secuirty';
   // import * as Sentry from "@sentry/svelte";
 
@@ -93,13 +93,13 @@
       }
       account = (currentlySelected.data as CurrentlySelectedData).account;
 
-      if (isEncryptedData(account.data)) {
-        await decryptData(account.data, $yakklMiscStore).then(result => {
-          account.data = result as AccountData;
+      if (isEncryptedData(account && account.data)) {
+        await decryptData(account!.data as EncryptedData, $yakklMiscStore).then(result => {
+          account!.data = result as AccountData;
         });
       }
 
-      pkey = (account.data as AccountData).privateKey;
+      pkey = (account!.data as AccountData).privateKey;
       profile = undefined;
 
       userName = '';

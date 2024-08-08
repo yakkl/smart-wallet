@@ -43,10 +43,10 @@
     getSettings().then(result => {
       yakklSettings = result;
 
-      if (yakklSettings.init === false) {
+      if (yakklSettings && yakklSettings.init === false) {
         goto(PATH_REGISTER);
       }
-      if (yakklSettings.isLocked === true) {
+      if (yakklSettings && yakklSettings.isLocked === true) {
         goto(PATH_LOGIN);
       }
     });

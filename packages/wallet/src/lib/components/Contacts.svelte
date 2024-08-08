@@ -5,7 +5,6 @@
 
   export let showContacts = false;
   export let contacts: YakklContact[] = [];
-  // export let hContact; // TODO: Handle the contact once selected
 
   export async function handleContacts(show=true) {
     contacts = [];
@@ -16,9 +15,7 @@
   function handleContact(contact: YakklContact | null) {
     if (contact) {
       setContactStore(contact);
-    } //else {
-    //   setContactStore();
-    // }
+    } 
     showContacts = false;
   }
 
