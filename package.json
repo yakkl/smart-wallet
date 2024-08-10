@@ -29,9 +29,8 @@
   "version": "0.99.5",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["crypto", "ethereum", "wallet", "browser-extension"],
+  "author": "YAKKL",
   "devDependencies": {
     "install": "^0.13.0",
     "npm": "^10.8.2"
