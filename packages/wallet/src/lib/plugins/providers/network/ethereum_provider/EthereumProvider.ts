@@ -3,7 +3,7 @@
 import EventEmitter from "events";
 import { Duplex } from 'readable-stream';
 import {v4 as uuidv4} from 'uuid';
-import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderInfo, EIP6963ProviderDetail, EIP6963RequestProviderEvent } from '$lib/plugins/providers/ethereum_provider/EthereumProviderTypes';
+import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderInfo, EIP6963ProviderDetail, EIP6963RequestProviderEvent } from '$lib/plugins/providers/network/ethereum_provider/EthereumProviderTypes';
 
 // Provider Info for EIP-6963
 const eip6963ProviderInfo: EIP6963ProviderInfo = {
