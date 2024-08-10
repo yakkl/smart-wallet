@@ -4,8 +4,7 @@
 import { type BlockTag, type BigNumberish, type Deferrable, type Listener, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter, type Log, type EventType, BigNumber } from '$lib/common';
 import eventManager from '$plugins/EventManager';
 import { AbstractProvider, type Provider } from '$plugins/Provider';
-import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, Utils, type AlchemySettings } from "alchemy-sdk";
-import { EthereumSigner } from '$plugins/blockchains/evm/ethereum/EthereumSigner';
+import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings } from "alchemy-sdk";
 import type { Signer } from '$lib/plugins/Signer';
 
 interface AlchemyOptions {

@@ -76,6 +76,24 @@ export interface MetaDataParams {
   transaction?: unknown;
 }
 
+
+export interface PriceData {
+  provider: string;
+  price: number;
+  lastUpdated: Date;
+  // Add any other common fields
+}
+
+export interface PriceProvider {
+  getName(): string;
+  getPrice(pair: string): Promise<PriceData>;
+}
+
+export interface WeightedProvider {
+  provider: PriceProvider;
+  weight: number;
+}
+
 export interface Signer {
   signTransaction(transaction: Transaction): Promise<string>;
   signMessage(message: string): Promise<string>;
