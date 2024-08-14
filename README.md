@@ -30,6 +30,14 @@ YAKKL Smart Wallet is a multi-platform cryptocurrency wallet designed for seamle
       - [Possible 402 Error](#possible-402-error)
     - [Building and Testing](#building-and-testing)
     - [Best Practices](#best-practices)
+  - [Some Interesting Formulas:](#some-interesting-formulas)
+    - [Step-by-Step Calculation (Higher Gas Price and Lower Gas Price)](#step-by-step-calculation-higher-gas-price-and-lower-gas-price)
+    - [Step-by-Step Calculation](#step-by-step-calculation)
+    - [Formula](#formula)
+    - [Conclusion](#conclusion)
+    - [Step-by-Step Calculation](#step-by-step-calculation-1)
+    - [Conversion Steps](#conversion-steps)
+    - [Conclusion](#conclusion-1)
   - [Contributing](#contributing)
   - [Support and Contact](#support-and-contact)
   - [Acknowledgements](#acknowledgements)
@@ -110,6 +118,75 @@ This may be needed if you get a 402 error when pushing to github initially. The 
 ### Best Practices
 - **Coding Standards**: Outline the coding standards followed in the project, such as code formatting, commenting, and documentation.
 - **Security Practices**: List best practices for ensuring the security of both the browser extension and smart contracts.
+
+## Some Interesting Formulas:
+
+### Step-by-Step Calculation (Higher Gas Price and Lower Gas Price)
+To determine how much 1,384,197 gas costs (example of deploying a good size and semi-complex smart contract at the time of this writing) when deploying your contract, you need to multiply the gas used by the gas price and convert the result to ETH. The total cost in ETH depends on the gas price at the time of the transaction.
+
+### Step-by-Step Calculation
+
+1. **Gas Used**: 1,384,197 gas
+2. **Gas Price**: The gas price is usually given in **gwei** (1 gwei = \(10^{-9}\) ETH). Let's assume a gas price of 20 gwei for this example.
+3. **Conversion from gwei to ETH**:
+   - 1 gwei = \(10^{-9}\) ETH
+
+### Formula
+
+\[
+\text{Total Cost in ETH} = \text{Gas Used} \times \text{Gas Price (in ETH)}
+\]
+
+Given:
+- Gas Used = 1,384,197
+- Gas Price = 20 gwei = 20 \times 10^{-9} \text{ ETH}
+
+\[
+\text{Total Cost in ETH} = 1,384,197 \times 20 \times 10^{-9} = 0.02768394 \text{ ETH}
+\]
+
+### Conclusion
+
+If the gas price is 20 gwei, then deploying your contract with 1,384,197 gas would cost approximately **0.0277 ETH**. So, assume $2,652.76 per ETH, the cost would be approximately **$73.50 USD**.
+
+To get the exact cost, you'd replace the gas price in the calculation with the actual gas price at the time of deployment. You can check the current gas price using tools like [Etherscan Gas Tracker](https://etherscan.io/gastracker) or directly from an Ethereum node.
+
+-OR-
+
+Given the current gas price of 5.486 gwei and the price of 1 ETH as $2,652.76, you can calculate the cost of deploying your contract in USD as follows.
+
+### Step-by-Step Calculation
+
+1. **Gas Used**: 1,384,197 gas
+2. **Gas Price**: 5.486 gwei
+3. **ETH to USD**: 1 ETH = \$2,652.76
+
+### Conversion Steps
+
+1. **Convert Gas Price to ETH**:
+   - Gas Price in ETH = 5.486 gwei = \(5.486 \times 10^{-9}\) ETH
+
+2. **Calculate Total Gas Cost in ETH**:
+   \[
+   \text{Total Cost in ETH} = \text{Gas Used} \times \text{Gas Price (in ETH)}
+   \]
+   \[
+   \text{Total Cost in ETH} = 1,384,197 \times 5.486 \times 10^{-9} = 0.007596496142 \text{ ETH}
+   \]
+
+3. **Convert the Total Cost to USD**:
+   \[
+   \text{Total Cost in USD} = \text{Total Cost in ETH} \times \text{ETH to USD}
+   \]
+   \[
+   \text{Total Cost in USD} = 0.007596496142 \times 2652.76 = 20.15 \text{ USD}
+   \]
+
+### Conclusion
+
+With a gas price of 5.486 gwei and 1 ETH being \$2,652.76, deploying your contract with 1,384,197 gas would cost approximately **\$20.15 USD**.
+
+
 
 ## Contributing
 

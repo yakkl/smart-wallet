@@ -153,7 +153,7 @@ export interface BaseTransaction {
   gasPrice?: BigNumberish | null | undefined;
   data?: BytesLike;
   value: BigNumberish | null;
-  chainId: number;
+  chainId: BigNumberish;
   r?: string;
   s?: string;
   v?: number;
@@ -182,7 +182,7 @@ export interface TransactionReceipt {
   effectiveGasPrice?: BigNumberish,
   byzantium?: boolean,
   type: number;
-  status?: boolean
+  status?: number;
 }
 
 export interface TransactionResponse extends Transaction {

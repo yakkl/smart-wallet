@@ -152,6 +152,7 @@ export const yakklGPTKeyStore = writable<string>(undefined); // Single indicator
 export const yakklConnectionStore = writable<boolean>(true); // All fetch or api calls need to validate that the yakklConnectionStore is true before accessing the internet
 export const yakklDappConnectRequestStore = writable<string | null>(undefined);
 
+
 // --------------------------------
 
 // Generic error logger

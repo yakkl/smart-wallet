@@ -1,8 +1,10 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
+    "rootDir": ".",
     "paths": {
+      "*": ["src/*", "tests/*"],
       "$lib": ["src/lib"],
       "$lib/*": ["src/lib/*"],
       "$plugins": ["src/lib/plugins"],
@@ -15,6 +17,7 @@
     "checkJs": false,
     "esModuleInterop": true,
     "isolatedModules": true,
+    "module": "ESNext",
     "moduleResolution": "node",
     "noEmit": false,
     "resolveJsonModule": true,
@@ -23,15 +26,21 @@
     "strict": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
+    "target": "ES2020",
     "types": ["svelte", "chrome", "webextension-polyfill"]
   },
   "include": [
-    "src",
+    "src/**/*",
+    "tests/**/*",
     "src/**/*.d.ts",
     "src/**/*.ts",
     "src/**/*.js",
     "src/**/*.svelte",
     "src/lib/browser-polyfill.d.ts"
-  ],
-  "exclude": ["node_modules", "../../node_modules"]
+, "tests/SwapManagerTestts.tmp"  ],
+  "exclude": ["node_modules", "../../node_modules"],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
 }

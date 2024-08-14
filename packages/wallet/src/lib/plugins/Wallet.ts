@@ -16,7 +16,7 @@ import {
 import eventManager from '$plugins/EventManager';
 import ProviderFactory from '$plugins/ProviderFactory';
 import BlockchainFactory from '$plugins/BlockchainFactory';
-import { Signer } from '$plugins/Signer';
+import type { Signer } from '$plugins/Signer';
 import { Ethereum, EthereumSigner } from '$plugins/blockchains';
 import { writable } from 'svelte/store';
 

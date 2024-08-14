@@ -1,7 +1,26 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AccountInfo, BaseTransaction, BigNumberish, Block, BlockTag, BlockWithTransactions, Deferrable, Filter, Log, MetaData, Transaction, TransactionReceipt, TransactionRequest, TransactionResponse, YakklPrimaryAccount, Network, IMAGEPATH } from '$lib/common';
+import type { AccountInfo, BaseTransaction, BigNumberish, Block, BlockTag, BlockWithTransactions, Deferrable, Filter, Log, MetaData, Transaction, TransactionReceipt, TransactionRequest, TransactionResponse, YakklPrimaryAccount, Network, IMAGEPATH, Signer } from '$lib/common';
 import type { Provider } from '$plugins/Provider';
+
+export interface ContractInterface {
+  address: string;
+  abi: readonly any[]; // Change this line
+  functions: Record<string, (...args: any[]) => Promise<any>>;
+  call(functionName: string, ...args: any[]): Promise<any>;
+}
+
+
+// Example usage:
+// In UniswapService or SushiSwapService
+// const contract = await this.blockchain.getContract(address, abi);
+
+// Use the functions property
+// const someFunction = contract.functions.someFunction;
+// const result = await someFunction(arg1, arg2);
+
+// Or use the call method
+// const result = await contract.call('someFunction', arg1, arg2);
 
 
 /**
@@ -16,6 +35,10 @@ export interface Blockchain {
   icon: IMAGEPATH; // Icon of the blockchain (could be a URL, path or base64 encoded string)
   providers: Provider[]; // List of providers supported by this blockchain
   options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
+
+  Contract: any; // This should be the appropriate contract type 
+
+  getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
   /**
    * Calls a transaction.
@@ -151,6 +174,10 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     }
     this.provider = providers[0]; // Default to the first provider
   }
+
+  abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+
+  abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
 
   /**
    * Calls a transaction.

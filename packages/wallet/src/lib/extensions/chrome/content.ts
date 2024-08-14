@@ -88,7 +88,7 @@ try {
     const container = document.head || document.documentElement;
     const script = document.createElement( "script" );
     script.setAttribute( "async", "false" );
-    script.src = browser_ext.runtime.getURL( "/js/inpage.js" );  // May want to pull in inpage.js during build instead of runtime to make sure it's registered quickly and first
+    script.src = browser_ext.runtime.getURL( "/ext/inpage.js" );  // May want to pull in inpage.js during build instead of runtime to make sure it's registered quickly and first
     script.id = YAKKL_PROVIDER_ETHEREUM;  // TODO: May want to change to something more dynamic...?
     script.onload = () => {
       script.remove();

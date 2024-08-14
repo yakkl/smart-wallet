@@ -17,7 +17,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { truncate, handleOpenInTab, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices, getPricesCoinbase } from '$lib/tokens/prices';
+  import { startCheckPrices, stopCheckPrices, getPrice } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import { AccountTypeCategory, NetworkType, RegistrationType, isEncryptedData, 
     type CurrentlySelectedData, type Network, type Profile, type ProfileData, 
@@ -162,11 +162,11 @@
 
   async function startPricingChecks() {
     // Keep checking the prices
-    startCheckPrices(checkPricesProvider, checkPricesInterval);
+    startCheckPrices(checkPricesInterval);
     // If the value === 0 then stop the checks
     // const numValue = shortcutsValue.toNumber();
     // if (numValue !== null && numValue > 0) {
-    //   startCheckPrices(checkPricesProvider, checkPricesInterval);
+    //   startCheckPrices(checkPricesInterval);
     // } else {
     //   stopCheckPrices();
     // }
@@ -238,8 +238,9 @@
       if (currentlySelected.shortcuts.address) {
         startPricingChecks();
         if (!$yakklPricingStore?.price) {
-          getPricesCoinbase('eth-usd').then(results => {
-            yakklPricingStore.set({ provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price });
+          const symbol = currentlySelected.shortcuts.symbol;
+          getPrice(symbol+'-USD').then(results => {
+            yakklPricingStore.set({ provider: '', id: '-1', pair: symbol+'-USD', price: results.price });
           });
         }
 
