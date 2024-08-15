@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AccountInfo, BaseTransaction, BigNumberish, Block, BlockTag, BlockWithTransactions, Deferrable, Filter, Log, MetaData, Transaction, TransactionReceipt, TransactionRequest, TransactionResponse, YakklPrimaryAccount, Network, IMAGEPATH } from '$lib/common';
+import { BaseFeeManager } from './FeeManager';
+import { EthereumGasProvider } from '$plugins/providers/fees/ethereum/EthereumGasProvider';
+import type { FeeManager, GasEstimate, GasPrediction, HistoricalGasData } from '$lib/common/gas-types';
+import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH, BigNumber } from '$lib/common';
 import type { Provider } from '$plugins/Provider';
 
 
@@ -16,6 +19,27 @@ export interface Blockchain {
   icon: IMAGEPATH; // Icon of the blockchain (could be a URL, path or base64 encoded string)
   providers: Provider[]; // List of providers supported by this blockchain
   options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
+
+  /**
+   * Gets a gas estimate for a transaction.
+   * @param transaction - The transaction request to estimate gas for.
+   * @returns A promise that resolves to a gas estimate.
+   */
+  getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate>;
+
+  /**
+   * Gets historical gas data.
+   * @param duration - The duration for which to fetch historical data.
+   * @returns A promise that resolves to an array of historical gas data.
+   */
+  getHistoricalGasData(duration: number): Promise<HistoricalGasData[]>;
+
+  /**
+   * Predicts future gas fees.
+   * @param duration - The duration for which to predict future fees.
+   * @returns A promise that resolves to an array of gas predictions.
+   */
+  predictFutureFees(duration: number): Promise<GasPrediction[]>;
 
   /**
    * Calls a transaction.
@@ -40,11 +64,6 @@ export interface Blockchain {
    */
   createAccount<T>(accountToDeriveFrom: YakklPrimaryAccount | null, accountInfo: AccountInfo): Promise<T>;
 
-  /**
-   * Estimates the gas required for a transaction.
-   * @param transaction - The transaction request to estimate gas for.
-   * @returns The estimated gas.
-   */
   estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint>;
 
   // Getters for blockchain information
@@ -128,6 +147,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   icon: IMAGEPATH;
   name: string;
   options: { [key: string]: MetaData };
+  protected feeManager: FeeManager;
 
   /**
    * Creates an instance of AbstractBlockchain. This class should be extended by specific blockchain implementations.
@@ -150,6 +170,24 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
       throw new Error('Providers list cannot be empty');
     }
     this.provider = providers[0]; // Default to the first provider
+    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider)]);
+  }
+
+  // async estimateGas(transaction: TransactionRequest): Promise<bigint> {
+  //   const estimate = await this.feeManager.getGasEstimate(transaction);
+  //   return BigNumber.from(estimate.gasLimit).toBigInt() ?? BigInt(0);
+  // }
+
+  async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
+    return await this.feeManager.getGasEstimate(transaction);
+  }
+
+  async getHistoricalGasData(duration: number): Promise<HistoricalGasData[]> {
+    return await this.feeManager.getHistoricalGasData(duration);
+  }
+
+  async predictFutureFees(duration: number): Promise<GasPrediction[]> {
+    return await this.feeManager.predictFutureFees(duration);
   }
 
   /**

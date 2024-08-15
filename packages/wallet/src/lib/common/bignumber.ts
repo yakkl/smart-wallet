@@ -48,6 +48,17 @@ export class BigNumber implements IBigNumber {
     this._value = newValue;
   }
 
+  compare(other: BigNumberish): number {
+    const a = this.toBigInt();
+    const b = BigNumber.from(other).toBigInt();
+    if (a === null || b === null) {
+      throw new Error("Cannot compare null values");
+    }
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  }
+  
   // Type guard to check if value is BigNumber
   private static isBigNumber(value: any): value is BigNumber {
     return value instanceof BigNumber;

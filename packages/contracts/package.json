@@ -3,6 +3,8 @@
   "scripts": {
     "build": "forge build",
     "test": "forge test"
+  },
+  "dependencies": {
+    "svelte-chartjs": "^3.1.5"
   }
 }
-

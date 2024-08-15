@@ -19,6 +19,7 @@ import BlockchainFactory from '$plugins/BlockchainFactory';
 import { Signer } from '$plugins/Signer';
 import { Ethereum, EthereumSigner } from '$plugins/blockchains';
 import { writable } from 'svelte/store';
+import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
 
 export const walletStore = writable<Wallet | null>(null);
 
@@ -443,11 +444,19 @@ export class Wallet {
       throw new Error('Blockchain or Provider or Signer not initialized');
     }
 
-    console.log('Sending transaction to provider:', transaction);
-    const response = await this.provider.sendTransaction(transaction);
+    const gasEstimate = await this.blockchain.getGasEstimate(transaction);
 
-    Wallet.setInstance(this);
-    return response;
+    // Apply the gas estimate to the transaction
+    transaction.gasLimit = gasEstimate.gasLimit;
+    transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
+    transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
+
+    console.log('Sending transaction to provider:', transaction);
+    // const response = await this.provider.sendTransaction(transaction);
+
+    // Wallet.setInstance(this);
+    // return response;
+    return await this.blockchain.sendTransaction(transaction);
   }
 
   /**
@@ -501,6 +510,27 @@ export class Wallet {
   public removeAccount(address: string): void {
     this.accounts = this.accounts.filter(account => account.address !== address);
     Wallet.setInstance(this);
+  }
+
+  async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.getGasEstimate(transaction);
+  }
+
+  async getHistoricalGasData(duration: number): Promise<HistoricalGasData[]> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.getHistoricalGasData(duration);
+  }
+
+  async predictFutureFees(duration: number): Promise<GasPrediction[]> {
+    if (!this.blockchain) {
+      throw new Error('Blockchain not initialized');
+    }
+    return await this.blockchain.predictFutureFees(duration);
   }
 }
 

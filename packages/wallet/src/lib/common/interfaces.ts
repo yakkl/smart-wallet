@@ -165,6 +165,10 @@ export interface BaseTransaction {
   ccipReadEnabled?: boolean;
 }
 
+export interface TransactionRequest extends BaseTransaction {
+  maxFeePerBlobGas?: BigNumberish | null | undefined;
+}
+
 export interface TransactionReceipt {
   to: string;
   from: string;
