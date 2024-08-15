@@ -14,10 +14,12 @@ contract FeeManager is Ownable {
     event FeeCalculated(uint256 feeAmount);
     event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
     event FeeDistributed(address indexed token, uint256 amount);
+    event FeeManagerDeployed(address indexed contractAddress, address indexed owner);
 
     constructor(address _feeRecipient) Ownable(msg.sender) {
         require(_feeRecipient != address(0), "Invalid fee recipient");
         feeRecipient = _feeRecipient;
+        emit FeeManagerDeployed(address(this), msg.sender);
     }
 
     receive() external payable {}

@@ -1,3 +1,5 @@
+const ethers = require("ethers");
+
 async function verifyFork() {
   const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
   
@@ -18,3 +20,10 @@ async function verifyFork() {
 }
 
 verifyFork();
+
+
+
+// Example usage:
+// node --experimental-modules local-verify-fork.mjs
+// OR
+// ts-node 

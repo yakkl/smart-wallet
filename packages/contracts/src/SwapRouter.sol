@@ -21,6 +21,7 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
     event TokensRescued(address indexed token, uint256 amount);
     event ETHRescued(uint256 amount);
     event FeeAdjusted(uint256 adjustedFee);
+    event SwapRouterDeployed(address indexed contractAddress, address indexed owner);
 
     constructor(
         address _uniswapRouter,
@@ -34,6 +35,7 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
         uniswapRouter = ISwapRouter(_uniswapRouter);
         WETH9 = _WETH9;
         feeManager = IFeeManager(_feeManager);
+        emit SwapRouterDeployed(address(this), msg.sender);
     }
 
     receive() external payable whenNotPaused {
