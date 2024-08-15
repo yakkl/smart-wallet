@@ -27,6 +27,7 @@ packages/wallet/*.http
 packages/wallet/.env
 packages/wallet/.env.*
 !packages/wallet/.env.example
+packages/**/.env
 packages/wallet/test-data-keyring.json
 packages/wallet/wip-colors
 packages/wallet/background.js.LICENSE.txt
@@ -58,3 +59,4 @@ packages/wallet/src/lib/**/*.tmp
 # Optional: Specific patterns to match nested directories (alternative approach)
 **/*.tmp
 **/*.wip
+**/anvil-state

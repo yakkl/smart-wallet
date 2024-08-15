@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumSigner.ts
 import { ethers } from 'ethers';
-import type { TransactionRequest, BigNumberish } from '$lib/common';
+import type { EVMTransactionRequest, BigNumberish } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 
@@ -58,7 +58,7 @@ export class EthereumSigner extends Signer {
    * @param transaction - The transaction request to sign.
    * @returns The signed transaction as a string.
    */
-  async signTransaction(transaction: TransactionRequest): Promise<string> {
+  async signTransaction(transaction: EVMTransactionRequest): Promise<string> {
 
     console.log('Transaction to sign:', transaction);
 

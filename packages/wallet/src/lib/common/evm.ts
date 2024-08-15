@@ -1,5 +1,5 @@
 import type { BytesLike, BlockTag } from '$lib/common/types';
-import type { BaseTransaction, EncryptedData, TransactionResponse, YakklPrimaryAccount } from '$lib/common/interfaces';
+import type { BaseTransaction, TransactionRequest, EncryptedData, TransactionResponse, YakklPrimaryAccount } from '$lib/common/interfaces';
 import type { BigNumber, BigNumberish } from '$lib/common/bignumber';
 
 
@@ -139,17 +139,12 @@ export type LegacyWindowEthereum = LegacyWalletProvider & {
 /**
  * Interface for transaction requests, extending base transactions.
  */
-export interface TransactionRequest extends BaseTransaction {
+export interface EVMTransactionRequest extends TransactionRequest {
   blockTag?: BlockTag;
   /**
    * The blob versioned hashes (see [[link-eip-4844]]).
    */
   blobVersionedHashes?: null | Array<string>;
-
-  /**
-   * The maximum fee per blob gas (see [[link-eip-4844]]).
-   */
-  maxFeePerBlobGas?: null | BigNumberish;
 
   /**
    * Any blobs to include in the transaction (see [[link-eip-4844]]).

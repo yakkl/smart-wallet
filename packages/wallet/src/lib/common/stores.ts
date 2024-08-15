@@ -57,6 +57,8 @@ import type {
 	GasTransStore
 } from '$lib/common/interfaces';
 
+import type { Wallet } from '$plugins/Wallet';
+
 // Svelte writeable stores
 export const alert = writable({
 	msg: 'Welcome to the YAKKL® Smart Wallet!',
@@ -152,6 +154,7 @@ export const yakklGPTKeyStore = writable<string>(undefined); // Single indicator
 export const yakklConnectionStore = writable<boolean>(true); // All fetch or api calls need to validate that the yakklConnectionStore is true before accessing the internet
 export const yakklDappConnectRequestStore = writable<string | null>(undefined);
 
+export const wallet = writable<Wallet | null>(null);
 // --------------------------------
 
 // Generic error logger
