@@ -10,19 +10,16 @@ const provider = new ethers.JsonRpcProvider(FORK_RPC_URL);
 
 // Replace this with the ABI of the contract you're interested in
 const contractAbi = [
-    // Example ABI for an ERC20 contract
     "event Transfer(address indexed from, address indexed to, uint256 value)",
     "event Approval(address indexed owner, address indexed spender, uint256 value)",
-    // Add more event signatures as required
 ];
 
 const contractInterface = new ethers.Interface(contractAbi);
 
-async function decodeLogs(txHash: string) {
+async function auditTransaction(txHash: string) {
     const receipt = await provider.getTransactionReceipt(txHash);
-
     if (receipt && receipt.logs.length > 0) {
-        console.log(`Logs found in transaction ${txHash}:`);
+        console.log(`Auditing transaction ${txHash}:`);
         receipt.logs.forEach((log, index) => {
             try {
                 const decodedEvent = contractInterface.parseLog(log);
@@ -39,6 +36,8 @@ async function decodeLogs(txHash: string) {
                 console.log(`Error decoding log ${index + 1}:`, error.message);
             }
         });
+
+        // Add more audit logic as needed here
     } else {
         console.log(`No logs found in transaction ${txHash}.`);
     }
@@ -51,4 +50,4 @@ if (!txHash) {
     process.exit(1);
 }
 
-decodeLogs(txHash).catch(console.error);
+auditTransaction(txHash).catch(console.error);
