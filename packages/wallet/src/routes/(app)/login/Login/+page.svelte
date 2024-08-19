@@ -58,7 +58,7 @@
 
         currentlySelected = await getYakklCurrentlySelected();
 
-        // wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected  ? currentlySelected.shortcuts.chainId ?? 1 : 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
+        // wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected  ? currentlySelected.shortcuts.chainId ?? 1 : 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         // console.log('onMount: wallet', wallet);
 
         pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement; 

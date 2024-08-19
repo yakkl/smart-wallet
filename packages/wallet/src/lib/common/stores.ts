@@ -54,8 +54,10 @@ import type {
   HasData,
 	YakklConnectedDomain,
 	YakklChat,
-	GasTransStore
+	GasTransStore,
+	ContractData
 } from '$lib/common/interfaces';
+
 
 import type { Wallet } from '$plugins/Wallet';
 
@@ -155,6 +157,11 @@ export const yakklConnectionStore = writable<boolean>(true); // All fetch or api
 export const yakklDappConnectRequestStore = writable<string | null>(undefined);
 
 export const wallet = writable<Wallet | null>(null);
+export const yakklContractStore = writable<ContractData>({
+  address: '',
+  abi: '',
+  functions: []
+});
 // --------------------------------
 
 // Generic error logger
@@ -294,6 +301,10 @@ export function getYakklWalletProvidersStore() {
 export function getYakklConnectedDomainsStore() {
 	const store = get(yakklConnectedDomainsStore);
 	return store;
+}
+
+export function getYakklContractStore() {
+  return get(yakklContractStore);
 }
 
 // Memory only
@@ -506,6 +517,10 @@ export function setYakklConnectionStore(values: boolean) {
 	const store = get(yakklConnectionStore);
 	yakklConnectionStore.set(values);
 	return store;
+}
+
+export function setYakklContractStore(values: ContractData) {
+  yakklContractStore.set(values);
 }
 
 // --------------------------------

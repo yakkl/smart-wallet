@@ -1,40 +1,29 @@
 // services/swapService.ts
-import { ethers } from 'ethers';
+import WalletManager from '..//WalletManager';
 import { UniswapService } from './uniswap/UniswapService';
 import { SushiSwapService } from './sushiswap/SushiSwapService';
-import { ChainId } from '@sushiswap/sdk';
-
-// Choose either Alchemy or Infura
-const ALCHEMY_API_KEY = 'YOUR_ALCHEMY_API_KEY';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const INFURA_PROJECT_ID = 'YOUR_INFURA_PROJECT_ID';
-
-// Use Alchemy
-const provider = new ethers.AlchemyProvider('mainnet', ALCHEMY_API_KEY);
-
-// Or use Infura
-// const provider = new ethers.InfuraProvider('mainnet', INFURA_PROJECT_ID);
 
 async function initializeServices() {
-  // You'll need to implement a way to get the signer, possibly through a wallet connection
-  const signer = await provider.getSigner();
+  const wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], 1);
+  const blockchain = wallet.getBlockchain();
+  const provider = wallet.getProvider();
+
+  if (!provider) {
+    throw new Error('Provider not initialized');
+  }
 
   const uniswapService = new UniswapService(
+    blockchain,
     provider,
-    signer,
-    'YOUR_DEPLOYED_CONTRACT_ADDRESS',
-    1, // chainId (1 for Ethereum mainnet)
-    0.00875 // Initial fee percentage
+    875 // Initial fee basis points (0.875%)
   );
 
   const sushiSwapService = new SushiSwapService(
+    blockchain,
     provider,
-    signer,
-    ChainId.MAINNET,
-    0.00875 // Initial fee percentage
+    875 // Initial fee basis points (0.875%)
   );
 
   return { uniswapService, sushiSwapService };
 }
-
 export const swapServices = initializeServices();

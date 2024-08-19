@@ -3,9 +3,16 @@
 import { BaseFeeManager } from './FeeManager';
 import { EthereumGasProvider } from '$plugins/providers/fees/ethereum/EthereumGasProvider';
 import type { FeeManager, GasEstimate, GasPrediction, HistoricalGasData } from '$lib/common/gas-types';
-import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH, BigNumber } from '$lib/common';
+import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH } from '$lib/common';
+import type { Signer } from '$plugins/Signer';
 import type { Provider } from '$plugins/Provider';
 
+export interface ContractInterface {
+  address: string;
+  abi: readonly any[]; // Change this line
+  functions: Record<string, (...args: any[]) => Promise<any>>;
+  call(functionName: string, ...args: any[]): Promise<any>;
+}
 
 /**
  * Interface for blockchain interactions.
@@ -19,6 +26,10 @@ export interface Blockchain {
   icon: IMAGEPATH; // Icon of the blockchain (could be a URL, path or base64 encoded string)
   providers: Provider[]; // List of providers supported by this blockchain
   options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
+
+  Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+
+  getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
   /**
    * Gets a gas estimate for a transaction.
@@ -172,6 +183,10 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     this.provider = providers[0]; // Default to the first provider
     this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider)]);
   }
+
+  abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+
+  abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
 
   // async estimateGas(transaction: TransactionRequest): Promise<bigint> {
   //   const estimate = await this.feeManager.getGasEstimate(transaction);

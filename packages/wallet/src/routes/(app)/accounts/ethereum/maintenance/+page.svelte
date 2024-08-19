@@ -40,7 +40,7 @@
     handleClear();
     currentlySelected = await getYakklCurrentlySelected();
 
-    wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
+    wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
     accounts = await getYakklAccounts();
     if (!accounts) {
       accounts = [];

@@ -153,7 +153,7 @@ export interface BaseTransaction {
   gasPrice?: BigNumberish | null | undefined;
   data?: BytesLike;
   value: BigNumberish | null;
-  chainId: number;
+  chainId: BigNumberish;
   r?: string;
   s?: string;
   v?: number;
@@ -186,7 +186,7 @@ export interface TransactionReceipt {
   effectiveGasPrice?: BigNumberish,
   byzantium?: boolean,
   type: number;
-  status?: boolean
+  status?: number
 }
 
 export interface TransactionResponse extends Transaction {
@@ -208,6 +208,23 @@ export interface TransactionResponse extends Transaction {
 
   // This function waits until the transaction has been mined
   wait: (confirmations?: number) => Promise<TransactionReceipt>
+}
+
+export interface FunctionInput {
+  name: string;
+  type: string;
+}
+
+export interface ContractFunction {
+  name: string;
+  inputs: FunctionInput[];
+  stateMutability: string;
+}
+
+export interface ContractData {
+  address: string;
+  abi: string;
+  functions: ContractFunction[];
 }
 
 export interface EstimatedPrice {

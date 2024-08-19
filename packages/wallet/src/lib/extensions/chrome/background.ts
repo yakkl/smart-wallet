@@ -681,7 +681,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
           break;
         case 'eth_estimateGas':
           if (yakklCurrentlySelected?.shortcuts?.chainId) { 
-            const response = await estimateGas(yakklCurrentlySelected.shortcuts.chainId, event.params, process.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);  
+            const response = await estimateGas(yakklCurrentlySelected.shortcuts.chainId, event.params, process.env.VITE_ALCHEMY_API_KEY_PROD);  
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: response});
           }
         break;
@@ -689,7 +689,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
           if (yakklCurrentlySelected?.shortcuts?.chainId) { 
             const block = event?.params[0] ?? 'latest';
             let value;
-            getBlock(yakklCurrentlySelected.shortcuts.chainId, block, process.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD).then(result => {
+            getBlock(yakklCurrentlySelected.shortcuts.chainId, block, process.env.VITE_ALCHEMY_API_KEY_PROD).then(result => {
               value = result;
               sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: value});
             });                  

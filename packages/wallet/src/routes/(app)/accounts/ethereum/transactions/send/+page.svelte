@@ -266,7 +266,6 @@
 				gasEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
 				gasEstimateUSD = currencyFormat ? currencyFormat.format(gasEstimateUSDNumber) : '0.00';
 				
-				// This includes the netFee
 				gasTotalEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
 				gasTotalEstimateUSD = currencyFormat ? currencyFormat.format(gasTotalEstimateUSDNumber) : '0.00';
 
