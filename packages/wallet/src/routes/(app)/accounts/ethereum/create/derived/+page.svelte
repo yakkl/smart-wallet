@@ -81,7 +81,7 @@
       }
     } catch (e) {
       error = true;
-      errorValue = `Your subportfolio account was not created for the following reason: ${e}`;
+      errorValue = `Your subportfolio account was not created for the following reason ==> ${e}`;
       console.log(errorValue, trace(e));
     }
   });
