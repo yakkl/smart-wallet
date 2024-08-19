@@ -17,6 +17,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     if (!yakklMiscStore) {
       yakklMiscStore = getMiscStore();
     }
+
     if (!currentlySelected) {
       currentlySelected = await getYakklCurrentlySelected();
       if (isEncryptedData(currentlySelected.data)) {
@@ -25,6 +26,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
         });
       }
     }
+
     if (!profile) {
       profile = await getProfile();
       if (isEncryptedData(profile!.data)) {
@@ -59,7 +61,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
 
     let currentlySelectedData: CurrentlySelectedData = currentlySelected.data as CurrentlySelectedData;
     // yakklPrimaryAccount = profileData.primaryAccounts.find(account => account.name === currentlySelectedData.primaryAccount!.name) as YakklPrimaryAccount;   
-    yakklPrimaryAccount = currentlySelectedData.primaryAccount as YakklPrimaryAccount; // TODO: This should be currently selected primary account
+    yakklPrimaryAccount = currentlySelectedData.primaryAccount as YakklPrimaryAccount; 
 
     let index = profileData.primaryAccounts.indexOf(yakklPrimaryAccount);
     
@@ -139,7 +141,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
         yakklAccountEnc.data = result as EncryptedData;
       });
     }
-    
+
     if (!Array.isArray(yakklPrimaryAccount.subAccounts)) {
       yakklPrimaryAccount.subAccounts = [];
     }
@@ -158,7 +160,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
         profileEnc.data = result;
       });
     }
-    
+
     yakklSettings.isLocked = false;
 
     currentlySelected.preferences.locale = preferences.locale;
