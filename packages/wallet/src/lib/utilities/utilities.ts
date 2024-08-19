@@ -376,8 +376,8 @@ export function truncate(val: string, len=20, suffix='...'){
 
 
 // Returns an array of words
-export function splitWords(str: string): string[] {
-    return str.split(' ');
+export function splitWords(str: string, delimiter = ' '): string[] {
+  return str.split(delimiter);
 }
 
 

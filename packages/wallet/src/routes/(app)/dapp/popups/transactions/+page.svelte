@@ -134,7 +134,7 @@
           port.postMessage({method: 'get_params', id: requestId}); // request is not currently used but we may want to later
 
           // Now setup the wallet
-          wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
+          wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         }
       }
     } catch(e) {

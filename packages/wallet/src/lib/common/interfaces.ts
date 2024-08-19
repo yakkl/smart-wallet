@@ -76,6 +76,24 @@ export interface MetaDataParams {
   transaction?: unknown;
 }
 
+
+export interface PriceData {
+  provider: string;
+  price: number;
+  lastUpdated: Date;
+  // Add any other common fields
+}
+
+export interface PriceProvider {
+  getName(): string;
+  getPrice(pair: string): Promise<PriceData>;
+}
+
+export interface WeightedProvider {
+  provider: PriceProvider;
+  weight: number;
+}
+
 export interface Signer {
   signTransaction(transaction: Transaction): Promise<string>;
   signMessage(message: string): Promise<string>;
@@ -135,7 +153,7 @@ export interface BaseTransaction {
   gasPrice?: BigNumberish | null | undefined;
   data?: BytesLike;
   value: BigNumberish | null;
-  chainId: number;
+  chainId: BigNumberish;
   r?: string;
   s?: string;
   v?: number;
@@ -145,6 +163,10 @@ export interface BaseTransaction {
   maxFeePerGas?: BigNumberish | null | undefined;
   customData?: Record<string, any>;
   ccipReadEnabled?: boolean;
+}
+
+export interface TransactionRequest extends BaseTransaction {
+  maxFeePerBlobGas?: BigNumberish | null | undefined;
 }
 
 export interface TransactionReceipt {
@@ -164,7 +186,7 @@ export interface TransactionReceipt {
   effectiveGasPrice?: BigNumberish,
   byzantium?: boolean,
   type: number;
-  status?: boolean
+  status?: number
 }
 
 export interface TransactionResponse extends Transaction {
@@ -186,6 +208,23 @@ export interface TransactionResponse extends Transaction {
 
   // This function waits until the transaction has been mined
   wait: (confirmations?: number) => Promise<TransactionReceipt>
+}
+
+export interface FunctionInput {
+  name: string;
+  type: string;
+}
+
+export interface ContractFunction {
+  name: string;
+  inputs: FunctionInput[];
+  stateMutability: string;
+}
+
+export interface ContractData {
+  address: string;
+  abi: string;
+  functions: ContractFunction[];
 }
 
 export interface EstimatedPrice {

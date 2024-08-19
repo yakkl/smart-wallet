@@ -2,21 +2,43 @@
 import { fetchJson } from "@ethersproject/web";
 import { get } from 'svelte/store';
 import { yakklPricingStore, yakklConnectionStore } from "$lib/common/stores";
+import { PriceManager } from '$lib/plugins/PriceManager';
+import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+import { KrakenPriceProvider } from '$lib/plugins/providers/price/kraken/KrakenPriceProvider';
 
 
 // https://polygon.io/docs/crypto/get_v3_reference_exchanges - APIs to look at next (stocks and crypto)
 
 let pricingIntervalID: string | number | NodeJS.Timeout | undefined=undefined;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let providerCB: string; // Note: If we decided to have multiple intervals running or alarms then we can add to an array
+
+// Add other providers here
+const priceManager = new PriceManager([
+  { provider: new CoinbasePriceProvider(), weight: 5 },
+  { provider: new KrakenPriceProvider(), weight: 2 },
+  // Add other providers with their weights...
+]);
 
 // TODO: If we want to randomly check prices then we need a more abstract function that randomly chooses from the different exchanges or aggregators
 async function checkPricesCB() {
   try {
     if (pricingIntervalID) {
       if (get(yakklConnectionStore) === true) {
-        await getPrices(['eth-usd']).then(results => {
-          yakklPricingStore.set({provider: providerCB, id: 'checkPricesCB', price: results.price}); // id only a placeholder like value. May remove later
+
+        // await getPrices(['eth-usd']).then(results => {
+        //   yakklPricingStore.set({provider: providerCB, id: 'checkPricesCB', price: results.price}); // id only a placeholder like value. May remove later
+        // });
+
+        const result = await priceManager.getPrice('ETH-USD');
+        yakklPricingStore.set({
+          provider: result.provider,
+          id: 'checkPricesCB',
+          price: result.price
         });
+
+
       } else {
         console.log('checkPrices:', 'Internet connection may be down.'); // Comment this out later
       }

@@ -1,6 +1,21 @@
+## YAKKL Contracts
+
+This is the smart contract repository for the YAKKL project. The contracts are written in Solidity and tested using the Foundry testing framework.
+
+We use remappings.txt instead of adding them to the foundry.toml file. Also, do not attempt to add comments but follow the format of the file.
+
+.env.example shows example environment variables that can be used in the project. Rename to .env and fill in the values.
+
+### Contracts
+
+Contracts are located in the src directory. Each contract is in its own file and the tests are in the tests directory. Also, the contract's ABI is in the 'out' directory. The ABI is used for interfacing with the contracts on the blockchain.
+
+Contract scripts are located in the scripts directory. These scripts are used to deploy the contracts to the blockchain.
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+
 
 Foundry consists of:
 

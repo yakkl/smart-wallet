@@ -4,4 +4,5 @@ console.error = (...args) => {
 
   // TBD - Mayve override all console: .log, .warning, .error, .info and push to capture in local storage and then clear the console
   console.log(...args);
-}			
+}	
+

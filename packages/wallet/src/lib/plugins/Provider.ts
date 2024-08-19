@@ -12,6 +12,16 @@ import { Signer } from '$plugins/Signer';
 //   return resolved;
 // }
 
+export function assertProvider(provider: Provider | null): asserts provider is Provider {
+  if (provider === null) {
+    throw new Error('Provider is null');
+  }
+}
+
+// Usage:
+// const provider = wallet.getProvider();
+// assertProvider(provider);
+// Now TypeScript knows that provider is not null so you make calls without casting everywhere
 
 // Note: Some of the parameters below can also be Promise<whatever> types. This will allow the async part to be handled in the implementation of the method and not by the caller.
 
@@ -89,6 +99,8 @@ export interface Provider {
    * @returns The storage at the position.
    */
   getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+
+  getSigner(): Signer;
 
   setSigner(signer: Signer): void; // This one sets the signer for the provider after it has been created by the wallet and/or Signer 
 
@@ -334,6 +346,13 @@ export abstract class AbstractProvider implements Provider {
    * @returns The storage at the position.
    */
   abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+
+  getSigner(): Signer {
+    if (!this.signer) {
+      throw new Error('Signer not initialized');
+    }
+    return this.signer;
+  }
 
   setSigner(signer: Signer): void {
     this.signer = signer; 

@@ -144,7 +144,7 @@
           symbolLabel = currentlySelected.shortcuts.symbol ?? 'ETH';
           chainId = currentlySelected.shortcuts.network.chainId ?? 1;
 
-          wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
+          wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
 
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
           $yakklCurrentlySelectedStore.shortcuts.value = val ?? 0n;

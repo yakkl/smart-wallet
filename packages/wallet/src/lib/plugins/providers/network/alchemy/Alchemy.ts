@@ -4,8 +4,7 @@
 import { type BlockTag, type BigNumberish, type Deferrable, type Listener, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter, type Log, type EventType, BigNumber } from '$lib/common';
 import eventManager from '$plugins/EventManager';
 import { AbstractProvider, type Provider } from '$plugins/Provider';
-import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, Utils, type AlchemySettings } from "alchemy-sdk";
-import { EthereumSigner } from '$plugins/blockchains/evm/ethereum/EthereumSigner';
+import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings } from "alchemy-sdk";
 import type { Signer } from '$lib/plugins/Signer';
 
 interface AlchemyOptions {
@@ -472,7 +471,7 @@ export class Alchemy extends AbstractProvider {
  */
 function getConfig(chainId: number, kval = undefined): AlchemySettings | undefined {
   try {
-    let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;  // Set defaults
+    let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_PROD;  // Set defaults
     let network = AlchemyNetwork.ETH_MAINNET;
 
     switch (chainId) {
@@ -506,7 +505,7 @@ function getConfig(chainId: number, kval = undefined): AlchemySettings | undefin
         break;
       case 1: // Default - Ethereum mainnet
       default:
-        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_PROD;
         network = AlchemyNetwork.ETH_MAINNET;
         break;
     }

@@ -1,6 +1,6 @@
 // ProviderFactory.ts
 import type { Provider } from '$plugins/Provider';
-import { Alchemy } from '$plugins/providers/alchemy/Alchemy';
+import { Alchemy } from '$plugins/providers/network/alchemy/Alchemy';
 // Import other providers here
 
 interface ProviderOptions {

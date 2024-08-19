@@ -10,8 +10,8 @@ import { supportedChainId } from "$lib/common/utils";
 import type { LegacyWalletProvider, LegacyWindowEthereum, RequestArguments } from "$lib/common";
 import { ProviderRpcError } from '$lib/common';
 
-import { getEIP6963ProviderDetail } from '$lib/plugins/providers/ethereum_provider/EthereumProvider';
-import type { EIP6963ProviderDetail } from '$lib/plugins/providers/ethereum_provider/EthereumProviderTypes';
+import { getEIP6963ProviderDetail } from '$lib/plugins/providers/network/ethereum_provider/EthereumProvider';
+import type { EIP6963ProviderDetail } from '$lib/plugins/providers/network/ethereum_provider/EthereumProviderTypes';
 
 const windowOrigin = window.location.origin;
 

@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { type AccountData, type AccountInfo, type Deferrable, type EthereumTransaction, type MetaData, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklAccount, type YakklPrimaryAccount, type Block, type BlockTag, type BlockWithTransactions, type Filter, type Log, type PrimaryAccountData, AccountTypeCategory, VERSION, type Network, NetworkType } from '$lib/common';
 import { dateString } from '$lib/common/datetime';
-import { AbstractBlockchain } from '$plugins/Blockchain';
+import type { Signer } from '$lib/plugins/Signer';
+import { AbstractBlockchain, type ContractInterface } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
 import { ethers } from 'ethers';
 
@@ -276,5 +277,41 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
 
   async lookupAddress(address: string | Promise<string>): Promise<null | string> {
     return this.provider.lookupAddress(address);
+  }
+
+  Contract = class implements ContractInterface {
+    private ethersContract: ethers.Contract;
+
+    constructor(address: string, abi: any[], signerOrProvider: Provider | Signer) {
+      this.ethersContract = new ethers.Contract(address, abi, signerOrProvider as any);
+    }
+
+    get address(): string {
+      return this.ethersContract.target as string;
+    }
+
+    get abi(): readonly any[] {
+      return this.ethersContract.interface.fragments;
+    }
+
+    get functions(): Record<string, (...args: any[]) => Promise<any>> {
+      const functions: Record<string, (...args: any[]) => Promise<any>> = {};
+      for (const [name, func] of Object.entries(this.ethersContract.functions)) {
+        functions[name] = (...args: any[]) => (func as any)(...args);
+      }
+      return functions;
+    }
+
+    // Add a method to directly call contract functions
+    async call(functionName: string, ...args: any[]): Promise<any> {
+      if (typeof this.ethersContract[functionName] !== 'function') {
+        throw new Error(`Function ${functionName} does not exist on the contract`);
+      }
+      return await this.ethersContract[functionName](...args);
+    }
+  }
+
+  async getContract(address: string, abi: any[]): Promise<ContractInterface> {
+    return new this.Contract(address, abi, this.provider);
   }
 }

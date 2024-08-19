@@ -1,5 +1,5 @@
-export * from '$plugins/providers/alchemy/Alchemy';
-export * from '$plugins/providers/infura/Infura';
-export * from '$plugins/providers/yakkl/Yakkl';
+export * from '$plugins/providers/network/alchemy/Alchemy';
+export * from '$plugins/providers/network/infura/Infura';
+export * from '$lib/plugins/providers/network/yakkl/Yakkl';
 
 // Export other providers as needed
