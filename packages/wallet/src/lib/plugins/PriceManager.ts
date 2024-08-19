@@ -36,6 +36,7 @@ export class PriceManager {
     return this.weightedProviders.reduce((sum, wp) => sum + wp.weight, 0);
   }
 
+  // May want to add a second param that supplied the provider to use instead of picking a random one. If null or undefined, pick a random one.
   async getPrice(pair: string): Promise<PriceData> {
     const provider = this.getWeightedRandomProvider();
     try {

@@ -7,7 +7,7 @@ const contractABI = [{"type":"constructor","inputs":[{"name":"_uniswapRouter","t
 const contractAddress = '0x...'; // Replace with your contract's address
 
 // Set up provider (e.g., using Infura)
-const provider = new ethers.JsonRpcProvider('https://eth-mainnet.alchemyapi.io/v2/AlofYxI4lE118qazFGdPt5sL8VoMvddY');
+const provider = new ethers.JsonRpcProvider('');
 
 // Create contract instance
 const contract = new ethers.Contract(contractAddress, contractABI, provider);
@@ -26,7 +26,7 @@ getOwner();
 
 // Example: Call a state-changing function (requires a signer)
 async function pauseContract() {
-    const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'; // Be very careful with private keys!
+    const privateKey = ''; // Be very careful with private keys!
     const signer = new ethers.Wallet(privateKey, provider);
     const contractWithSigner = contract.connect(signer);
 

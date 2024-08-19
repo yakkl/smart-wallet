@@ -244,7 +244,7 @@ export let yakklCurrentlySelected: YakklCurrentlySelected = {
     accountName: YAKKL_ZERO_ACCOUNT_NAME, // shortcut for account.name
     smartContract: false,
     address: YAKKL_ZERO_ADDRESS,  // So we don't have to hit yakklAccount every time
-    alias: '', // Address alias like yakkl.eth
+    alias: '', // Address alias like myaddress.eth
     primary: null,  // Primary account for quick reference
     init: false,
     legal: false,  // from yakklSettings - this version is only a shortcut - use the yakklSettings version for actual logic

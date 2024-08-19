@@ -1,81 +1,77 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // SwapManager.ts
 // SwapManager.ts
-import { ethers } from 'ethers';
-import { Token, CurrencyAmount, Percent, type Currency } from '@uniswap/sdk-core';
+import type { Blockchain } from './Blockchain';
+import type { Provider } from './Provider';
+
+export interface Token {
+  address: string;
+  decimals: number;
+  symbol: string;
+  name: string;
+  isNative?: boolean;
+}
+
+export interface SwapQuote {
+  quote: string;
+  quoteWithFee: string;
+  minAmountOut: string;
+  fee: string;
+  priceImpact: string;
+  route: string;
+  slippageToleranceBps: string
+}
+
+export interface SwapTransactionResponse {
+  hash: string;
+  wait: () => Promise<any>;
+}
 
 export abstract class SwapManager {
-  protected provider: ethers.Provider;
-  protected signer: ethers.Signer;
-  protected feePercentage: number;
+  protected readonly blockchain: Blockchain;
+  protected readonly provider: Provider;
+  protected feeBasisPoints: number = 0;
 
   constructor(
-    provider: ethers.Provider,
-    signer: ethers.Signer,
-    initialFeePercentage: number = 0.00875
+    blockchain: Blockchain,
+    provider: Provider,
+    initialFeeBasisPoints: number = 875 // 0.875%
   ) {
+    this.blockchain = blockchain;
     this.provider = provider;
-    this.signer = signer;
-    this.feePercentage = initialFeePercentage;
+    this.setFeeBasisPoints(initialFeeBasisPoints);
   }
 
-  setFeePercentage(newFeePercentage: number) {
-    this.feePercentage = newFeePercentage;
+  public setFeeBasisPoints(newFeeBasisPoints: number): void {
+    if (newFeeBasisPoints < 0 || newFeeBasisPoints > 10000) {
+      throw new Error('Fee basis points must be between 0 and 10000');
+    }
+    this.feeBasisPoints = newFeeBasisPoints;
   }
 
-  abstract getSwapQuote(
+  public abstract getSwapQuote(
     tokenIn: Token,
     tokenOut: Token,
     amount: string,
-    slippageTolerance?: number
-  ): Promise<{
-    quote: CurrencyAmount<Currency>;
-    quoteWithFee: CurrencyAmount<Currency>;
-    fee: CurrencyAmount<Currency>;
-    priceImpact: Percent;
-    route: string;
-  }>;
+    slippageToleranceBps?: number
+  ): Promise<SwapQuote>;
 
-  abstract executeSwap(
+  public abstract executeSwap(
     tokenIn: Token,
     tokenOut: Token,
     amount: string,
-    slippageTolerance?: number
-  ): Promise<ethers.TransactionResponse>;
+    slippageToleranceBps?: number
+  ): Promise<SwapTransactionResponse>;
 
-  abstract addLiquidity(
+  public abstract addLiquidity(
     tokenA: Token,
     tokenB: Token,
     amountA: string,
     amountB: string,
-    slippageTolerance?: number
-  ): Promise<ethers.TransactionResponse>;
+    slippageToleranceBps?: number
+  ): Promise<SwapTransactionResponse>;
+
+  protected convertBpsToPercent(bps: number): number {
+    return bps / 10000;
+  }
 }
-
-// Example usage:
-// <script lang="ts">
-//   import { uniswapService, sushiSwapService } from '../services/swapService';
-//   import type { Token } from '@uniswap/sdk-core';
-
-//   let tokenIn: Token;
-//   let tokenOut: Token;
-//   let amount: string;
-//   let selectedDex: 'uniswap' | 'sushiswap' = 'uniswap';
-
-//   async function handleSwap() {
-//     try {
-//       const service = selectedDex === 'uniswap' ? uniswapService : sushiSwapService;
-//       const tx = await service.executeSwap(tokenIn, tokenOut, amount);
-//       await tx.wait();
-//       console.log('Swap successful!');
-//     } catch (error) {
-//       console.error('Swap failed:', error);
-//     }
-//   }
-// </script>
-
-// <select bind:value={selectedDex}>
-//   <option value="uniswap">Uniswap</option>
-//   <option value="sushiswap">SushiSwap</option>
-// </select>
-
-// <button on:click={handleSwap}>Swap</button>

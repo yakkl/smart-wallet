@@ -1,3 +1,9 @@
+YAKKL Smart Wallet License - Non-Commercial Use Only. 
+
+NOTE: This license is a legal agreement between you and YAKKL, Inc. Read it carefully before using the software. By using the software, you are agreeing to be bound by the terms of this license. If you do not agree to the terms of this license, do not use the software.
+
+NOTE: YAKKL Smart Contracts have their own license. This license applies to the software, application, source code, documentation, and any other materials in this repository except for the smart contracts or any other materials that are subject to a separate license.
+
 Copyright YAKKL, Inc. [2024]. All rights reserved.
 
 You acknowledge and agree that YAKKL, Inc. (“YAKKL”) (or YAKKL’s licensors) own all legal rights, title, and interest in and to the work, software, application, source code, documentation, and any other materials in this repository (collectively, the “Program”), including any intellectual property rights which subsist in the Program (whether those rights happen to be registered or not, and wherever in the world those rights may exist), whether in source code or any other form.
@@ -21,7 +27,7 @@ You are granted a non-exclusive, non-transferable, non-sublicensable license to 
 
 ### Commercial Use License
 
-For any commercial use of the Program, where the total annual gross revenue derived from the use of the Program exceeds $1 million USD, a commercial license must be obtained from YAKKL, Inc.
+For any commercial use of the Program, where the total annual gross revenue derived from the use of the Program exceeds $500 thousand USD, a commercial license must be obtained from YAKKL, Inc.
 
 Commercial use includes, but is not limited to:
 - Selling, offering for sale, or distributing the Program as part of a paid product or service.
@@ -30,7 +36,7 @@ Commercial use includes, but is not limited to:
 
 ### How to Obtain a Commercial License
 
-If your use of the Program exceeds the $1 million USD annual revenue threshold, you are required to contact YAKKL, Inc. to obtain a commercial license.
+If your use of the Program exceeds the $500 thousand USD annual revenue threshold, you are required to contact YAKKL, Inc. to obtain a commercial license.
 
 Please contact:
 YAKKL, Inc.

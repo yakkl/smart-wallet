@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumSigner.ts
 import { ethers } from 'ethers';
-import type { EVMTransactionRequest, BigNumberish } from '$lib/common';
+import type { EVMTransactionRequest, BigNumberish, TransactionRequest, TransactionResponse, TransactionReceipt, Log } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 
@@ -62,26 +62,8 @@ export class EthereumSigner extends Signer {
 
     console.log('Transaction to sign:', transaction);
 
-    const tx: ethers.TransactionRequest = {
-      to: transaction.to ?? undefined,
-      from: transaction.from ?? undefined,
-      nonce: transaction.nonce === -1 ? undefined : transaction.nonce,
-      gasLimit: this.toEthersHex(transaction.gasLimit),
-      gasPrice: this.toEthersHex(transaction.gasPrice),
-      maxPriorityFeePerGas: this.toEthersHex(transaction.maxPriorityFeePerGas),
-      maxFeePerGas: this.toEthersHex(transaction.maxFeePerGas),
-      data: transaction.data?.toString() ?? undefined,
-      value: this.toEthersHex(transaction.value),
-      chainId: this.toEthersHex(transaction.chainId) ?? undefined,
-      accessList: transaction.accessList ?? undefined,
-      customData: transaction.customData,
-      enableCcipRead: transaction.ccipReadEnabled,
-      blobVersionedHashes: transaction.blobVersionedHashes ?? undefined,
-      maxFeePerBlobGas: this.toEthersHex(transaction.maxFeePerBlobGas),
-      blobs: transaction.blobs ?? undefined,
-      kzg: transaction.kzg ?? undefined,
-    };
-
+    const tx = this.transactionToEthersTransaction(transaction);
+    
     console.log('Signing transaction:', tx);
 
     return await this.wallet.signTransaction(tx);
@@ -122,5 +104,98 @@ export class EthereumSigner extends Signer {
       console.log(e);
       return Promise.reject(e);
     }
+  }
+
+  async getAddress(): Promise<string> {
+    return this.wallet.address;
+  }
+
+  async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
+    const tx = await this.wallet.sendTransaction(this.transactionToEthersTransaction(transaction));
+    return this.ethersTransactionResponseToTransactionResponse(tx);
+  }
+
+  private transactionToEthersTransaction(transaction: EVMTransactionRequest): ethers.TransactionRequest {
+    return {
+      to: transaction.to ?? undefined,
+      from: transaction.from ?? undefined,
+      nonce: transaction.nonce === -1 ? undefined : transaction.nonce,
+      gasLimit: this.toEthersHex(transaction.gasLimit),
+      gasPrice: this.toEthersHex(transaction.gasPrice),
+      maxPriorityFeePerGas: this.toEthersHex(transaction.maxPriorityFeePerGas),
+      maxFeePerGas: this.toEthersHex(transaction.maxFeePerGas),
+      data: transaction.data?.toString() ?? undefined,
+      value: this.toEthersHex(transaction.value),
+      chainId: this.toEthersHex(transaction.chainId) ?? undefined,
+      accessList: transaction.accessList ?? undefined,
+      customData: transaction.customData,
+      enableCcipRead: transaction.ccipReadEnabled,
+      blobVersionedHashes: transaction.blobVersionedHashes ?? undefined,
+      maxFeePerBlobGas: this.toEthersHex(transaction.maxFeePerBlobGas),
+      blobs: transaction.blobs ?? undefined,
+      kzg: transaction.kzg ?? undefined,
+    };
+  }
+
+  private async ethersTransactionResponseToTransactionResponse(tx: ethers.TransactionResponse): Promise<TransactionResponse> {
+    return {
+      hash: tx.hash,
+      to: tx.to ?? '',
+      from: tx.from,
+      nonce: tx.nonce,
+      gasLimit: tx.gasLimit,
+      gasPrice: tx.gasPrice,
+      data: tx.data,
+      value: tx.value,
+      chainId: tx.chainId,
+      blockNumber: tx.blockNumber ?? undefined,
+      blockHash: tx.blockHash ?? undefined,
+      timestamp: new Date().getTime(), // ethers v6 doesn't have this property
+      confirmations: await tx.confirmations(),
+      raw: undefined, // ethers v6 doesn't have this property
+      type: tx.type ?? undefined,
+      accessList: tx.accessList ?? undefined,
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+      maxFeePerGas: tx.maxFeePerGas,
+      wait: async (confirmations?: number): Promise<TransactionReceipt> => {
+        const receipt = await tx.wait(confirmations);
+        if (!receipt) {
+          throw new Error('Transaction receipt is null');
+        }
+        return this.ethersTransactionReceiptToTransactionReceipt(receipt);
+      }
+    };
+  }
+  
+  private async ethersTransactionReceiptToTransactionReceipt(receipt: ethers.TransactionReceipt): Promise<TransactionReceipt> {
+    return {
+      to: receipt.to ?? '',
+      from: receipt.from,
+      contractAddress: receipt.contractAddress ?? undefined,
+      transactionIndex: receipt.index,
+      root: receipt.root ?? undefined,
+      gasUsed: receipt.gasUsed,
+      logsBloom: receipt.logsBloom,
+      blockHash: receipt.blockHash,
+      transactionHash: receipt.hash,
+      logs: receipt.logs.map((log): Log => ({
+        blockNumber: log.blockNumber,
+        blockHash: log.blockHash,
+        transactionIndex: log.transactionIndex,
+        removed: log.removed,
+        address: log.address,
+        data: log.data,
+        topics: [...log.topics], // Create a new mutable array from the readonly one
+        transactionHash: log.transactionHash,
+        logIndex: log.index
+      })),
+      blockNumber: receipt.blockNumber,
+      confirmations: await receipt.confirmations(), // This is now a number in ethers v6
+      cumulativeGasUsed: receipt.cumulativeGasUsed,
+      effectiveGasPrice: receipt.gasPrice ?? undefined,
+      byzantium: true, // Assuming all transactions are post-Byzantium
+      type: receipt.type,
+      status: receipt.status ? receipt.status : undefined
+    };
   }
 }

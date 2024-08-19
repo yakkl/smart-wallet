@@ -79,7 +79,7 @@
         setDappConnectRequestStore(yakklDappConnectRequest);
         chainId = currentlySelected.shortcuts.chainId as number;
 
-        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD);
+        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         
         port = browser_ext.runtime.connect({name: YAKKL_DAPP});
         if (port) {

@@ -106,4 +106,4 @@ $$
 - **50 basis points** represent 0.005%.
 - **100 basis points** represent 0.01%.
 
----
+

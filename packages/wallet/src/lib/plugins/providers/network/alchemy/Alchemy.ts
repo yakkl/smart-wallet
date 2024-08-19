@@ -471,7 +471,7 @@ export class Alchemy extends AbstractProvider {
  */
 function getConfig(chainId: number, kval = undefined): AlchemySettings | undefined {
   try {
-    let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;  // Set defaults
+    let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_PROD;  // Set defaults
     let network = AlchemyNetwork.ETH_MAINNET;
 
     switch (chainId) {
@@ -505,7 +505,7 @@ function getConfig(chainId: number, kval = undefined): AlchemySettings | undefin
         break;
       case 1: // Default - Ethereum mainnet
       default:
-        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM_PROD;
+        api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_PROD;
         network = AlchemyNetwork.ETH_MAINNET;
         break;
     }
