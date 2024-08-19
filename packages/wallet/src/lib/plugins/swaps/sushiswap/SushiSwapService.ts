@@ -21,11 +21,15 @@ export class SushiSwapService extends SwapManager {
     initialFeeBasisPoints: number = 875
   ) {
     super(blockchain, provider, initialFeeBasisPoints);
-    this.sushiSwapRouter = new blockchain.Contract(
+    this.sushiSwapRouter = blockchain.createContract(
       '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', // SushiSwap router address
-      SUSHISWAP_ROUTER_ABI,
-      provider.getSigner()
+      SUSHISWAP_ROUTER_ABI
     );
+    // this.sushiSwapRouter = new blockchain.Contract(
+    //   '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', // SushiSwap router address
+    //   SUSHISWAP_ROUTER_ABI,
+    //   provider.getSigner()
+    // );
   }
 
   public async getSwapQuote(
@@ -75,11 +79,11 @@ export class SushiSwapService extends SwapManager {
   
     // Approve the router to spend tokens
     if (!tokenIn.isNative) {
-      const tokenContract = await this.blockchain.getContract(
+      const tokenContract = this.blockchain.createContract(
         tokenIn.address,
         ['function approve(address spender, uint256 amount) public returns (bool)']
       );
-      const approveTx = await tokenContract.approve(this.sushiSwapRouter.address, amountIn);
+      const approveTx = await tokenContract.call('approve', this.sushiSwapRouter.address, amountIn);
       await approveTx.wait();
     }
   

@@ -222,7 +222,7 @@
     <h3 class="text-lg font-bold">ERROR!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {error=false; goto(PATH_ACCOUNTS)}}>Close</button>
+      <button class="btn" on:click={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>
@@ -233,7 +233,7 @@
     <h3 class="text-lg font-bold">{msgType}</h3>
     <p class="py-4">{warningValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {warning=false; goto(PATH_ACCOUNTS)}}>Close</button>
+      <button class="btn" on:click={() => {warning=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>

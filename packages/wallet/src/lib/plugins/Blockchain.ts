@@ -4,8 +4,9 @@ import { BaseFeeManager } from './FeeManager';
 import { EthereumGasProvider } from '$plugins/providers/fees/ethereum/EthereumGasProvider';
 import type { FeeManager, GasEstimate, GasPrediction, HistoricalGasData } from '$lib/common/gas-types';
 import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH } from '$lib/common';
-import type { Signer } from '$plugins/Signer';
+// import type { Signer } from '$plugins/Signer';
 import type { Provider } from '$plugins/Provider';
+import type { AbstractContract } from './Contract';
 
 export interface ContractInterface {
   address: string;
@@ -27,9 +28,10 @@ export interface Blockchain {
   providers: Provider[]; // List of providers supported by this blockchain
   options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
 
-  Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+  // Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+  createContract(address: string, abi: any[]): AbstractContract;
 
-  getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
+  // getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
   /**
    * Gets a gas estimate for a transaction.
@@ -184,9 +186,9 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider)]);
   }
 
-  abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
-
-  abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
+  // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
+  // abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
+  abstract createContract(address: string, abi: any[]): AbstractContract;
 
   // async estimateGas(transaction: TransactionRequest): Promise<bigint> {
   //   const estimate = await this.feeManager.getGasEstimate(transaction);
