@@ -14,10 +14,14 @@ packages/contracts/lib/
 packages/contracts/out/
 packages/contracts/cache/
 packages/contracts/node_modules/
+packages/contracts/code/anvil-test-data.txt
+packages/contracts/code/deployed_*_contracts.json
+packages/contracts/code/deployed_contracts.json
 
 # General patterns
 packages/wallet/*.tmp
 packages/wallet/*.wip
+packages/wallet/src/lib/plugins/swaps/uniswap/UniswapHelper.ts
 
 # Specific files and directories
 packages/wallet/package
