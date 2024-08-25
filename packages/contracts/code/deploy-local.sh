@@ -18,10 +18,10 @@ INIT_FILE="./anvil-initialized"
 # Check if the initialization file exists
 if [ -f "$INIT_FILE" ]; then
     echo "Found '$INIT_FILE'. Loading existing Anvil state..."
-    anvil --fork-url $FORK_RPC_URL --dump-state $STATE_FILE --load-state $STATE_FILE
+    anvil --fork-url $FORK_RPC_URL --tracing --dump-state $STATE_FILE --load-state $STATE_FILE
 else
     echo "Initializing Anvil for the first time..."
-    anvil --fork-url $FORK_RPC_URL --dump-state $STATE_FILE
+    anvil --fork-url $FORK_RPC_URL --tracing --dump-state $STATE_FILE
     
     # Create the initialization file with the warning message
     echo "Don't remove this file or your anvil fork will be reset to the original state the next time you run deploy-local.sh." > $INIT_FILE
