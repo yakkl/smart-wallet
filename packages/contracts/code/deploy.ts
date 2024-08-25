@@ -6,21 +6,59 @@ import * as dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-const FORK_RPC_URL = process.env.LOCAL_RPC_URL || "http://127.0.0.1:8545";
-const PRIVATE_KEY = process.env.LOCAL_PRIVATE_KEY;  // Your private key should be securely stored
+const FORK_RPC_URL = process.env.SEPOLIA_RPC_URL || "http://127.0.0.1:8545";
+const PRIVATE_KEY = (FORK_RPC_URL === "http://127.0.0.1:8545") ? process.env.LOCAL_PRIVATE_KEY : process.env.PRIVATE_KEY;  // Your private key should be securely stored. Only local keys are different.
 if (!PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY is required");
 }
+
+const NETWORK = process.env.SEPOLIA_RPC_URL ? 'sepolia' : 
+                (FORK_RPC_URL.includes('localhost') || FORK_RPC_URL.includes('127.0.0.1')) ? 'local' : 
+                'mainnet';
+
 const provider = new ethers.JsonRpcProvider(FORK_RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
+// FeeManager params: [ownerAddress]
+// SwapRouter params: [UniswapRouterAddress, WETH, FeeManager Address, Quoter Address, Factory Address]
+
 // Global array of contracts to deploy with their parameters
 const contractsToDeploy = [
-    { name: "IFeeManager", params: [], existingAddress: '' },
-    { name: "FeeManager", params: ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], existingAddress: '' },
-    { name: "SwapRouter", params: ["0xE592427A0AEce92De3Edee1F18E0157C05861564", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "FeeManager"], existingAddress: '' }, // Placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
+    { name: "IFeeManager", params: [], existingAddress: "" },
+    { name: "FeeManager", params: ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], existingAddress: "" }, 
+    { name: "SwapRouter", params: [
+        "0xE592427A0AEce92De3Edee1F18E0157C05861564", 
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 
+        "FeeManager",
+        "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6", // Quoter address - mainnet or forked mainnet
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"  // Factory address - mainnet or forked mainnet
+    ],  existingAddress: "" }, 
+    // 'FeeManager' is a placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
+    // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 - Owner address on local
+    // 0xE592427A0AEce92De3Edee1F18E0157C05861564 - UniswapRouter address on mainnet??
+    // 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD - UniswapRouter address on sepolia and mainnet (universal router)
+    // 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 - WETH address on mainnet
+    // 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14 - WETH address on sepolia
     // Add more contracts here as needed
 ];
+
+// Check if the provided value is a valid Ethereum address
+function isValidAddress(address: string): boolean {
+    return ethers.isAddress(address);
+}
+
+// Function to check contracts' parameters for valid addresses
+function checkContracts(contracts: Array<{ name: string, params: any[], existingAddress?: string }>): void {
+    contracts.forEach(contract => {
+        contract.params.forEach((param, index) => {
+            if (typeof param === 'string' && param.startsWith('0x')) {
+                if (!isValidAddress(param)) {
+                    throw new Error(`Invalid address parameter detected in contract "${contract.name}" at index ${index}: ${param}`);
+                }
+            }
+        });
+    });
+}
 
 // Deploy the contract if it doesn't already exist - Optional
 async function getExistingContractAddress(name: string, knownAddress?: string): Promise<string | null> {
@@ -55,8 +93,8 @@ async function deployContract(
         const factory = new ethers.ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
         const contract = await factory.deploy(...params);
 
-        console.log(`Deploying ${name}...`);
-        const tx = await contract.deploymentTransaction();  // Get the deployment transaction receipt
+        console.log(`\nDeploying ${name}...`);
+        const tx = contract.deploymentTransaction();  // Get the deployment transaction receipt
         if (!tx) {
             throw new Error(`Failed to deploy ${name}`);
         }
@@ -64,13 +102,18 @@ async function deployContract(
         const receipt = await tx.wait();
         const transactionHash = receipt?.hash;
         const blockNumber = receipt?.blockNumber;
+        const gasUsed = receipt?.gasUsed;
+        const gasPrice = receipt?.gasPrice;
+        const transactionFee = gasUsed && gasPrice ? ethers.formatEther(gasUsed * gasPrice) : null;
+
         console.log(`Deployment completed successfully! ${name} Contract`, transactionHash, blockNumber);
+        console.log(`Gas Used: ${gasUsed}, Gas Price: ${gasPrice}, Transaction Fee: ${transactionFee} ETH`);
 
         const contractAddress = await contract.getAddress();
         console.log(`${name} deployed to: ${contractAddress}`);
 
         // Log the deployment details
-        logDeploymentDetails(name, contractAddress, params, ownerAddress, userName, transactionHash, blockNumber);
+        logDeploymentDetails(name, contractAddress, params, ownerAddress, userName, transactionHash, blockNumber, transactionFee, gasPrice?.toString(), gasUsed?.toString());
 
         return contractAddress;
     } catch (error) {
@@ -87,9 +130,12 @@ function logDeploymentDetails(
     userName?: string, 
     transactionHash?: string,
     blockNumber?: number,
+    transactionFee?: string | null,
+    gasPrice?: string | null,
+    gasUsed?: string | null,
     existingAddress?: string
 ) {
-    const logFilePath = path.join(__dirname, "deployed_contracts.json");
+    const logFilePath = path.join(__dirname, `deployed_${NETWORK}_contracts.json`);
 
     // Get the current date
     const date = new Date().toISOString();
@@ -99,10 +145,14 @@ function logDeploymentDetails(
         name,
         address,
         date,
+        network: NETWORK,
         ownerAddress,
         userName: userName || null,
         hash: transactionHash || null,
         block: blockNumber || null,
+        transactionFee: transactionFee || null,
+        gasPrice: gasPrice || null,
+        gasUsed: gasUsed || null,
         existingAddress: existingAddress || null,
         params: params.map(param => param.toString())  // Convert params to strings for logging
     };
@@ -112,10 +162,14 @@ function logDeploymentDetails(
         name: string; 
         address: string; 
         date: string; 
+        network: string;
         ownerAddress: string; 
         userName: string | null; 
         hash: string | null;
         block: number | null;
+        transactionFee: string | null;
+        gasPrice: string | null;
+        gasUsed: string | null;
         existingAddress: string | null; 
         params: string[];
     }> = [];
@@ -132,7 +186,7 @@ function logDeploymentDetails(
     // Write the updated logs back to the file
     fs.writeFileSync(logFilePath, JSON.stringify(logs, null, 2));
 
-    console.log(`Logged deployment of ${name} to ${logFilePath}`);
+    console.log(`Logged deployment of ${name} to ${logFilePath}\n`);
 }
 
 async function main() {
@@ -140,10 +194,15 @@ async function main() {
         const ownerAddress = wallet.address;  // Assuming the owner address is the wallet's address
         const userName = "someUserName";  // Optional: Replace with actual userName logic if needed
 
+        // Check contracts for valid addresses before deploying
+        checkContracts(contractsToDeploy);
+        
         const deployedAddresses: Record<string, string> = {};
 
         for (const contract of contractsToDeploy) {
             const { name, params, existingAddress } = contract;
+
+            console.log(`\nDeploying ${name}...`, contract);
 
             // Check if the contract is already deployed at the existing address
             if (existingAddress) {

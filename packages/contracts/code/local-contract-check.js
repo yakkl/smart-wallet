@@ -19,5 +19,5 @@ async function checkContractOnFork(contractAddress) {
 }
 
 // Example usage:
-const contractAddress = '0x...'; // Your contract address
+const contractAddress = '0x5bfaaa02cab795d576276a19cb1c2d2d2d652717'; // Your contract address - we default the local test SwapRouter contract. This will change each time you deploy your contract.
 checkContractOnFork(contractAddress);
