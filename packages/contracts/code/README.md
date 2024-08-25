@@ -1,6 +1,14 @@
 ## Setting up local development environment for contracts
 
+### Foundry 
+
+Foundry is a tool that allows you to fork the Ethereum mainnet locally. This is useful for testing smart contracts in a local environment that mirrors the mainnet. You can find out more at https://book.getfoundry.sh
+
+### Installation
+
+- Foundry - `curl -L https://foundry.paradigm.xyz | bash` - You may need to install it a different way if not on a Mac or Linux based system.
 - Make sure you have Node.js installed on your machine. You can download it from [here](https://nodejs.org/en/download/).
+- Install ts-node globally by running `npm install -g ts-node`. This wi
 - Run the ./deploy-local.sh script to deploy the contracts to your local network.
 
 ## Starting a local network
@@ -15,6 +23,10 @@ By default, the script will look at the environment variable `ETH_RPC_URL` to de
 ## Deploying contracts
 ### Example using deploy.ts:
 
+```shell
+ts-node deploy.ts
+```
+
 Deploy the contracts to your local network by running the deploy.ts script. The script will deploy the contracts to the network specified in the script.
 
 contractsToDeploy is an array of objects that contain the contract name, constructor parameters, and an optional existing address if the contract has already been deployed. The script will deploy the contracts in the order they are listed in the array. If you enter an existing address for a contract, the script will not attempt to deploy that contract again. If you leave the existing address empty, the script will deploy the contract to a new address. It will also print out and log the deployed contracts which includes their addresses, names, hashes, block number, and timestamp. The name of the log files is deployed_contracts.json. You can use this information to interact with the contracts using the forge-cli or other tools if needed.
@@ -25,18 +37,16 @@ If you need the address of a deployed contract, you can find it in the deployed_
 const contractsToDeploy = [
     { name: "IFeeManager", params: [], existingAddress: '' },
     { name: "FeeManager", params: ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], existingAddress: '' },
-    { name: "SwapRouter", params: ["0xE592427A0AEce92De3Edee1F18E0157C05861564", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "FeeManager", "quote address", "factory address"], existingAddress: '' }, // Placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
+    { name: "SwapRouter", params: ["0xE592427A0AEce92De3Edee1F18E0157C05861564", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "FeeManager", "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6", "0x1F98431c8aD98523631AE4a59f267346ea31F984"], existingAddress: '' }, // Placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
     // Add more contracts here as needed
 ];
-```
-
-```shell
-ts-node deploy.ts
 ```
 
 >NOTE: If you are on the local anvil fork of mainnet and you shutdown anvil and start it again and call deploy.ts, it may give you a nounce not high enough error. Delete the anvi-state and anvil-initialized files and restart the network. This will reset the nounce and allow you to deploy the contracts again. Don't forget to copy the address to your swap-test.ts array.
 
 ### Example using the forge-cli:
+
+This is an example of doing a manual command line deployment to your local network using the forge-cli. You can find more information on the forge-cli.
 
 ```shell
 forge create src/SwapRouter.sol:SwapRouter --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --constructor-args 0xE592427A0AEce92De3Edee1F18E0157C05861564 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 0xb354ecf032e9e14442be590d9eaee37d2924b67a
@@ -47,6 +57,10 @@ forge create src/SwapRouter.sol:SwapRouter --rpc-url http://localhost:8545 --pri
 ## Scripts
 
 There are a number of other scripts that can be used to interact with the contracts. These scripts can be found here. The scripts are written in TypeScript and can be run using the ts-node command. The scripts are:
+- swap-test.ts - Main script to test the SwapRouter contract
+- deploy.ts - Script to deploy the contracts
+- deploy-local.sh - Script to start the local network
+- list-accounts.ts - Script to list the accounts on the local network and their balances
 - audit-transaction.ts
 - decode-log.ts
 - gather-analytics.ts
@@ -57,6 +71,18 @@ There are a number of other scripts that can be used to interact with the contra
 - local-verify-fork.ts - This is an example of a typescript method to verify a fork
 - lookup-contracts.ts
 - monitor-events.ts
+
+## Testing the contracts
+
+- Create the contract.
+- Create the test contract.
+- Run `forge test -vv` to run the tests (-vv is for verbose output). This will compile and put the ABI output in the /out directory (this is important since these are needed inside any client code like typescript, etc.).
+- If you need to run a specific test, you can use the `--test` flag. For example, `forge test --test test/SwapRouter.test.ts` will run the SwapRouter tests.
+- If you need to only compile the contracts, you can use `forge build` to compile the contracts.
+- deploy.sh will deploy the contracts to the local network. This is useful for testing the contracts in a local environment. You can modify the variable inside the script to deploy the contracts to a different network. Also, you will need to adjust the `owner address` in the FeeManager element of the array in the script to match the address of the account that will deploy the contracts. You can find the address of the account in the `list-accounts.ts` script. Leave the others alone, they are specific to Uniswap. You will see one array element called `FeeManager`. This represents a placeholder for dynamically created address. In this case it is for the FeeManager. The name must match the contract name in the array. The script will attempt to find the address of the contract and use it. If it is not found, it will fail. If you need to deploy the contract again, you can simply remove the address from the script and it will deploy a new contract. The script will also log the deployed contracts to a file called `deployed_local_contracts.json`. You can use this information to interact with the contracts using the forge-cli or other tools if needed.
+- The contracts are deployed to the local network using the deploy.ts script. The script will deploy the contracts to the network specified in the script. The script will deploy the contracts in the order they are listed in the array. If you enter an existing address for a contract, the script will not attempt to deploy that contract again (this can use a little work to support proxy contracts). If you leave the existing address empty, the script will deploy the contract to a new address. It will also print out and log the deployed contracts which includes their addresses, names, hashes, block number, timestamp, and more in a JSON format for later use if needed. The name of the log files is deployed_<whatever network>_contracts.json (e.g., 'deployed_local_contracts.json, deployed_mainnet_contracts.json'). You can use this information to interact with the contracts using the forge-cli or other tools if needed.
+- The swap-test.ts script is the main script to test the SwapRouter contract. It will test the SwapRouter contract by calling various functions on the contract. The script will print out the results of the tests and log the results to a file. The name of the log file is swap-test.log (not currently implemented - swap-test.log). You can use this information to verify that the contract is working as expected.
+- Before running swap-test.ts (`ts-node swap-test.ts`) you need to copy the swapRouter contract address that was created when it was deployed (use the correct one). Do the same for FeeManager. These are updated in the variable `network`. The other addresses can remain as long as you only want to test WETH and USDC swaps. Change the addresses as needed for other tokens. 
 
 ## More information
 Information will be added as needed.
@@ -117,9 +143,10 @@ Multiply this by the current gas price to get an ETH cost estimate.
 Example of estimating gas for a function call:
 
 ```typescript
+// We use the latest version of ethers.js so our examples may differ from any examples you find online
 const contract = new ethers.Contract(contractAddress, abi, provider);
 const gasEstimate = await contract.someFunction.estimateGas(arg1, arg2);
 console.log(`Estimated gas: ${gasEstimate}`);
 ```
 
-In summary, while contract deployment is expensive, subsequent interactions are generally much cheaper. The exact cost will depend on what the function does, but it's typically a fraction of the deployment cost. Always monitor and optimize your contract interactions to keep ongoing costs as low as possible, especially when moving to mainnet where real ETH is used.
+In summary, while contract deployment is expensive, subsequent interactions are generally much cheaper. For example, if you call some function on a contract that only returns a value in memory or calculated then it most likely will be no cost since a state hasn't changed. However, there are certain types of functions that look like simple get like calls but end up creating and executing a transaction that will cost gas fees. The exact cost will depend on what the function does, but it's typically a fraction of the deployment cost. Always monitor and optimize your contract interactions to keep ongoing costs as low as possible, especially when moving to mainnet where real ETH is used.

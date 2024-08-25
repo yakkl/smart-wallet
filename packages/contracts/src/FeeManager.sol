@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "forge-std/console.sol";
 
 contract FeeManager is Ownable {
     using SafeERC20 for IERC20;
@@ -32,6 +33,9 @@ contract FeeManager is Ownable {
 
     function calculateFee(uint256 amount, uint256 feeBasisPoints) public pure returns (uint256) {
         require(feeBasisPoints <= FEE_PRECISION, "Fee basis points exceed maximum allowed");
+        
+        console.log("amount: %d, feeBasisPoints: %d", amount, feeBasisPoints);
+
         return (amount * feeBasisPoints) / FEE_PRECISION;
     }
 
@@ -39,17 +43,29 @@ contract FeeManager is Ownable {
         uint256 amount;
         if (token == address(0)) {
             // Distribute ETH
+            console.log("Distributing ETH");
             amount = address(this).balance;
             (bool success, ) = feeRecipient.call{value: amount}("");
             require(success, "ETH fee distribution failed");
         } else {
             // Distribute ERC20 tokens
+            console.log("Distributing ERC20");
             amount = IERC20(token).balanceOf(address(this));
+            console.log("amount: %d", amount);
+            console.log("feeRecipient: %s", feeRecipient);
+            console.log("this: %s", address(this));
             IERC20(token).safeTransfer(feeRecipient, amount);
         }
         emit FeeDistributed(token, amount);
     }
 
+    function getCollectedFees(address token) external view returns (uint256) {
+        if (token == address(0)) {
+            return address(this).balance;
+        } else {
+            return IERC20(token).balanceOf(address(this));
+        }
+    }
     function rescueETH(uint256 amount) external onlyOwner {
         uint256 contractBalance = address(this).balance;
         require(contractBalance >= amount, "Insufficient balance to rescue");
