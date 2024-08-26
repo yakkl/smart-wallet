@@ -17,6 +17,7 @@ packages/contracts/node_modules/
 packages/contracts/code/anvil-test-data.txt
 packages/contracts/code/deployed_*_contracts.json
 packages/contracts/code/deployed_contracts.json
+packages/contracts/code/anvil-config.json
 
 # General patterns
 packages/wallet/*.tmp
