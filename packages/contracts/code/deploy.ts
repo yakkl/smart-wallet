@@ -17,7 +17,14 @@ const NETWORK = process.env.SEPOLIA_RPC_URL ? 'sepolia' :
                 'mainnet';
 
 const provider = new ethers.JsonRpcProvider(FORK_RPC_URL);
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider); // NOTE: Replace with your actual private key AND it does not have to belong to the recepient address
+
+const OWNER_ADDRESS           = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";  // Replace with actual owner address - NOT currently used but matches the PRIVATE_KEY address
+const RECEPIENT_ADDRESS       = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";  // Replace with actual recipient address
+const UNISWAP_QUOTER_ADDRESS  = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";  // Uniswap Quoter address
+const UNISWAP_FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";  // Uniswap Factory address
+const UNISWAP_ROUTER_ADDRESS  = "0xE592427A0AEce92De3Edee1F18E0157C05861564";  // Uniswap Router address
+const WETH_ADDRESS            = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";  // Replace with actual WETH address
 
 // FeeManager params: [ownerAddress]
 // SwapRouter params: [UniswapRouterAddress, WETH, FeeManager Address, Quoter Address, Factory Address]
@@ -25,22 +32,24 @@ const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 // Global array of contracts to deploy with their parameters
 const contractsToDeploy = [
     { name: "IFeeManager", params: [], existingAddress: "" },
-    { name: "FeeManager", params: ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], existingAddress: "" }, 
+    { name: "FeeManager", params: [RECEPIENT_ADDRESS], existingAddress: "" }, 
     { name: "SwapRouter", params: [
-        "0xE592427A0AEce92De3Edee1F18E0157C05861564", 
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 
+        UNISWAP_ROUTER_ADDRESS, 
+        WETH_ADDRESS, 
         "FeeManager",
-        "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6", // Quoter address - mainnet or forked mainnet
-        "0x1F98431c8aD98523631AE4a59f267346ea31F984"  // Factory address - mainnet or forked mainnet
+        UNISWAP_QUOTER_ADDRESS, // Quoter address - mainnet or forked mainnet
+        UNISWAP_FACTORY_ADDRESS  // Factory address - mainnet or forked mainnet
     ],  existingAddress: "" }, 
-    // 'FeeManager' is a placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
-    // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 - Owner address on local
-    // 0xE592427A0AEce92De3Edee1F18E0157C05861564 - UniswapRouter address on mainnet??
-    // 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD - UniswapRouter address on sepolia and mainnet (universal router)
-    // 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 - WETH address on mainnet
-    // 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14 - WETH address on sepolia
     // Add more contracts here as needed
 ];
+
+// NOTE: Address examples
+// 'FeeManager' is a placeholder for FeeManager address and an option for existing address so it does not attempt to deploy again at a different address
+// 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 - Owner address on local
+// 0xE592427A0AEce92De3Edee1F18E0157C05861564 - UniswapRouter address on mainnet??
+// 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD - UniswapRouter address on sepolia and mainnet (universal router)
+// 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 - WETH address on mainnet
+// 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14 - WETH address on sepolia
 
 // Check if the provided value is a valid Ethereum address
 function isValidAddress(address: string): boolean {
@@ -81,6 +90,7 @@ async function deployContract(
 ) {
     try {
         // Check if we already have an existing address and use it if available
+        // More advanced checking can be done here
         if (existingAddress) {
             console.log(`${name} contract already exists at: ${existingAddress}`);
             logDeploymentDetails(name, existingAddress, params, ownerAddress, userName, existingAddress);
@@ -201,8 +211,6 @@ async function main() {
 
         for (const contract of contractsToDeploy) {
             const { name, params, existingAddress } = contract;
-
-            console.log(`\nDeploying ${name}...`, contract);
 
             // Check if the contract is already deployed at the existing address
             if (existingAddress) {

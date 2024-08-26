@@ -12,6 +12,49 @@ Contracts are located in the src directory. Each contract is in its own file and
 
 Contract scripts are located in the scripts directory. These scripts are used to deploy the contracts to the blockchain.
 
+## SwapRouter.sol
+### swapExactETHForTokens:
+
+This function is used to swap ETH for tokens. 
+
+### swapExactTokensForTokens:
+
+The swapExactTokensForTokens function is used when you want to swap a specific amount of one ERC20 token for another ERC20 token. This function is useful in several scenarios:
+
+1. Token-to-Token Swaps: When users want to exchange one token for another directly, without involving ETH. For example, swapping USDC for DAI, or LINK for UNI.
+2. Stablecoin Exchanges: Users might want to swap between different stablecoins (e.g., USDC to USDT, or DAI to BUSD).
+3. DeFi Operations: In DeFi protocols, users often need to swap tokens to participate in various activities like yield farming, liquidity provision, or accessing specific protocol features.
+4. Portfolio Rebalancing: Traders or investors might use this function to adjust their token holdings without converting to ETH first.
+5. Arbitrage: Traders could use this for arbitrage opportunities between different token pairs.
+6. Token Upgrades: When projects upgrade their tokens, users might need to swap old tokens for new ones.
+7. Cross-Chain Bridges: Some cross-chain operations might require swapping tokens on one chain before bridging to another.
+8. Automated Trading Strategies: Bots or automated systems might use this function to execute trading strategies involving multiple ERC20 tokens.
+
+Example of how to call from typescript:
+```typescript
+// Assume 'tokenIn' and 'tokenOut' are the addresses of the ERC20 tokens
+// 'amountIn' is the amount of tokenIn to swap
+// 'swapRouter' is the instance of your SwapRouter contract
+
+// First, approve the SwapRouter to spend tokenIn
+const tokenInContract = new ethers.Contract(tokenIn, ERC20ABI, signer);
+await tokenInContract.approve(swapRouter.address, amountIn);
+
+// Then, perform the swap
+const tx = await swapRouter.swapExactTokensForTokens(
+    tokenIn,
+    amountIn,
+    tokenOut,
+    minAmountOut, // Calculated based on expected price and slippage tolerance
+    recipientAddress,
+    deadline,
+    feeBasisPoints,
+    poolFee
+);
+
+await tx.wait();
+```
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**

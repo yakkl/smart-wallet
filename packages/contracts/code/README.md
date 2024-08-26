@@ -27,6 +27,41 @@ By default, the script will look at the environment variable `ETH_RPC_URL` to de
 ts-node deploy.ts
 ```
 
+> Contract addresses: `contract_address = keccak256(rlp_encode(sender_address, nonce))[12:]` this is how contract addresses are created. The nonce is the number of transactions sent from the account. The sender_address is the address of the account that is deploying the contract. The keccak256 function is a cryptographic hash function that takes an input and produces a fixed-size string of bytes. The rlp_encode function is a serialization function that encodes data in a compact binary format. The [12:] is a slice operation that takes the last 20 bytes of the hash. This is the address of the contract.
+>
+> The contract address is deterministic and can be calculated before the contract is deployed. This is useful for interacting with the contract before it is deployed. You can use the contract address to interact with the contract using the forge-cli or other tools. You can also use the contract address to verify that the contract was deployed correctly by comparing the address to the one that was calculated before deployment. However, the nonce **MUST** be the same as the one used to calculate the address. If the nonce is different, the address will be different.
+>
+> This all means that on Anvil, if you restart it and it is reset (default unless using --state) then your contract address could be the same on each initial deploy (assuming the nonce is the same as before). This does not occur on the normal mainnet. This is useful for testing and development purposes.
+
+### Key Points to Consider:
+1. Same Sender and Nonce:
+
+- If you deploy the contract using the same account and the account's nonce is the same, you will get the same contract address. This would typically occur if the network is reset to the same state before each deployment, or if no other transactions have been sent from that account between deployments.
+
+2. Different Nonce:
+
+- If the account's nonce changes between deployments (e.g., if you've sent other transactions from the same account before the second deployment), the contract address will be different. This is because the nonce is incremented with each transaction.
+
+3. Anvil’s State:
+
+- If Anvil is reset (i.e., the state is cleared or a new instance is started) and you deploy the contract in the exact same way (same account and nonce), you will get the same contract address.
+- If you don't reset Anvil and the account's nonce has incremented due to other transactions, the contract address will be different.
+
+### Practical Example:
+- First Deployment:
+
+  - Deploy a contract using an EOA (e.g., 0x123...) with nonce 0.
+  - Contract address = keccak256(rlp_encode(0x123..., 0)).
+
+- Second Deployment (Without Reset):
+
+  - If you've sent a transaction after the first deployment, the nonce is now 1.
+  - Deploy the same contract again; the contract address will be keccak256(rlp_encode(0x123..., 1)), which is different from the first.
+
+- Second Deployment (With Reset or Identical State):
+
+  - If you reset Anvil or start with the same state (same nonce and no other transactions), the contract address will be the same as the first deployment.
+
 Deploy the contracts to your local network by running the deploy.ts script. The script will deploy the contracts to the network specified in the script.
 
 contractsToDeploy is an array of objects that contain the contract name, constructor parameters, and an optional existing address if the contract has already been deployed. The script will deploy the contracts in the order they are listed in the array. If you enter an existing address for a contract, the script will not attempt to deploy that contract again. If you leave the existing address empty, the script will deploy the contract to a new address. It will also print out and log the deployed contracts which includes their addresses, names, hashes, block number, and timestamp. The name of the log files is deployed_contracts.json. You can use this information to interact with the contracts using the forge-cli or other tools if needed.

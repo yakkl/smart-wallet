@@ -25,10 +25,17 @@ contract FeeManager is Ownable {
 
     receive() external payable {}
 
+    // Anyone can call this function to see the fee recipient 
+    function getFeeRecipient() external view returns (address) {
+        return feeRecipient;
+    }
+
     function setFeeRecipient(address _feeRecipient) external onlyOwner {
         require(_feeRecipient != address(0), "Invalid fee recipient");
-        emit FeeRecipientUpdated(feeRecipient, _feeRecipient);
+        address oldRecipient = feeRecipient;
         feeRecipient = _feeRecipient;
+        emit FeeRecipientUpdated(oldRecipient, _feeRecipient);
+        console.log("Fee recipient updated from %s to %s", oldRecipient, _feeRecipient);
     }
 
     function calculateFee(uint256 amount, uint256 feeBasisPoints) public pure returns (uint256) {

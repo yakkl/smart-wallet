@@ -153,7 +153,12 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
         uint256 feeBasisPoints,
         uint24 poolFee
     ) external nonReentrant whenNotPaused {
-        console.log("swapExactTokensForTokens called");
+        emit SwapStarted(tokenOut, amountIn);
+
+        require(amountIn > 0, "Must send tokens");
+        require(deadline >= block.timestamp, "Transaction too old");
+
+        console.log("SwapExactTokensForTokens called");
         console.log("tokenIn:", tokenIn);
         console.log("amountIn:", amountIn);
         console.log("tokenOut:", tokenOut);
@@ -163,28 +168,21 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
         console.log("feeBasisPoints:", feeBasisPoints);
         console.log("poolFee:", poolFee);
 
-        emit SwapStarted(tokenOut, amountIn);
+        uint256 expectedAmountOut = getAmountOut(tokenIn, tokenOut, poolFee, amountIn);
+        console.log("Expected amount out:", expectedAmountOut);
 
-        require(amountIn > 0, "Amount must be greater than 0");
-        require(deadline >= block.timestamp, "Transaction too old");
-        
-        uint256 allowance = IERC20(tokenIn).allowance(msg.sender, address(this));
-        require(allowance >= amountIn, "Insufficient allowance");
-
-        console.log("Swapping tokens for tokens with fee");
-        console.log("Token input amount:", amountIn);
-
-        // Perform the swap first
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenIn).safeIncreaseAllowance(address(uniswapRouter), amountIn);
-
-        uint24 feePool = 3000;
-        if ( poolFee != 100 || poolFee != 500 || poolFee != 3000 || poolFee != 10000) {
+        uint24 feePool = poolFee;
+        if (feePool != 100 && feePool != 500 && feePool != 3000 && feePool != 10000) {
             feePool = 3000;
-        } else {
-            feePool = poolFee;
         }
 
+        // Transfer tokens to this contract
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+
+        // Approve Uniswap router to spend tokens
+        IERC20(tokenIn).approve(address(uniswapRouter), amountIn);
+
+        // Perform the swap
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: tokenIn,
             tokenOut: tokenOut,
@@ -196,6 +194,7 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
             sqrtPriceLimitX96: 0
         });
 
+        console.log("Performing swap with params:");
         console.log("feePool:", feePool);
         console.log("Performing swap with params.tokenIn:", params.tokenIn);
         console.log("Performing swap with params.tokenOut:", params.tokenOut);
@@ -209,124 +208,25 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
         console.log("Received tokens:", amountOut);
 
         // Calculate the fee based on the final amount received
-        uint256 fee = feeManager.calculateFee(amountOut, feeBasisPoints);
+        uint256 fee = feeBasisPoints > 0 ? feeManager.calculateFee(amountOut, feeBasisPoints) : 0;
         uint256 amountAfterFee = amountOut - fee;
 
+        require(amountAfterFee >= amountOutMin, "Insufficient output amount");
+
         console.log("Fee amount:", fee);
-        console.log("FeeManager address:", address(feeManager));
         console.log("Amount after fee:", amountAfterFee);
 
-        if (amountAfterFee < amountOutMin) {
-            revert("Insufficient output amount");
-        }
-
         // Transfer the fee to the feeManager
-        IERC20(tokenOut).safeTransfer(address(feeManager), fee);
+        if (fee > 0) {
+            IERC20(tokenOut).safeTransfer(address(feeManager), fee);
+            feeManager.distributeFee(tokenOut);
+        }
 
         // Transfer the remaining tokens to the recipient
         IERC20(tokenOut).safeTransfer(to, amountAfterFee);
 
-        // Distribute the fee
-        feeManager.distributeFee(tokenOut);
-
         emit SwapCompleted(msg.sender, tokenOut, amountIn, amountAfterFee, fee);
     }
-
-    // function getQuote(
-    //     address tokenIn,
-    //     address tokenOut,
-    //     uint24 fee,
-    //     uint256 amountIn
-    // ) public returns (uint256 amountOut, uint256 priceImpact) {
-    //     uint256 quoteAmountOut = quoter.quoteExactInputSingle(
-    //         tokenIn,
-    //         tokenOut,
-    //         fee,
-    //         amountIn,
-    //         0
-    //     );
-
-    //     console.log("Quote amount out:"); //, quoteAmountOut);
-
-    //     // Calculate price impact
-    //     address poolAddress = factory.getPool(tokenIn, tokenOut, fee);
-    //     require(poolAddress != address(0), "Pool does not exist");
-        
-    //     IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
-    //     (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
-        
-    //     uint256 price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * 1e18 / (2**192);
-    //     uint256 expectedAmountOut = amountIn * price / 1e18;
-        
-    //     if (expectedAmountOut > quoteAmountOut) {
-    //         uint256 impact = expectedAmountOut - quoteAmountOut;
-    //         priceImpact = (impact * 10000) / expectedAmountOut;
-    //     } else {
-    //         priceImpact = 0;
-    //     }
-
-    //     return (quoteAmountOut, priceImpact);
-    // }
-
-// function getQuote(
-//     address tokenIn,
-//     address tokenOut,
-//     uint24 fee,
-//     uint256 amountIn
-// ) public returns (uint256 amountOut, uint256 priceImpact) {
-//     emit LogMessage("getQuote called", tokenIn, fee, amountIn);
-
-//     try quoter.quoteExactInputSingle(
-//         tokenIn,
-//         tokenOut,
-//         fee,
-//         amountIn,
-//         0
-//     ) returns (uint256 quoteAmountOut) {
-//         emit LogQuoteResult("Quoter result", quoteAmountOut);
-
-//         address poolAddress = factory.getPool(tokenIn, tokenOut, fee);
-//         require(poolAddress != address(0), "Pool does not exist");
-//         emit LogMessage("Pool found", poolAddress, 0, 0);
-
-//         IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
-//         (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
-//         emit LogUint("sqrtPriceX96", sqrtPriceX96);
-
-//         uint256 price;
-//         unchecked {
-//             price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * 1e18 / (2**192);
-//         }
-//         emit LogUint("Calculated price", price);
-
-//         uint256 expectedAmountOut;
-//         unchecked {
-//             expectedAmountOut = amountIn * price / 1e18;
-//         }
-//         emit LogUint("Expected amount out", expectedAmountOut);
-
-//         if (expectedAmountOut > quoteAmountOut) {
-//             uint256 impact;
-//             unchecked {
-//                 impact = expectedAmountOut - quoteAmountOut;
-//                 priceImpact = (impact * 10000) / expectedAmountOut;
-//             }
-//         } else {
-//             priceImpact = 0;
-//         }
-
-//         emit LogQuoteResult("Final result", quoteAmountOut);
-//         emit LogUint("Price impact", priceImpact);
-
-//         return (quoteAmountOut, priceImpact);
-//     } catch Error(string memory reason) {
-//         emit LogError("Quoter error", reason);
-//         revert(reason);
-//     } catch (bytes memory lowLevelData) {
-//         emit LogBytes("Quoter low-level error", lowLevelData);
-//         revert("Quoter low-level error");
-//     }
-// }
 
 function getQuote(
     address tokenIn,
