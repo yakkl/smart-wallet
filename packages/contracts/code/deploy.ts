@@ -31,7 +31,7 @@ const WETH_ADDRESS            = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";  /
 
 // Global array of contracts to deploy with their parameters
 const contractsToDeploy = [
-    { name: "IFeeManager", params: [], existingAddress: "" },
+    // { name: "IFeeManager", params: [], existingAddress: "" },  // NOTE: IFeeManager is an interface only so it need not be deployed. This is here to show how to add more contracts
     { name: "FeeManager", params: [RECEPIENT_ADDRESS], existingAddress: "" }, 
     { name: "SwapRouter", params: [
         UNISWAP_ROUTER_ADDRESS, 
@@ -40,6 +40,7 @@ const contractsToDeploy = [
         UNISWAP_QUOTER_ADDRESS, // Quoter address - mainnet or forked mainnet
         UNISWAP_FACTORY_ADDRESS  // Factory address - mainnet or forked mainnet
     ],  existingAddress: "" }, 
+    { name: "YAKKL", params: [], existingAddress: "" },  // NOTE: YAKKL is a WIP and only for testing
     // Add more contracts here as needed
 ];
 
