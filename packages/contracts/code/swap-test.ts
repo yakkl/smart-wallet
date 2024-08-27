@@ -33,8 +33,8 @@ const IERC20ABI = [
 const networks = {
     local: {
         rpcUrl: "http://localhost:8545",
-        swapRouterAddress: "0x0BFC626B583e93A5F793Bc2cAa195BDBB2ED9F20", // Replace with the actual SwapRouter address you wish to use (should be latest always)
-        feeManagerAddress: "0x71d2EBF08bF4FcB82dB5ddE46677263F4c534ef3", // Replace with the actual FeeManager address you wish to use (should be latest always)
+        swapRouterAddress: "0x4Bd915C3e39cfF4eac842255965E79061c38cACD", // Replace with the actual SwapRouter address you wish to use (should be latest always)
+        feeManagerAddress: "0xAAd4F7BB5FB661181D500829e60010043833a85B", // Replace with the actual FeeManager address you wish to use (should be latest always)
         tokenInAddress: WETH_ADDRESS,
         tokenOutAddress: USDC_ADDRESS
     },
@@ -453,6 +453,18 @@ async function performSwapETHForTokens(networkName: string) {
       console.log(`Actual received: ${ethers.formatUnits(actualReceivedBigInt, tokenOutDecimals)} ${await tokenOut.symbol()}`);
       console.log(`Expected after fee: ${ethers.formatUnits(expectedOutputAfterFee, tokenOutDecimals)} ${await tokenOut.symbol()}`);
             
+      // Call the FeeManager contract to calculate the fee
+      const contractFeeAmount = await feeManager.calculateFee(expectedOutputWithoutFee, feeBasisPoints);
+
+      console.log(`Fee amount (local calculation): ${ethers.formatUnits(feeAmount, tokenOutDecimals)} ${await tokenOut.symbol()}`);
+      console.log(`Fee amount (contract calculation): ${ethers.formatUnits(contractFeeAmount, tokenOutDecimals)} ${await tokenOut.symbol()}`);
+
+      if (feeAmount !== contractFeeAmount) {
+          console.warn("Warning: Local fee calculation does not match contract calculation!");
+      } else {
+          console.log(`\nFee calculations match between local script and contract.\n`);
+      }
+
       // Estimate the gas cost
       const gasPrice = receipt?.gasPrice || tx.gasPrice || 0n;
       const gasUsed = receipt?.gasUsed || 0n;

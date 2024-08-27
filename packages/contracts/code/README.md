@@ -15,7 +15,7 @@ Foundry is a tool that allows you to fork the Ethereum mainnet locally. This is 
 Foundry will fork the Ethereum mainnet locally to test the contracts. You can use the following command to start a local network:
 
 ```shell
-./deploy-local.sh
+./local-mainnet.sh
 ```
 
 By default, the script will look at the environment variable `ETH_RPC_URL` to determine the RPC URL of the network. If the environment variable is not set, it will default to `http://localhost:8545`. You can set the environment variable to point to a different network if needed. The script will also check to see if anvil-state exists. If it does not exist, it will create a new one. If it does exist, it will use the existing state found in the anvil-state file. When the script exits it will write out the current state of the network to the anvil-state file. This allows you to start and stop the network without losing the state of the network.
