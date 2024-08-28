@@ -1,77 +1,33 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// SwapManager.ts
-// SwapManager.ts
+import type { BigNumberish, TransactionResponse } from '$lib/common';
+import type { Token } from '$plugins/Token';
 import type { Blockchain } from './Blockchain';
-import type { Provider } from './Provider';
+import type { Provider } from '$plugins/Provider';
 
-export interface Token {
-  address: string;
-  decimals: number;
-  symbol: string;
-  name: string;
-  isNative?: boolean;
-}
+
+// export interface Token {
+//   address: string;
+//   symbol: string;
+//   decimals: number;
+// }
 
 export interface SwapQuote {
-  quote: string;
-  quoteWithFee: string;
-  minAmountOut: string;
-  fee: string;
-  priceImpact: string;
-  route: string;
-  slippageToleranceBps: string
-}
-
-export interface SwapTransactionResponse {
-  hash: string;
-  wait: () => Promise<any>;
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  path: string[];
+  priceImpact: number;
 }
 
 export abstract class SwapManager {
-  protected readonly blockchain: Blockchain;
-  protected readonly provider: Provider;
-  protected feeBasisPoints: number = 0;
+  protected blockchain: Blockchain;
+  protected provider: Provider;
 
-  constructor(
-    blockchain: Blockchain,
-    provider: Provider,
-    initialFeeBasisPoints: number = 875 // 0.875%
-  ) {
+  constructor(blockchain: Blockchain, provider: Provider) {
     this.blockchain = blockchain;
     this.provider = provider;
-    this.setFeeBasisPoints(initialFeeBasisPoints);
   }
 
-  public setFeeBasisPoints(newFeeBasisPoints: number): void {
-    if (newFeeBasisPoints < 0 || newFeeBasisPoints > 10000) {
-      throw new Error('Fee basis points must be between 0 and 10000');
-    }
-    this.feeBasisPoints = newFeeBasisPoints;
-  }
-
-  public abstract getSwapQuote(
-    tokenIn: Token,
-    tokenOut: Token,
-    amount: string,
-    slippageToleranceBps?: number
-  ): Promise<SwapQuote>;
-
-  public abstract executeSwap(
-    tokenIn: Token,
-    tokenOut: Token,
-    amount: string,
-    slippageToleranceBps?: number
-  ): Promise<SwapTransactionResponse>;
-
-  public abstract addLiquidity(
-    tokenA: Token,
-    tokenB: Token,
-    amountA: string,
-    amountB: string,
-    slippageToleranceBps?: number
-  ): Promise<SwapTransactionResponse>;
-
-  protected convertBpsToPercent(bps: number): number {
-    return bps / 10000;
-  }
+  abstract getQuote(tokenIn: Token, tokenOut: Token, amountIn: BigNumberish): Promise<SwapQuote>;
+  abstract executeSwap(tokenIn: Token, tokenOut: Token, amountIn: BigNumberish, minAmountOut: BigNumberish, recipient: string, deadline: number): Promise<TransactionResponse>;
+  abstract addLiquidity(tokenA: Token, tokenB: Token, amountA: BigNumberish, amountB: BigNumberish, minAmountA: BigNumberish, minAmountB: BigNumberish, recipient: string, deadline: number): Promise<TransactionResponse>;
+  abstract removeLiquidity(tokenA: Token, tokenB: Token, liquidity: BigNumberish, minAmountA: BigNumberish, minAmountB: BigNumberish, recipient: string, deadline: number): Promise<TransactionResponse>;
 }
