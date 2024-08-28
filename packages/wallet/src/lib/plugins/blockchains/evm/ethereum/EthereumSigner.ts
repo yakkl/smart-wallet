@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import type { EVMTransactionRequest, BigNumberish, TransactionRequest, TransactionResponse, TransactionReceipt, Log } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+import type { Provider } from '$lib/plugins/Provider';
 
 
 /**
@@ -11,13 +12,15 @@ import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
  */
 export class EthereumSigner extends Signer {
   private wallet: ethers.Wallet;
+  public readonly provider: Provider | null;
 
   /**
    * Creates an instance of EthereumSigner.
    * @param privateKey - The private key for the wallet.
+   * @param provider - The provider for the signer.
    * @throws Will throw an error if the private key is not provided.
    */
-  constructor(privateKey: string | null) {
+  constructor(privateKey: string | null, provider: Provider | null) {
     super();
     if (!privateKey) {
       throw new Error('Private key not provided to signer');
@@ -28,7 +31,8 @@ export class EthereumSigner extends Signer {
     if (privateKey.length !== 66) {
       throw new Error(`Invalid private key length. Instead it is ${privateKey.length}`);
     }
-    this.wallet = new ethers.Wallet(privateKey);
+    this.provider = provider;
+    this.wallet = new ethers.Wallet(privateKey, provider as any);  // TODO: Check this!
 
     console.log('ethers - Wallet created:', this.wallet);
   }

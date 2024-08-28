@@ -4,7 +4,6 @@ import type { Blockchain } from '$plugins/Blockchain';
 import {
   isYakklPrimaryAccount,
   type AccountInfo,
-  type Token,
   type Transaction,
   type TransactionRequest,
   type TransactionResponse,
@@ -20,6 +19,7 @@ import { Signer } from '$plugins/Signer';
 import { Ethereum, EthereumSigner } from '$plugins/blockchains';
 import { writable } from 'svelte/store';
 import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
+import type { Token } from '$plugins/Token';
 
 export const walletStore = writable<Wallet | null>(null);
 
@@ -309,7 +309,7 @@ export class Wallet {
 
       switch ( this.blockchain.name ) { //this.currentToken.blockchain.name) {
         case 'Ethereum':
-          this.signer = new EthereumSigner(privateKey);
+          this.signer = new EthereumSigner(privateKey, this.provider);
           break;
         // case 'Polygon': 
         //   this.signer = new PolygonSigner(this.privateKey);

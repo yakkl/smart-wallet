@@ -24,7 +24,9 @@ contract SwapRouterTest is Test {
     swapRouter = new SwapRouter(
         UNISWAP_ROUTER,
         WETH9,
-        address(feeManager)
+        address(feeManager),
+        address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6), // Quoter address - mainnet or forked mainnet
+        address(0x1F98431c8aD98523631AE4a59f267346ea31F984)  // Factory address - mainnet or forked mainnet 
     );
 
     // Reset balances before each test
@@ -68,36 +70,37 @@ contract SwapRouterTest is Test {
         assertEq(feeManager.feeRecipient(), newFeeRecipient);
     }
 
-    function testSwapExactETHForTokensWithFee() public {
-    uint256 swapAmount = 1 ether;
-    vm.deal(address(this), swapAmount);
+    function testSwapExactETHForTokens() public {
+        uint256 swapAmount = 1 ether;
+        vm.deal(address(this), swapAmount);
 
-    uint256 daiBalanceBefore = IERC20(DAI).balanceOf(address(this));
-    uint256 feeRecipientDaiBalanceBefore = IERC20(DAI).balanceOf(feeRecipient);
+        uint256 daiBalanceBefore = IERC20(DAI).balanceOf(address(this));
+        uint256 feeRecipientDaiBalanceBefore = IERC20(DAI).balanceOf(feeRecipient);
 
-    swapRouter.swapExactETHForTokensWithFee{value: swapAmount}(
-        DAI,
-        0,
-        address(this),
-        block.timestamp + 300,
-        feeBasisPoints
-    );
+        swapRouter.swapExactETHForTokens{value: swapAmount}(
+            DAI,
+            0,
+            address(this),
+            block.timestamp + 300,
+            feeBasisPoints,
+            3000
+        );
 
-    uint256 daiBalanceAfter = IERC20(DAI).balanceOf(address(this));
-    uint256 daiReceived = daiBalanceAfter - daiBalanceBefore;
-    uint256 feeRecipientDaiBalanceAfter = IERC20(DAI).balanceOf(feeRecipient);
-    uint256 feeCollected = feeRecipientDaiBalanceAfter - feeRecipientDaiBalanceBefore;
+        uint256 daiBalanceAfter = IERC20(DAI).balanceOf(address(this));
+        uint256 daiReceived = daiBalanceAfter - daiBalanceBefore;
+        uint256 feeRecipientDaiBalanceAfter = IERC20(DAI).balanceOf(feeRecipient);
+        uint256 feeCollected = feeRecipientDaiBalanceAfter - feeRecipientDaiBalanceBefore;
 
-    assertEq(address(this).balance, 0, "All ETH should be spent");
-    assertGt(feeCollected, 0, "Fee should have been collected");
-    assertGt(daiReceived, 0, "Should have received DAI");
-    
-    // Check that the mocked amount (100000) minus fee was received
-    uint256 expectedAmountReceived = 100000 - feeManager.calculateFee(100000, feeBasisPoints);
-    assertEq(daiReceived, expectedAmountReceived, "Should have received correct amount of DAI");
-}
+        assertEq(address(this).balance, 0, "All ETH should be spent");
+        assertGt(feeCollected, 0, "Fee should have been collected");
+        assertGt(daiReceived, 0, "Should have received DAI");
+        
+        // Check that the mocked amount (100000) minus fee was received
+        uint256 expectedAmountReceived = 100000 - feeManager.calculateFee(100000, feeBasisPoints);
+        assertEq(daiReceived, expectedAmountReceived, "Should have received correct amount of DAI");
+    }
 
-function testSwapExactTokensForTokensWithFee() public {
+function testSwapExactTokensForTokens() public {
     uint256 swapAmount = 500000 * 1e18; // 500,000 DAI
     deal(DAI, address(this), swapAmount);
 
@@ -106,14 +109,15 @@ function testSwapExactTokensForTokensWithFee() public {
     uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(address(this));
     uint256 feeRecipientBalanceBefore = IERC20(USDC).balanceOf(feeRecipient);
 
-    swapRouter.swapExactTokensForTokensWithFee(
+    swapRouter.swapExactTokensForTokens(
         DAI,
         swapAmount,
         USDC,
         0,
         address(this),
         block.timestamp + 300,
-        feeBasisPoints
+        feeBasisPoints,
+        3000
     );
 
     uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(address(this));
@@ -135,12 +139,13 @@ function testSwapExactTokensForTokensWithFee() public {
         vm.deal(address(this), 1 ether); // Not enough ETH
 
         vm.expectRevert("Must send ETH");
-        swapRouter.swapExactETHForTokensWithFee{value: swapAmount}(
+        swapRouter.swapExactETHForTokens{value: swapAmount}(
             DAI,
             0,
             address(this),
             block.timestamp + 300,
-            feeBasisPoints
+            feeBasisPoints,
+            3000
         );
     }
 
@@ -152,12 +157,13 @@ function testSwapExactTokensForTokensWithFee() public {
         vm.warp(block.timestamp + 1 hours);
 
         vm.expectRevert("Transaction too old");
-        swapRouter.swapExactETHForTokensWithFee{value: swapAmount}(
+        swapRouter.swapExactETHForTokens{value: swapAmount}(
             DAI,
             0,
             address(this),
             block.timestamp - 1, // expired deadline
-            feeBasisPoints
+            feeBasisPoints,
+            3000
         );
     }
 
@@ -189,12 +195,13 @@ function testSwapExactTokensForTokensWithFee() public {
 
     uint256 feeRecipientBalanceBefore = IERC20(DAI).balanceOf(feeRecipient);
 
-    swapRouter.swapExactETHForTokensWithFee{value: swapAmount}(
+    swapRouter.swapExactETHForTokens{value: swapAmount}(
         DAI,
         0,
         address(this),
         block.timestamp + 300,
-        feeBasisPoints
+        feeBasisPoints,
+        3000
     );
 
     uint256 feeRecipientBalanceAfter = IERC20(DAI).balanceOf(feeRecipient);
