@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Interface definitions
 
-import type { Blockchain, Provider } from '$lib/plugins';
 import type { AccessList, Log, Transaction } from '$lib/common/evm';
 import type { AccountTypeCategory, BytesLike, NetworkType, RegistrationType, SystemTheme, URL } from '$lib/common/types';
 import type { BigNumberish } from '$lib/common/bignumber';
@@ -186,7 +185,7 @@ export interface TransactionReceipt {
   effectiveGasPrice?: BigNumberish,
   byzantium?: boolean,
   type: number;
-  status?: number
+  status?: number | null | undefined;
 }
 
 export interface TransactionResponse extends Transaction {
@@ -312,14 +311,20 @@ export interface Transactions {
 }
 // End - Evaluate the need for these interfaces
 
-export interface Token {
-  name: string;
-  address: string;
-  symbol: string;
-  blockchain: Blockchain;
-  provider: Provider;
-  privateKey?: string;
-}
+// export interface Token {
+//   address: string;
+//   name: string;
+//   symbol: string;
+//   decimals: number;
+//   isNative: boolean;
+//   iconUrl: string;
+//   description: string;
+//   chainId: number;
+//   blockchain: Blockchain;
+//   provider: Provider;
+//   privateKey?: string;
+//   getContract(provider: Provider): Promise<AbstractContract>;  
+// }
 
 export interface Extension {
   id: string;

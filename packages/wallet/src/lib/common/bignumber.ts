@@ -23,6 +23,7 @@ export interface IBigNumber {
   min(other: BigNumberish): BigNumber;
   add(other: BigNumberish): BigNumber;
   subtract(other: BigNumberish): BigNumber;
+  sub(other: BigNumberish): BigNumber;
   div(other: BigNumberish): BigNumber;
   mul(other: BigNumberish): BigNumber;
   mod(other: BigNumberish): BigNumber;
@@ -148,6 +149,11 @@ export class BigNumber implements IBigNumber {
     return BigNumber.subtract(this._value, other);
   }
 
+  // Instance method to subtract another BigNumberish value from the current value - to be more compatible with other classes
+  sub(other: BigNumberish): BigNumber {
+    return this.subtract(other);
+  }
+  
   // Instance method to divide the current value by another BigNumberish value
   div(other: BigNumberish): BigNumber {
     return BigNumber.div(this._value, other);
@@ -321,6 +327,10 @@ export class BigNumber implements IBigNumber {
     }
 
     return new BigNumber(bigint1 - bigint2);
+  }
+
+  static sub(value1: BigNumberish, value2: BigNumberish): BigNumber {
+    return BigNumber.subtract(value1, value2);
   }
 
   // Static method to divide one BigNumberish value by another
