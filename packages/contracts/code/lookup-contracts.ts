@@ -20,8 +20,8 @@ const contractEvents = [
     {
         name: "FeeManager",
         eventSignature: "FeeManagerDeployed(address indexed contractAddress, address indexed owner)",
-        address: "0x8544ceaB19038024A0178B8579918F7233638b61"
-        // eventTopic: ethers.id("FeeManagerDeployed(address indexed contractAddress, address indexed owner)")  // Directly use the topic from the logs
+        address: "0xe8c3F27D20472e4f3C546A3f73C04B54DD72871d",
+        eventTopic: ethers.id("FeeManagerDeployed(address indexed contractAddress, address indexed owner)")  // Directly use the topic from the logs
     },
     // {
     //     name: "SwapRouter",
@@ -90,10 +90,10 @@ async function lookupContracts() {
             const filter = {
                 fromBlock,
                 toBlock,
-                address: contractEvent.address,
-                // topics: [
-                //   contractEvent.eventTopic
-                // ]
+                // address: contractEvent.address,
+                topics: [
+                  contractEvent.eventTopic
+                ]
             };
                 // eventSignatureHash // Event signature hash for the event
 
