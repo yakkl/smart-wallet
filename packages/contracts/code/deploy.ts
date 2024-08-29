@@ -40,7 +40,7 @@ const contractsToDeploy = [
         UNISWAP_QUOTER_ADDRESS, // Quoter address - mainnet or forked mainnet
         UNISWAP_FACTORY_ADDRESS  // Factory address - mainnet or forked mainnet
     ],  existingAddress: "" }, 
-    { name: "YAKKL", params: [], existingAddress: "" },  // NOTE: YAKKL is a WIP and only for testing
+    { name: "YAKKL", params: [OWNER_ADDRESS], existingAddress: "" },  // NOTE: YAKKL is a WIP and only for testing
     // Add more contracts here as needed
 ];
 

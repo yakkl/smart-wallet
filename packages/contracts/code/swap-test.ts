@@ -12,6 +12,8 @@ const UNISWAP_FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984"; //
 const WETH_ADDRESS            = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address
 const USDC_ADDRESS            = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // USDC address
 
+const YAKKL_ADDRESS = "0x36B81ebd01C31643BAF132240C8Bc6874B329c4C";
+
 const MAX_WAIT_TIME = 60000; // 60 seconds, adjust as needed - This is for the tx.wait() or waitForTransaction() function
 const MINIMUM_WETH_LIQUIDITY = ethers.parseEther("0.1"); // Adjust this value as needed
 const SLIPPAGE_TOLERANCE = 0.005; // 0.5%
@@ -33,8 +35,8 @@ const IERC20ABI = [
 const networks = {
     local: {
         rpcUrl: "http://localhost:8545",
-        swapRouterAddress: "0x4Bd915C3e39cfF4eac842255965E79061c38cACD", // Replace with the actual SwapRouter address you wish to use (should be latest always)
-        feeManagerAddress: "0xAAd4F7BB5FB661181D500829e60010043833a85B", // Replace with the actual FeeManager address you wish to use (should be latest always)
+        swapRouterAddress: "0xd2983525E903Ef198d5dD0777712EB66680463bc", // Replace with the actual SwapRouter address you wish to use (should be latest always)
+        feeManagerAddress: "0xe8c3F27D20472e4f3C546A3f73C04B54DD72871d", // Replace with the actual FeeManager address you wish to use (should be latest always)
         tokenInAddress: WETH_ADDRESS,
         tokenOutAddress: USDC_ADDRESS
     },
