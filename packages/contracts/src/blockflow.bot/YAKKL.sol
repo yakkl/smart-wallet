@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../FeeManager.sol";
+import "forge-std/console.sol";
 
-contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, ReentrancyGuard {
+contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
@@ -52,6 +53,7 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
     uint256 public rateLimitPeriod;
     mapping(address => uint256) private lastTransferTimestamp;
     mapping(address => uint256) private transferredInPeriod;
+    mapping(address => bool) public isExemptFromFees;
 
     event TokensRecovered(address token, uint256 amount);
     event BlacklistUpdated(address account, bool status);
@@ -85,6 +87,8 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         mintedInCurrentPeriod = 0;
         mintPeriodDuration = 30 days;
 
+        isExemptFromFees[_feeManager] = true;
+        isExemptFromFees[defaultAdmin] = true;
         feeManager = FeeManager(payable(_feeManager));
         emit FeeManagerUpdated(address(0), _feeManager);
 
@@ -135,8 +139,14 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
     function setFeeManager(address _feeManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_feeManager != address(0), "Invalid FeeManager address");
         address oldManager = address(feeManager);
+        isExemptFromFees[_feeManager] = true;
         feeManager = FeeManager(payable(_feeManager));
         emit FeeManagerUpdated(oldManager, _feeManager);
+    }
+
+    function setFeeExemption(address account, bool exempt) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        isExemptFromFees[account] = exempt;
+        console.log("Fee exemption updated for %s: %s", account, exempt);
     }
 
     function setTransferTaxRate(uint256 _transferTaxRate) external onlyRole(FEE_MANAGER_ROLE) {
@@ -146,6 +156,7 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         emit TransferTaxRateUpdated(oldRate, _transferTaxRate);
     }
 
+    // Revist this function since most tests originate from an exempt owner. 
     function setFeeRates(uint256[] memory lowerBounds, uint256[] memory upperBounds, uint256[] memory rates) external onlyRole(FEE_MANAGER_ROLE) {
         require(lowerBounds.length == upperBounds.length && upperBounds.length == rates.length, "Arrays must have the same length");
         delete feeRates;
@@ -164,48 +175,13 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         emit RateLimitUpdated(amount, period);
     }
 
-    function getFeeRate(uint256 amount) public view returns (uint256) {
+    function getFeeRate(uint256 amount) public view whenNotPaused returns (uint256) {
         for (uint i = 0; i < feeRates.length; i++) {
             if (amount >= feeRates[i].lowerBound && amount < feeRates[i].upperBound) {
                 return feeRates[i].rate;
             }
         }
         return feeRates[feeRates.length - 1].rate; // Default to the highest tier if no match
-    }
-
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal override whenNotPaused {
-        require(!blacklistStatus[sender] && !blacklistStatus[recipient], "Address is blacklisted");
-        
-        if (!whitelistStatus[sender] && !whitelistStatus[recipient]) {
-            uint256 feeRate = getFeeRate(amount);
-            uint256 fee = feeManager.calculateFee(amount, feeRate);
-            uint256 netAmount = amount - fee;
-
-            if (fee > 0) {
-                super._transfer(sender, address(feeManager), fee);
-                feeManager.distributeFee(address(this));
-            }
-
-            _checkRateLimit(sender, netAmount);
-            super._transfer(sender, recipient, netAmount);
-        } else {
-            _checkRateLimit(sender, amount);
-            super._transfer(sender, recipient, amount);
-        }
-    }
-
-    function _checkRateLimit(address sender, uint256 amount) internal {
-        if (block.timestamp > lastTransferTimestamp[sender] + rateLimitPeriod) {
-            transferredInPeriod[sender] = 0;
-            lastTransferTimestamp[sender] = block.timestamp;
-        }
-
-        transferredInPeriod[sender] += amount;
-        require(transferredInPeriod[sender] <= rateLimitAmount, "Transfer exceeds rate limit");
     }
 
     function recoverTokens(address token, uint256 amount) public onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
@@ -253,7 +229,7 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         emit VestingScheduleSet(account, amount, duration, cliffDuration);
     }
 
-    function claimVestedTokens() public nonReentrant {
+    function claimVestedTokens() public whenNotPaused nonReentrant {
         VestingSchedule storage schedule = vestingSchedules[msg.sender];
         require(schedule.totalAmount > 0, "No vesting schedule");
         require(block.timestamp >= schedule.startTime + schedule.cliffDuration, "Cliff period not over");
@@ -274,7 +250,7 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         emit VestingClaimed(msg.sender, claimableAmount);
     }
 
-    function getVestingInfo(address account) public view returns (
+    function getVestingInfo(address account) public view whenNotPaused returns (
         uint256 totalAmount,
         uint256 releasedAmount,
         uint256 vestedAmount,
@@ -301,13 +277,71 @@ contract YAKKL is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Permit, Re
         claimableAmount = vestedAmount > releasedAmount ? vestedAmount - releasedAmount : 0;
     }
 
+    function transfer(address recipient, uint256 amount) public virtual override whenNotPaused returns (bool) {
+        
+        console.log("Transfer called: from %s to %s %s", msg.sender, recipient,  amount);
+
+        _customTransfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override whenNotPaused returns (bool) {
+        _customTransfer(sender, recipient, amount);
+        uint256 currentAllowance = allowance(sender, _msgSender());
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        unchecked {
+            _approve(sender, _msgSender(), currentAllowance - amount);
+        }
+        return true;
+    }
+
+    function _customTransfer(address sender, address recipient, uint256 amount) internal whenNotPaused {
+        require(!blacklistStatus[sender] && !blacklistStatus[recipient], "Address is blacklisted");
+        
+        if (!whitelistStatus[sender] && !whitelistStatus[recipient] && !isExemptFromFees[sender] && !isExemptFromFees[recipient]) {
+            uint256 feeRate = getFeeRate(amount);
+            uint256 fee = feeManager.calculateFee(amount, feeRate);
+            uint256 netAmount = amount;
+
+            if (fee > 0 && recipient != address(0)) {
+                super._transfer(sender, feeManager.getFeeRecipient(), fee); // address(feeManager), fee);
+                netAmount = amount - fee;
+            }
+
+            _checkRateLimit(sender, netAmount);
+            super._transfer(sender, recipient, netAmount);
+        } else {
+            _checkRateLimit(sender, amount);
+            super._transfer(sender, recipient, amount);
+        }
+    }
+
+    function _checkRateLimit(address sender, uint256 amount) internal whenNotPaused {
+        if (block.timestamp > lastTransferTimestamp[sender] + rateLimitPeriod) {
+            transferredInPeriod[sender] = amount;
+        } else {
+            transferredInPeriod[sender] += amount;
+        }
+        require(transferredInPeriod[sender] <= rateLimitAmount, "Transfer exceeds rate limit");
+        lastTransferTimestamp[sender] = block.timestamp;
+    }
+
     function burn(uint256 amount) public override {
-        super.burn(amount);
+        console.log("Burn called: from %s %s", msg.sender, amount);
+        _burn(_msgSender(), amount);
         _totalBurned += amount;
     }
 
     function burnFrom(address account, uint256 amount) public override {
-        super.burnFrom(account, amount);
+        uint256 currentAllowance = allowance(account, _msgSender());
+        
+        console.log("BurnFrom called: from %s to %s %s", account, _msgSender(), amount);
+
+        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
+        unchecked {
+            _approve(account, _msgSender(), currentAllowance - amount);
+        }
+        _burn(account, amount);
         _totalBurned += amount;
     }
 

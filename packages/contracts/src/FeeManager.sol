@@ -47,13 +47,16 @@ contract FeeManager is Ownable {
     }
 
     function distributeFee(address token) external {
+        console.log("Distributing fee for token:", token);
         uint256 amount;
         if (token == address(0)) {
             // Distribute ETH
             console.log("Distributing ETH");
             amount = address(this).balance;
-            (bool success, ) = feeRecipient.call{value: amount}("");
-            require(success, "ETH fee distribution failed");
+            if (amount > 0) {
+                (bool success, ) = feeRecipient.call{value: amount}("");
+                require(success, "ETH fee distribution failed");
+            }
         } else {
             // Distribute ERC20 tokens
             console.log("Distributing ERC20");
@@ -61,9 +64,13 @@ contract FeeManager is Ownable {
             console.log("amount: %d", amount);
             console.log("feeRecipient: %s", feeRecipient);
             console.log("this: %s", address(this));
-            IERC20(token).safeTransfer(feeRecipient, amount);
+            if (amount > 0) {
+                IERC20(token).safeTransfer(feeRecipient, amount);
+            }
         }
-        emit FeeDistributed(token, amount);
+        if (amount > 0) {
+            emit FeeDistributed(token, amount);
+        }
     }
 
     function getCollectedFees(address token) external view returns (uint256) {

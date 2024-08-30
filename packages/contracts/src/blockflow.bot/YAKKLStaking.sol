@@ -236,6 +236,18 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         return rewards[user];
     }
 
+    function getParameters() external view onlyOwner returns (
+        uint256 _minStakeAmount,
+        uint256 _minStakeDuration,
+        uint256 _defaultStakeDuration
+    ) {
+        return (
+            minStakeAmount,
+            minStakeDuration,
+            defaultStakeDuration
+        );
+    }
+
     // Additional function to get all parameters at once
     function getAllParameters() external view onlyOwner returns (
         uint256 _rewardRate,
