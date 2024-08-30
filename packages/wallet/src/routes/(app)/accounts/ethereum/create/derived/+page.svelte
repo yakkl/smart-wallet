@@ -8,7 +8,7 @@
   import { goto } from '$app/navigation';
   import { deepCopy } from '$lib/utilities/utilities';
   import { createSubportfolioAccount } from '$lib/plugins/networks/ethereum/createSubportfolioAccount';
-	import { EmergencyKitManager } from '$lib/common/emergencykit';
+	import { EmergencyKitManager } from '$plugins/EmergencyKitManager';
 	import { onMount } from 'svelte';
 	import { dateString } from '$lib/common/datetime';
 	import { trace } from 'console';
