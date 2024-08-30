@@ -9,7 +9,7 @@
   import { dateString } from '$lib/common/datetime';
   import { createPortfolioAccount } from '$lib/plugins/networks/ethereum/createPortfolioAccount';
 	import { onMount } from 'svelte';
-	import { EmergencyKitManager } from '$lib/common/emergencykit';
+	import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
   // import ErrorModal from '$lib/components/ErrorModal.svelte';
   // import { jsPDF } from "jspdf";
 
