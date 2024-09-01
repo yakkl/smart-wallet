@@ -29,10 +29,18 @@
   "version": "1.0.3",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
-  "keywords": ["crypto", "ethereum", "wallet", "browser-extension"],
+  "keywords": [
+    "crypto",
+    "ethereum",
+    "wallet",
+    "browser-extension"
+  ],
   "author": "YAKKL",
   "devDependencies": {
     "install": "^0.13.0",
     "npm": "^10.8.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^5.0.2"
   }
 }
