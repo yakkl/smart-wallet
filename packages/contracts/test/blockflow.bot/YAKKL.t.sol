@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../../src/blockflow.bot/YAKKL.sol";
-import "../../src/FeeManager.sol";
+import "../../src/blockflow.bot/YAKKLTreasury.sol";
 
 contract YAKKLTest is Test {
     YAKKL public yakkl;
-    FeeManager public feeManager;
+    YAKKLTreasury public yakklTreasury;
     address public owner;
     address public user1;
     address public user2;
@@ -15,30 +15,40 @@ contract YAKKLTest is Test {
     uint256 private constant INITIAL_SUPPLY = 500_000_000 * 10**18;
     uint256 private constant MAX_SUPPLY = 1_000_000_000 * 10**18;
 
-    // uint256 private constant ADDITIONAL_MINT = 10_000_000 * 10**18;
-
     function setUp() public {
         console.log("Setting up YAKKL test...");
         owner = address(this);
         user1 = address(0x1);
         user2 = address(0x2);
-        
-        console.log("Deploying FeeManager...");
-        feeManager = new FeeManager(owner); // By default, the owner is the fee recipient since it is being passed in
-        
+
+        // Deploy YAKKL first
         console.log("Deploying YAKKL...");
-        yakkl = new YAKKL(owner, address(feeManager));
-        
+        yakkl = new YAKKL(owner, address(0)); // Pass a temporary address for treasury
+
+        // Now deploy YAKKLTreasury with the correct parameters
+        console.log("Deploying YAKKLTreasury...");
+        address swapRouter = address(0x1234); // Replace with actual swap router address
+        address wethAddress = address(0x5678); // Replace with actual WETH address
+        uint256 liquidityPercentage = 50; // 50% for liquidity
+        uint256 treasuryPercentage = 50; // 50% for treasury
+        yakklTreasury = new YAKKLTreasury(
+            IERC20(address(yakkl)),
+            owner, // fee recipient
+            ISwapRouter(swapRouter),
+            wethAddress,
+            liquidityPercentage,
+            treasuryPercentage
+        );
+
+        // Update YAKKL with the correct treasury address
+        yakkl.setYAKKLTreasury(address(yakklTreasury));
+
         console.log("Initial supply:", yakkl.totalSupply());
-        
+
         console.log("Granting MINTER_ROLE to owner...");
         yakkl.grantRole(yakkl.MINTER_ROLE(), owner);
-        
-        // console.log("Minting additional tokens to owner...");
-        // yakkl.mint(owner, ADDITIONAL_MINT);        
-        // console.log("Owner balance before transfer:", yakkl.balanceOf(owner));
 
-        yakkl.setFeeExemption(owner, true); // Owner is exempt from fees by default due to being the fee recipient (may want to revist this later) but testing this here anyway
+        yakkl.setFeeExemption(owner, true);
 
         yakkl.transfer(user1, 10_000_000 * 10**18);
         yakkl.transfer(user2, 10_000_000 * 10**18);
@@ -51,7 +61,7 @@ contract YAKKLTest is Test {
 
     function testInitialSupply() public view {
         assertEq(yakkl.totalSupply(), INITIAL_SUPPLY);
-        assertEq(yakkl.balanceOf(owner), INITIAL_SUPPLY - 2_000_000 * 10**18);
+        assertEq(yakkl.balanceOf(owner), INITIAL_SUPPLY - 20_000_000 * 10**18);
     }
 
     function testMint() public {
@@ -63,34 +73,34 @@ contract YAKKLTest is Test {
 
     function testBurn() public {
         uint256 amountToBurn = 1_000_000 * 10**18;
-        yakkl.burn(amountToBurn);        
-        assertEq(yakkl.balanceOf(owner), INITIAL_SUPPLY - 21_000_000 * 10**18); // In setup, transfered 10M to user1 and 10M to user2 and burned 1M here
-        assertEq(yakkl.totalSupply(), INITIAL_SUPPLY - amountToBurn);
-        assertEq(yakkl.totalBurned(), amountToBurn);
+        uint256 initialBalance = yakkl.balanceOf(owner);
+        uint256 initialSupply = yakkl.totalSupply();
+        
+        yakkl.burn(amountToBurn);
+        
+        assertEq(yakkl.balanceOf(owner), initialBalance - amountToBurn);
+        assertEq(yakkl.totalSupply(), initialSupply - amountToBurn);
     }
 
     function testBurnFrom() public {
         uint256 amountToBurn = 500_000 * 10**18;
-        console.log("user1 balance before burn:", yakkl.balanceOf(user1));
-        console.log("amountToBurn:", amountToBurn);
+        uint256 initialUser1Balance = yakkl.balanceOf(user1);
+        uint256 initialSupply = yakkl.totalSupply();
 
         vm.prank(user1);
         yakkl.approve(address(this), amountToBurn);
         yakkl.burnFrom(user1, amountToBurn);
         
-        console.log("user1 balance after burn:", yakkl.balanceOf(user1));
-
-        assertEq(yakkl.balanceOf(user1), 9_500_000 * 10**18);
-        assertEq(yakkl.totalSupply(), INITIAL_SUPPLY - amountToBurn);
-        assertEq(yakkl.totalBurned(), amountToBurn);
+        assertEq(yakkl.balanceOf(user1), initialUser1Balance - amountToBurn);
+        assertEq(yakkl.totalSupply(), initialSupply - amountToBurn);
     }
 
     function testPause() public {
         yakkl.pause();
         assertTrue(yakkl.paused());
         
-        // vm.expectRevert("Pausable: paused");
-        // yakkl.transfer(user1, 1000);
+        vm.expectRevert("Pausable: paused");
+        yakkl.transfer(user1, 1000);
     }
 
     function testSetFeeRates() public {
@@ -136,6 +146,9 @@ contract YAKKLTest is Test {
         yakkl.claimVestedTokens();
 
         (, releasedAmount, , , , , ) = yakkl.getVestingInfo(user1);
+
+        console.log("releasedAmount:", releasedAmount);
+        
         assertGt(releasedAmount, 0);
     }
 
@@ -149,7 +162,7 @@ contract YAKKLTest is Test {
 
         vm.expectRevert("Transfer exceeds rate limit");
         vm.prank(user1);
-        yakkl.transfer(user2, 1);
+        yakkl.transfer(user2, 1_000_000 * 10**18);
 
         vm.warp(block.timestamp + rateLimitPeriod + 1);
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -7,13 +7,15 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./YAKKLTreasury.sol";
+import "../FeeManager.sol";
+import "forge-std/console.sol";
 
 contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
     bytes32 public constant WHITELIST_MANAGER_ROLE = keccak256("WHITELIST_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
     uint256 private constant MAX_SUPPLY = 1_000_000_000 * 10**18;
     uint256 private constant INITIAL_SUPPLY = 500_000_000 * 10**18;
@@ -36,9 +38,10 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     uint256 public mintPeriodStart;
     uint256 public mintedInCurrentPeriod;
     uint256 public mintPeriodDuration;
+    address private owner;
 
     uint256 private _totalBurned;
-    YAKKLTreasury public yakklTreasury;
+    FeeManager public feeManager;
     
     struct FeeRate {
         uint256 lowerBound;
@@ -53,17 +56,6 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     mapping(address => uint256) private transferredInPeriod;
     mapping(address => bool) public isExemptFromFees;
 
-    struct TransactionInfo {
-        address from;
-        address to;
-        uint256 amount;
-        uint256 fee;
-        uint256 timestamp;
-    }
-
-    mapping(uint256 => TransactionInfo) public transactionHistory;
-    uint256 public transactionCount;
-
     event TokensRecovered(address token, uint256 amount);
     event BlacklistUpdated(address account, bool status);
     event WhitelistUpdated(address account, bool status);
@@ -72,24 +64,25 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     event Minted(address to, uint256 amount);
     event MintingTimelockSet(uint256 timestamp);
     event MintCapSet(uint256 amount, uint256 periodDuration);
-    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event FeeManagerUpdated(address indexed oldManager, address indexed newManager);
     event FeeRateUpdated(uint256 index, uint256 lowerBound, uint256 upperBound, uint256 rate);
     event RateLimitUpdated(uint256 amount, uint256 period);
     event TransferTaxRateUpdated(uint256 oldRate, uint256 newRate);
 
-    constructor(address defaultAdmin, address _yakklTreasury) 
+    constructor(address defaultAdmin, address _feeManager) 
         ERC20("YAKKL", "YAKKL") 
         ERC20Permit("YAKKL") 
     {
         require(defaultAdmin != address(0), "Invalid owner address");
-        require(_yakklTreasury != address(0), "Invalid treasury address");
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, defaultAdmin);
         _grantRole(BLACKLIST_MANAGER_ROLE, defaultAdmin);
         _grantRole(WHITELIST_MANAGER_ROLE, defaultAdmin);
+        _grantRole(FEE_MANAGER_ROLE, defaultAdmin);
 
+        owner = defaultAdmin;
         _mint(defaultAdmin, INITIAL_SUPPLY);
         emit Minted(defaultAdmin, INITIAL_SUPPLY);
 
@@ -98,10 +91,10 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         mintedInCurrentPeriod = 0;
         mintPeriodDuration = 30 days;
 
-        isExemptFromFees[_yakklTreasury] = true;
+        isExemptFromFees[_feeManager] = true;
         isExemptFromFees[defaultAdmin] = true;
-        yakklTreasury = YAKKLTreasury(payable(_yakklTreasury));
-        emit TreasuryUpdated(address(0), _yakklTreasury);
+        feeManager = FeeManager(payable(_feeManager));
+        emit FeeManagerUpdated(address(0), _feeManager);
 
         rateLimitAmount = MAX_SUPPLY;
         rateLimitPeriod = 1 days;
@@ -110,25 +103,65 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         feeRates.push(FeeRate(0, MAX_SUPPLY, 500)); // 0.5% fee for all transfers
     }
 
-    function setYAKKLTreasury(address _yakklTreasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_yakklTreasury != address(0), "Invalid YAKKLTreasury address");
-        address oldTreasury = address(yakklTreasury);
-        yakklTreasury = YAKKLTreasury(payable(_yakklTreasury));
-        emit TreasuryUpdated(oldTreasury, _yakklTreasury);
+    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) nonReentrant {
+        require(totalSupply() + amount <= MAX_SUPPLY, "Exceeds max supply");
+        require(block.timestamp >= mintingTimelock, "Minting is timelocked");
+
+        if (block.timestamp >= mintPeriodStart + mintPeriodDuration) {
+            mintPeriodStart = block.timestamp;
+            mintedInCurrentPeriod = 0;
+        }
+        require(mintedInCurrentPeriod + amount <= mintCapPerPeriod, "Exceeds minting cap for current period");
+
+        mintedInCurrentPeriod += amount;
+        _mint(to, amount);
+        emit Minted(to, amount);
+    }
+
+    function setMintingTimelock(uint256 timestamp) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        mintingTimelock = timestamp;
+        emit MintingTimelockSet(timestamp);
+    }
+
+    function setMintCap(uint256 amount, uint256 periodDuration) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(amount <= MAX_SUPPLY, "Mint cap cannot exceed max supply");
+        mintCapPerPeriod = amount;
+        mintPeriodDuration = periodDuration;
+        mintPeriodStart = block.timestamp;
+        mintedInCurrentPeriod = 0;
+        emit MintCapSet(amount, periodDuration);
+    }
+
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function setFeeManager(address _feeManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_feeManager != address(0), "Invalid FeeManager address");
+        address oldManager = address(feeManager);
+        isExemptFromFees[_feeManager] = true;
+        feeManager = FeeManager(payable(_feeManager));
+        emit FeeManagerUpdated(oldManager, _feeManager);
     }
 
     function setFeeExemption(address account, bool exempt) external onlyRole(DEFAULT_ADMIN_ROLE) {
         isExemptFromFees[account] = exempt;
+        console.log("Fee exemption updated for %s: %s", account, exempt);
     }
 
-    function setTransferTaxRate(uint256 _transferTaxRate) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setTransferTaxRate(uint256 _transferTaxRate) external onlyRole(FEE_MANAGER_ROLE) {
         require(_transferTaxRate <= MAX_TRANSFER_TAX_RATE, "Transfer tax rate too high");
-        uint256 oldRate = feeRates[0].rate;
+        uint256 oldRate = feeRates[0].rate; // Assuming the first rate is the default
         feeRates[0].rate = _transferTaxRate;
         emit TransferTaxRateUpdated(oldRate, _transferTaxRate);
     }
 
-    function setFeeRates(uint256[] memory lowerBounds, uint256[] memory upperBounds, uint256[] memory rates) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    // Revist this function since most tests originate from an exempt owner. 
+    function setFeeRates(uint256[] memory lowerBounds, uint256[] memory upperBounds, uint256[] memory rates) external onlyRole(FEE_MANAGER_ROLE) {
         require(lowerBounds.length == upperBounds.length && upperBounds.length == rates.length, "Arrays must have the same length");
         delete feeRates;
         for (uint i = 0; i < lowerBounds.length; i++) {
@@ -164,38 +197,6 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         emit TokensRecovered(token, amount);
     }
 
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) nonReentrant {
-        require(totalSupply() + amount <= MAX_SUPPLY, "Exceeds max supply");
-        require(block.timestamp >= mintingTimelock, "Minting is timelocked");
-
-        if (block.timestamp >= mintPeriodStart + mintPeriodDuration) {
-            mintPeriodStart = block.timestamp;
-            mintedInCurrentPeriod = 0;
-        }
-        require(mintedInCurrentPeriod + amount <= mintCapPerPeriod, "Exceeds minting cap for current period");
-
-        mintedInCurrentPeriod += amount;
-        _mint(to, amount);
-        emit Minted(to, amount);
-    }
-
-    function setMintingTimelock(uint256 timestamp) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        mintingTimelock = timestamp;
-        emit MintingTimelockSet(timestamp);
-    }
-
-    function setMintCap(uint256 amount, uint256 periodDuration) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(amount <= MAX_SUPPLY, "Mint cap cannot exceed max supply");
-        mintCapPerPeriod = amount;
-        mintPeriodDuration = periodDuration;
-        mintPeriodStart = block.timestamp;
-        mintedInCurrentPeriod = 0;
-        emit MintCapSet(amount, periodDuration);
-    }
-
-    function unpause() public onlyRole(PAUSER_ROLE) {
-        _unpause();
-    }
     function updateBlacklist(address[] memory accounts, bool[] memory statuses) public onlyRole(BLACKLIST_MANAGER_ROLE) {
         require(accounts.length == statuses.length, "Arrays must have the same length");
         for (uint i = 0; i < accounts.length; i++) {
@@ -237,6 +238,10 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         require(schedule.totalAmount > 0, "No vesting schedule");
         require(block.timestamp >= schedule.startTime + schedule.cliffDuration, "Cliff period not over");
 
+        console.log("Claiming vested tokens for %s", msg.sender);
+        console.log("startTime: %d, duration: %d, cliffDuration: %d", schedule.startTime, schedule.duration, schedule.cliffDuration);
+        console.log("Total Amount - %d", schedule.totalAmount);
+
         uint256 elapsedTime = block.timestamp - schedule.startTime;
         uint256 vestedAmount;
         if (elapsedTime >= schedule.duration) {
@@ -245,11 +250,20 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
             vestedAmount = (schedule.totalAmount * elapsedTime) / schedule.duration;
         }
 
+        console.log("Elapsed Time - %d", elapsedTime);
+        console.log("Vested Amount - %d", vestedAmount);
+
         uint256 claimableAmount = vestedAmount - schedule.releasedAmount;
+        console.log("Claimable Amount - %d", claimableAmount);
         require(claimableAmount > 0, "No tokens to claim");
 
+        console.log("Released Amount - %d", schedule.releasedAmount);
+
         schedule.releasedAmount += claimableAmount;
-        _transfer(address(this), msg.sender, claimableAmount);
+        console.log("This balance of this - %d - and sender - %d", balanceOf(address(this)), balanceOf(msg.sender));
+        console.log("This balance of owner - %d", balanceOf(owner));
+
+        _transfer(owner, msg.sender, claimableAmount);
         emit VestingClaimed(msg.sender, claimableAmount);
     }
 
@@ -281,6 +295,9 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     }
 
     function transfer(address recipient, uint256 amount) public virtual override whenNotPaused returns (bool) {
+        
+        console.log("Transfer called: from %s to %s %s", msg.sender, recipient,  amount);
+
         _customTransfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -298,30 +315,22 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     function _customTransfer(address sender, address recipient, uint256 amount) internal whenNotPaused {
         require(!blacklistStatus[sender] && !blacklistStatus[recipient], "Address is blacklisted");
         
-        uint256 fee = 0;
         if (!whitelistStatus[sender] && !whitelistStatus[recipient] && !isExemptFromFees[sender] && !isExemptFromFees[recipient]) {
             uint256 feeRate = getFeeRate(amount);
-            fee = yakklTreasury.calculateFee(amount, feeRate);
-            uint256 netAmount = amount - fee;
+            uint256 fee = feeManager.calculateFee(amount, feeRate);
+            uint256 netAmount = amount;
 
             if (fee > 0 && recipient != address(0)) {
-                super._transfer(sender, address(yakklTreasury), fee);
-                yakklTreasury.distributeFees(fee);
-                amount = netAmount;
+                super._transfer(sender, feeManager.getFeeRecipient(), fee); // address(feeManager), fee);
+                netAmount = amount - fee;
             }
+
+            _checkRateLimit(sender, netAmount);
+            super._transfer(sender, recipient, netAmount);
+        } else {
+            _checkRateLimit(sender, amount);
+            super._transfer(sender, recipient, amount);
         }
-
-        _checkRateLimit(sender, amount);
-        super._transfer(sender, recipient, amount);
-
-        transactionCount++;
-        transactionHistory[transactionCount] = TransactionInfo({
-            from: sender,
-            to: recipient,
-            amount: amount,
-            fee: fee,
-            timestamp: block.timestamp
-        });
     }
 
     function _checkRateLimit(address sender, uint256 amount) internal whenNotPaused {
@@ -334,11 +343,8 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         lastTransferTimestamp[sender] = block.timestamp;
     }
 
-    function getTransactionInfo(uint256 transactionId) external view returns (TransactionInfo memory) {
-        return transactionHistory[transactionId];
-    }
-
     function burn(uint256 amount) public override {
+        console.log("Burn called: from %s %s", msg.sender, amount);
         _burn(_msgSender(), amount);
         _totalBurned += amount;
     }
@@ -346,6 +352,8 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     function burnFrom(address account, uint256 amount) public override {
         uint256 currentAllowance = allowance(account, _msgSender());
         
+        console.log("BurnFrom called: from %s to %s %s", account, _msgSender(), amount);
+
         require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
         unchecked {
             _approve(account, _msgSender(), currentAllowance - amount);
@@ -360,9 +368,6 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
 
     function isBlacklisted(address account) public view returns (bool) {
         return blacklistStatus[account];
-    }
-    function pause() public onlyRole(PAUSER_ROLE) {
-        _pause();
     }
 
     function isWhitelisted(address account) public view returns (bool) {
