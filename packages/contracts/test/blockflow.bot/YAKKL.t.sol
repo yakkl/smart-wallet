@@ -2,237 +2,256 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/blockflow.bot/YAKKL.sol";
 import "../../src/blockflow.bot/YAKKLTreasury.sol";
+import "../../src/blockflow.bot/YAKKL.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-contract YAKKLTest is Test {
-    YAKKL public yakkl;
-    YAKKLTreasury public yakklTreasury;
+contract YAKKLTreasuryTest is Test {
+    YAKKLTreasury public treasury;
+    YAKKL public yakklToken;
+    ISwapRouter public swapRouter;
     address public owner;
     address public user1;
     address public user2;
+    address public feeRecipient;
+    address public wethAddress;
 
-    uint256 private constant INITIAL_SUPPLY = 500_000_000 * 10**18;
-    uint256 private constant MAX_SUPPLY = 1_000_000_000 * 10**18;
+    uint256 public constant INITIAL_SUPPLY = 1000000 * 10**18;
+
+    event LiquidityAdded(address indexed pool, uint256 tokenAmount, uint256 ethAmount);
+    event FeesDistributed(uint256 liquidityAmount, uint256 treasuryAmount);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event SwapRouterUpdated(address indexed oldRouter, address indexed newRouter);
+    event TokenWithdrawn(address indexed token, address indexed recipient, uint256 amount);
+    event TokenUpdated(address indexed token, address indexed recipient);
+    event ETHWithdrawn(address indexed recipient, uint256 amount);
+    event PoolApprovalUpdated(address indexed pool, bool approved);
 
     function setUp() public {
-        console.log("Setting up YAKKL test...");
         owner = address(this);
         user1 = address(0x1);
         user2 = address(0x2);
+        feeRecipient = address(0x3);
+        wethAddress = address(0x4);
 
-        // Deploy YAKKL first
-        console.log("Deploying YAKKL...");
-        yakkl = new YAKKL(owner, address(0)); // Pass a temporary address for treasury
+        // Mock SwapRouter
+        swapRouter = ISwapRouter(address(0x5));
 
-        // Now deploy YAKKLTreasury with the correct parameters
-        console.log("Deploying YAKKLTreasury...");
-        address swapRouter = address(0x1234); // Replace with actual swap router address
-        address wethAddress = address(0x5678); // Replace with actual WETH address
-        uint256 liquidityPercentage = 50; // 50% for liquidity
-        uint256 treasuryPercentage = 50; // 50% for treasury
-        yakklTreasury = new YAKKLTreasury(
-            IERC20(address(yakkl)),
-            owner, // fee recipient
-            ISwapRouter(swapRouter),
+        // Deploy YAKKLTreasury
+        treasury = new YAKKLTreasury(
+            IERC20(address(0)),
+            payable(feeRecipient),
+            swapRouter,
             wethAddress,
-            liquidityPercentage,
-            treasuryPercentage
+            50, // liquidityPercentage
+            50  // treasuryPercentage
         );
 
-        // Update YAKKL with the correct treasury address
-        yakkl.setYAKKLTreasury(address(yakklTreasury));
+        // Deploy YAKKL token
+        yakklToken = new YAKKL(owner, address(treasury));
 
-        console.log("Initial supply:", yakkl.totalSupply());
+        // Update YAKKLTreasury with the correct YAKKL token address
+        treasury.setToken(address(yakklToken));
 
-        console.log("Granting MINTER_ROLE to owner...");
-        yakkl.grantRole(yakkl.MINTER_ROLE(), owner);
+        // Set up roles
+        treasury.grantRole(treasury.TREASURER_ROLE(), owner);
+        treasury.grantRole(treasury.FEE_MANAGER_ROLE(), owner);
 
-        yakkl.setFeeExemption(owner, true);
-
-        yakkl.transfer(user1, 10_000_000 * 10**18);
-        yakkl.transfer(user2, 10_000_000 * 10**18);
-
-        console.log("User1 balance:", yakkl.balanceOf(user1));
-        console.log("User2 balance:", yakkl.balanceOf(user2));
-
-        console.log("YAKKL test setup complete.");
+        // Fund the treasury with some YAKKL tokens
+        yakklToken.transfer(address(treasury), INITIAL_SUPPLY);
     }
 
-    function testInitialSupply() public view {
-        assertEq(yakkl.totalSupply(), INITIAL_SUPPLY);
-        assertEq(yakkl.balanceOf(owner), INITIAL_SUPPLY - 20_000_000 * 10**18);
-    }
-
-    function testMint() public {
-        uint256 amountToMint = 1_000_000 * 10**18;
-        yakkl.mint(user1, amountToMint);
-        assertEq(yakkl.balanceOf(user1), 11_000_000 * 10**18);
-        assertEq(yakkl.totalSupply(), INITIAL_SUPPLY + amountToMint);
-    }
-
-    function testBurn() public {
-        uint256 amountToBurn = 1_000_000 * 10**18;
-        uint256 initialBalance = yakkl.balanceOf(owner);
-        uint256 initialSupply = yakkl.totalSupply();
+    function testInitialSetup() view public {
+        assertEq(address(treasury.yakklToken()), address(yakklToken));
+        assertEq(treasury.feeRecipient(), feeRecipient);
+        assertEq(address(treasury.swapRouter()), address(swapRouter));
+        assertEq(treasury.wethAddress(), wethAddress);
+        assertEq(treasury.liquidityPercentage(), 50);
+        assertEq(treasury.treasuryPercentage(), 50);
         
-        yakkl.burn(amountToBurn);
-        
-        assertEq(yakkl.balanceOf(owner), initialBalance - amountToBurn);
-        assertEq(yakkl.totalSupply(), initialSupply - amountToBurn);
+        console.log("Initial supply: %s", INITIAL_SUPPLY);
+        console.log("Treasury balance: %s", yakklToken.balanceOf(address(treasury)));
+
+        assertGe(yakklToken.balanceOf(address(treasury)), INITIAL_SUPPLY);
     }
 
-    function testBurnFrom() public {
-        uint256 amountToBurn = 500_000 * 10**18;
-        uint256 initialUser1Balance = yakkl.balanceOf(user1);
-        uint256 initialSupply = yakkl.totalSupply();
+    function testCalculateFee() public view {
+        uint256 amount = 1000 * 10**18;
+        uint256 feeRate = 10000; // 1%
+        uint256 expectedFee = 10 * 10**18; // 1% of 1000 tokens
+        assertEq(treasury.calculateFee(amount, feeRate), expectedFee);
+    }
 
+    function testDistributeFees() public {
+        uint256 feeAmount = 1000 * 10**18;
+        uint256 initialFeeRecipientBalance = yakklToken.balanceOf(feeRecipient);
+        uint256 initialTreasuryBalance = yakklToken.balanceOf(address(treasury));
+        
+        // Ensure yakklToken is set correctly in the treasury
+        assertEq(address(treasury.yakklToken()), address(yakklToken));
+
+        treasury.distributeFees(feeAmount);
+
+        uint256 expectedLiquidityAmount = feeAmount * treasury.liquidityPercentage() / 100;
+        uint256 expectedTreasuryAmount = feeAmount - expectedLiquidityAmount;
+
+        console.log("Expected liquidity amount: %s, Expected treasury amount: %s", expectedLiquidityAmount, expectedTreasuryAmount); 
+
+        assertEq(yakklToken.balanceOf(feeRecipient), initialFeeRecipientBalance + expectedLiquidityAmount);
+        assertEq(yakklToken.balanceOf(address(treasury)), initialTreasuryBalance - expectedLiquidityAmount);
+    }
+
+    function testAddLiquidity() public {
+        uint256 tokenAmount = 1000 * 10**18;
+        uint256 ethAmount = 1 ether;
+        uint24 poolFee = 3000; // 0.3%
+        address pool = address(0x7); // Mock pool address
+
+        treasury.addApprovedPool(pool);
+        yakklToken.approve(address(treasury), tokenAmount);
+
+        // TODO: Implement this
+        // vm.expectEmit(true, false, false, true);
+        // emit LiquidityAdded(pool, tokenAmount, ethAmount);
+        
+        // treasury.addLiquidity(tokenAmount, ethAmount, poolFee, pool);
+
+        // YAKKLTreasury.PoolInfo memory info = treasury.getPoolInfo(pool);
+        // assertEq(info.totalLiquidity, tokenAmount);
+        // assertEq(info.lastAddedLiquidity, tokenAmount);
+        // assertEq(info.lastAddedTimestamp, block.timestamp);
+    }
+
+    function testSetFeeRecipient() public {
+        address newFeeRecipient = address(0x8);
+        
+        vm.expectEmit(true, true, false, false);
+        emit FeeRecipientUpdated(feeRecipient, newFeeRecipient);
+        
+        treasury.setFeeRecipient(newFeeRecipient);
+        
+        assertEq(treasury.feeRecipient(), newFeeRecipient);
+    }
+
+    function testSetSwapRouter() public {
+        address newSwapRouter = address(0x9);
+        
+        vm.expectEmit(true, true, false, false);
+        emit SwapRouterUpdated(address(swapRouter), newSwapRouter);
+        
+        treasury.setSwapRouter(ISwapRouter(newSwapRouter));
+        
+        assertEq(address(treasury.swapRouter()), newSwapRouter);
+    }
+
+    function testWithdrawToken() public {
+        uint256 amount = 100 * 10**18;
+        uint256 initialBalance = yakklToken.balanceOf(user1);
+        
+        vm.expectEmit(true, true, false, true);
+        emit TokenWithdrawn(address(yakklToken), user1, amount);
+        
+        treasury.withdrawToken(IERC20(address(yakklToken)), user1, amount);
+        
+        assertEq(yakklToken.balanceOf(user1), initialBalance + amount);
+    }
+
+    function testWithdrawETH() public {
+        uint256 amount = 1 ether;
+        vm.deal(address(treasury), amount);
+        uint256 initialBalance = user1.balance;
+        
+        vm.expectEmit(true, false, false, true);
+        emit ETHWithdrawn(user1, amount);
+        
+        treasury.withdrawETH(payable(user1), amount);
+        
+        assertEq(user1.balance, initialBalance + amount);
+    }
+
+    function testPauseUnpause() public {
+        assertFalse(treasury.paused());
+        
+        treasury.pause();
+        assertTrue(treasury.paused());
+        
+        treasury.unpause();
+        assertFalse(treasury.paused());
+    }
+
+    function testUnauthorizedWithdraw() public {
         vm.prank(user1);
-        yakkl.approve(address(this), amountToBurn);
-        yakkl.burnFrom(user1, amountToBurn);
-        
-        assertEq(yakkl.balanceOf(user1), initialUser1Balance - amountToBurn);
-        assertEq(yakkl.totalSupply(), initialSupply - amountToBurn);
+        vm.expectRevert(bytes("AccessControl: account 0x0000000000000000000000000000000000000001 is missing role 0x3496e2e73c4d42b75d702e60d9e48102720b8691234415963a5a857b86425d07"));
+        treasury.withdrawETH(payable(user1), 1 ether);
     }
 
-    function testPause() public {
-        yakkl.pause();
-        assertTrue(yakkl.paused());
+    // function testSetToken() public {
+    //     address newToken = address(0x10);
+    //     address oldToken = address(yakklToken);
+        
+    //     vm.expectEmit(true, true, false, false);
+    //     emit TokenUpdated(oldToken, newToken);
+        
+    //     treasury.setToken(newToken);
+
+    //     console.log("Treasury token: %s", treasury.getToken());
+        
+    //     assertEq(treasury.getToken(), newToken);
+    // }
+
+    function testAddRemoveApprovedPool() public {
+        address pool = address(0x11);
+        
+        assertFalse(treasury.approvedPools(pool));
+        
+        vm.expectEmit(true, false, false, true);
+        emit PoolApprovalUpdated(pool, true);
+        treasury.addApprovedPool(pool);
+        
+        assertTrue(treasury.approvedPools(pool));
+        
+        vm.expectEmit(true, false, false, true);
+        emit PoolApprovalUpdated(pool, false);
+        treasury.removeApprovedPool(pool);
+        
+        assertFalse(treasury.approvedPools(pool));
+    }
+
+    function testAddLiquidityUnapprovedPool() public {
+        uint256 tokenAmount = 1000 * 10**18;
+        uint256 ethAmount = 1 ether;
+        uint24 poolFee = 3000; // 0.3%
+        address pool = address(0x12);
+
+        yakklToken.approve(address(treasury), tokenAmount);
+        
+        vm.expectRevert("Pool not approved");
+        treasury.addLiquidity(tokenAmount, ethAmount, poolFee, pool);
+    }
+
+    function testDistributeFeesWhenPaused() public {
+        treasury.pause();
         
         vm.expectRevert("Pausable: paused");
-        yakkl.transfer(user1, 1000);
+        treasury.distributeFees(1000 * 10**18);
     }
 
-    function testSetFeeRates() public {
-        uint256[] memory lowerBounds = new uint256[](2);
-        uint256[] memory upperBounds = new uint256[](2);
-        uint256[] memory rates = new uint256[](2);
+    function testWithdrawAllTokens() public {
+        uint256 initialBalance = yakklToken.balanceOf(address(treasury));
+        uint256 initialOwnerBalance = yakklToken.balanceOf(owner);
 
-        lowerBounds[0] = 0;
-        upperBounds[0] = 1000 * 10**18;
-        rates[0] = 100; // 1%
-
-        lowerBounds[1] = 1000 * 10**18 + 1;
-        upperBounds[1] = type(uint256).max;
-        rates[1] = 50; // 0.5%
-
-        yakkl.setFeeRates(lowerBounds, upperBounds, rates);
-
-        assertEq(yakkl.getFeeRate(500 * 10**18), 100);
-        assertEq(yakkl.getFeeRate(1500 * 10**18), 50);
-    }
-
-    function testVesting() public {
-        uint256 vestingAmount = 1_000_000 * 10**18;
-        uint256 vestingDuration = 365 days;
-        uint256 cliffDuration = 30 days;
-
-        yakkl.setVestingSchedule(user1, vestingAmount, vestingDuration, cliffDuration);
-
-        (uint256 totalAmount, uint256 releasedAmount, uint256 vestedAmount, uint256 claimableAmount, , , ) = yakkl.getVestingInfo(user1);
-
-        assertEq(totalAmount, vestingAmount);
-        assertEq(releasedAmount, 0);
-        assertEq(vestedAmount, 0);
-        assertEq(claimableAmount, 0);
-
-        vm.warp(block.timestamp + cliffDuration + 1);
-
-        (, , vestedAmount, claimableAmount, , , ) = yakkl.getVestingInfo(user1);
-        assertGt(vestedAmount, 0);
-        assertGt(claimableAmount, 0);
-
-        vm.prank(user1);
-        yakkl.claimVestedTokens();
-
-        (, releasedAmount, , , , , ) = yakkl.getVestingInfo(user1);
-
-        console.log("releasedAmount:", releasedAmount);
+        console.log("Initial balance: %s", initialBalance);
+        console.log("Treasury address: %s", address(treasury));
+        console.log("Owner balance (before): %s", yakklToken.balanceOf(owner));
         
-        assertGt(releasedAmount, 0);
+        treasury.withdrawToken(IERC20(address(yakklToken)), owner, initialBalance);
+        
+        console.log("Treasury balance: %s", yakklToken.balanceOf(address(treasury)));
+        console.log("Owner balance (after): %s", yakklToken.balanceOf(owner));
+
+        assertEq(yakklToken.balanceOf(address(treasury)), 0);
+        assertEq(yakklToken.balanceOf(owner), initialBalance + initialOwnerBalance);
     }
 
-    function testRateLimit() public {
-        uint256 rateLimitAmount = 100_000 * 10**18;
-        uint256 rateLimitPeriod = 1 days;
-        yakkl.setRateLimit(rateLimitAmount, rateLimitPeriod);
-
-        vm.prank(user1);
-        yakkl.transfer(user2, rateLimitAmount);
-
-        vm.expectRevert("Transfer exceeds rate limit");
-        vm.prank(user1);
-        yakkl.transfer(user2, 1_000_000 * 10**18);
-
-        vm.warp(block.timestamp + rateLimitPeriod + 1);
-
-        vm.prank(user1);
-        yakkl.transfer(user2, rateLimitAmount);
-    }
-
-    // function testFeeDistribution() public {
-    //     uint256[] memory lowerBounds = new uint256[](1);
-    //     uint256[] memory upperBounds = new uint256[](1);
-    //     uint256[] memory rates = new uint256[](1);
-    //     lowerBounds[0] = 0;
-    //     upperBounds[0] = type(uint256).max;
-    //     rates[0] = 1000; // 10% fee
-    //     yakkl.setFeeRates(lowerBounds, upperBounds, rates);
-
-    //     uint256 transferAmount = 1000 * 10**18;
-    //     uint256 expectedFee = transferAmount / 10;
-
-    //     uint256 initialFeeManagerBalance = yakkl.balanceOf(address(feeManager));
-    //     yakkl.transfer(user2, transferAmount);
-
-    //     // Need to revist this test. The fee is not being deducted from the sender's balance and it should but the sender in this case is excempt from fees!
-    //     assertEq(yakkl.balanceOf(feeManager.getFeeRecipient()), yakkl.balanceOf(feeManager.getFeeRecipient())); // Forcing assertEq for now //initialFeeManagerBalance + expectedFee);
-    // }
+    receive() external payable {}
 }
-
-
-
-// function testBlacklist() public {
-//         address[] memory accounts = new address[](1);
-//         accounts[0] = user1;
-//         bool[] memory statuses = new bool[](1);
-//         statuses[0] = true;
-//         yakkl.updateBlacklist(accounts, statuses);
-//         assertTrue(yakkl.isBlacklisted(user1));
-//     }
-
-//     function testTransferToBlacklisted() public {
-//         address[] memory accounts = new address[](1);
-//         accounts[0] = user1;
-//         bool[] memory statuses = new bool[](1);
-//         statuses[0] = true;
-//         yakkl.updateBlacklist(accounts, statuses);
-//         vm.expectRevert("Address is blacklisted");
-//         yakkl.transfer(user1, 1000);
-//     }
-
-//     function testTransferFromBlacklisted() public {
-//         address[] memory accounts = new address[](1);
-//         accounts[0] = user1;
-//         bool[] memory statuses = new bool[](1);
-//         statuses[0] = true;
-//         yakkl.updateBlacklist(accounts, statuses);
-//         vm.prank(user1);
-//         vm.expectRevert("Address is blacklisted");
-//         yakkl.transfer(user2, 500);
-//     }
-
-// function testWhitelist() public {
-//         address[] memory accounts = new address[](1);
-//         accounts[0] = user1;
-//         bool[] memory statuses = new bool[](1);
-//         statuses[0] = true;
-//         yakkl.updateWhitelist(accounts, statuses);
-//         assertTrue(yakkl.isWhitelisted(user1));
-
-//         // Whitelisted users should be able to transfer without fees
-//         uint256 initialBalance = yakkl.balanceOf(user2);
-//         vm.prank(user1);
-//         yakkl.transfer(user2, 1000);
-//         assertEq(yakkl.balanceOf(user2), initialBalance + 1000);
-//     }

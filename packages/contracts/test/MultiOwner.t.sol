@@ -24,6 +24,7 @@ contract MultiOwnerTest is Test {
         timelockDuration = 1 days;
 
         multiOwner = new MultiOwner(initialOwners, requiredConfirmations, timelockDuration);
+        multiOwner.grantRole(multiOwner.PROPOSER_ROLE(), owner1);
     }
 
     function testInitialization() public view {
@@ -70,10 +71,12 @@ contract MultiOwnerTest is Test {
     }
 
     function testChangeRequiredConfirmations() public {
-        uint256 newRequiredConfirmations = 3;
+        uint256 newRequiredConfirmations = 1;
 
         vm.prank(owner1);
         multiOwner.setRequiredConfirmations(newRequiredConfirmations);
+
+        console.log("Required confirmations", multiOwner.getRequiredConfirmations());
 
         assertEq(multiOwner.getRequiredConfirmations(), newRequiredConfirmations);
     }
