@@ -63,28 +63,32 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransaction() public {
-        address to = address(0x4);
-        uint256 value = 1 ether;
-        bytes memory data = "";
+    address payable to = payable(address(0x4));
+    uint256 value = 1 ether;
+    bytes memory data = "";
 
-        vm.prank(owner1);
-        bytes32 proposalId = multiSigWallet.proposeTransaction(to, value, data);
+    // Fund the MultiSigWallet contract
+    vm.deal(address(multiSigWallet), 2 ether);
 
-        vm.prank(owner1);
-        multiSigWallet.confirmProposal(proposalId);
+    vm.prank(owner1);
+    bytes32 proposalId = multiSigWallet.proposeTransaction(to, value, data);
 
-        vm.warp(block.timestamp + timelockDuration + 1);
+    vm.prank(owner1);
+    multiSigWallet.confirmProposal(proposalId);
 
-        vm.expectEmit(true, true, true, true);
-        emit TransactionExecuted(proposalId, to, value, data);
+    vm.warp(block.timestamp + timelockDuration + 1);
 
-        // The last confirmation should trigger the execution
-        vm.prank(owner2);
-        multiSigWallet.confirmProposal(proposalId);
+    vm.expectEmit(true, true, true, true);
+    emit TransactionExecuted(proposalId, to, value, data);
 
-        (,,,bool executed) = multiSigWallet.getTransactionInfo(proposalId);
-        assertTrue(executed);
-    }
+    // The last confirmation should trigger the execution
+    vm.prank(owner2);
+    multiSigWallet.confirmProposal(proposalId);
+
+    (,,,bool executed) = multiSigWallet.getTransactionInfo(proposalId);
+    assertTrue(executed);
+    assertEq(to.balance, value);
+}
 
     function testCancelTransaction() public {
         address to = address(0x4);

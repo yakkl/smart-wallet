@@ -3,14 +3,18 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "./YAKKL.sol";
+import "./YAKKLTreasury.sol";
 
-contract YAKKLStaking is ReentrancyGuard, Ownable {
+contract YAKKLStaking is ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable stakingToken;
-    IERC20 public immutable rewardsToken;
+    YAKKL public stakingToken;
+    IERC20 public rewardsToken;
+    YAKKLTreasury public yakklTreasury;
 
     uint256 public constant REWARD_PRECISION = 1e18;
     uint256 public constant SECONDS_PER_DAY = 86400;
@@ -46,20 +50,22 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
     constructor(
         address _stakingToken,
         address _rewardsToken,
+        address _yakklTreasury,
         uint256 _rewardRate,
         uint256 _minStakeAmount,
         uint256 _minStakeDuration,
         uint256 _defaultStakeDuration
-    ) Ownable(msg.sender) {
-        stakingToken = IERC20(_stakingToken);
+    ) {
+        stakingToken = YAKKL(_stakingToken);
         rewardsToken = IERC20(_rewardsToken);
+        yakklTreasury = YAKKLTreasury(payable(_yakklTreasury));
         rewardRate = _rewardRate;
         minStakeAmount = _minStakeAmount;
         minStakeDuration = _minStakeDuration;
         defaultStakeDuration = _defaultStakeDuration;
     }
 
-    function stake(uint256 amount, uint256 duration) external nonReentrant updateReward(msg.sender) {
+    function stake(uint256 amount, uint256 duration) external nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount >= minStakeAmount, "Stake amount too low");
         require(duration >= minStakeDuration, "Stake duration too short");
         
@@ -77,7 +83,7 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
             active: true
         }));
 
-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        stakingToken.transferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount, duration);
     }
 
@@ -92,7 +98,7 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         totalSupply -= amount;
         totalStaked[msg.sender] -= amount;
 
-        stakingToken.safeTransfer(msg.sender, amount);
+        stakingToken.transfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
 
@@ -126,8 +132,6 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         _;
     }
 
-    // Admin functions
-
     function setParameters(
         uint256 _minStakeAmount,
         uint256 _minStakeDuration,
@@ -149,8 +153,6 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         emit RewardAdded(amount);
     }
 
-    // View functions
-
     function getUserStakes(address user) external view returns (StakeInfo[] memory) {
         return userStakes[user];
     }
@@ -163,7 +165,6 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         uint256 totalMaturities = 0;
         uint256 endTimestamp = block.timestamp + (daysAhead * SECONDS_PER_DAY);
 
-        // Count total upcoming maturities
         for (uint256 i = 0; i < userStakes[msg.sender].length; i++) {
             if (userStakes[msg.sender][i].active && userStakes[msg.sender][i].endTime <= endTimestamp) {
                 totalMaturities++;
@@ -198,74 +199,27 @@ contract YAKKLStaking is ReentrancyGuard, Ownable {
         );
     }
 
-    // Additional admin getter functions
-
-    function getRewardRate() external view onlyOwner returns (uint256) {
-        return rewardRate;
+    function pause() external onlyOwner {
+        _pause();
     }
 
-    function getLastUpdateTime() external view onlyOwner returns (uint256) {
-        return lastUpdateTime;
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
-    function getRewardPerTokenStored() external view onlyOwner returns (uint256) {
-        return rewardPerTokenStored;
+    function emergencyWithdraw() external onlyOwner {
+        uint256 balance = stakingToken.balanceOf(address(this));
+        stakingToken.transfer(owner(), balance);
     }
 
-    function getMinStakeAmount() external view onlyOwner returns (uint256) {
-        return minStakeAmount;
+    function setYAKKLTreasury(address _yakklTreasury) external onlyOwner {
+        yakklTreasury = YAKKLTreasury(payable(_yakklTreasury));
     }
 
-    function getMinStakeDuration() external view onlyOwner returns (uint256) {
-        return minStakeDuration;
-    }
-
-    function getDefaultStakeDuration() external view onlyOwner returns (uint256) {
-        return defaultStakeDuration;
-    }
-
-    function getTotalSupply() external view onlyOwner returns (uint256) {
-        return totalSupply;
-    }
-
-    function getUserRewardPerTokenPaid(address user) external view onlyOwner returns (uint256) {
-        return userRewardPerTokenPaid[user];
-    }
-
-    function getUserRewards(address user) external view onlyOwner returns (uint256) {
-        return rewards[user];
-    }
-
-    function getParameters() external view onlyOwner returns (
-        uint256 _minStakeAmount,
-        uint256 _minStakeDuration,
-        uint256 _defaultStakeDuration
-    ) {
-        return (
-            minStakeAmount,
-            minStakeDuration,
-            defaultStakeDuration
-        );
-    }
-
-    // Additional function to get all parameters at once
-    function getAllParameters() external view onlyOwner returns (
-        uint256 _rewardRate,
-        uint256 _minStakeAmount,
-        uint256 _minStakeDuration,
-        uint256 _defaultStakeDuration,
-        uint256 _totalSupply,
-        uint256 _lastUpdateTime,
-        uint256 _rewardPerTokenStored
-    ) {
-        return (
-            rewardRate,
-            minStakeAmount,
-            minStakeDuration,
-            defaultStakeDuration,
-            totalSupply,
-            lastUpdateTime,
-            rewardPerTokenStored
-        );
+    function distributeFees() external onlyOwner {
+        uint256 balance = stakingToken.balanceOf(address(this));
+        uint256 fee = yakklTreasury.calculateFee(balance, 1000); // 0.1% fee
+        stakingToken.approve(address(yakklTreasury), fee);
+        yakklTreasury.distributeFees(fee);
     }
 }

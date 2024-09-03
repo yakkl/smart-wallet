@@ -4,9 +4,10 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "forge-std/console.sol";
 
 contract YAKKLTreasury is AccessControl, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -14,7 +15,7 @@ contract YAKKLTreasury is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant TREASURER_ROLE = keccak256("TREASURER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     
-    IERC20 public immutable yakklToken;
+    IERC20 public yakklToken;
     address public feeRecipient;
     address public immutable wethAddress;
     uint256 public liquidityPercentage;
@@ -39,6 +40,7 @@ contract YAKKLTreasury is AccessControl, ReentrancyGuard, Pausable {
     event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
     event SwapRouterUpdated(address indexed oldRouter, address indexed newRouter);
     event TokenWithdrawn(address indexed token, address indexed recipient, uint256 amount);
+    event TokenUpdated(address indexed token, address indexed recipient);
     event ETHWithdrawn(address indexed recipient, uint256 amount);
     event PoolApprovalUpdated(address indexed pool, bool approved);
 
@@ -64,16 +66,49 @@ contract YAKKLTreasury is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(FEE_MANAGER_ROLE, msg.sender);
     }
 
+    function grantTreasurerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(TREASURER_ROLE, account);
+    }
+
+    function getToken() external view onlyRole(DEFAULT_ADMIN_ROLE) returns (address) {
+        return address(yakklToken);
+    }
+
+    function setToken(address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(token != address(0), "Invalid token address");
+        address oldToken = address(yakklToken);
+        yakklToken = IERC20(token);
+        emit TokenUpdated(oldToken, token); // Emit old token address and new token address
+    }
+
     function calculateFee(uint256 amount, uint256 feeRate) public pure returns (uint256) {
         require(feeRate <= FEE_PRECISION, "Fee rate exceeds maximum allowed");
+        
+        console.log("Amount: %s, Fee rate: %s", amount, feeRate);
+
         return (amount * feeRate) / FEE_PRECISION;
     }
 
     function distributeFees(uint256 amount) external nonReentrant onlyRole(TREASURER_ROLE) whenNotPaused {
+        require(address(yakklToken) != address(0), "YAKKL token not set");
+        require(feeRecipient != address(0), "Fee recipient not set");
+        require(amount > 0, "Amount must be greater than 0");
+        
+        console.log("Address of this", address(this));
+        console.log("Address of yakklToken", address(yakklToken));
+        console.log("Balance of this", address(this).balance);
+        console.log("FeeRecipient", feeRecipient);
+
         uint256 liquidityAmount = (amount * liquidityPercentage) / 100;
         uint256 treasuryAmount = amount - liquidityAmount; // Ensures no rounding errors
 
-        yakklToken.safeTransfer(feeRecipient, liquidityAmount);
+        console.log("Amount: %s, Liquidity percentage: %s, Treasury percentage: %s", amount, liquidityPercentage, treasuryPercentage);
+        console.log("Distributing fees: %s to liquidity, %s to treasury", liquidityAmount, treasuryAmount);
+
+        if (liquidityAmount > 0) {
+            yakklToken.safeTransfer(feeRecipient, liquidityAmount);
+        }
+    
         // Treasury amount stays in this contract
 
         emit FeesDistributed(liquidityAmount, treasuryAmount);

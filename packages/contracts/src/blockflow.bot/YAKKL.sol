@@ -3,11 +3,12 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./YAKKLTreasury.sol";
+import "forge-std/console.sol";
 
 contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -90,8 +91,14 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         _grantRole(BLACKLIST_MANAGER_ROLE, defaultAdmin);
         _grantRole(WHITELIST_MANAGER_ROLE, defaultAdmin);
 
-        _mint(defaultAdmin, INITIAL_SUPPLY);
-        emit Minted(defaultAdmin, INITIAL_SUPPLY);
+        uint256 treasuryAllocation = (INITIAL_SUPPLY * 20) / 100; // 20% to Treasury
+        uint256 ownerAllocation = INITIAL_SUPPLY - treasuryAllocation;
+
+        _mint(defaultAdmin, ownerAllocation);
+        _mint(_yakklTreasury, treasuryAllocation);
+
+        emit Minted(defaultAdmin, ownerAllocation);
+        emit Minted(_yakklTreasury, treasuryAllocation);
 
         mintCapPerPeriod = MAX_SUPPLY;
         mintPeriodStart = block.timestamp;
@@ -101,6 +108,7 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         isExemptFromFees[_yakklTreasury] = true;
         isExemptFromFees[defaultAdmin] = true;
         yakklTreasury = YAKKLTreasury(payable(_yakklTreasury));
+
         emit TreasuryUpdated(address(0), _yakklTreasury);
 
         rateLimitAmount = MAX_SUPPLY;
@@ -196,6 +204,7 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
     }
+
     function updateBlacklist(address[] memory accounts, bool[] memory statuses) public onlyRole(BLACKLIST_MANAGER_ROLE) {
         require(accounts.length == statuses.length, "Arrays must have the same length");
         for (uint i = 0; i < accounts.length; i++) {
@@ -218,7 +227,7 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         uint256 duration,
         uint256 cliffDuration
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(balanceOf(account) >= amount, "Insufficient balance for vesting");
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance for vesting");
         require(cliffDuration <= duration, "Cliff duration cannot exceed total duration");
 
         vestingSchedules[account] = VestingSchedule({
@@ -228,6 +237,9 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
             duration: duration,
             cliffDuration: cliffDuration
         });
+
+        // Transfer tokens to the contract
+        _transfer(msg.sender, address(this), amount);
 
         emit VestingScheduleSet(account, amount, duration, cliffDuration);
     }
@@ -249,6 +261,13 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
         require(claimableAmount > 0, "No tokens to claim");
 
         schedule.releasedAmount += claimableAmount;
+
+        console.log("Claiming %s tokens", claimableAmount);
+        console.log("Vested amount: %s", vestedAmount);
+        console.log("Released amount: %s", schedule.releasedAmount);
+        console.log("Sender balance: %s", balanceOf(msg.sender));
+        console.log("This balance: %s", balanceOf(address(this)));
+
         _transfer(address(this), msg.sender, claimableAmount);
         emit VestingClaimed(msg.sender, claimableAmount);
     }
@@ -305,6 +324,9 @@ contract YAKKL is ERC20Burnable, Pausable, AccessControl, ERC20Permit, Reentranc
             uint256 netAmount = amount - fee;
 
             if (fee > 0 && recipient != address(0)) {
+                
+                console.log("Treasury fee:", fee);
+
                 super._transfer(sender, address(yakklTreasury), fee);
                 yakklTreasury.distributeFees(fee);
                 amount = netAmount;

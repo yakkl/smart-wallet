@@ -4,12 +4,13 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../../src/blockflow.bot/YAKKLStaking.sol";
 import "../../src/blockflow.bot/YAKKL.sol";
-import "../../src/FeeManager.sol";
+import "../../src/blockflow.bot/YAKKLTreasury.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 contract YAKKLStakingTest is Test {
     YAKKLStaking public staking;
     YAKKL public yakkl;
-    FeeManager public feeManager;
+    YAKKLTreasury public treasury;
     address public owner;
     address public user1;
     address public user2;
@@ -26,12 +27,21 @@ contract YAKKLStakingTest is Test {
         user1 = address(0x1);
         user2 = address(0x2);
 
-        console.log("Deploying FeeManager...");
-        feeManager = new FeeManager(owner);
+        console.log("Deploying YAKKLTreasury...");
+        treasury = new YAKKLTreasury(
+            IERC20(address(0)),
+            payable(address(this)),
+            ISwapRouter(address(0x5)),
+            address(0x6),
+            50,
+            50
+        );
         
         console.log("Deploying YAKKL...");
-        yakkl = new YAKKL(owner, address(feeManager));
+        yakkl = new YAKKL(owner, address(treasury));
         
+        treasury.grantRole(treasury.TREASURER_ROLE(), address(yakkl));
+
         console.log("Granting MINTER_ROLE to owner...");
         yakkl.grantRole(yakkl.MINTER_ROLE(), owner);
         
@@ -42,6 +52,7 @@ contract YAKKLStakingTest is Test {
         staking = new YAKKLStaking(
             address(yakkl),
             address(yakkl),
+            address(treasury),
             REWARD_RATE,
             MIN_STAKE_AMOUNT,
             MIN_STAKE_DURATION,
@@ -150,32 +161,54 @@ contract YAKKLStakingTest is Test {
 
         staking.setParameters(newMinStakeAmount, newMinStakeDuration, newDefaultStakeDuration);
 
-        // (uint256 _rewardRate, uint256 _minStakeAmount, uint256 _minStakeDuration, uint256 _defaultStakeDuration, , , ) = staking.getAllParameters();
-        (uint256 _minStakeAmount, uint256 _minStakeDuration, uint256 _defaultStakeDuration) = staking.getParameters();
+        assertEq(staking.minStakeAmount(), newMinStakeAmount);
+        assertEq(staking.minStakeDuration(), newMinStakeDuration);
+        assertEq(staking.defaultStakeDuration(), newDefaultStakeDuration);
+    }
 
-        assertEq(_minStakeAmount, newMinStakeAmount);
-        assertEq(_minStakeDuration, newMinStakeDuration);
-        assertEq(_defaultStakeDuration, newDefaultStakeDuration);
+    function testPauseUnpause() public {
+    staking.pause();
+    assertTrue(staking.paused());
+
+    vm.expectRevert("Pausable: paused");
+    vm.prank(user1);
+    staking.stake(1000 * 10**18, 30 days);
+
+    staking.unpause();
+    assertFalse(staking.paused());
+
+    vm.prank(user1);
+    try staking.stake(1000 * 10**18, 30 days) {
+        // Stake successful
+    } catch Error(string memory reason) {
+        // If it fails, it should not be because of being paused
+        assertFalse(keccak256(abi.encodePacked(reason)) == keccak256(abi.encodePacked("Pausable: paused")));
     }
 }
 
+    function testEmergencyWithdraw() public {
+        uint256 stakeAmount = 1000 * 10**18;
+        uint256 stakeDuration = 60 days;
 
+        vm.prank(user1);
+        staking.stake(stakeAmount, stakeDuration);
 
+        uint256 initialBalance = yakkl.balanceOf(owner);
+        staking.emergencyWithdraw();
 
+        assertEq(yakkl.balanceOf(owner), initialBalance + stakeAmount);
+    }
 
+    function testDistributeFees() public {
+        uint256 stakeAmount = 1000 * 10**18;
+        uint256 stakeDuration = 60 days;
 
+        vm.prank(user1);
+        staking.stake(stakeAmount, stakeDuration);
 
+        uint256 initialTreasuryBalance = yakkl.balanceOf(address(treasury));
+        staking.distributeFees();
 
-// function testSetParameters() public {
-//         uint256 newMinStakeAmount = 200 * 10**18;
-//         uint256 newMinStakeDuration = 2 days;
-//         uint256 newDefaultStakeDuration = 45 days;
-
-//         staking.setParameters(newMinStakeAmount, newMinStakeDuration, newDefaultStakeDuration);
-
-//         (uint256 _rewardRate, uint256 _minStakeAmount, uint256 _minStakeDuration, uint256 _defaultStakeDuration, , , ) = staking.getAllParameters();
-
-//         assertEq(_minStakeAmount, newMinStakeAmount);
-//         assertEq(_minStakeDuration, newMinStakeDuration);
-//         assertEq(_defaultStakeDuration, newDefaultStakeDuration);
-//     }
+        assertGt(yakkl.balanceOf(address(treasury)), initialTreasuryBalance);
+    }
+}
