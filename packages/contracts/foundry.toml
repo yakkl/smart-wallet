@@ -6,3 +6,4 @@ evm_version = "paris"  # This is currently the latest for Mainnet
 solc_version = "0.8.23" # Use the latest stable Solidity version
 optimizer = true
 optimizer_runs = 200
+via_ir = true  # Use the IR compiler for Solidity due to stack depth issues

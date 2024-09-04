@@ -311,20 +311,43 @@ export interface Transactions {
 }
 // End - Evaluate the need for these interfaces
 
-// export interface Token {
-//   address: string;
+export interface SwapToken {
+  chainId: number;
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  logoURI: string;
+  extensions?: any;
+  isNative?: boolean;
+  description?: string;
+  tags?: string[]; // key
+  version?: string; // Symantic versioning
+};
+
+export interface TokenData extends SwapToken {
+  priceData: PriceData[];
+  volume: number;
+  currentPrice: number;
+  timeline: string; // Can be '24h', '7d', '30d', etc.
+}
+
+
+// export interface SwapTokenListTag {
+//   [key: string]: {
+//     name: string;
+//     description: string;
+//   };
+// };
+
+// export interface SwapTokenList {
 //   name: string;
-//   symbol: string;
-//   decimals: number;
-//   isNative: boolean;
-//   iconUrl: string;
-//   description: string;
-//   chainId: number;
-//   blockchain: Blockchain;
-//   provider: Provider;
-//   privateKey?: string;
-//   getContract(provider: Provider): Promise<AbstractContract>;  
-// }
+//   logoURI: string;
+//   timestamp: string;
+//   tags: SwapTokenListTag[]
+//   tokens: SwapToken[];
+// };
+
 
 export interface Extension {
   id: string;

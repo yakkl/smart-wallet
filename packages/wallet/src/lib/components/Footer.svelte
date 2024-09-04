@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { PATH_WELCOME, PATH_LOGIN, YEAR, VERSION, PATH_ACCOUNTS, PATH_LOCK, PATH_CONTACTS, PATH_ETHEREUM_TRANSACTIONS_SEND, RegistrationType, type Settings } from "$lib/common";
+  import { PATH_WELCOME, PATH_LOGIN, YEAR, VERSION, PATH_ACCOUNTS, PATH_LOCK, PATH_CONTACTS, PATH_ETHEREUM_TRANSACTIONS_SEND, RegistrationType, type Settings, PATH_ETHEREUM_TRANSACTIONS_SWAP } from "$lib/common";
+  import { yakklCurrentlySelectedStore } from '$lib/common/stores';
   import { Modal } from "flowbite-svelte";
   import Chatbot from '$lib/components/Chatbot.svelte';
 	import Buy from "$lib/components/Buy.svelte";
@@ -24,6 +25,7 @@
   let yakklMiscStore: string;
   let yakklSettingsStore: Settings | null;
 
+  let currentlySelected: string = $yakklCurrentlySelectedStore?.shortcuts.address as string;
 
   onMount(async () => {
     try {
@@ -130,7 +132,7 @@
 
 <Buy bind:show={showBuy}/>
 
-<Swap bind:show={showSwap}/>
+<Swap bind:show={showSwap} currentlySelected={currentlySelected}/>
 
 <footer id="{id}" class="visible fixed bg-base-100 mb-2 inset-x-0 bottom-0 mx-2 mt-0 rounded-lg max-w-[{containerWidth}px] {classParam}">
   <!-- Send -->
