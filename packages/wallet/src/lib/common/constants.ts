@@ -1,7 +1,7 @@
 // IMPORTANT NOTE: Edit 'constants.mustache' since it is the template for 'constants.ts'
 
 // Global shared constants. Network specifics are in the network/<whatever>/contants.js file
-export const VERSION = "1.0.2";
+export const VERSION = "1.0.3";
 
 export const YEAR = "2024"; // Instead of computing year since user can change date on system - use a constant
 
@@ -101,6 +101,7 @@ export const PATH_SECURITY_RESET = "/security/reset";
 export const PATH_SETTINGS = "/settings";
 export const PATH_SETTINGS_PREFERENCES = "/settings/preferences";
 export const PATH_SETTINGS_SETTINGS = "/settings/settings";
+export const PATH_TOKENS = "/tokens";
 export const PATH_WEB3 = "/web3";
 export const PATH_DAPP_TRANSACTIONS = "/dapp/popups/transactions";
 export const PATH_DAPP_ACCOUNTS = "/dapp/popups/accounts";

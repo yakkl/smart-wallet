@@ -41,6 +41,8 @@
     "npm": "^10.8.2"
   },
   "dependencies": {
-    "@openzeppelin/contracts-upgradeable": "^5.0.2"
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "chart.js": "^4.4.4",
+    "svelte-chartjs": "^3.1.5"
   }
 }

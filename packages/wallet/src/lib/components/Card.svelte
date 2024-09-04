@@ -565,16 +565,16 @@
 <p>o_o</p>
 {:then _}
 {#if $yakklAccountsStore != undefined}
-<Modal title="Account List" bind:open={showAccountsModal} size="xs" class="p-4" autoclose> 
+<Modal title="Account List" bind:open={showAccountsModal} size="xs" class="p-2 overflow-x-auto" autoclose> 
   <p class="text-sm font-normal text-gray-500 dark:text-gray-400">Select the account you wish to make current</p>
-  <ul class="my-4 space-y-3">
+  <ul class="-mx-2">
     {#each $yakklAccountsStore as account, i}
     {#if account.accountType === AccountTypeCategory.PRIMARY}
     <li class="my-2">
       <!-- svelte-ignore a11y-interactive-supports-focus -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-primary rounded-lg hover:bg-primary-focus group hover:shadow">
+      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-primary rounded-lg hover:bg-primary-focus group hover:shadow">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
           <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
@@ -582,31 +582,34 @@
           <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
           <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
         </svg>
-        <div class="flex flex-1 flex-col ml-2 text-base-content">
+        <div class="flex flex-1 flex-col ml-1 text-base-content">
           <span class="text-sm font-bold">PORTFOLIO</span>
           <div class="flex flex-row">
             <span id='p{i}' class="text-sm font-bold text-left">{account.name}</span>
-            <input id="ename{i}"
-              class="w-full text-gray-700 bg-gray-100 border border-solid border-gray-300 transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-              autocomplete="off" 
-              value="{$form.email}" hidden/>
           </div>
-          <span class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
+          <span class="text-xs font-semibold">{account.address}</span>
         </div>
       </a>
     </li>
     {:else if account.accountType === AccountTypeCategory.SUB}
-    <li class="my-2 ml-3">
+    <li class="my-2 ml-2">
       <!-- svelte-ignore a11y-interactive-supports-focus -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-secondary rounded-lg hover:bg-secondary-focus group hover:shadow">
-        <div class="flex flex-1 flex-col text-base-content">
+      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-secondary rounded-lg hover:bg-secondary-focus group hover:shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
+          <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
+          <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
+          <path fill="#454A75" d="M539.7 650.3v564.4l539.8-319.1z"/>
+          <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
+          <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
+        </svg>
+        <div class="flex flex-1 flex-col ml-1 text-base-content">
           <span class="text-sm font-bold">SUB-PORTFOLIO</span>
-          <span class="text-sm font-bold">{account.name}</span>
-          <span id='s{i}' class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
+          <div class="flex flex-row">
+            <span id='p{i}' class="text-sm font-bold text-left">{account.name}</span>
+          </div>
+          <span class="text-xs font-semibold">{account.address}</span>
         </div>
       </a>
     </li>
@@ -615,7 +618,7 @@
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- svelte-ignore a11y-interactive-supports-focus -->
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-accent rounded-lg hover:bg-accent-focus group hover:shadow">
+      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-accent rounded-lg hover:bg-accent-focus group hover:shadow">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
           <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
@@ -623,11 +626,12 @@
           <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
           <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
         </svg>
-        <div class="flex flex-1 flex-col ml-2 text-base-content">
+        <div class="flex flex-1 flex-col ml-1 text-base-content">
           <span class="text-sm font-bold">IMPORTED</span>
-          <span class="text-sm font-bold">{account.name}</span>
-          <span id='i{i}' class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
+          <div class="flex flex-row">
+            <span class="text-sm font-bold text-left">{account.name}</span>
+          </div>
+          <span id='s{i}' class="text-xs font-semibold">{account.address}</span>
         </div>
       </a>
     </li>
@@ -789,33 +793,33 @@
 
       <SpeedDial defaultClass="absolute right-1 bottom-1 z-10 bg-primary rounded-full" pill={false} tooltip="none" placement='bottom'>
         <svg slot="icon" aria-hidden="true" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)}>
-          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
-            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
-            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
-          </svg>            
-        </SpeedDialButton> 
-        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)}>
+        <SpeedDialButton name="Accounts" on:click={() => {showAccountsModal = true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+          </svg>
+        </SpeedDialButton>
+        <SpeedDialButton name="Contacts" on:click={() => {showContacts = true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+          </svg>
+        </SpeedDialButton>
+        <SpeedDialButton name="Receive" on:click={() => {showRecv=true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
+            <path fill-rule="evenodd" d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 9.375v-4.5zM4.875 4.5a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875.375c0-1.036.84-1.875 1.875-1.875h4.5C20.16 3 21 3.84 21 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 01-1.875-1.875v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zM6 6.75A.75.75 0 016.75 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75A.75.75 0 016 7.5v-.75zm9.75 0A.75.75 0 0116.5 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM3 14.625c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.035-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 19.125v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875-.75a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM6 16.5a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm9.75 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm-3 3a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75z" clip-rule="evenodd" />          
+          </svg>
+        </SpeedDialButton>
+        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)} btnDefaultClass="w-16">
           <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h10.5A2.25 2.25 0 0118 4.25v10.5A2.25 2.25 0 0115.75 18h-10.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M8.704 10.943l1.048.943H3.75a.75.75 0 000 1.5h6.002l-1.048.943a.75.75 0 101.004 1.114l2.5-2.25a.75.75 0 000-1.114l-2.5-2.25a.75.75 0 10-1.004 1.114z" clip-rule="evenodd" />
           </svg>
         </SpeedDialButton> 
-        <SpeedDialButton name="Receive" on:click={() => {showRecv=true}}>
-          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
-            <path fill-rule="evenodd" d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 9.375v-4.5zM4.875 4.5a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875.375c0-1.036.84-1.875 1.875-1.875h4.5C20.16 3 21 3.84 21 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 01-1.875-1.875v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zM6 6.75A.75.75 0 016.75 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75A.75.75 0 016 7.5v-.75zm9.75 0A.75.75 0 0116.5 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM3 14.625c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.035-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 19.125v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875-.75a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM6 16.5a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm9.75 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm-3 3a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75z" clip-rule="evenodd" />          
-          </svg>
-        </SpeedDialButton>
-        <SpeedDialButton name="Contact" on:click={() => {showContacts = true}}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
-          </svg>
-        </SpeedDialButton>
-        <SpeedDialButton name="Account" on:click={() => {showAccountsModal = true}}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
-          </svg>
-        </SpeedDialButton>
+        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)} btnDefaultClass="w-16">
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
+            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
+          </svg>            
+        </SpeedDialButton> 
       </SpeedDial>
 
       <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
