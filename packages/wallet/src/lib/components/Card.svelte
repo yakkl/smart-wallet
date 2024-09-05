@@ -29,6 +29,7 @@
   import WalletManager from '$lib/plugins/WalletManager';
   import { Wallet } from '$lib/plugins/Wallet';
   import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+	import Accounts from './Accounts.svelte';
 
   export let id = "card";
   
@@ -565,15 +566,13 @@
 <p>o_o</p>
 {:then _}
 {#if $yakklAccountsStore != undefined}
-<Modal title="Account List" bind:open={showAccountsModal} size="xs" class="p-2 overflow-x-auto" autoclose> 
+<Accounts bind:show={showAccountsModal} onAccountSelect={handleAccounts} className="text-gray-600"/>
+<!-- <Modal title="Account List" bind:open={showAccountsModal} size="xs" class="p-2 overflow-x-auto" autoclose> 
   <p class="text-sm font-normal text-gray-500 dark:text-gray-400">Select the account you wish to make current</p>
   <ul class="-mx-2">
     {#each $yakklAccountsStore as account, i}
     {#if account.accountType === AccountTypeCategory.PRIMARY}
     <li class="my-2">
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-missing-attribute -->
       <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-primary rounded-lg hover:bg-primary-focus group hover:shadow">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
@@ -593,9 +592,6 @@
     </li>
     {:else if account.accountType === AccountTypeCategory.SUB}
     <li class="my-2 ml-2">
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-missing-attribute -->
       <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-secondary rounded-lg hover:bg-secondary-focus group hover:shadow">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
@@ -615,9 +611,6 @@
     </li>
     {:else}
     <li class="my-2">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-missing-attribute -->
       <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center text-base-content bg-accent rounded-lg hover:bg-accent-focus group hover:shadow">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
@@ -644,7 +637,7 @@
   <svelte:fragment slot='footer'>
     <p class="text-sm font-normal text-gray-500 dark:text-gray-400">Whatever account you select will become your <span class="border-b-2 underline underline-offset-8">active</span> account!</p>
   </svelte:fragment>
-</Modal>
+</Modal> -->
 
 <Modal title="Contact List" bind:open={showContacts} size="xs" class="p-4">
   <p class="text-sm font-normal text-gray-700 dark:text-gray-400">List of contacts</p>
