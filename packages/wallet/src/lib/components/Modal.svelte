@@ -25,7 +25,7 @@
       <div class="flex-1 overflow-y-auto">
         <slot></slot>
       </div>
-      <div class="bg-gray-50 px-6 py-4 rounded-b-lg border-t border-gray-200">
+      <div class="bg-gray-50 px-6 py-3 rounded-b-lg border-t border-gray-200">
         <slot name="footer"></slot>
       </div>
     </div>

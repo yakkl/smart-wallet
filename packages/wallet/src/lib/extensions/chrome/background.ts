@@ -279,17 +279,17 @@ try {
 try {
   browser_ext!.runtime.onConnect.addListener((port: RuntimePort) => {
     port.onMessage.addListener((message: any) => {
-      console.log('Received message from content script:', message);
+      // console.log('Received message from content script:', message);
 
       // Handle the message from the content script
       if (message.type === 'YAKKL_REQUEST:EIP6963') {
         const { id, method, params } = message;
 
-        console.log('Received EIP-6963 request:', method, params);
+        // console.log('Received EIP-6963 request:', method, params);
         
         // Process the request or forward it to the Ethereum node
         handleRequest(method, params).then((result) => {
-          console.log('Sending EIP-6963 response:', result);
+          // console.log('Sending EIP-6963 response:', result);
 
           port.postMessage({ id, result, type: 'YAKKL_RESPONSE:EIP6963' });
         }).catch((error) => {

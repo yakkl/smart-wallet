@@ -1,7 +1,8 @@
 <script lang="ts">
-  import Confirm from "$components/Confirm.svelte";
+  import Confirm from "$components/Confirmation.svelte";
 	import { deepCopy } from "$lib/utilities";
   import { importEmergencyKit } from "$lib/imports/emergencyKit.js";
+	import Confirmation from '$components/Confirmation.svelte';
 
   export let defaultClass = 'mt-4';
   export let emergencyData = null;
@@ -138,11 +139,11 @@
 
 </script>
 
-<Confirm
+<Confirmation
   bind:show={showConfirm}
   title="Import Emergency Kit"
-  content="Caution! Are you sure you want to import this emergency kit? This will overwrite your existing accounts."
-  handleConfirm={() => {handleConfirm()}}
+  message="Caution! Are you sure you want to import this emergency kit? This will overwrite your existing accounts."
+  onConfirm={() => {handleConfirm()}}
   confirmText="Yes, Import"
   rejectText="No, Cancel"
   />

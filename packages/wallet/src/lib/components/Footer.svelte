@@ -20,7 +20,7 @@
 
   let w = 6;
   let h = 6;
-  let registeredType: 'Premier'; //RegistrationType.PREMIER; // Default to Premier for now!!!!
+  let registeredType = 'Premier'; //RegistrationType.PREMIER; // Default to Premier for now!!!!
 
   let yakklMiscStore: string;
   let yakklSettingsStore: Settings | null;
@@ -32,9 +32,9 @@
       // Get the settings
       yakklSettingsStore = await getSettings();
       yakklMiscStore = getMiscStore();
-      // if (yakklSettingsStore) {
-      //   registeredType = yakklSettingsStore.registeredType;
-      // }
+      if (yakklSettingsStore) {
+        registeredType = yakklSettingsStore.registeredType;
+      }
     } catch (e) {
       console.log(`Footer: onMount - ${e}`);
     }

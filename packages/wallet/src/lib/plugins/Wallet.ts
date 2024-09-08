@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Provider } from '$plugins/Provider';
 import type { Blockchain } from '$plugins/Blockchain';
@@ -208,7 +209,7 @@ export class Wallet {
    * @param data - Data containing provider, blockchain, and chainId.
    */
   private onProviderConnected(data: { provider: string, blockchain: string, chainId: number }): void {
-    console.log(`onConnected to ${data.provider} on ${data.blockchain} with chainId ${data.chainId}`);
+    // console.log(`onConnected to ${data.provider} on ${data.blockchain} with chainId ${data.chainId}`);
     Wallet.setInstance(this);
   }
 
@@ -217,7 +218,7 @@ export class Wallet {
    * @param data - Data containing address and balance.
    */
   private onBalanceFetched(data: { address: string, balance: bigint }): void {
-    console.log(`onBalance event for fetched ${data.address}: XXXXXXXX`, this.chainId);
+    // console.log(`onBalance event for fetched ${data.address}: XXXXXXXX`, this.chainId);
     Wallet.setInstance(this);
   }
 
@@ -226,7 +227,7 @@ export class Wallet {
    * @param data - Data containing old provider and new provider.
    */
   private onProviderSwitched(data: { oldProvider: string, newProvider: string }): void {
-    console.log(`onProvider switched from ${data.oldProvider} to ${data.newProvider}`);
+    // console.log(`onProvider switched from ${data.oldProvider} to ${data.newProvider}`);
     Wallet.setInstance(this);
   }
 
@@ -235,7 +236,7 @@ export class Wallet {
    * @param data - Data containing provider, method, and error.
    */
   private onError(data: { provider: string, method: string, error: any }): void {
-    console.log(`onError in provider ${data.provider}, method ${data.method}:`, data.error);
+    // console.log(`onError in provider ${data.provider}, method ${data.method}:`, data.error);
     Wallet.setInstance(this);
   }
 
@@ -244,7 +245,7 @@ export class Wallet {
    * @param data - Data containing provider, method, params, and result.
    */
   private onRequestMade(data: { provider: string, method: string, params: any[], result: any }): void {
-    console.log(`onRequest made to ${data.provider} with method ${data.method}:`, data.result);
+    // console.log(`onRequest made to ${data.provider} with method ${data.method}:`, data.result);
     Wallet.setInstance(this);
   }
 
