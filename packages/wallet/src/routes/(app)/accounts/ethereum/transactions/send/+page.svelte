@@ -11,7 +11,6 @@
   import { onDestroy, onMount } from 'svelte';
   import { ETH_BASE_EOA_GAS_UNITS, ETH_BASE_SCA_GAS_UNITS, PATH_LOCK, PATH_LOGOUT } from '$lib/common/constants';
 	import { startCheckGasPrices, stopCheckGasPrices, debounce } from '$lib/utilities/gas';
-	import Pin from '$lib/components/Pin.svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Warning from '$lib/components/Warning.svelte';
 	import WalletManager from '$lib/plugins/WalletManager';
@@ -19,6 +18,7 @@
 	// import { getPricesCoinbase } from '$lib/tokens/prices';
 	import { isEthereum } from '$lib/plugins/BlockchainGuards';
 	import { BigNumber, isEncryptedData, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
+	import PincodeModal from '$lib/components/PincodeModal.svelte';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
   
@@ -1192,8 +1192,9 @@
 	}
 
 
-	function handlePin() {
+	function handlePin(pincode: string) {
 		try {
+			pincode = pincode;
 			if (pincodeVerified) {
 				handleApprove();
 			} else {
@@ -1218,7 +1219,7 @@
 
 </script>
 
-<Pin bind:verified={pincodeVerified} bind:value={pincode} bind:show={showVerify} callback={handlePin}/>
+<PincodeModal bind:show={showVerify} onVerify={handlePin} className="text-gray-600"/>
 
 <ErrorNoAction bind:show={error} bind:value={errorValue} handle={handleClose}/>
 

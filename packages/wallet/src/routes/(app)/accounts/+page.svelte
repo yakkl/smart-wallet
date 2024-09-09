@@ -2,8 +2,8 @@
   import { browser as browserSvelte} from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
-  import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PRIVATEKEY, PATH_EXPORT, PATH_IMPORT_WATCH, PATH_LOGIN, PATH_REGISTER, PATH_CONTACTS, YAKKL_ZERO_ADDRESS, PATH_ACCOUNT_MAINTENANCE, PATH_LOCK } from "$lib/common/constants";
-  import { getSettings, getYakklCurrentlySelected, yakklCurrentlySelectedStore } from '$lib/common/stores';
+  import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PRIVATEKEY, PATH_EXPORT, PATH_IMPORT_WATCH, YAKKL_ZERO_ADDRESS, PATH_ACCOUNT_MAINTENANCE, PATH_LOCK } from "$lib/common/constants";
+  import { getYakklCurrentlySelected } from '$lib/common/stores';
   import ErrorNoAction from "$lib/components/ErrorNoAction.svelte";
   import Back from "$lib/components/Back.svelte";
 	import ButtonGrid from "$lib/components/ButtonGrid.svelte";
@@ -12,7 +12,12 @@
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
 	import { routeCheckWithSettings } from '$lib/common/routes';
-	import type { YakklCurrentlySelected } from '$lib/common';
+	import type { YakklAccount, YakklCurrentlySelected, YakklWatch } from '$lib/common';
+	import ImportWatchAccount from '$lib/components/ImportWatchAccount.svelte';
+	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
+	import type { Yakkl } from '$lib/plugins/providers';
+	import ExportPrivateKey from '$lib/components/ExportPrivateKey.svelte';
+	import Accounts from '$lib/components/Accounts.svelte';
   let browser_ext: Browser; 
   if (browserSvelte) browser_ext = getBrowserExt();
 
@@ -20,6 +25,10 @@
   let errorValue: string;
   let isPortfolioModalOpen = false;
   let isSubPortfolioModalOpen = false;
+  let showImportWatch = false;
+  let showImportAccount = false;
+  let showExportPrivateKey = false;
+  let showAccounts = false;
   
   let currentlySelected: YakklCurrentlySelected; 
 
@@ -58,7 +67,7 @@
     }
   }
 
-routeCheckWithSettings();
+  routeCheckWithSettings();
 
   function handleAccounts(e: any) {
     if (browserSvelte) {
@@ -84,28 +93,51 @@ routeCheckWithSettings();
     }
   }
 
-  function handleExport() {
+  // function handleExport() {
+  //   if (browserSvelte) {
+  //     if (currentlySelected.shortcuts.address === YAKKL_ZERO_ADDRESS) {
+  //       errorValue = 'NO WALLET ACCOUNT has been created yet. Please create a portfolio wallet account first.';
+  //       error = true;
+  //     } else {
+  //       goto(PATH_EXPORT);
+  //     }
+  //   }
+  // }
+
+
+  // function handleAccountMaintenance() {
+  //   if (browserSvelte) {
+  //     if (currentlySelected.shortcuts.address === YAKKL_ZERO_ADDRESS) {
+  //       errorValue = 'NO ACCOUNT has been created yet. Please create a portfolio account first.';
+  //       error = true;
+  //     } else {
+  //       goto(PATH_ACCOUNT_MAINTENANCE);
+  //     }
+  //   }
+  // }
+
+  function handleImport(account: YakklAccount) {
     if (browserSvelte) {
-      if (currentlySelected.shortcuts.address === YAKKL_ZERO_ADDRESS) {
-        errorValue = 'NO WALLET ACCOUNT has been created yet. Please create a portfolio wallet account first.';
-        error = true;
-      } else {
-        goto(PATH_EXPORT);
-      }
+      showImportAccount = true;
     }
   }
 
-
-  function handleAccountMaintenance() {
+  function handleImportWatch(account: YakklWatch) {
     if (browserSvelte) {
-      if (currentlySelected.shortcuts.address === YAKKL_ZERO_ADDRESS) {
-        errorValue = 'NO ACCOUNT has been created yet. Please create a portfolio account first.';
-        error = true;
-      } else {
-        goto(PATH_ACCOUNT_MAINTENANCE);
-      }
+      showImportWatch = true;
     }
+  }
 
+  function handleExportPrivateKey() {
+    if (browserSvelte) {
+      showExportPrivateKey = true;
+    }
+  }
+
+  function handleAccountMaintenance(account: YakklAccount) {
+    if (browserSvelte) {
+      showAccounts = true;
+    }
   }
 
 </script>
@@ -122,9 +154,17 @@ routeCheckWithSettings();
   <br>
 </div>
 
+<ImportWatchAccount bind:show={showImportWatch} onImportWatch={handleImportWatch} className="text-gray-600 z-[999]"/>
+
+<ImportPrivateKey bind:show={showImportAccount} onImportAccount={handleImport} className="text-gray-600 z-[999]"/>
+
+<ExportPrivateKey bind:show={showExportPrivateKey} onVerify={handleExportPrivateKey} className="text-gray-600 z-[999]"/>
+
+<Accounts bind:show={showAccounts} onAccountSelect={handleAccountMaintenance} className="text-gray-600"/>
+
 <ButtonGrid>
 
-  <ButtonGridItem handle={handleAccountMaintenance} title="Maintenance" btn="btn-secondary" >
+  <ButtonGridItem handle={() => showAccounts=true} title="Maintenance" btn="btn-secondary" >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class=" flex flex-col w-10 h-10 m-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
     </svg>            
@@ -167,7 +207,7 @@ routeCheckWithSettings();
     </div>
   </div>
 
-  <ButtonGridItem handle={() => goto(PATH_IMPORT_WATCH)} title="Add Watch-Only Wallet" btn="btn-secondary" >
+  <ButtonGridItem handle={() => showImportWatch=true} title="Add Watch-Only Wallet" btn="btn-secondary" >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 m-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -181,13 +221,13 @@ routeCheckWithSettings();
     </svg>            
   </ButtonGridItem> -->
     
-  <ButtonGridItem handle={() => goto(PATH_IMPORT_PRIVATEKEY)} title="Import Wallet" btn="btn-secondary" >
+  <ButtonGridItem handle={() => showImportAccount=true} title="Import Wallet" btn="btn-secondary" >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 m-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
     </svg>            
   </ButtonGridItem>
 
-  <ButtonGridItem handle={handleExport} title="Export Wallet" btn="btn-secondary" >
+  <ButtonGridItem handle={() => showExportPrivateKey=true} title="Export Wallet" btn="btn-secondary" >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 m-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
     </svg>
