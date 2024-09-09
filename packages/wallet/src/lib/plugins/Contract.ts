@@ -35,5 +35,22 @@ export abstract class AbstractContract {
   abstract once(eventName: string, listener: (...args: any[]) => void): void;
 
   abstract getFunctions(): Record<string, (...args: any[]) => Promise<any>>;
+  // In AbstractContract class
+  // getFunctions(): ContractFunction[] {
+  //   const functions: ContractFunction[] = [];
+  //   for (const functionName in this.contract.functions) {
+  //     const functionFragment = this.contract.interface.getFunction(functionName);
+  //     functions.push({
+  //       name: functionName,
+  //       inputs: functionFragment.inputs.map(input => ({
+  //         name: input.name,
+  //         type: input.type,
+  //       })),
+  //       stateMutability: functionFragment.stateMutability,
+  //     });
+  //   }
+  //   return functions;
+  // }
+  
   abstract getEvents(): string[];
 }
