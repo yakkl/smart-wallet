@@ -78,8 +78,6 @@
 
 </script>
 
-<!-- <Pin bind:show={showPin} bind:value={pinValue} /> -->
-
 <ErrorNoAction bind:show={error} bind:value={errorValue} />
 
 <ComingSoon bind:show={showComingSoon} />
