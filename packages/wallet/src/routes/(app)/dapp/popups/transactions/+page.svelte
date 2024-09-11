@@ -16,7 +16,7 @@
   
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import { verify } from '$lib/common/secuirty';
+	import { verify } from '$lib/common/security';
   let browser_ext: Browser; 
   if (browserSvelte) browser_ext = getBrowserExt();
 

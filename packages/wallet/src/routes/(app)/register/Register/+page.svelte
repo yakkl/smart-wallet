@@ -373,30 +373,6 @@
 
 <Warning bind:show={warning} value={warningValue} title="WARNING!" />
 
-
-<!-- <div class="modal" class:modal-open={error}>
-  <div class="modal-box relative">
-
-    <h3 class="text-lg font-bold">ERROR</h3>
-    <p class="py-4">{errorValue}</p>
-    <div class="modal-action">
-      <button class="btn" on:click={() => error = false}>Close</button>
-    </div>
-  </div>
-</div> -->
-
-<!-- <div class="modal" class:modal-open={warning}>
-  <div class="modal-box relative">
-
-    <h3 class="text-lg font-bold">WARNING</h3>
-    <p class="py-4">{warningValue}</p>
-    
-    <div class="modal-action">
-      <button class="btn" on:click={() => warning = false}>Close</button>
-    </div>
-  </div>
-</div> -->
-
 <!-- REMOVE comments on Emergency Kit below once fully tested! -->
 <div class="modal" class:modal-open={continueOption}>
   <div class="modal-box relative">

@@ -170,46 +170,45 @@ export function onError(e: any) {
 }
 
 // Anytime any local storage changes then we set the Svelte memory stores to keep things in sync
-// export function storageChange(changes: any) {
-	// console.log('Storage change:', changes);
-	// try {
-	// 	if (changes.yakklPreferences) {
-	// 		setPreferencesStore(changes.yakklPreferences.newValue);
-	// 	}
-	// 	if (changes.yakklSettings) {
-	// 		setSettingsStore(changes.yakklSettings.newValue);
-	// 	}
-	// 	if (changes.profile) {
-	// 		setProfileStore(changes.profile.newValue);
-	// 	}
-	// 	if (changes.yakklCurrentlySelected) {
-	// 		setYakklCurrentlySelectedStore(changes.yakklCurrentlySelected.newValue);
-	// 	}
-	// 	if (changes.yakklWatchList) {
-	// 		setYakklWatchListStore(changes.yakklWatchList.newValue);
-	// 	}
-	// 	if (changes.yakklAccounts) {
-	// 		setYakklAccountsStore(changes.yakklAccounts.newValue);
-	// 	}
-	// 	if (changes.yakklPrimaryAccounts) {
-	// 		setYakklPrimaryAccountsStore(changes.yakklPrimaryAccounts.newValue);
-	// 	}
-	// 	if (changes.yakklContacts) {
-	// 		setYakklContactsStore(changes.yakklContacts.newValue);
-	// 	}
-	// 	if (changes.yakklChats) {
-	// 		setYakklChatsStore(changes.yakklChats.newValue);
-	// 	}
-	// 	if (changes.yakklConnectedDomains) {
-	// 		setYakklConnectedDomainsStore(changes.yakklConnectedDomains.newValue);
-	// 	}
-	// 	if (changes.yakklBlockedList) {
-	// 		setYakklBlockedListStore(changes.yakklBlockedList.newValue);
-	// 	}
-	// } catch (error) {
-	// 	console.log(error);
-	// }
-// }
+export function storageChange(changes: any) {
+	try {
+		if (changes.yakklPreferences) {
+			setPreferencesStore(changes.yakklPreferences.newValue);
+		}
+		if (changes.yakklSettings) {
+			setSettingsStore(changes.yakklSettings.newValue);
+		}
+		if (changes.profile) {
+			setProfileStore(changes.profile.newValue);
+		}
+		if (changes.yakklCurrentlySelected) {
+			setYakklCurrentlySelectedStore(changes.yakklCurrentlySelected.newValue);
+		}
+		if (changes.yakklWatchList) {
+			setYakklWatchListStore(changes.yakklWatchList.newValue);
+		}
+		if (changes.yakklAccounts) {
+			setYakklAccountsStore(changes.yakklAccounts.newValue);
+		}
+		if (changes.yakklPrimaryAccounts) {
+			setYakklPrimaryAccountsStore(changes.yakklPrimaryAccounts.newValue);
+		}
+		if (changes.yakklContacts) {
+			setYakklContactsStore(changes.yakklContacts.newValue);
+		}
+		if (changes.yakklChats) {
+			setYakklChatsStore(changes.yakklChats.newValue);
+		}
+		if (changes.yakklConnectedDomains) {
+			setYakklConnectedDomainsStore(changes.yakklConnectedDomains.newValue);
+		}
+		if (changes.yakklBlockedList) {
+			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
+		}
+	} catch (error) {
+		console.log(error);
+	}
+}
 
 export async function syncStoresToStorage() {
 	try {
