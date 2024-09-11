@@ -16,7 +16,7 @@
 	import Welcome from '$lib/components/Welcome.svelte';
 	import { RegistrationType, isEncryptedData, type ProfileData, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
-	import { verify } from '$lib/common/secuirty';
+	import { verify } from '$lib/common/security';
   
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';

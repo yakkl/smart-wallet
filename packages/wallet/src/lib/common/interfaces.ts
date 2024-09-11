@@ -17,6 +17,16 @@ export interface EncryptedData {
   salt?: string;
 }
 
+// src/lib/security/types.ts
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  authProvider: 'password' | 'google' | 'apple' | 'passkey';
+}
+
 // EmergencyKit data for each address. SubPortfolio will be empty if it's a primary account. Every SubPortfolio will have a Portfolio address and name.
 // This is always encrypted.
 export interface EmergencyKitAccountData {

@@ -30,6 +30,7 @@
 	// Toast
 	import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';  
+	import Contacts from '$lib/components/Contacts.svelte';
   // Toast
 
 // EIP-6969 - A proposal of giving back some of the gas fees to developers.
@@ -1126,9 +1127,13 @@
 
 	function handleOpenAddress(url: string) {
 		try {
-			let URL = url;
+			let URL = url.toLowerCase();
 			if (txNetworkTypeName.toLowerCase() !== 'mainnet') {
-				URL = url.replace('https://', 'https://' + txNetworkTypeName.toLowerCase() + '.');
+				if ( URL.includes(txNetworkTypeName.toLowerCase() + '.')) {
+					URL = url;
+				} else {
+					URL = url.replace('https://', 'https://' + txNetworkTypeName.toLowerCase() + '.');
+				}
 			}
 			handleOpenInTab(URL);
 		} catch(e) {
@@ -1195,6 +1200,7 @@
 	function handlePin(pincode: string) {
 		try {
 			pincode = pincode;
+			pincodeVerified = true; // We changed the dialog and it now does the verification. So, we can set this to true for downward compatibility!
 			if (pincodeVerified) {
 				handleApprove();
 			} else {
@@ -1225,17 +1231,16 @@
 
 <Warning bind:show={warning} bind:value={warningValue} />
 
+<Contacts bind:show={showContacts} onContactSelect={handleContact} />
+
 <!-- Modal had padding="xs" -->
 <!-- svelte-ignore missing-declaration -->
-<Modal title="Contact List" bind:open={showContacts} size="xs" >
+<!-- <Modal title="Contact List" bind:open={showContacts} size="xs" >
   <p class="text-sm font-normal text-gray-700 dark:text-gray-400">Select the contact you wish to send/transfer to</p>
   {#if $yakklContactsStore}
   <ul class="my-4 space-y-3">
     {#each $yakklContactsStore as contact}
       <li class="my-2">
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
 			<a id="d1" role="button" on:click|preventDefault={() => handleContact(contact)} class="flex items-center p-2 text-base text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 group hover:shadow dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white">
         <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
           <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
@@ -1262,7 +1267,7 @@
   <svelte:fragment slot='footer'>
     <p class="text-sm font-normal text-gray-700 dark:text-gray-400">Always <span class="border-b-2 underline underline-offset-8">verify</span> the address before transferring!</p>
   </svelte:fragment>
-</Modal>
+</Modal> -->
 
 
 <!-- <div class="modal" class:modal-open={error}>
@@ -1411,7 +1416,7 @@
 									</div>
 
 									<!-- <div class="hidden hover:show"> -->
-										<span class="text-xs text-gray-100 font-bold mb-1">Data (optional - also used by Smart Contracts)</span>
+										<!-- <span class="text-xs text-gray-100 font-bold mb-1">Data (optional - also used by Smart Contracts)</span>
 										<input
 											id="hexData"
 											class="placeholder:italic block w-full px-4 md:py-2 py-1 leading-7 text-md font-normal
@@ -1425,7 +1430,7 @@
 											on:blur={onBlur} />
 										{#if $errors.hexData}
 											<small class="text-red-600 font-bold animate-pulse">{$errors.hexData}</small>
-										{/if}
+										{/if} -->
 									<!-- </div> -->
 
 									{#if totalUSD !== '0'}
@@ -1486,15 +1491,10 @@
 					</div>
 
 					<div class="m-4 mr-1 text-left text-base-content">
-						<Timeline order="vertical">
+						<Timeline > 
+							<!-- order="vertical"> -->
 							{#if txStatus === 'pending'}
 							<TimelineItem >
-								<svelte:fragment slot="icon">
-									<span
-										class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-blue-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-blue-900">
-										<Spinner color="yellow" size={6} />
-									</span>
-								</svelte:fragment>
 								<h3 class="flex items-center text-lg font-semibold text-base-content animate-pulse dark:text-white">Pending Transaction</h3>
 								<time class="block mb-2 text-xs font-normal leading-none text-gray-400 dark:text-gray-500">{new Date(parseInt(txStartTimestamp))}</time>
 
@@ -1540,48 +1540,23 @@
 							{#each txHistoryTransactions as transaction}
 
 							<TimelineItem >
-								<svelte:fragment slot="icon">
-									<span
-										class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-blue-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-blue-900">
-										{#if transaction.status === 'pending'}
-										<Spinner color="yellow" size={6} />
-										<!-- Receive -->
-										{:else if (transaction.to === address.toLowerCase()) && (transaction.from !== address.toLowerCase())}  
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-green-500">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
-										</svg>							
-										<!-- Send -->
-										{:else if (transaction.from === address.toLowerCase()) && (transaction.to !== address.toLowerCase())}
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke-width="1.5" class="w-6 h-6 text-purple-500">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-										</svg>
-										<!-- Cancel -->
-										{:else if (transaction.from === address.toLowerCase()) && (transaction.to === address.toLowerCase())}
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke-width="1.5" class="w-6 h-6 text-yellow-500">
-											<path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
-										</svg>
-										{:else}
-										<!-- Error -->
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-500">
-											<path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" />
-										</svg>
-										{/if}
-									</span>
-								</svelte:fragment>
-								{#if transaction.status === 'pending'}
-								<h3 class="flex items-center text-lg font-semibold text-white">Pending Transaction</h3>
-								{:else if (transaction.from === address.toLowerCase()) && (transaction.to !== address.toLowerCase())}
-								<h3 class="flex items-center text-lg font-semibold text-white">Send Transaction</h3>
-								{:else if (transaction.to === address.toLowerCase()) && (transaction.from !== address.toLowerCase())}
-								<h3 class="flex items-center text-lg font-semibold text-white">Receive Transaction</h3>
-								{:else if (transaction.from === address.toLowerCase()) && (transaction.to === address.toLowerCase())}
-								<h3 class="flex items-center text-lg font-semibold text-white">Send/Receive/Cancel Transaction</h3>
-								{:else}
-								<h3 class="flex items-center text-lg font-semibold text-white">Error</h3>
-								{/if}
-								<time class="block mb-2 text-xs font-normal leading-none text-gray-300 dark:text-gray-200">{transaction.formattedTimestamp}</time>
 
-								<div class="w-full break-all ">
+								<div class="ml-4">
+									{#if transaction.status === 'pending'}
+									<h3 class="flex items-center text-lg font-semibold text-white">Pending Transaction</h3>
+									{:else if (transaction.from === address.toLowerCase()) && (transaction.to !== address.toLowerCase())}
+									<h3 class="flex items-center text-lg font-semibold text-white">Send Transaction</h3>
+									{:else if (transaction.to === address.toLowerCase()) && (transaction.from !== address.toLowerCase())}
+									<h3 class="flex items-center text-lg font-semibold text-white">Receive Transaction</h3>
+									{:else if (transaction.from === address.toLowerCase()) && (transaction.to === address.toLowerCase())}
+									<h3 class="flex items-center text-lg font-semibold text-white">Send/Receive/Cancel Transaction</h3>
+									{:else}
+									<h3 class="flex items-center text-lg font-semibold text-white">Error</h3>
+									{/if}
+									<time class="block mb-2 text-xs font-normal leading-none text-gray-300 dark:text-gray-200">{transaction.formattedTimestamp}</time>
+								</div>
+
+								<div class="w-full break-all ml-4">
 									<p class="text-sm font-semibold text-white">
 										{#if transaction.from === transaction.to}
 										Canceled or non-value transaction: {transaction.value}
@@ -1614,7 +1589,7 @@
 									<p class="text-xs font-semibold text-white mt-1">
 										Transaction nonce: {transaction.nonce}
 									</p>
-							</div>
+								</div>
 								{#if txStatus === 'pending'} 
 								<div class="flex flex-row mt-1">
 									<Button size="xs" pill={true} on:click={() => handleSpeedUp(txGasPercentIncrease, transaction.nonce, transaction.hash)} class="mr-2">Speed Up</Button>
@@ -1623,7 +1598,7 @@
 								{:else}
 								<div class="flex flex-row mt-1">
 									{#if $yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore?.shortcuts.network.explorer.length > 0}
-									<Button size="xs" pill={true} color="light" on:click={() => handleOpenInTab($yakklCurrentlySelectedStore ? $yakklCurrentlySelectedStore?.shortcuts.network.explorer : '')}>Details ></Button>
+									<Button size="xs" pill={true} color="light" on:click={() => handleOpenInTab($yakklCurrentlySelectedStore ? $yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/tx/' + transaction.hash : '')}>Details ></Button>
 									{:else}
 									<Button size="xs" pill={true} color="light">N/A</Button>
 									{/if}

@@ -43,7 +43,11 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
     "chart.js": "^4.4.4",
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.2",
     "svelte-chartjs": "^3.1.5"
   }
 }

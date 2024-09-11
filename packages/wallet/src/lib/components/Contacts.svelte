@@ -11,6 +11,11 @@
   export let className = 'z-[999]';
 
   let showAddModal = false;
+  let contacts: YakklContact[] = [];
+
+  $: {
+    contacts = $yakklContactsStore;
+  }
 
   function handleContactSelect(selectedContact: YakklContact) {
     if (onContactSelect !== null) {
@@ -21,27 +26,30 @@
 
   function handleContactAdd(contact: YakklContact) {
     yakklContactsStore.update((contacts) => [...contacts, contact]);
+    setYakklContactsStorage($yakklContactsStore);  // Save to local storage - make sure contact is saved. If not then it will be lost.
     showAddModal = false;
   }
 
   function handleContactDelete(deletedContact: YakklContact) {
-  yakklContactsStore.update((contacts) => {
-    const updatedContacts = contacts.filter((c) => c.id !== deletedContact.id);
-    setYakklContactsStorage(updatedContacts);
-    return updatedContacts;
-  });
-}
+    yakklContactsStore.update((contacts) => {
+      const updatedContacts = contacts.filter((c) => c.address !== deletedContact.address);
+      setYakklContactsStorage(updatedContacts);
+      return updatedContacts;
+    });
+  }
 
-function handleContactUpdate(updatedContact: YakklContact) {
-  yakklContactsStore.update((contacts) => {
-    const updatedContacts = contacts.map((c) => (c.id === updatedContact.id ? updatedContact : c));
-    setYakklContactsStorage(updatedContacts);
-    return updatedContacts;
-  });
-}
+  function handleContactUpdate(updatedContact: YakklContact) {
+    yakklContactsStore.update((contacts) => {
+      const updatedContacts = contacts.map((c) => (c.address === updatedContact.address ? updatedContact : c));
+      setYakklContactsStorage(updatedContacts);
+      return updatedContacts;
+    });
+  }
+
   function closeModal() {
     show = false;
   }
+
 </script>
 
 <div class="relative {className}">
@@ -53,7 +61,7 @@ function handleContactUpdate(updatedContact: YakklContact) {
   >
     <div class="border-t border-b border-gray-200 py-4">
       <ContactList
-        contacts={$yakklContactsStore}
+        contacts={contacts}
         onContactSelect={handleContactSelect}
         onContactUpdate={handleContactUpdate}
         onContactDelete={handleContactDelete}
