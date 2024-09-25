@@ -2,24 +2,27 @@
 <script lang="ts">
   import type { YakklAccount } from '$lib/common';
   import { onMount } from 'svelte';
-  import { yakklAccountsStore, yakklPrimaryAccountsStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
+  import { yakklAccountsStore, yakklCurrentlySelectedStore, yakklPrimaryAccountsStore } from '$lib/common/stores';
   import AccountForm from './AccountForm.svelte';
   import Confirmation from './Confirmation.svelte';
   import { dateString } from '$lib/common/datetime';
   import { setYakklAccountsStorage, setYakklPrimaryAccountsStorage } from '$lib/common/stores';
   import { AccountTypeCategory } from '$lib/common/types';
   import EditControls from './EditControls.svelte';
-	import { deepCopy } from '$lib/utilities/utilities';
-
+	import WalletManager from '$lib/plugins/WalletManager';
+  import type { Wallet } from '$lib/plugins/Wallet';
+  
   export let accounts: YakklAccount[] = [];
   export let onAccountSelect: (account: YakklAccount) => void = () => {};
 
   let editMode = false;
   let showDeleteModal = false;
   let selectedAccount: YakklAccount | null = null;
+  let wallet: Wallet;
 
   onMount(() => {
     accounts = $yakklAccountsStore;
+    wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], $yakklCurrentlySelectedStore!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
   });
 
   function handleEdit(account: YakklAccount) {
@@ -32,54 +35,64 @@
     showDeleteModal = true;
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (selectedAccount) {
-      console.log('Deleting account:', selectedAccount);
-      console.log('Accounts 1:', deepCopy(accounts));
-      
+      const balance = await checkBalances(selectedAccount);
+      if (balance) { // Any balances found, return early
+        return;
+      }
       if (selectedAccount.accountType === AccountTypeCategory.PRIMARY) {
         let subAccounts = accounts.filter(a => a.primaryAccount?.address === selectedAccount!.address);
-        console.log('Sub accounts:', subAccounts);
         subAccounts.forEach(subAccount => {
           const index = accounts.findIndex(a => a.address === subAccount.address);
           if (index !== -1) {
-            console.log('Deleting sub account:', accounts[index]);
             accounts.splice(index, 1);
           }
         });
       }
       accounts = accounts.filter(a => a.address !== selectedAccount!.address);
       setYakklAccountsStorage(accounts);
-      console.log('Accounts 2:', deepCopy(accounts));
-
       $yakklAccountsStore = accounts;
       
       if (selectedAccount.accountType === AccountTypeCategory.PRIMARY) {
         let primaryAccounts = $yakklPrimaryAccountsStore.filter(a => a.address !== selectedAccount!.address);
         setYakklPrimaryAccountsStorage(primaryAccounts);
+        selectedAccount = null;
+      } else {
+        if (selectedAccount.address === $yakklCurrentlySelectedStore!.shortcuts.address) {
+          selectedAccount = selectedAccount!.primaryAccount?.account as YakklAccount;
+          onAccountSelect(selectedAccount); // This will update the currently selected account to the primary account if the sub-account is deleted and it's the currently selected account too.
+        }
       }
-
-      console.log('Accounts 3:', accounts);
-      console.log('Accounts 4:', $yakklAccountsStore);
-
       showDeleteModal = false;
-      selectedAccount = null;
     }
   }
 
-  function updateAccount(updatedAccount: YakklAccount) {
-    console.log('Updating account:', updatedAccount);
+  async function checkBalances(account: YakklAccount) {
+    let balance = 0n;
+    if (account.accountType === AccountTypeCategory.PRIMARY) {
+      let subAccounts = accounts.filter(a => a.primaryAccount?.address === account.address);
+      subAccounts.forEach(async subAccount => {
+        balance = await wallet.getBalance(subAccount.address);
+        if (balance > 0n) {
+          alert(`Sub-account ${subAccount.name} has a balance of ${balance}. Please transfer the balance to another account before deleting!`);
+          return true;
+        }
+      });
+    } else {
+      balance = await wallet.getBalance(account.address);
+      if (balance > 0n) {
+        alert(`Account ${account.name} has a balance of ${balance}. Please transfer the balance to another account before deleting!`);
+        return true;
+      }
+    }
+    return false;
+  }
 
+  function updateAccount(updatedAccount: YakklAccount) {
     const index = accounts.findIndex(a => a.address === updatedAccount.address);
     if (index !== -1) {
-      console.log('Updating account at index:', index);
-      console.log('Accounts1:', deepCopy(accounts));
-      console.log('Account[]1:', deepCopy(accounts[index]));
-
       accounts[index] = { ...updatedAccount, updateDate: dateString() };
-      console.log('Accounts2:', deepCopy(accounts));
-      console.log('Account[]2:', deepCopy(accounts[index]));
-
       if (updatedAccount.accountType === AccountTypeCategory.PRIMARY) {
         updatePrimaryAndSubAccounts(updatedAccount);
       }
@@ -98,7 +111,6 @@
       setYakklPrimaryAccountsStorage($yakklPrimaryAccountsStore);
     }
     let subAccounts = accounts.filter(a => a.primaryAccount?.address === updatedPrimaryAccount.address);
-    console.log('Sub accounts:', subAccounts);
     subAccounts.forEach(subAccount => {
       const index = accounts.findIndex(a => a.address === subAccount.address);
       if (index !== -1) {

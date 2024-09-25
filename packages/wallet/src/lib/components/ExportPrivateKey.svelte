@@ -1,13 +1,11 @@
 <!-- ExportPrivateKey.svelte -->
 <script lang="ts">
   import { browser as browserSvelte } from '$app/environment';
-  import { truncate, timeoutClipboard } from '$lib/utilities/utilities';
-  import ClipboardJS from 'clipboard';
   import { getYakklCurrentlySelected, yakklMiscStore } from '$lib/common/stores';
   import { onMount } from 'svelte';
   import { decryptData } from '$lib/common/encryption';
   import { isEncryptedData, type AccountData, type CurrentlySelectedData, type EncryptedData, type YakklCurrentlySelected } from '$lib/common';
-  import PincodeModal from './PincodeModal.svelte';
+  import PincodeModal from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
 
   export let show = false;

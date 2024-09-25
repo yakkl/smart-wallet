@@ -9,10 +9,17 @@
 	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
 	import ImportWatchAccount from '$lib/components/ImportWatchAccount.svelte';
 	import Pincode from '$lib/components/Pincode.svelte';
-	import PincodeModal from '$lib/components/PincodeModal.svelte';
+	import PincodeModal from '$lib/components/PincodeVerify.svelte';
 	import Receive from '$lib/components/Receive.svelte';
   import TokenBox from '$lib/components/TokenBox.svelte';
   import { ethTokenData, btcTokenData } from '$lib/data/mock/MockTokenData';
+
+  import { Button } from "$lib/components/ui/button";
+  import Profile from '$lib/components/Profile.svelte';
+  import Preferences from '$lib/components/Preferences.svelte';
+  
+  let profileComponent: Profile;
+  let preferencesComponent: Preferences;
 
   // Mock token data array
   const tokenDataArray: TokenData[] = [ethTokenData, btcTokenData];
@@ -121,6 +128,12 @@
   <!-- Foundry primary test account -->
   <Receive bind:show={showReceive} address={"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"} />
 </div>
+
+<Profile bind:this={profileComponent} />
+<Preferences bind:this={preferencesComponent} />
+
+<Button on:click={() => profileComponent.openProfile()}>Open Profile</Button>
+<Button on:click={() => preferencesComponent.openPreferences()}>Open Preferences</Button>
 
 <button
   on:click={() => showExportPrivateKey = true}

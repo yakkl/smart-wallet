@@ -97,6 +97,7 @@
     "svelte-confetti": "2.0.1",
     "svelte-forms-lib": "^2.0.1",
     "svelte-preprocess": "^6.0.1",
+    "svelte-radix": "^1.1.1",
     "sveltekit-adapter-chrome-extension": "^2.0.1",
     "tailwindcss": "^3.4.4",
     "tailwindcss-dotted-background": "^1.1.0",
@@ -125,12 +126,16 @@
   "dependencies": {
     "@walletconnect/web3wallet": "^1.12.3",
     "assert": "^2.1.0",
+    "bits-ui": "^0.21.15",
     "buffer": "^6.0.3",
+    "clsx": "^2.1.1",
     "https-browserify": "^1.0.0",
     "is-stream": "^4.0.1",
     "os-browserify": "^0.3.0",
     "process": "^0.11.10",
     "stream-http": "^3.2.0",
+    "tailwind-merge": "^2.5.2",
+    "tailwind-variants": "^0.2.1",
     "url": "^0.11.3",
     "uuid": "^10.0.0"
   }

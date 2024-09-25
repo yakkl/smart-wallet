@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { type AccountData, type AccountInfo, type Deferrable, type EthereumTransaction, type MetaData, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklAccount, type YakklPrimaryAccount, type Block, type BlockTag, type BlockWithTransactions, type Filter, type Log, type PrimaryAccountData, AccountTypeCategory, VERSION, type Network, NetworkType } from '$lib/common';
+import { type AccountData, type AccountInfo, type Deferrable, type EthereumTransaction, type MetaData, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklAccount, type YakklPrimaryAccount, type Block, type BlockTag, type BlockWithTransactions, type Filter, type Log, type PrimaryAccountData, AccountTypeCategory, VERSION, type Network, NetworkType, type BigNumberish } from '$lib/common';
 import { dateString } from '$lib/common/datetime';
 // import type { Signer } from '$lib/plugins/Signer';
 import { AbstractBlockchain, type ContractInterface } from '$plugins/Blockchain';
@@ -85,6 +85,14 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
 
   async getLogs(filter: Filter): Promise<Array<Log>> {
     throw new Error('Method not implemented.');
+  }
+
+  async getStorageAt( addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string> {
+    throw new Error( 'Method not implemented.' );
+  }
+
+  async signTypedData( transction: TransactionRequest ): Promise<string> {
+    throw new Error( 'Method not implemented.' );
   }
 
   async getTransaction(transactionHash: string): Promise<EthereumTransaction> {

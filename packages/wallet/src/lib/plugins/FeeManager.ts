@@ -31,9 +31,20 @@ export class BaseFeeManager implements FeeManager {
       throw new Error('No gas providers available');
     }
 
+    // console.log('Getting gas estimates from providers:', Array.from(this.providers.keys()));
+
+    // console.log('Providers:', this.providers);
+    // console.log('Providers keys:', Array.from(this.providers.keys()));
+    // console.log('Providers get:', this.providers.get('EthereumGasProvider'));
+
+    // const gas = await this.providers.get('EthereumGasProvider')!.getGasEstimate(transaction);
+    // console.log('Gas:', gas);
+
     const estimates = await Promise.all(
-      Array.from(this.providers.values()).map(provider => provider.getGasEstimate(transaction))
+      Array.from(this.providers.values()).map(provider =>  provider.getGasEstimate(transaction))
     );
+
+    // console.log('Gas estimates:', estimates);
 
     const gasLimits = estimates.map(e => BigNumber.from(e.gasLimit)).sort((a, b) => a.compare(b));
     const baseFees = estimates.map(e => BigNumber.from(e.feeEstimate.baseFee)).sort((a, b) => a.compare(b));
@@ -48,6 +59,8 @@ export class BaseFeeManager implements FeeManager {
       priorityFee: medianPriorityFee.toString(),
       totalFee: medianBaseFee.add(medianPriorityFee).toString()
     };
+
+    // console.log('Gas estimate:', { gasLimit: medianGasLimit.toString(), feeEstimate });
 
     return {
       gasLimit: medianGasLimit.toString(),

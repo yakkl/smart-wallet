@@ -429,7 +429,6 @@
 
   async function handleContact() {
     try {
-      console.log('handleContact - selected');
       showAccountImportModal = false;
       updateValuePriceFiat();
       goto(PATH_WELCOME);

@@ -44,6 +44,7 @@ YAKKL Smart Wallet is a multi-platform cryptocurrency wallet designed for seamle
   - [Support and Contact](#support-and-contact)
   - [Acknowledgements](#acknowledgements)
     - [Final Notes](#final-notes)
+  - [EXPERIMENTAL](#experimental)
 
 ## Introduction
 
@@ -217,3 +218,17 @@ Thank those who have contributed to the development of YAKKL Smart Wallet, inclu
 ### Final Notes
 
 This outline provides a comprehensive structure for your `README.md`. It covers all major aspects of the YAKKL Smart Wallet, including installation, usage, development, and licensing. 
+
+## EXPERIMENTAL
+
+Testing shadcn UI controls. There are a few components but they are not functional:
+- Profile.svelte
+- Preferences.svelte
+
+Files:
+- tailwind.config.shadcn.js
+- app.shadcn.css
+- components.json
+
+Directory:
+- $lib/components/ui

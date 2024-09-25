@@ -328,27 +328,13 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     }
   }
 
-  getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<Block> {
-    throw new Error('Method not implemented.');
-  }
-  getBlockNumber(): Promise<number> {
-    throw new Error('Method not implemented.');
-  }
-  getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<BlockWithTransactions> {
-    throw new Error('Method not implemented.');
-  }
-  getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-
+  abstract getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<Block>;
+  abstract getBlockNumber(): Promise<number>;
+  abstract getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<BlockWithTransactions>;
+  abstract getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
   abstract getFeeData(): Promise<any>;
-
-  getGasPrice(): Promise<bigint> {
-    throw new Error('Method not implemented.');
-  }
-  getLogs(filter: Filter): Promise<Log[]> {
-    throw new Error('Method not implemented.');
-  }
+  abstract getGasPrice(): Promise<bigint>;
+  abstract getLogs(filter: Filter): Promise<Log[]>;
 
   /**
    * Gets the options for a blockchain.
@@ -383,9 +369,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     return this.providers.map((provider) => provider.name);
   }
 
-  getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
+  abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
 
   abstract getTransaction(transactionHash: string): Promise<any>;
   abstract getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number>;
@@ -443,17 +427,9 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     this.chainId = chainId;
   }
 
-  signTransaction(transaction: TransactionRequest): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-
-  signMessage(message: string): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-
-  signTypedData(transction: TransactionRequest): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
+  abstract signTransaction(transaction: TransactionRequest): Promise<string>;
+  abstract signMessage(message: string): Promise<string>;
+  abstract signTypedData(transction: TransactionRequest): Promise<string>;
 
   /**
    * Protected method to add or override metadata.

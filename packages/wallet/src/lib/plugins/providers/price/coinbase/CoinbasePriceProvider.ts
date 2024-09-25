@@ -8,14 +8,14 @@ export class CoinbasePriceProvider implements PriceProvider {
   }
 
   async getPrice(pair: string): Promise<PriceData> {
-    const json = await fetchJson(`https://api.pro.coinbase.com/products/${pair}/ticker`);
-    if (!json.price || !json.time) {
+    const json = await fetchJson(`https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${pair}`);
+    if (json.num_products <= 0) {
       throw new Error('Invalid JSON structure or missing data from Coinbase');
     }
     return {
       provider: this.getName(),
-      price: parseFloat(json.price),
-      lastUpdated: new Date(json.time)
+      price: parseFloat(json.products[0].price),
+      lastUpdated: new Date()
     };
   }
 }

@@ -5,7 +5,7 @@
 	import { decryptData } from '$lib/common/encryption';
 	import { createForm } from 'svelte-forms-lib';
 	import * as yup from 'yup';
-	import { Modal, Popover, Tabs, TabItem, Timeline, TimelineItem, Spinner, Button, Hr } from 'flowbite-svelte';
+	import { Popover, Tabs, TabItem, Timeline, TimelineItem, Spinner, Button, Hr } from 'flowbite-svelte';
 	import { handleOpenInTab, formatValue, getChainId, deepCopy } from '$lib/utilities/utilities';
 	import { getLengthInBytes, wait } from '$lib/common/utils';
   import { onDestroy, onMount } from 'svelte';
@@ -15,10 +15,9 @@
 	import Warning from '$lib/components/Warning.svelte';
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
-	// import { getPricesCoinbase } from '$lib/tokens/prices';
 	import { isEthereum } from '$lib/plugins/BlockchainGuards';
 	import { BigNumber, isEncryptedData, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
-	import PincodeModal from '$lib/components/PincodeModal.svelte';
+	import PincodeModal from '$lib/components/PincodeVerify.svelte';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
   
@@ -117,7 +116,6 @@
 	let marketClass = 'border-white border-2 animate-pulse ';
 	let lowClass = 'border border-gray-100 ';
 
-	let checkPricesProvider = 'coinbase';
   let checkGasPricesProvider = 'blocknative';
   let checkGasPricesInterval = 10; // Seconds
 
@@ -317,7 +315,7 @@
 			}
 		} catch(e) {
 			console.log(e);
-			errorValue = ':yakkl:' + e as string;
+			errorValue = e as string;
 			error = true;  // This 'should' show an error message but being in the onMount it may not.
 		} 
 	});
@@ -360,7 +358,7 @@
 			if ($form.toAddress) {
 				// Checks to see if address belongs to a smart contract. If so, then it will have a larger base gas fee.
 				const blockchain = wallet.getBlockchain();
-				if (blockchain.isSmartContractSupported()) { // TODO: Look into adding an additional block check for other blockchains that support smart contracts
+				if (blockchain.isSmartContractSupported()) { 
 					smartContract = await blockchain.isSmartContract($form.toAddress) ?? false;
 				} else {
 					smartContract = false;
@@ -417,7 +415,7 @@
 				validate(data);
 			} catch (e) {
         console.log(e);
-				errorValue = ':yakkl:' + e as string;
+				errorValue = e as string;
 				error = true;
 			}
 		}
@@ -443,6 +441,7 @@
 		try {
 			let address = data.toAddress;
 			let resolvedAddr = null;
+			let pin;
 
 			// Always need to verify verification values to be safe
 			let profile = await getProfile();
@@ -451,7 +450,6 @@
 			}
 			if (isEncryptedData(profile.data)) {
 				let result = await decryptData(profile.data, yakklMiscStore);
-				let pin;
 				const profileData = result as ProfileData;
 				if (profileData.pincode) {
 					pin = profileData.pincode;
@@ -463,12 +461,14 @@
 				} else {
 					pincodeVerified = false;
 				}
+			} else {
+				console.log("Profile data is not encrypted", profile.data);
 			}
 
 			maxPriorityFeePerGasOverride = BigNumber.from(data.maxPriorityFeePerGasOverride);
 			maxFeePerGasOverride = BigNumber.from(data.maxFeePerGasOverride);
 
-			toAddressValue = EthereumBigNumber.fromEther(valueCrypto).toBigInt() as bigint;
+			toAddressValue = EthereumBigNumber.fromEther(valueType != 'fiat' ? data.toAddressValue : valueCrypto).toBigInt() as bigint;
 
 			if (data.hexData && data.hexData.length > 0) {
 				if (data.hexData !== '0x') {
@@ -477,7 +477,7 @@
 					hexData = data.hexData;
 				}
 			}	else {
-				hexData = '0x';
+				data.hexData = hexData = '0x';
 			}
 
 			const blockchain = wallet.getBlockchain();
@@ -498,8 +498,7 @@
 				return;
 			}
 			
-			const feePerGas: number = BigNumber.from(maxFeePerGas).toNumber() as number;
-
+			const feePerGas: number = BigNumber.from(maxFeePerGas).toNumber() as number;			
 			if ( feePerGas < gasEstimate) {
 				warningValue = "The transaction Max Fee Per Gas Unit is LESS than the estimated Gas Fee. This may result in a slow transaction or no transaction at all. Keeping the Max Fee Per Gas Unit equal or greater than the estimated Gas Fee increases the possibility of a faster transaction time."
 				clearVerificationValues();
@@ -518,14 +517,14 @@
 					}
 				} else {
 					clearVerificationValues();
-					errorValue = ":yakkl:There are insufficient funds for this transaction.";
+					errorValue = "There are insufficient funds for this transaction.";
 					error = true;
 				}
 			}
 		} catch (e) {
 			console.log(e);
 			clearVerificationValues();
-			errorValue = ':yakkl:' + e as string;
+			errorValue = e as string;
 			error = true;
 		}
 	}
@@ -533,7 +532,7 @@
 
 	async function loadContacts() {
 		try {
-			$yakklContactsStore = await getYakklContacts();
+			$yakklContactsStore = await getYakklContacts(); // Don't really need this now. The $yakklContactsStore is already set in the store
 		} catch(e) {
 			console.log(e);
 			clearVerificationValues();
@@ -628,12 +627,11 @@
 		}
 	} catch (e) {
 		console.log(e);
-		errorValue = ':yakkl:' + e as string;
+		errorValue = e as string;
 		error = true;
 		clearVerificationValues();
 	}
 }
-
 
 
 	function handleOnMessage(request: any, sender: any) {
@@ -664,7 +662,6 @@
 	}
 
 
-
 	async function checkValue() {
 		try {
 			if (browserSvelte) {
@@ -675,11 +672,11 @@
 					if (value.valueOf() as bigint <= 0n) {
 						greaterThan0 = false;
 						error = true;
-						errorValue = `:yakkl:The current account, ${currentlySelected!.shortcuts.address}, has a 0 balance - there are insufficient funds in this account.`;
+						errorValue = `The current account, ${currentlySelected!.shortcuts.address}, has a 0 balance - there are insufficient funds in this account.`;
 					}
 				} catch (e) {
 					error = true;
-					errorValue = ':yakkl:' + e as string;
+					errorValue = e as string;
 				}
 			}
 		} catch(e) {
@@ -700,73 +697,8 @@
 		}
 	}
 
-	// async function getPrivateKey() {
-	// 	let privateKey = null;
-	// 	let address = null;
 
-	// 	try {
-	// 		let account!: YakklAccount;
-	// 		yakklMiscStore = getMiscStore();
-	// 		currentlySelected = $yakklCurrentlySelectedStore;
-
-	// 		console.log('currentlySelected', currentlySelected);
-
-	// 		const accountData = currentlySelected!.data as CurrentlySelectedData;
-	// 		let data: CurrentlySelectedData;
-
-	// 		console.log('accountData encrypt', accountData);
-	// 		if (isEncryptedData(accountData)) {
-	// 			await decryptData(accountData, yakklMiscStore).then(async result => {
-	// 				data = result as CurrentlySelectedData;
-	// 				if (isEncryptedData(data)) {
-	// 					await decryptData(data, yakklMiscStore).then(result => {
-	// 						account = result as YakklAccount;
-	// 					});
-	// 				} else {
-	// 					account = data.account as YakklAccount;
-	// 				}
-	// 				console.log('accountData decrypt', data);
-	// 				console.log('account', account);	
-	// 			});
-	// 		} else {
-	// 			account = (currentlySelected!.data as CurrentlySelectedData).account as YakklAccount;
-	// 		}
-
-	// 		console.log('account', account);
-
-	// 		if (isEncryptedData(account.data)) {
-	// 			await decryptData(account.data, yakklMiscStore).then(result => {
-	// 				account.data = result as AccountData;
-	// 			});
-	// 		}
-
-	// 		if (!(account.data as AccountData).privateKey) {
-	// 			throw 'Account data did not decrypt.';
-	// 		}
-
-	// 		console.log('account.data', account.data);
-
-	// 		if (!$yakklPricingStore?.price) {
-	// 			// This will act as a temporary call until the pricing interval checks start in the background
-	// 			await getPricesCoinbase('eth-usd').then(results => {
-	// 				yakklPricingStore.set({provider: checkPricesProvider, id: '-1', price: results.price}); // -1 for id means one off pricing and not on an interval
-	// 			});
-	// 		}
-
-		
-	// 		privateKey = (account.data as AccountData).privateKey;
-	// 		address = account.address;
-	// 	} catch(e) {
-	// 		console.log(e);
-	// 		errorValue = e as string;
-	// 		error = true;
-	// 	}
-
-	// 	return { privateKey, address };
-	// }
-
-
-	async function verifyWithPin(pincode: string, pincodeVerified: boolean): Promise<Profile | null>{
+	async function verifyWithPin(pin: string, pincodeVerified: boolean): Promise<Profile | null>{
 		try {
 			let profile: Profile | null = await getProfile();
 			if (profile === null) {
@@ -774,18 +706,19 @@
 			}
 
 			let profileEncrypted = null;
-			if (pincodeVerified === false) {
-				throw 'PINCODE was not verified.';
-			}
 
 			if (isEncryptedData(profile.data)) {
-				profileEncrypted = profile;
+				profileEncrypted = deepCopy(profile);
 				await decryptData(profile?.data, yakklMiscStore).then(result => {
 					(profile as Profile).data = result as ProfileData;
 				});
 			} 
 
-			if (pincode === (profile.data as ProfileData)?.pincode) {
+			if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
+				throw 'PINCODE was not verified.';
+			}
+
+			if (pincode === (profile.data as ProfileData).pincode) {
 				profile = null;
 				return profileEncrypted;
 			} else {
@@ -804,9 +737,7 @@
   async function processTransaction(unblockIncrease = 0, nonce = -1, hash: string = '', cancel = false, eoa=true) {
 		try {
 			currentlySelected = deepCopy($yakklCurrentlySelectedStore); // Allows for a deep copy of the store that does not impact the actual store
-
-			// profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
-			profile = await verifyWithPin(pincode, pincodeVerified); // Verifies one more time
+			profile = await verifyWithPin(deepCopy(pincode), pincodeVerified); // Verifies one more time. deepCopy is used to ensure that the pincode is not changed
 			if (!profile) {
 				throw 'Unable to verify your PINCODE. Please try again.'; //YAKKL pincode not valid. Please try again.';
 			}
@@ -814,19 +745,10 @@
 			// Create a transaction object
 			// Override values are set at submit time so we use those
 			// If cancel = true then have from and to be the same address, value = 0 and increase gas
-			// console.log('maxFeePerGas before 1: ', deepCopy(maxFeePerGas));
-			// console.log('maxPriorityFeePerGas before 1: ', deepCopy(maxPriorityFeePerGas));
-			// console.log('maxPriorityFeePerGasOverride before 1: ', maxPriorityFeePerGasOverride);
-			// console.log('maxFeePerGasOverride before 1: ', maxFeePerGasOverride);
 
+			
 			const priorityFeePerGas = Math.max(Number(maxPriorityFeePerGas), Number(maxPriorityFeePerGasOverride));// EthereumBigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride).toString(); //BigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride));
 			let feePerGas = Math.max(Number(maxFeePerGas), Number(maxFeePerGasOverride)); //EthereumBigNumber.max(maxFeePerGas, maxFeePerGasOverride);
-
-			// console.log('maxFeePerGas before 2: ', maxFeePerGas);
-			// console.log('maxPriorityFeePerGas before 2: ', maxPriorityFeePerGas);
-
-			// console.log('priorityFeePerGas: ', priorityFeePerGas);
-			// console.log('feePerGas: ', feePerGas);
 
 			// Check unblockIncrease and add it to the maxFeePerGasOverride
 			if (unblockIncrease > 0) {
@@ -848,12 +770,7 @@
 				nonce: nonce,
 			};
 
-			// console.log('Processing transaction: ', transaction); // Look at parseUnits for gas fees
-			// console.log('maxFeePerGas, maxPriorityFeePerGas, maxPriorityFeePerGasOverride, maxFeePerGasOverride: ', maxFeePerGas, feePerGas, maxPriorityFeePerGas, maxPriorityFeePerGasOverride, maxFeePerGasOverride);
-
-
 			// let hexTransaction = convertToHexStrings(transaction,['type', 'nonce']);
-
 			// All 'tx' prefix variables are available for the UI and misc  
 			txBlockchain = blockchain;
 			txNetworkTypeName = currentlySelected!.shortcuts.network.name;
@@ -867,8 +784,6 @@
 			txGasLimit = transaction.gasLimit as bigint; 
 			txNonce = Number(transaction.nonce);
 			txStartTimestamp = Date.now().toString();
-
-			// console.log('Processing transaction ALL: ', transaction, txBlockchain, txNetworkTypeName, txURL, txHash, txToAddress, txValue, txmaxFeePerGas, txmaxPriorityFeePerGas, txGasLimit, txNonce, txStartTimestamp);
 
 			let privateKey: string | null | undefined = null;
 
@@ -886,16 +801,14 @@
 				privateKey = currentlySelected?.data ? ((currentlySelected?.data as CurrentlySelectedData).account?.data as AccountData).privateKey : null;
 			}
 
-
-			// console.log('processTransaction: send: Wallet privateKey:', privateKey);
-			// console.log('processTransaction: send: Wallet.signer:', wallet.setSigner(privateKey === undefined ? null : privateKey));
-
 			if (privateKey === null) {
-				// console.log('processTransaction: Private key was not obtained');
 				throw 'Private key was not obtained'; 
 			}
+
 			await wallet.setSigner(privateKey!);
+
 			const tx: TransactionResponse = await wallet.sendTransaction(transaction);
+
 			clearVerificationValues(); // Clear verification values as soon as possible
 			if (tx) {
 				toastTrigger(2, 'Sending to the blockchain...');
@@ -910,8 +823,6 @@
 				const result = await tx.wait();
 				txStatus = 'mined';
 
-				// console.log('Transaction mined: ', result);
-
 				toastTrigger(2, 'Success - Processed on the Blockchain!');
 				wait(2000); // So that Etherscan has time to update
 				handleRecycle(); // Adds transactions again to the store OR we need to remove txTransactions etc from clearValues()
@@ -920,9 +831,10 @@
      	  throw 'No transaction was returned. Something went wrong.';
     	}
 		} catch(e: any) {
-			errorValue = ':yakkl:' + e?.message ?? e;
+			errorValue = e?.message ?? e;
 			error = true;
 		} finally {
+			console.log('processTransaction: finally. Clearing verification values.');
 			clearVerificationValues();
 		}
   }
@@ -946,17 +858,14 @@
 		switch (nextTab) {
 			case "amountTab":
 				amountTabOpen = true;
-				// amountTab.disabled = false;
 				break;
 
 			case "activityTab":
 				activityTabOpen = true;
-				// confirmTab.disabled = false;
 				break;
 		
 			case "feesTab":
 				feesTabOpen = true;
-				// feesTab.disabled = false;
 				break;
 		}
 
@@ -967,20 +876,17 @@
 			case "amountTab":
 				amountTabOpen = true;
 				feesTabOpen = false;
-				// confirmTabOpen = false;
 				activityTabOpen = false;
 				break;
 		
 			case "feesTab":
 				amountTabOpen = false;
 				feesTabOpen = true;
-				// confirmTabOpen = false;
 				activityTabOpen = false;
 				break;
 
 			case "activityTab":
 				activityTabOpen = true;
-				// confirmTabOpen = false;
 				amountTabOpen = false;
 				feesTabOpen = false;
 				break;
@@ -991,7 +897,7 @@
 	function handleMax() {
 		// May need to reduce based on estimated fees
 		try {
-			$form.toAddressValue = $yakklCurrentlySelectedStore!.shortcuts.value?.toString() ?? '0.0';
+			$form.toAddressValue = EthereumBigNumber.toEtherString($yakklCurrentlySelectedStore!.shortcuts.value) ?? '0.0';
 		} catch(e) {
 			console.log(e);
 			clearVerificationValues();
@@ -1031,8 +937,8 @@
 			txGasLimit = 21000n;
 			txGasLimitIncrease = 0;
 			txNonce = 0;
-			txStartTimestamp = '';
 			recipientPays = false;
+			txStartTimestamp = '';
 			txHistoryTransactions = [];
 			valueType = 'crypto';
 		} catch(e) {
@@ -1084,11 +990,6 @@
 
   function handleContact(contact: YakklContact) {
 		try {
-			if (contact) {
-				$yakklContactStore = contact;
-			} else {
-				// $yakklContactStore = null;
-			}
 			toAddress = $form.toAddress = contact.address;
 			showContacts = false;
 		} catch(e) {
@@ -1197,9 +1098,10 @@
 	}
 
 
-	function handlePin(pincode: string) {
+	// First verfication for the pincode. The second verification is done in the processTransaction function
+	function handlePin(pin: string) {
 		try {
-			pincode = pincode;
+			pincode = pin;
 			pincodeVerified = true; // We changed the dialog and it now does the verification. So, we can set this to true for downward compatibility!
 			if (pincodeVerified) {
 				handleApprove();
@@ -1233,65 +1135,6 @@
 
 <Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
-<!-- Modal had padding="xs" -->
-<!-- svelte-ignore missing-declaration -->
-<!-- <Modal title="Contact List" bind:open={showContacts} size="xs" >
-  <p class="text-sm font-normal text-gray-700 dark:text-gray-400">Select the contact you wish to send/transfer to</p>
-  {#if $yakklContactsStore}
-  <ul class="my-4 space-y-3">
-    {#each $yakklContactsStore as contact}
-      <li class="my-2">
-			<a id="d1" role="button" on:click|preventDefault={() => handleContact(contact)} class="flex items-center p-2 text-base text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 group hover:shadow dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
-          <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
-          <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
-          <path fill="#454A75" d="M539.7 650.3v564.4l539.8-319.1z"/>
-          <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
-          <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
-        </svg>
-        <div class="flex flex-1 flex-col ml-2">
-         <span class="text-sm font-bold">{contact.name}</span>
-         <span class="text-xs font-mono">{contact.address}</span>
-         <span class="text-xs font-mono">{contact.alias}</span>
-         <span class="text-xs font-mono">{contact.note}</span>
-        </div>
-      </a>
-    </li>
-    {/each}
-  </ul>
-  {:else}
-  <div class="text-center text-md text-gray-700 dark:text-gray-400">
-    There are currently no contacts! You can add contacts in the 'Accounts' area.
-  </div>
-  {/if}
-  <svelte:fragment slot='footer'>
-    <p class="text-sm font-normal text-gray-700 dark:text-gray-400">Always <span class="border-b-2 underline underline-offset-8">verify</span> the address before transferring!</p>
-  </svelte:fragment>
-</Modal> -->
-
-
-<!-- <div class="modal" class:modal-open={error}>
-  <div class="modal-box relative">
-    <h3 class="text-lg font-bold">ERROR!</h3>
-    <p class="py-4">{errorValue}</p>
-    <div class="modal-action">
-      <button class="btn" on:click={handleClose}>Close</button>
-    </div>
-  </div>
-</div> -->
-
-
-<!-- <div class="modal" class:modal-open={warning}>
-  <div class="modal-box relative">
-    <h3 class="text-lg font-bold">Warning</h3>
-    <p class="py-4">{warningValue}</p>
-    <div class="modal-action">
-      <button class="btn" on:click={() => warning=false}>OK</button>
-    </div>
-  </div>
-</div> -->
-
-
 <Toast color="indigo" transition={slide} bind:toastStatus>
   <svelte:fragment slot="icon">
     {#if toastType === 'success'}
@@ -1302,20 +1145,6 @@
   </svelte:fragment>
   {toastMessage}
 </Toast>
-
-
-<!-- <Popover class="text-sm z-10" triggeredBy="#recipientFees" placement="bottom">
-  <h3 class="font-semibold text-gray-900 dark:text-white">Recipient pays gas fees!</h3>
-  <div class="grid grid-cols-4 gap-2">
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-  </div>
-  <p class="py-2">This means that the gas fees are taken out of what you intend to send. See documentation for details. For example, if you are sending 1 ETH and this option is not checked then you will actually be sending 1 ETH + estimated gas fees (e.g., 1 ETH + .000000121 ETH for gas fees = 1.000000121 total ETH). 
-		If this option is checked then the estimated gas fees are taken out of the total (e.g., you are sending 1 ETH - .000000121 ETH (est gas fee) = 0.999999879 ETH the recipient receives). Suggestion - the recipient should know in advance they are covering the cost of gas fees so there are no surprises 😊</p>
-</Popover> -->
-
 
 <div class="text-center min-h-[75rem] -mt-1 ">
 	<div class="top-[.75rem] right-[1.5rem]">
@@ -1365,6 +1194,9 @@
 										required />										
 									{#if $errors.toAddress}
 										<small class="text-red-600 font-bold animate-pulse">{$errors.toAddress}</small>
+									{/if}
+									{#if smartContract}
+										<small class=" text-green-500 font-bold animate-pulse">*This is a smart contract address</small>
 									{/if}
 								</div>
 							</div>

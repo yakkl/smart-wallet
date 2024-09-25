@@ -3,8 +3,9 @@ import { fetchJson } from "@ethersproject/web";
 import { get } from 'svelte/store';
 import { yakklPricingStore, yakklConnectionStore } from "$lib/common/stores";
 import { PriceManager } from '$lib/plugins/PriceManager';
-import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 import { KrakenPriceProvider } from '$lib/plugins/providers/price/kraken/KrakenPriceProvider';
+import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/CoingeckoPriceProvider';
+import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 
 
 // https://polygon.io/docs/crypto/get_v3_reference_exchanges - APIs to look at next (stocks and crypto)
@@ -15,8 +16,10 @@ let pricingIntervalID: string | number | NodeJS.Timeout | undefined=undefined;
 let providerCB: string; // Note: If we decided to have multiple intervals running or alarms then we can add to an array
 
 // Add other providers here
+// NOTE: The original api.pro.coinbase.com is now deprecated.
 const priceManager = new PriceManager([
   { provider: new CoinbasePriceProvider(), weight: 5 },
+  { provider: new CoingeckoPriceProvider(), weight: 3 },
   { provider: new KrakenPriceProvider(), weight: 2 },
   // Add other providers with their weights...
 ]);

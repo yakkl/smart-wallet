@@ -1,6 +1,5 @@
 <!-- Accounts2.svelte -->
 <script lang="ts">
-  import { AccountTypeCategory } from '$lib/common/types';
   import { yakklAccountsStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
   import { YAKKL_ZERO_ADDRESS } from '$lib/common/constants';
   import type { YakklAccount } from '$lib/common';
@@ -13,10 +12,11 @@
   export let className = 'z-[999]';
 
   function handleAccountSelect(selectedAccount: YakklAccount) {
-    if (account === null && onAccountSelect !== null) {
-      onAccountSelect(selectedAccount);
-    } else {
+    if (account !== null) {
       account = selectedAccount;
+    }
+    if (onAccountSelect !== null) {
+      onAccountSelect(selectedAccount);
     }
     show = false;
   }

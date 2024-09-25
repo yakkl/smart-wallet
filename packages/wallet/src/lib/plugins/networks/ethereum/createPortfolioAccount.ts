@@ -9,7 +9,7 @@ import { deepCopy, getSymbol } from '$lib/utilities';
 import { isEncryptedData, isMetaData, isProfileData, isString } from '$lib/common/misc';
 import { dateString } from '$lib/common/datetime';
 import { AccountTypeCategory, NetworkType } from '$lib/common/types';
-
+import { VERSION } from '$lib/common/constants';
 
 export async function createPortfolioAccount(yakklMiscStore: string, profile: Profile) {
   try {
@@ -36,7 +36,10 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
 
     let currentlySelectedData: CurrentlySelectedData = yakklCurrentlySelected.data as CurrentlySelectedData;
     let derivedPath = DEFAULT_DERIVED_PATH_ETH; // Account gets created with '/0/0' appended to represent the first
-    const chainId = 1; // Default to mainnet - Doesn't matter the chainId for creating an address
+    let chainId = yakklCurrentlySelected.shortcuts.chainId; // Was 1
+    if (!chainId) {
+      chainId = 1;
+    }
 
     const preferences = profile.preferences;
     let accountName: string | null = null;
@@ -112,7 +115,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       tags: ['Ethereum', 'primary'],
       includeInPortfolio: true,   // This only applys to the value in this primary account and not any of the derived accounts from this primary account
       connectedDomains: [],
-      version: yakklCurrentlySelected.version,
+      version: VERSION,
       createDate: currentDate,
       updateDate: currentDate,
     };
@@ -146,7 +149,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       subAccounts: [] as YakklAccount[], // Always empty since the primary account is the start of the tree
       createDate: yakklAccount.createDate,
       updateDate: yakklAccount.updateDate,
-      version: yakklCurrentlySelected.version,
+      version: VERSION,
     }
     
     let yakklPrimaryAccountEnc = deepCopy(yakklPrimaryAccount) as YakklPrimaryAccount;
@@ -216,6 +219,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
     yakklSettings.init = true;
     yakklSettings.isLocked = false;
 
+    yakklCurrentlySelected.version = VERSION;
     yakklCurrentlySelected.preferences.locale = preferences.locale;
     yakklCurrentlySelected.preferences.currency = preferences.currency;
 
@@ -240,6 +244,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
     yakklCurrentlySelected.shortcuts.address = yakklPrimaryAccountEnc.address;
     yakklCurrentlySelected.shortcuts.accountName = yakklPrimaryAccountEnc.account.name;
     yakklCurrentlySelected.shortcuts.accountType = AccountTypeCategory.PRIMARY;
+    yakklCurrentlySelected.shortcuts.alias = yakklPrimaryAccountEnc.account.alias;
     yakklCurrentlySelected.shortcuts.smartContract = false;
 
     currentlySelectedData.primaryAccount = yakklPrimaryAccountEnc;

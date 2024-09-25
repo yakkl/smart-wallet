@@ -41,7 +41,7 @@
 
       const digestedPincode = await digestMessage(pincode);
       if (isProfileData(profile.data as ProfileData) && (profile.data as ProfileData).pincode === digestedPincode) {
-        onVerify(pincode);
+        onVerify(digestedPincode); // Send the digested pincode and not the actual pincode
       } else {
         alert("Invalid pincode");
       }
