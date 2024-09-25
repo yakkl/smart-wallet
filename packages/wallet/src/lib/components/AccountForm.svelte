@@ -22,9 +22,6 @@
       description: yup.string().optional(),
     }),
     onSubmit: (values) => {
-      console.log('Form values:', values);
-      console.log('Account:', account);
-      
       if (account) {
         const updatedAccount: YakklAccount = {
           ...account,

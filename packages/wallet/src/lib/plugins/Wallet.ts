@@ -296,18 +296,13 @@ export class Wallet {
    * Sets the signer for the wallet based on the current token and private key.
    */
   public setSigner(privateKey: string | null): Promise<Signer> {
-    // if (!this.currentToken) {
-    //   throw new Error('Current token is not set');
-    // }
     try {
       if (!this.blockchain) {
         throw new Error('Blockchain is not initialized');
       }
-
       if (!privateKey) {
         throw new Error('Private key is not set. You MUST provide a valid user private key before sending transactions.');
       }
-
       switch ( this.blockchain.name ) { //this.currentToken.blockchain.name) {
         case 'Ethereum':
           this.signer = new EthereumSigner(privateKey, this.provider);
@@ -342,7 +337,6 @@ export class Wallet {
         default:
           throw new Error(`Unsupported blockchain: ${this.blockchain.name}`);  //${this.currentToken.blockchain.name}`);
       }
-
       if (this.signer) {
         this.privateKey = privateKey; // Set the private key for the user for signing transactions of the current token.
         Wallet.setInstance(this);
@@ -352,9 +346,12 @@ export class Wallet {
         throw new Error('Signer could not be created');
       }
     } catch (error) {
-      console.log('Error setting signer:', error);
       return Promise.reject(error);
     }
+  }
+
+  public getSigner(): Signer | null {
+    return this.signer;
   }
 
   // SwitchNetwork is implemented with setChainId since the provider and blockchain remain the same.
@@ -437,26 +434,26 @@ export class Wallet {
       if (!this.privateKey) {
         throw new Error('Private key not set');
       } else {
+        console.log('Setting signer with private key - again!! :', this.privateKey);
+
         await this.setSigner(this.privateKey);
       }
     }
+
     if (!this.blockchain || !this.provider || !this.signer) {
       console.log('Blockchain, Provider, Signer:', this.blockchain, this.provider, this.signer);
       throw new Error('Blockchain or Provider or Signer not initialized');
     }
 
-    const gasEstimate = await this.blockchain.getGasEstimate(transaction);
+    // Implement gas estimation - Found an issue the FeeProvider model (not complete). 
+    // const gasEstimate = await this.blockchain.getGasEstimate(transaction);
 
     // Apply the gas estimate to the transaction
-    transaction.gasLimit = gasEstimate.gasLimit;
-    transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
-    transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
+    // transaction.gasLimit = gasEstimate.gasLimit;
+    // transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
+    // transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
 
     console.log('Sending transaction to provider:', transaction);
-    // const response = await this.provider.sendTransaction(transaction);
-
-    // Wallet.setInstance(this);
-    // return response;
     return await this.blockchain.sendTransaction(transaction);
   }
 

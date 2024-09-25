@@ -13,7 +13,7 @@
   import { DEFAULT_DERIVED_PATH_ETH, VERSION } from '$lib/common/constants';
   import { AccountTypeCategory, isEncryptedData, type CurrentlySelectedData, type PrimaryAccountData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
   import { dateString } from '$lib/common/datetime';
-  import PincodeModal from './PincodeModal.svelte';
+  import PincodeModal from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
 
   export let show = false;
@@ -285,6 +285,7 @@
 
           let yakklCurrentlySelected = currentlySelected;
 
+          yakklCurrentlySelected!.version = VERSION;
           yakklCurrentlySelected!.id = profile.id;
           yakklCurrentlySelected!.preferences.locale = preferences.locale;
           yakklCurrentlySelected!.preferences.currency = preferences.currency;
@@ -299,6 +300,7 @@
           yakklCurrentlySelected!.shortcuts.address = yakklAccount.address;
           yakklCurrentlySelected!.shortcuts.accountName = accountName;
           yakklCurrentlySelected!.shortcuts.accountType = AccountTypeCategory.PRIMARY;
+          yakklCurrentlySelected!.shortcuts.alias = yakklAccount.alias;
           yakklCurrentlySelected!.shortcuts.smartContract = false;
 
           (yakklCurrentlySelected!.data as CurrentlySelectedData).primaryAccount = yakklPrimaryAccountEnc;

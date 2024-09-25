@@ -16,6 +16,7 @@ export class EthereumGasProvider implements GasProvider {
 
   constructor(provider: Provider) {
     this.provider = provider;
+    // console.log('EthereumGasProvider created');
   }
 
   getName(): string {
@@ -26,11 +27,15 @@ export class EthereumGasProvider implements GasProvider {
     const gasLimit = await this.provider.estimateGas(transaction);
     const feeData = await this.provider.getFeeData();
 
+    // console.log('Gas estimate:', { gasLimit: gasLimit.toString(), feeData });
+
     const feeEstimate: FeeEstimate = {
       baseFee: feeData.lastBaseFeePerGas.toString(),
       priorityFee: feeData.maxPriorityFeePerGas.toString(),
       totalFee: BigNumber.from(feeData.lastBaseFeePerGas).add(feeData.maxPriorityFeePerGas).toString()
     };
+
+    // console.log('Gas estimate:', { gasLimit: gasLimit.toString(), feeEstimate });
 
     return {
       gasLimit: gasLimit.toString(),

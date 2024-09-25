@@ -3,7 +3,7 @@
 import { ethers } from "ethers"; // Just need to call a few non-blockchain access functions
 import { setSettings, getSettings, setProfileStorage, setYakklCurrentlySelectedStorage, getYakklPrimaryAccounts, setYakklPrimaryAccountsStorage, getYakklAccounts, setYakklAccountsStorage, getMiscStore, getYakklCurrentlySelected, getProfile } from '$lib/common/stores';
 import { encryptData, decryptData, isEncryptedData } from '$lib/common';
-import { DEFAULT_DERIVED_PATH_ETH } from '$lib/common/constants';
+import { DEFAULT_DERIVED_PATH_ETH, VERSION } from '$lib/common/constants';
 import { deepCopy, getSymbol } from '$lib/utilities';
 import type { AccountData, CurrentlySelectedData, EncryptedData, PrimaryAccountData, ProfileData, YakklAccount, YakklPrimaryAccount, Profile, Preferences, Settings, YakklCurrentlySelected } from '$lib/common';
 import { AccountTypeCategory, NetworkType } from '$lib/common/types';
@@ -12,19 +12,29 @@ import { dateString } from '$lib/common/datetime';
 // TODO: May want to have all of the .data encrypted in the catch block or final block to ensure that the data is encrypted before returning it. This requires moving the variables to here instead of the try block.
 
 // Note: profile is not encrypted when passed in. Also, profile.data.primaryAccounts?.length === 0 should be done before calling this function
-export async function createSubportfolioAccount(yakklMiscStore: string, currentlySelected: YakklCurrentlySelected, profile: Profile | null) {
+export async function createSubportfolioAccount(yakklMiscStore: string, currentlySelected: YakklCurrentlySelected | null, profile: Profile | null) {
   try {
+    let selectedData: CurrentlySelectedData | null = null;
+
     if (!yakklMiscStore) {
       yakklMiscStore = getMiscStore();
     }
 
     if (!currentlySelected) {
-      currentlySelected = await getYakklCurrentlySelected();
-      if (isEncryptedData(currentlySelected.data)) {
-        await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
-          currentlySelected.data = result as CurrentlySelectedData;
-        });
-      }
+      currentlySelected = await getYakklCurrentlySelected();      
+    }
+
+    if (isEncryptedData(currentlySelected.data)) {
+      await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
+        currentlySelected!.data = result as CurrentlySelectedData;
+        selectedData = deepCopy(result) as CurrentlySelectedData;
+      });
+    } else {
+      selectedData = deepCopy(currentlySelected.data) as CurrentlySelectedData;
+    }
+
+    if (!currentlySelected || !selectedData) {
+      throw "CurrentlySelected data does not appear. Please select a different Primary/Portfolio account and try again.";
     }
 
     if (!profile) {
@@ -38,11 +48,10 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     if (!profile || !profile.data) {
       throw "Profile data does not appear to be encrypted. Please register or re-register. Thank you.";
     }
-    // If profile is null then bail.
 
     let yakklSettings: Settings | null = await getSettings();
     if (!yakklSettings || yakklSettings?.init === false || yakklSettings?.isLocked === true) {
-      throw 'createSubportfolioAccount: The settings data has not been initialized. This could be due to not yet registered or data could be incomplete which requires registering again. If unable to re-register then uninstall and reinstall. No Ethereum data will be impacted.';
+      throw 'createSubportfolioAccount: The settings data has not been initialized. This could be due to not yet registered or data could be incomplete which requires registering again. If unable to re-register then uninstall and reinstall. No Blockchain data will be impacted.';
     }
 
     let addressDerived: string ='';
@@ -50,7 +59,10 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     let derivedPath = DEFAULT_DERIVED_PATH_ETH; //Index at end is dynamically created
     let currentDate: string;
     let preferences: Preferences;
-    const chainId = 1;
+    let chainId = currentlySelected.shortcuts.chainId; // Was 1
+    if (!chainId) {
+      chainId = 1;
+    }
 
     let profileData: ProfileData | null = null;
 
@@ -58,10 +70,24 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     if (profileData.primaryAccounts?.length === 0) {
       throw "You cannot derive a new account unless a primary account has been created through the registration process. Please register. Thank you.";
     }
+    if (isEncryptedData(selectedData)) {
+      await decryptData(selectedData, yakklMiscStore).then(result => {
+        selectedData = result as CurrentlySelectedData;
+      });
+    }
 
-    let currentlySelectedData: CurrentlySelectedData = currentlySelected.data as CurrentlySelectedData;
-    // yakklPrimaryAccount = profileData.primaryAccounts.find(account => account.name === currentlySelectedData.primaryAccount!.name) as YakklPrimaryAccount;   
-    yakklPrimaryAccount = currentlySelectedData.primaryAccount as YakklPrimaryAccount; 
+    if (selectedData !== null) {
+      yakklPrimaryAccount = (selectedData as CurrentlySelectedData).primaryAccount as YakklPrimaryAccount;
+      if (!yakklPrimaryAccount) {
+        // Check to see if this is a primary account. If the user delete a subaccount then the primary account will be null
+        yakklPrimaryAccount = profileData.primaryAccounts.find(account => account.address === currentlySelected?.shortcuts.address) as YakklPrimaryAccount; 
+        if (!yakklPrimaryAccount) {
+          throw "The primary account data does not appear to be correct. Please select a different primary account and try again. Thank you.";
+        }
+      }
+    } else {
+      throw "The primary account data does not appear to be correct. Please select a different primary account and try again (2). Thank you.";
+    }
 
     let index = profileData.primaryAccounts.indexOf(yakklPrimaryAccount);
     
@@ -82,7 +108,6 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
 
     const mnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic;
     let ethWallet = ethers.HDNodeWallet.fromPhrase(mnemonic as string, undefined, derivedPath); 
-
     if ( !ethWallet ) {
       throw "The subportfolio account was not able to be created. Please try again.";
     }
@@ -132,7 +157,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
       connectedDomains: [], 
       createDate: currentDate,
       updateDate: currentDate,
-      version: '1.0.0',
+      version: VERSION,
     };
 
     const yakklAccountEnc: YakklAccount = deepCopy(yakklAccount);
@@ -163,18 +188,19 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
 
     yakklSettings.isLocked = false;
 
+    currentlySelected.version = VERSION;
     currentlySelected.preferences.locale = preferences.locale;
     currentlySelected.preferences.currency = preferences.currency;
 
     currentlySelected.shortcuts.network.blockchain = yakklAccountEnc.blockchain;
-    currentlySelected.shortcuts.network.chainId = chainId; // Defaults to mainnet
+    currentlySelected.shortcuts.network.chainId = chainId!; // Defaults to mainnet
     currentlySelected.shortcuts.network.name = 'Mainnet'; // Defaults to mainnet - should change to read from getNetworkName(chainId)
     currentlySelected.shortcuts.network.explorer = 'https://etherscan.io'; // Defaults to etherscan
     currentlySelected.shortcuts.network.type = NetworkType.MAINNET; // Defaults to mainnet
     currentlySelected.shortcuts.network.decimals = 18; // Defaults to 18
     currentlySelected.shortcuts.network.symbol = getSymbol(yakklAccountEnc.blockchain);
 
-    currentlySelected.shortcuts.chainId = chainId;
+    currentlySelected.shortcuts.chainId = chainId!;
     currentlySelected.shortcuts.blockchain = yakklAccountEnc.blockchain;
     currentlySelected.shortcuts.symbol = getSymbol(yakklAccountEnc.blockchain);
     currentlySelected.shortcuts.showTestNetworks = preferences.showTestNetworks as boolean;
@@ -185,6 +211,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     currentlySelected.shortcuts.primary = yakklPrimaryAccount;
     currentlySelected.shortcuts.accountName = yakklAccountEnc.name;
     currentlySelected.shortcuts.accountType = AccountTypeCategory.SUB;
+    currentlySelected.shortcuts.alias = yakklAccountEnc.alias;
     currentlySelected.shortcuts.smartContract = false;
 
     (currentlySelected.data as CurrentlySelectedData).primaryAccount = yakklPrimaryAccount;
@@ -195,7 +222,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
 
     if (!isEncryptedData(currentlySelected.data)) {
       await encryptData(currentlySelected.data, yakklMiscStore).then(result => {
-        currentlySelected.data = result;
+        currentlySelected!.data = result;
       });
     }
 

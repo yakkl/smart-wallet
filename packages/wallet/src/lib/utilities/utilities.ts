@@ -288,6 +288,8 @@ export async function createHash(val: string) {
 
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
+// Do not use this for objects that have functions or circular references.
+// Do not use this on boolean - it will return null.
 export function deepCopy<T>(obj: T) {
   if (!obj) return null;
   return JSON.parse(encodeJSON(obj));

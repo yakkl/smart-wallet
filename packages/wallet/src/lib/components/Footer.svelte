@@ -4,6 +4,7 @@
   import { yakklCurrentlySelectedStore } from '$lib/common/stores';
   import { Modal } from "flowbite-svelte";
   import Chatbot from '$lib/components/Chatbot.svelte';
+  import ChatbotModal from './ChatbotModal.svelte';
 	import Buy from "$lib/components/Buy.svelte";
 	import Swap from "$lib/components/Swap.svelte";
 	import { onMount } from 'svelte';
@@ -124,11 +125,7 @@
 
 </script>
 
-<!-- <ChatbotModal showChat={showChat}/> -->
-<!-- padding="xs" - flowbite changed --> 
-<Modal  title="YAKKL-GPT"  bind:open={showChat} size="xs" >
-  <Chatbot />
-</Modal>
+<ChatbotModal bind:show={showChat}/>
 
 <Buy bind:show={showBuy}/>
 

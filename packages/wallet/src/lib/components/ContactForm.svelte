@@ -57,10 +57,11 @@
           onSubmit(updatedContact);
           show = false;
         } else {
-          console.error('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
+          alert('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
+          // console.log('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
         }
       } catch (e) {
-        console.error('Error processing contact:', e);
+        console.log('Error processing contact:', e);
       }
     },
   });
@@ -93,7 +94,7 @@
         resolvedAddr = await blockchain.resolveName(falias);
       } else {
         resolvedAddr = faddress;
-        console.log('ENS is only supported on Ethereum mainnet. Skipping ENS resolution on non-mainnet.');
+        // console.log('ENS is only supported on Ethereum mainnet. Skipping ENS resolution on non-mainnet.');
       }
     }
 
@@ -113,7 +114,7 @@
     const contacts = $yakklContactsStore;
     const isDuplicate = contacts.some(c => c.name === fname || c.address === faddress || c.alias === falias);
     if (isDuplicate) {
-      console.log('Duplicate contact name, address, or alias found. Cannot add duplicate contact.');
+      // console.log('Duplicate contact name, address, or alias found. Cannot add duplicate contact.');
       return false;
     }
 

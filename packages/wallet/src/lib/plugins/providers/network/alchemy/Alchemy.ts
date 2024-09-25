@@ -66,7 +66,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the call.
    * @returns A promise that resolves with the result of the call.
    */
-  call(transaction: Deferrable<TransactionRequest>, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
+  async call(transaction: Deferrable<TransactionRequest>, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
     throw new Error('Method not implemented.');
   }
 
@@ -75,7 +75,7 @@ export class Alchemy extends AbstractProvider {
    * @param transaction - The transaction request to estimate gas for.
    * @returns A promise that resolves with the estimated gas.
    */
-  estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
+  async estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
     throw new Error('Method not implemented.');
   }
 
@@ -159,7 +159,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the storage query.
    * @returns A promise that resolves with the storage value.
    */
-  getStorageAt(addressOrName: string, position: BigNumberish, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
+  async getStorageAt(addressOrName: string, position: BigNumberish, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
     // const blockTagish = BigNumber.from(await blockTag).toHex();
     throw new Error('Method not implemented.');
   }
@@ -320,7 +320,7 @@ export class Alchemy extends AbstractProvider {
    * @param filter - The filter to get logs for.
    * @returns A promise that resolves with the logs.
    */
-  getLogs(filter: Filter): Promise<Log[]> {
+  async getLogs(filter: Filter): Promise<Log[]> {
     throw new Error('Method not implemented.');
   }
 
@@ -346,7 +346,7 @@ export class Alchemy extends AbstractProvider {
    * @param address - The address to look up.
    * @returns A promise that resolves with the ENS name or null if not found.
    */
-  lookupAddress(address: string | Promise<string>): Promise<string | null> {
+  async lookupAddress(address: string | Promise<string>): Promise<string | null> {
     throw new Error('Method not implemented.');
   }
 
