@@ -154,9 +154,9 @@
   <br>
 </div>
 
-<ImportWatchAccount bind:show={showImportWatch} onImportWatch={handleImportWatch} className="text-gray-600 z-[999]"/>
+<ImportWatchAccount bind:show={showImportWatch} onComplete={handleImportWatch} className="text-gray-600 z-[999]"/>
 
-<ImportPrivateKey bind:show={showImportAccount} onImportAccount={handleImport} className="text-gray-600 z-[999]"/>
+<ImportPrivateKey bind:show={showImportAccount} onComplete={handleImport} className="text-gray-600 z-[999]"/>
 
 <ExportPrivateKey bind:show={showExportPrivateKey} onVerify={handleExportPrivateKey} className="text-gray-600 z-[999]"/>
 

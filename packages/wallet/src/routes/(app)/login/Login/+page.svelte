@@ -6,7 +6,7 @@
   import { syncStoresToStorage, yakklVersionStore, yakklUserNameStore } from '$lib/common/stores';
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
-  import { PATH_WELCOME, PATH_REGISTER, PATH_DAPP_ACCOUNTS, DEFAULT_TITLE } from '$lib/common/constants';
+  import { PATH_WELCOME, PATH_REGISTER, PATH_DAPP_ACCOUNTS, DEFAULT_TITLE, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_LOGOUT } from '$lib/common/constants';
   import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
   import { decryptData, encryptData } from '$lib/common/encryption';
   import { onMount } from 'svelte';
@@ -14,12 +14,17 @@
   import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Welcome from '$lib/components/Welcome.svelte';
-	import { RegistrationType, isEncryptedData, type ProfileData, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
+	import { RegistrationType, checkAccountRegistration, isEncryptedData, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
 	import { verify } from '$lib/common/security';
   
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
+	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
+	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
+	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
+	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
+	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
   let browser_ext: Browser; 
   if (browserSvelte) browser_ext = getBrowserExt();
 
@@ -38,6 +43,12 @@
   let pweyeOpen = false;
   let pweyeOpenId: HTMLButtonElement;
   let pweyeClosedId: HTMLButtonElement;
+
+  let showRegistrationOption = false;
+  let showEmergencyKit = false;
+  let showImportOption = false;
+  let showImportAccount = false;
+  let showImportPhrase = false;
 
   if (browserSvelte) {
     requestId = $page.url.searchParams.get('requestId') as string;
@@ -231,7 +242,13 @@
             setIconUnlock(); // Set the unlock icon and sync will occur in welcome (next step)
           }
           showProgress = false;
-          goto(redirect);
+
+          // Make sure there is at least one Primary or Imported account
+          if (await checkAccountRegistration()) {
+            goto(redirect);
+          } else {
+            showRegistrationOption = true;
+          }
         }
       } catch(e) {
         showProgress = false;
@@ -276,11 +293,84 @@
     }
   }
   
+  function onCompleteImportPrivateKey(account: YakklAccount) {
+    showImportAccount = false;
+    goto(PATH_WELCOME)
+  }
+
+  function onCancelImportPrivateKey() {
+    showImportAccount = false;
+    showRegistrationOption = true;
+  }
+
+  function onCompleteEmergenyKit(success: boolean, message: string) {
+    showEmergencyKit = false;
+    goto(PATH_WELCOME)
+  }
+
+  function onCancelEmergencyKit() {
+    showEmergencyKit = false;
+    showRegistrationOption = true;
+  }
+
+  function onCancelRegistrationOption() {
+    showRegistrationOption = false;
+    showEmergencyKit = false;
+    showImportAccount = false;
+    goto(PATH_LOGOUT);
+  }
+  
+  function onCancelImportOption() {
+    showImportOption = false;
+    showEmergencyKit = false;
+    showImportAccount = false;
+    showImportPhrase = false;
+    showRegistrationOption = true; // Go back to the registration option
+  }
+
+  function onImportKey() {
+    showRegistrationOption = false;
+    showImportOption = false;
+    showImportPhrase = false;
+    showEmergencyKit = false;
+    showImportAccount = true;
+  }
+
+  function onImportPhrase() {
+    showRegistrationOption = false;
+    showImportOption = false;
+    showEmergencyKit = false;
+    showImportAccount = false;
+    showImportPhrase = true;
+  }
+
+  // May want to add parameters of what changed later but not currently needed
+  function onCompleteImportPhrase() {
+    showImportPhrase = false;
+    goto(PATH_WELCOME)
+  }
+
+  function onCancelImportPhrase() {
+    showImportAccount = false;
+    showRegistrationOption = true;
+  }
+  
 </script>
 
 <svelte:head>
 	<title>{DEFAULT_TITLE}</title>
 </svelte:head>
+
+<!-- Here, we don't need to close anything so no need for onClose or onCancel -->
+<RegistrationOptionModal bind:show={showRegistrationOption} onCreate={() => {showRegistrationOption=false; goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);}} onImport={() => {showRegistrationOption=false; showImportAccount=true;}} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}} />
+
+<ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} />
+
+<ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  />
+
+<ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}}/>
+
+<EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit}/>
 
 <ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." />
 
@@ -383,6 +473,16 @@
                   d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
               </svg>
               <span>Unlock</span>
+            </div>
+          </button>
+          <button type="button" on:click={onCancelRegistrationOption}
+            class="btn btn-secondary w-64 rounded-full mt-3 text-white">
+            <div class="inline-flex items-center align-middle">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6 mx-2">
+                <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
+                <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
+              </svg> 
+              <span>Exit/Logout</span>
             </div>
           </button>
         </div>

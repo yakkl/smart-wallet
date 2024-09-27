@@ -10,6 +10,9 @@
   export let account: YakklAccount | null = null;
   export let onSubmit: (account: YakklAccount) => void = () => {};
 
+  // Not using onCancel here but letting it fall through to the Modal component since we don't need to do anything special
+  // export let onCancel: () => void = () => {show = false};
+  
   const { form, errors, handleChange, handleSubmit, updateInitialValues } = createForm({
     initialValues: {
       name: '',

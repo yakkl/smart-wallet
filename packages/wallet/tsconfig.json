@@ -31,7 +31,7 @@
     "src/**/*.ts",
     "src/**/*.js",
     "src/**/*.svelte",
-    "src/lib/browser-polyfill.d.ts"
+    "src/lib/browser-polyfill.d.ts",
   ],
   "exclude": ["node_modules", "../../node_modules"]
 }

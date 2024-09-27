@@ -86,7 +86,7 @@
 
 <div class="relative {className}">
   <Modal bind:show={show} title="Pincode Authorization" on:close={closeModal}>
-    <div class="p-6">
+    <div class="p-6 text-gray-700 dark:text-gray-200">
       <p class="mb-4">Please verify your pincode to move forward. Thank you.</p>
       <div class="relative">
         <!-- Numeric with password type will still show dots even if not allowed when type is text but it will not show -->
@@ -96,7 +96,7 @@
           inputmode="numeric"
           minlength="8"
           maxlength="8"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-700 bg-gray-50"
           placeholder="Enter 8 Digit Pin Code"
           autocomplete="off"
           bind:value={pincode}

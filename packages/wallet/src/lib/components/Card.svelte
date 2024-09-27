@@ -594,7 +594,7 @@
 
 <Receive bind:show={showRecv} address={address} />
 
-<ImportPrivateKey bind:show={showAccountImportModal} onImportAccount={handleImport} className="text-gray-600 z-[999]"/>
+<ImportPrivateKey bind:show={showAccountImportModal} onComplete={handleImport} className="text-gray-600 z-[999]"/>
 
 <Modal title="Upgrade to Premier" bind:open={upgrade} size="xs" class="xs" color="purple"> 
   <div class="text-center m-2">

@@ -13,7 +13,8 @@
 
   export let show = false;
   export let className = 'z-[999]';
-  export let onImportWatch: (watch: YakklWatch) => void = () => {};
+  export let onCancel: () => void = () => {};
+  export let onComplete: (watch: YakklWatch) => void = () => {};
 
   let currentlySelected: YakklCurrentlySelected;
   let yakklMiscStore: string;
@@ -131,13 +132,14 @@
 
     await setYakklWatchListStorage(watchList);
 
-    onImportWatch(watch);
+    onComplete(watch);
 
     resetForm();
     show = false;
   }
 
   function closeModal() {
+    onCancel();
     resetForm();
     show = false;
   }
@@ -162,21 +164,21 @@
       </p>
       <form on:submit|preventDefault={handleSubmit} class="space-y-4">
         <div>
-          <label for="blockchain" class="block text-sm font-medium text-gray-700">Blockchain</label>
+          <label for="blockchain" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Blockchain</label>
           <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.blockchain} on:change={handleChange}>
             <option value="Ethereum">Ethereum</option>
             <option value="Polygon">Polygon</option>
           </select>
         </div>
         <div>
-          <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+          <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address</label>
           <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.address} on:change={handleChange} />
           {#if $errors.address}
             <p class="mt-2 text-sm text-red-600">{$errors.address}</p>
           {/if}
         </div>
         <div>
-          <label for="addressName" class="block text-sm font-medium text-gray-700">Address Name</label>
+          <label for="addressName" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address Name</label>
           <input type="text" id="addressName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressName} on:change={handleChange} />
           {#if $errors.addressName}
             <p class="mt-2 text-sm text-red-600">{$errors.addressName}</p>
@@ -184,14 +186,14 @@
         </div>
         <div class="flex items-center">
           <input type="checkbox" id="includeInPortfolio" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={$form.includeInPortfolio} on:change={handleChange} />
-          <label for="includeInPortfolio" class="ml-2 block text-sm text-gray-900">Include this account in your portfolio totals?</label>
+          <label for="includeInPortfolio" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Include this account in your portfolio totals?</label>
         </div>
         <div>
-          <label for="addressAlias" class="block text-sm font-medium text-gray-700">Address Alias (optional)</label>
+          <label for="addressAlias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address Alias (optional)</label>
           <input type="text" id="addressAlias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressAlias} on:change={handleChange} />
         </div>
         <div>
-          <label for="url" class="block text-sm font-medium text-gray-700">Explorer URL - checking address data (optional)</label>
+          <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Explorer URL - checking address data (optional)</label>
           <input type="text" id="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.url} on:change={handleChange} />
         </div>
         <div class="pt-5">

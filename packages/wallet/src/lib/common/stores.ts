@@ -17,7 +17,7 @@ import {
 	yakklPreferences,
 	yakklChats,
 	yakklBlockedList
-} from '$lib/models/dataModels.js';
+} from '$lib/models/dataModels';
 import {
 	STORAGE_YAKKL_REGISTERED_DATA,
 	STORAGE_YAKKL_ACCOUNTS,

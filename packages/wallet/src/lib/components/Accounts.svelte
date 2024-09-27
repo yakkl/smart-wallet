@@ -10,7 +10,10 @@
   export let show = false;
   export let onAccountSelect: ((account: YakklAccount) => void) | null = null;
   export let className = 'z-[999]';
-
+  
+  // Not using onCancel here but letting it fall through to the Modal component since we don't need to do anything special
+  // export let onCancel: () => void = () => {show = false};
+  
   function handleAccountSelect(selectedAccount: YakklAccount) {
     if (account !== null) {
       account = selectedAccount;
@@ -21,6 +24,7 @@
     show = false;
   }
 
+  // Close the modal without calling onCancel
   function closeModal() {
     show = false;
   }

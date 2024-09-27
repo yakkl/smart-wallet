@@ -129,7 +129,7 @@
   <div class="p-6">
     <div class="space-y-4 mt-6">
       <!-- From Token -->
-      <div class="bg-gray-100 rounded-lg p-4">
+      <div class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-lg p-4">
         <div class="flex justify-between items-center">
           <input
             type="number"
@@ -144,7 +144,7 @@
           />
         </div>
         {#if fromToken}
-          <div class="text-sm text-gray-600 mt-2">Balance: {fromBalance} {fromToken.symbol}</div>
+          <div class="text-sm text-gray-700 dark:text-gray-200 mt-2">Balance: {fromBalance} {fromToken.symbol}</div>
         {/if}
       </div>
 
@@ -159,7 +159,7 @@
       </button>
 
       <!-- To Token -->
-      <div class="bg-gray-100 rounded-lg p-4">
+      <div class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-lg p-4">
         <div class="flex justify-between items-center">
           <input
             type="number"
