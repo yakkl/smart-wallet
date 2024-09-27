@@ -13,12 +13,13 @@
   import { DEFAULT_DERIVED_PATH_ETH, VERSION } from '$lib/common/constants';
   import { AccountTypeCategory, isEncryptedData, type CurrentlySelectedData, type PrimaryAccountData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
   import { dateString } from '$lib/common/datetime';
-  import PincodeModal from './PincodeVerify.svelte';
+  import PincodeVerify from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
 
   export let show = false;
   export let className = 'text-gray-600 z-[999]';
-  export let onImportPhrase: (importedAccount: YakklPrimaryAccount) => void = () => {};
+  export let onComplete: () => void = () => {showPincodeModal = false; show = false;}; // May want to add parameters to show what imported but not currently needed
+  export let onCancel: () => void = () => {showPincodeModal = false; show = false;};
 
   let currentlySelected: YakklCurrentlySelected;
   let error = '';
@@ -33,7 +34,7 @@
       try {
         const selectedWords = secretPhrase.split(' ').slice(0, parseInt(selected));
         const yakklPrimaryAccount = await createPortfolioAccount(selectedWords.join(' '));
-        onImportPhrase(yakklPrimaryAccount);
+        onComplete();
 
         // Create subAccounts if enabled
         if (subAccounts) {
@@ -453,28 +454,21 @@
     document.addEventListener('paste', handlePaste);
   });
 
-  function handleCancel() {
-    showPincodeModal = false;
-    show = false;
-  }
-
   function handleSubaccounts() {
     subAccounts = !subAccounts;
   }
 
   async function verifyPincode(pincode: string) {
-    // Perform pincode verification logic here
-    // If pincode is valid, show the import phrase modal
     showPincodeModal = false;
     show = true;
   }
 </script>
 
-<PincodeModal bind:show={showPincodeModal} onVerify={verifyPincode} />
+<PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
 
 <div class="relative {className}">
-  <Modal bind:show={show} title="Import - Secret Recovery Phrase" className={className}>
-    <div class="p-6">
+  <Modal bind:show={show} bind:onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>
+    <div class="p-6 text-gray-700 dark:text-gray-200">
       <p class="text-sm text-red-500 mb-4">
         Please be careful! <strong>This Secret Recovery Phrase is important!</strong>
         A bad actor could take the content of your wallet if they have access to your Private Key or Secret Recovery Phrase!
@@ -482,7 +476,7 @@
       </p>
       <form on:submit|preventDefault={handleSubmit} class="space-y-4">
         <div>
-          <label for="words" class="block text-sm font-medium text-gray-700">Secret Recovery Phrase Length</label>
+          <label for="words" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Secret Recovery Phrase Length</label>
           <select id="words" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={selected} on:change={hideShowWords}>
             <option value="12">12 Word Secret Phrase</option>
             <option value="15">15 Word Secret Phrase</option>
@@ -493,11 +487,11 @@
         </div>
         <div>
           <!-- svelte-ignore a11y-label-has-associated-control -->
-          <label class="block text-sm font-medium text-gray-700">Secret Recovery Phrase Words</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Secret Recovery Phrase Words</label>
           <div class="mt-1 grid grid-cols-2 gap-2">
             {#each Array(parseInt(selected)) as _, index (index)}
               <div class="flex items-center">
-                <span class="w-8 text-sm text-gray-500">{index + 1}.</span>
+                <span class="w-8 text-sm text-gray-700 dark:text-gray-200">{index + 1}.</span>
                 <input type="password" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" data-id={index + 1} aria-label={`Word ${index + 1}`} on:paste={handlePaste} />
               </div>
             {/each}
@@ -505,15 +499,15 @@
         </div>
         <div class="flex items-center">
           <input type="checkbox" id="showWords" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" on:click={toggleWordsVisibility} />
-          <label for="showWords" class="ml-2 block text-sm text-gray-900">Show Secret Recovery Phrase Words</label>
+          <label for="showWords" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Show Secret Recovery Phrase Words</label>
         </div>
         <div class="flex items-center">
           <input type="checkbox" id="subaccounts" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={subAccounts} on:change={handleSubaccounts} />
-          <label for="subaccounts" class="ml-2 block text-sm text-gray-900">Recover Subportfolio Accounts</label>
+          <label for="subaccounts" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Recover Subportfolio Accounts</label>
         </div>
         <div class="pt-5">
           <div class="flex justify-end space-x-4">
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={handleCancel}>Cancel</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={onCancel}>Cancel</button>
             <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
             <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Import</button>
           </div>

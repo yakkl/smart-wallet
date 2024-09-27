@@ -3,6 +3,29 @@
 import type { ErrorBody, ParsedError } from '$lib/common';
 // import { Utils } from "alchemy-sdk";
 
+import { AccountTypeCategory } from '$lib/common/types';
+import type { YakklAccount } from '$lib/common/interfaces';
+import { getYakklAccounts } from '$lib/common/stores';
+
+export async function checkAccountRegistration(): Promise<boolean> {
+  try {
+    const accounts: YakklAccount[] = await getYakklAccounts();
+
+    if (!accounts || accounts.length === 0) {
+      return false;
+    }
+
+    const hasPrimaryOrImported = accounts.some(account => 
+      account.accountType === AccountTypeCategory.PRIMARY || 
+      account.accountType === AccountTypeCategory.IMPORTED
+    );
+
+    return hasPrimaryOrImported;
+  } catch (error) {
+    console.error('Error checking registration:', error);
+    return false;
+  }
+}
 
 /**
  * <p transition:typewriter>
@@ -89,4 +112,5 @@ export function getLengthInBytes(value: string): number {
   }
   return 0;
 }
+
 

@@ -58,6 +58,8 @@ export interface EmergencyKitMetaData {
   subPortfolioName?: string;
   subPortfolioAddress?: string;
   hash?: string;
+  files?: string[];
+  // May want to add addresses for the portfolio and subportfolio at somepoint in the future
 }
 
 export interface EmergencyKitData {

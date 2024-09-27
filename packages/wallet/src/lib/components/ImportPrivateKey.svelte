@@ -26,7 +26,8 @@
 
   export let show = false;
   export let className = 'text-gray-600 z-[999]';
-  export let onImportAccount: (account: YakklAccount) => void = () => {};
+  export let onComplete: (account: YakklAccount) => void = () => {show = false};
+  export let onCancel: () => void = () => {show = false};
 
   onMount(async () => {
     try {
@@ -210,7 +211,7 @@
       await setYakklAccountsStorage(yakklAccounts);
       await setYakklCurrentlySelectedStorage(currentlySelected);
 
-      onImportAccount(yakklAccount);
+      onComplete(yakklAccount);
 
       show = false;
     }
@@ -234,19 +235,19 @@
 {/if}
 
 <div class="relative {className}">
-  <Modal bind:show={show} title="Import Account" on:close={closeModal} className={className}>
-    <div class="p-6 border-t border-gray-500">
-      <p class="text-sm text-red-500 mb-4">
+  <Modal bind:show={show} title="Import Account" on:close={closeModal} bind:onCancel={onCancel} className={className}>
+    <div class="p-6 border-t border-gray-500 dark:border-gray-300">
+      <p class="text-sm text-red-500 dark:text-red-300 mb-4">
         Please be careful! <strong>This private key is important!</strong>
         A bad actor could take the content of your wallet if they have access to your private key!
       </p>
       <form on:submit|preventDefault={handleSubmit} class="space-y-4">
         <div>
-          <label for="accountName" class="block text-sm font-medium text-gray-700">Account Name</label>
+          <label for="accountName" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Account Name</label>
           <input
             type="text"
             id="accountName"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.accountName}
             on:change={handleChange}
           />
@@ -255,21 +256,21 @@
           {/if}
         </div>
         <div>
-          <label for="alias" class="block text-sm font-medium text-gray-700">Alias (Optional)</label>
+          <label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alias (Optional)</label>
           <input
             type="text"
             id="alias"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.alias}
             on:change={handleChange}
           />
         </div>
         <div>
-          <label for="prvKey" class="block text-sm font-medium text-gray-700">Private Key</label>
+          <label for="prvKey" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Private Key</label>
           <textarea
             id="prvKey"
             rows="3"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.prvKey}
             on:change={handleChange}
           ></textarea>
@@ -279,7 +280,7 @@
         </div>
         <div class="pt-5">
           <div class="flex justify-end space-x-4">
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={closeModal}>Cancel</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={onCancel}>Cancel</button>
             <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
             <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Import</button>
           </div>

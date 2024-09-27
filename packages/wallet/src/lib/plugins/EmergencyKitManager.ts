@@ -44,6 +44,8 @@ interface BulkEmergencyKitData {
 // ADD other cloud/edge environment imports here
 // When ready to implement S3, uncomment the following line
 // import { S3 } from 'aws-sdk';
+import { profile } from '../models/dataModels';
+import { RegistrationType } from '../common/types';
 // Then do: npm install aws-sdk
 
 // Add conditional import to handle server-side only
@@ -87,7 +89,8 @@ export class EmergencyKitManager {
       portfolioName: accountData[0].portfolioName,
       subPortfolioName: accountData[0].subPortfolioName || '',
       subPortfolioAddress: accountData[0].subPortfolioAddress || '',
-      hash: overallChecksum
+      hash: overallChecksum,
+      files: ['YakklAccount']
     };
 
     const emergencyKit: EmergencyKitData = {
@@ -101,13 +104,16 @@ export class EmergencyKitManager {
     return emergencyKit;
   }
 
-  static async downloadEmergencyKit(emergencyKit: EmergencyKitData, filePath?: string) {
+  static async downloadEmergencyKit(emergencyKit: EmergencyKitData, filePath?: string): Promise<string> {
     if (typeof window !== 'undefined' && window.document) {
+      const fileName = `emergency-kit-${emergencyKit.id}-${emergencyKit?.meta?.createDate}.json`;
       // Browser environment
-      this.downloadObjectAsJson(emergencyKit, `emergency-kit-${emergencyKit.id}.json`);
+      this.downloadObjectAsJson(emergencyKit, fileName);
+      return fileName;
     } else if (filePath && fs && promisify) {
       // Node.js or other non-browser environment
       await this.saveJsonToFile(emergencyKit, filePath);
+      return filePath;
     } else {
       throw new Error('Download not supported in this environment');
     }
@@ -232,16 +238,23 @@ export class EmergencyKitManager {
       yakklConnectedDomainsStore: await this.encryptWithChecksum(connectedDomains, passwordOrSaltedKey),
     };
 
+    let profileData: ProfileData | null = null;
+    if (isEncryptedData(profile.data)) {
+      profileData = await decryptData(profile.data, passwordOrSaltedKey);
+    }
+
     const meta: EmergencyKitMetaData = {
       id,
       createDate,
       updateDate: createDate,
       version: VERSION,
       type: "yakkl_bulk",
-      registeredType: (profile.data as ProfileData).registered.type,
-      hash: await this.createHash(JSON.stringify(encryptedData))
+      registeredType: profileData?.registered?.type ?? RegistrationType.STANDARD,
+      hash: await this.createHash(JSON.stringify(encryptedData)),
+      files: ['yakklPreferencesStore', 'yakklSettingsStore', 'profileStore', 'yakklCurrentlySelectedStore', 'yakklContactsStore', 'yakklChatsStore', 'yakklAccountsStore', 'yakklPrimaryAccountsStore', 'yakklWatchListStore', 'yakklBlockedListStore', 'yakklConnectedDomainsStore']
     };
 
+    profileData = null;    
     
     const bulkEmergencyKit: BulkEmergencyKitData = {
       meta,
@@ -298,10 +311,12 @@ export class EmergencyKitManager {
     return { newData, existingData };
   }
 
-  static async downloadBulkEmergencyKit(bulkEmergencyKit: BulkEmergencyKitData) {
+  static async downloadBulkEmergencyKit(bulkEmergencyKit: BulkEmergencyKitData): Promise<string> {
     if (typeof window !== 'undefined' && window.document) {
+      const fileName = `bulk-emergency-kit-${bulkEmergencyKit.meta.id}-${bulkEmergencyKit.meta.createDate}.json`;
       // Browser environment
-      this.downloadObjectAsJson(bulkEmergencyKit, `bulk-emergency-kit-${bulkEmergencyKit.meta.id}.json`);
+      this.downloadObjectAsJson(bulkEmergencyKit, fileName);
+      return fileName;
     } else {
       throw new Error('Download not supported in this environment');
     }

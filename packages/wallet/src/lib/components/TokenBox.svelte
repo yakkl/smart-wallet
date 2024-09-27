@@ -20,7 +20,7 @@
 </script>
 
 {#if show}
-  <div class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer">
+  <div class="flex flex-col items-center p-4 border border-gray-300 rounded-lg cursor-pointer text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900">
     <div class="flex items-center mb-4">
       <img src={token.logoURI} alt={token.name} class="w-8 h-8 mr-2" />
       <div class="flex flex-col">
