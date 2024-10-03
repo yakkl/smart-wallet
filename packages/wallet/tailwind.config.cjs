@@ -37,6 +37,82 @@ module.exports = {
             '0 45px 65px rgba(0, 0, 0, 0.15)'
         ]
       },
+      colors: {
+        // Backgrounds
+        'modal-bg-light': '#f9fafb',
+        'modal-bg-dark': '#1f2937',
+        'surface-light': '#ffffff',
+        'surface-dark': '#2d3748',
+
+        // Primary colors for text (titles)
+        'primary-light': '#111827',  // Dark gray (almost black) for light mode
+        'primary-dark': '#E5E7EB',   // Light gray for dark mode
+
+        // Secondary colors for text (subtitles/descriptions)
+        'secondary-light': '#4B5563',  // Medium gray for light mode
+        'secondary-dark': '#9CA3AF',   // Light gray for dark mode
+
+        // Neutral background (for dividers and less emphasized elements)
+        'neutral-light': '#f3f4f6',  // Light gray for light mode
+        'neutral-dark': '#1f2937',   // Dark gray for dark mode
+
+        // Text and input colors
+        'input-bg-light': '#FFFFFF',
+        'input-bg-dark': '#374151',
+        'input-text-light': '#111827',
+        'input-text-dark': '#E5E7EB',
+        'input-placeholder-light': '#9CA3AF',
+        'input-placeholder-dark': '#6B7280',
+        
+        // Borders for inputs or dividers
+        'input-border-light': '#D1D5DB',
+        'input-border-dark': '#4B5563',
+        'input-focused-border-light': '#6D28D9',
+        'input-focused-border-dark': '#8B5CF6',
+      },
+        // 'modal-bg-light': '#f9fafb',
+        // 'modal-bg-dark': '#1f2937',
+        // 'primary-light': '#6d28d9',
+        // 'primary-dark': '#8b5cf6',
+        // 'secondary-light': '#6366f1',
+        // 'secondary-dark': '#818cf8',
+        // 'accent-light': '#1FB2A5',
+        // 'accent-dark': '#22D3EE',
+        // 'neutral-light': '#f3f4f6',
+        // 'neutral-dark': '#1f2937',
+        // 'surface-light': '#ffffff',
+        // 'surface-dark': '#2d3748',
+        // 'info-light': '#3ABFF8',
+        // 'info-dark': '#67E8F9',
+        // 'success-light': '#36D399',
+        // 'success-dark': '#4ADE80',
+        // 'warning-light': '#FBBD23',
+        // 'warning-dark': '#FCD34D',
+        // 'error-light': '#F87272',
+        // 'error-dark': '#FCA5A5',
+
+        // // Text colors
+        // 'text-primary-light': '#111827',
+        // 'text-secondary-light': '#4B5563',
+        // 'text-disabled-light': '#9CA3AF',
+        // 'text-primary-dark': '#E5E7EB',
+        // 'text-secondary-dark': '#9CA3AF',
+        // 'text-disabled-dark': '#6B7280',
+
+        // // Input colors
+        // 'input-bg-light': '#FFFFFF',
+        // 'input-bg-dark': '#374151',
+        // 'input-border-light': '#D1D5DB',
+        // 'input-border-dark': '#4B5563',
+        // 'input-text-light': '#111827',
+        // 'input-text-dark': '#E5E7EB',
+        // 'input-placeholder-light': '#9CA3AF',
+        // 'input-placeholder-dark': '#6B7280',
+
+        // // Focused border colors for inputs
+        // 'input-focused-border-light': '#6D28D9',
+        // 'input-focused-border-dark': '#8B5CF6',
+      // },
       // colors: {
       //   transparent: 'transparent',
       //   current: 'currentColor',

@@ -329,7 +329,7 @@ export interface SwapToken {
   name: string;
   symbol: string;
   decimals: number;
-  logoURI: string;
+  logoURI?: string;
   extensions?: any;
   isNative?: boolean;
   description?: string;

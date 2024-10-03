@@ -2,99 +2,67 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // type Listener = (...args: any[]) => void;
 
-import type { Listener } from '$lib/common';
+import type { EventType, Listener } from '$lib/common';
 
 /**
  * Manages event listeners and emits events.
  */
 class EventManager {
-  /** Map of events and their listeners */
-  private events: Map<string, Listener[]>;
+  private eventListeners: Map<EventType, Set<Listener>> = new Map();
 
-  /**
-   * Creates an instance of EventManager.
-   */
-  constructor() {
-    this.events = new Map();
-  }
-
-  /**
-   * Adds a listener for an event.
-   * @param event - The name of the event.
-   * @param listener - The listener function.
-   */
-  on(event: string, listener: Listener): void {
-    if (!this.events.has(event)) {
-      this.events.set(event, []);
+  on(eventName: EventType, listener: Listener): this {
+    if (!this.eventListeners.has(eventName)) {
+      this.eventListeners.set(eventName, new Set());
     }
-    this.events.get(event)!.push(listener);
+    this.eventListeners.get(eventName)!.add(listener);
+    return this;
   }
 
-  /**
-   * Removes a listener for an event.
-   * @param event - The name of the event.
-   * @param listener - The listener function.
-   */
-  off(event: string, listener: Listener): void {
-    const listeners = this.events.get(event);
-    if (listeners) {
-      this.events.set(event, listeners.filter(l => l !== listener));
-    }
-  }
-
-  /**
-   * Emits an event to all its listeners.
-   * @param event - The name of the event.
-   * @param args - Arguments to pass to the listeners.
-   */
-  emit(event: string, ...args: any[]): void {
-    const listeners = this.events.get(event);
-    if (listeners) {
-      listeners.forEach(listener => listener(...args));
-    }
-  }
-
-  /**
-   * Adds a one-time listener for an event.
-   * @param event - The name of the event.
-   * @param listener - The listener function.
-   */
-  once(event: string, listener: Listener): void {
-    const onceListener: Listener = (...args: any[]) => {
-      this.off(event, onceListener);
+  once(eventName: EventType, listener: Listener): this {
+    const onceWrapper = (...args: any[]) => {
+      this.off(eventName, onceWrapper);
       listener(...args);
     };
-    this.on(event, onceListener);
+    return this.on(eventName, onceWrapper);
   }
 
-  /**
-   * Removes all listeners for an event, or all events if no event is specified.
-   * @param event - The name of the event.
-   */
-  removeAllListeners(event?: string): void {
-    if (event) {
-      this.events.delete(event);
-    } else {
-      this.events.clear();
+  emit(eventName: EventType, ...args: any[]): boolean {
+    if (!this.eventListeners.has(eventName)) return false;
+    this.eventListeners.get(eventName)!.forEach(listener => listener(...args));
+    return true;
+  }
+
+  listenerCount(eventName?: EventType): number {
+    if (eventName === undefined) {
+      return Array.from(this.eventListeners.values()).reduce((acc, set) => acc + set.size, 0);
     }
+    return this.eventListeners.get(eventName)?.size || 0;
   }
 
-  /**
-   * Gets the count of listeners for an event.
-   * @param event - The name of the event.
-   * @returns The number of listeners for the event.
-   */
-  listenerCount(event: string): number {
-    return this.events.get(event)?.length || 0;
+  listeners(eventName?: EventType): Listener[] {
+    if (eventName === undefined) {
+      return Array.from(this.eventListeners.values()).flatMap(set => Array.from(set));
+    }
+    return Array.from(this.eventListeners.get(eventName) || []);
   }
 
-  /**
-   * Gets the listeners for an event.
-   * @param event - The name of the event.
-   * @returns The listeners for the event.
-   */
-  listeners(event: string): Listener[] {
-    return this.events.get(event) || [];
+  off(eventName: EventType, listener?: Listener): this {
+    if (!this.eventListeners.has(eventName)) return this;
+    if (listener) {
+      this.eventListeners.get(eventName)!.delete(listener);
+    } else {
+      this.eventListeners.delete(eventName);
+    }
+    return this;
+  }
+
+  removeAllListeners(eventName?: EventType): this {
+    if (eventName === undefined) {
+      this.eventListeners.clear();
+    } else {
+      this.eventListeners.delete(eventName);
+    }
+    return this;
   }
 }
 

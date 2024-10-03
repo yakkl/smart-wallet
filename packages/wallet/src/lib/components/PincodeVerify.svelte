@@ -1,4 +1,3 @@
-<!-- Pin.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
   import { getProfile, yakklMiscStore } from "$lib/common/stores";
@@ -66,10 +65,10 @@
 
   function togglePinVisibility() {
     eyeOpen = !eyeOpen;
-    toggleVisability("pincode", "number");
+    toggleVisibility("pincode", "number");
   }
 
-  function toggleVisability(id="pincode", type="text") {
+  function toggleVisibility(id="pincode", type="text") {
     try {
       let x = document.getElementById(id) as HTMLInputElement;
       if (x.type === "password") {
@@ -86,8 +85,8 @@
 
 <div class="relative {className}">
   <Modal bind:show={show} title="Pincode Authorization" on:close={closeModal}>
-    <div class="p-6 text-gray-700 dark:text-gray-200">
-      <p class="mb-4">Please verify your pincode to move forward. Thank you.</p>
+    <div class="p-6 text-primary-light dark:text-primary-dark">
+      <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your pincode to move forward. Thank you.</p>
       <div class="relative">
         <!-- Numeric with password type will still show dots even if not allowed when type is text but it will not show -->
         <input

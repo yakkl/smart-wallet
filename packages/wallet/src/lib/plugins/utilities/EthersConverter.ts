@@ -6,7 +6,7 @@ import type {
   Log,
   BigNumberish, 
   TransactionRequest,
-  AccessList
+  AccessList,
 } from '$lib/common';
 
 export class EthersConverter {

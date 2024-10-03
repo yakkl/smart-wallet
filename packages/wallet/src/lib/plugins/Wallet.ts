@@ -45,10 +45,11 @@ export class Wallet {
    * @param blockchainNames - List of blockchain names.
    * @param privateKey - Optional private key for the wallet.
    */
-  constructor(private providerNames: string[] = ['Alchemy'], private blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null) {
+  constructor(private providerNames: string[] = ['Alchemy'], private blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null, privateKey: string | null = null) {
     this.apiKey = apiKey;  // Set the private key if provided else use setPrivateKey method before attempting to send transactions - This is the provider API Key and not the user's private key
     this.chainId = chainId; // Have to do this before initializing the wallet
     this.setChainId(chainId);
+    this.privateKey = privateKey; // This is the user's private key
     this.initialize();
     Wallet.setInstance(this); // Any change to the wallet instance should update the store
   }
@@ -196,6 +197,9 @@ export class Wallet {
     }
   
     this.setupEventListeners();
+    if (this.privateKey) {
+      this.setSigner(this.privateKey);
+    }
     Wallet.setInstance(this);
   }
 
@@ -295,13 +299,15 @@ export class Wallet {
   /**
    * Sets the signer for the wallet based on the current token and private key.
    */
-  public setSigner(privateKey: string | null): Promise<Signer> {
+  public setSigner(privateKey: string | null): Promise<Signer> | null {
     try {
       if (!this.blockchain) {
         throw new Error('Blockchain is not initialized');
       }
-      if (!privateKey) {
-        throw new Error('Private key is not set. You MUST provide a valid user private key before sending transactions.');
+      // privateKey can be null if the system is initializing so we simply log and return
+      if (!privateKey && !this.privateKey) {
+        console.log('No private key provided yet');
+        return null;
       }
       switch ( this.blockchain.name ) { //this.currentToken.blockchain.name) {
         case 'Ethereum':

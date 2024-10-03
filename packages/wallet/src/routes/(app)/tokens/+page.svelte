@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { PATH_WELCOME } from '$lib/common';
-	import type { TokenData, YakklAccount, YakklContact, YakklPrimaryAccount, YakklWatch } from '$lib/common/interfaces';
+	import type { TokenData, YakklAccount, YakklContact, YakklWatch } from '$lib/common/interfaces';
 	import Accounts from '$lib/components/Accounts.svelte';
 	import Contacts from '$lib/components/Contacts.svelte';
 	import ExportPrivateKey from '$lib/components/ExportPrivateKey.svelte';
@@ -13,12 +13,17 @@
 	import Receive from '$lib/components/Receive.svelte';
   import TokenBox from '$lib/components/TokenBox.svelte';
   import { ethTokenData, btcTokenData } from '$lib/data/mock/MockTokenData';
-
   import Profile from '$lib/components/Profile.svelte';
   import Preferences from '$lib/components/Preferences.svelte';
   import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
   import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	import Swap from '$lib/components/Swap.svelte';
+	import SwapModal from '$lib/components/SwapModal.svelte';
+  import type { SwapToken as Token } from '$lib/common/interfaces';
+	import type { BigNumberish } from '$lib/common';
+	import { getYakklCurrentlySelected } from '$lib/common/stores';
+	import { onMount } from 'svelte';
 
   let profileComponent: Profile;
   let preferencesComponent: Preferences;
@@ -38,7 +43,10 @@
   let showEmergencyKit = false;
   let showRegistrationOptions = false;
   let showImportOptions = false;
+  let showSwap = false;
+  let showSwapModal = false;
 
+  let fundingAddress: string | null = null;
   let account: YakklAccount | null = null;
   let mode: 'import' | 'export' = 'export';
 
@@ -46,8 +54,22 @@
     console.log('account', account);
   }
 
+  onMount(async () => {
+    const getCurrentlySelected = await getYakklCurrentlySelected();
+    if (getCurrentlySelected?.shortcuts?.address) {
+      fundingAddress = getCurrentlySelected.shortcuts.address;
+    }
+  });
+
+
   function close() {
     goto(PATH_WELCOME);
+  }
+
+  function onSwap(fundingAddress: string, fromToken: Token, toToken: Token, fromAmount: BigNumberish, toAmount: BigNumberish) {
+    console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
+
+    
   }
 
   function handleAccounts(selectedAccount: YakklAccount) {
@@ -132,6 +154,14 @@
   </div>
 
   <div class="my-4">
+    <SwapModal bind:show={showSwapModal} {fundingAddress} /> 
+  </div>
+  
+  <div class="my-4">
+    <Swap bind:show={showSwap} {fundingAddress} {onSwap} /> address - where the funds/crypto will come from
+  </div>
+  
+  <div class="my-4">
     <ImportOptionModal bind:show={showImportOptions} showImportWatch={true} onImportKey={() => {showImportOptions=false; showImportAccount=true;}} onImportPhrase={() => {showImportOptions=false; showImportPhrase=true;}} onRestore={() => {showImportOptions=false; mode='import'; showEmergencyKit=true;}} onImportWatch={() => {showImportOptions=false; showImportWatch=true;}}/>
   </div>
 
@@ -196,6 +226,18 @@
     </button>
   </div>
 
+  <button
+    on:click={() => showSwapModal = true}
+    class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
+    SwapModal
+  </button>
+  
+  <button
+    on:click={() => showSwap = true}
+    class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
+    Swap
+  </button>
+  
   <button
     on:click={() => showRegistrationOptions = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">

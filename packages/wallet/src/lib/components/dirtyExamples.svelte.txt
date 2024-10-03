@@ -1,0 +1,169 @@
+<script lang="ts">
+  import { trackDirty } from './actions/formActions';
+  import { isDirty, resetDirty } from './stores/formStore';
+  
+  let formData = {
+    name: '',
+    email: ''
+  };
+  
+  function handleSubmit() {
+    // Save form data
+    resetDirty();
+  }
+  </script>
+  
+  <form on:submit|preventDefault={handleSubmit}>
+    <input type="text" bind:value={formData.name} use:trackDirty>
+    <input type="email" bind:value={formData.email} use:trackDirty>
+    <button type="submit">Save</button>
+  </form>
+
+
+
+  <script lang="ts">
+    import { onMount, onDestroy } from 'svelte';
+    import { isDirty } from './stores/formStore';
+    
+    let unsubscribe: () => void;
+    
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if ($isDirty) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    }
+    
+    onMount(() => {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      unsubscribe = isDirty.subscribe(value => {
+        // You can perform additional actions here when the dirty state changes
+      });
+    });
+    
+    onDestroy(() => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (unsubscribe) unsubscribe();
+    });
+    </script>
+
+
+
+<script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
+  import { isDirty } from './stores/formStore';
+  
+  beforeNavigate(({ cancel }) => {
+    if ($isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
+      cancel();
+    }
+  });
+  </script>
+
+
+<script lang="ts">
+  import { isDirty } from './stores/formStore';
+  
+  function handleClose() {
+    if ($isDirty) {
+      if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+        // Close the modal or navigate away
+      }
+    } else {
+      // Close the modal or navigate away
+    }
+  }
+  </script>
+  
+  <button on:click={handleClose}>Close</button>
+
+
+  // For non-formWrapped fields
+
+  <script lang="ts">
+import { trackChanges } from './actions/trackChanges';
+import { isDirty, resetDirty } from './stores/dirtyStore';
+
+let name = '';
+let isSubscribed = false;
+let preference = '';
+
+function handleSave() {
+  // Save the data
+  resetDirty();
+}
+</script>
+
+<input type="text" bind:value={name} use:trackChanges>
+
+<input type="checkbox" bind:checked={isSubscribed} use:trackChanges>
+
+<label>
+  <input type="radio" name="preference" value="option1" bind:group={preference} use:trackChanges>
+  Option 1
+</label>
+<label>
+  <input type="radio" name="preference" value="option2" bind:group={preference} use:trackChanges>
+  Option 2
+</label>
+
+<button on:click={handleSave}>Save</button>
+
+{#if $isDirty}
+  <p>You have unsaved changes!</p>
+{/if}
+
+// Show with alert:
+<script lang="ts">
+import { onMount, onDestroy } from 'svelte';
+import { isDirty } from './stores/dirtyStore';
+
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if ($isDirty) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+}
+
+onMount(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onDestroy(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
+</script>
+
+
+// With sveltekit - show beforeNavigate
+<script lang="ts">
+import { beforeNavigate } from '$app/navigation';
+import { isDirty } from './stores/dirtyStore';
+
+beforeNavigate(({ cancel }) => {
+  if ($isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
+    cancel();
+  }
+});
+</script>
+
+
+// For closing dialogs or custom navigation
+<script lang="ts">
+import { isDirty, resetDirty } from './stores/dirtyStore';
+
+function handleClose() {
+  if ($isDirty) {
+    if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+      resetDirty();
+      // Close the dialog or navigate away
+    }
+  } else {
+    // Close the dialog or navigate away
+  }
+}
+</script>
+
+<button on:click={handleClose}>Close</button>
+
+

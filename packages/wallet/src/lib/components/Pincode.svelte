@@ -1,4 +1,3 @@
-<!-- Pincode.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
   import { getProfile, setProfileStorage, yakklMiscStore, profileStore, yakklCurrentlySelectedStore, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected } from '$lib/common/stores';
@@ -115,8 +114,8 @@
 
 <div class="relative {className}">
   <Modal bind:show={show} title="Pincode Change" on:close={closeModal}>
-    <div class="p-6 text-gray-700 dark:text-gray-200">
-      <p class="mb-4">Please verify your current pincode and then enter your new pincode. Thank you.</p>
+    <div class="p-6 text-primary-light dark:text-primary-dark">
+      <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your current pincode and then enter your new pincode. Thank you.</p>
       <div class="relative mb-4">
         <input
           id="pincodeOriginal"
