@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { type BlockTag, type BigNumberish, type Deferrable, type Listener, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter, type Log, type EventType, BigNumber } from '$lib/common';
+import { type BlockTag as CustomBlockTag, type BigNumberish, type Deferrable, type Listener, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter as CustomFilter, type Log as CustomLog, type EventType, BigNumber } from '$lib/common';
 import eventManager from '$plugins/EventManager';
 import { AbstractProvider, type Provider } from '$plugins/Provider';
-import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings } from "alchemy-sdk";
+import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings, type Filter as AlchemyFilter, type Log as AlchemyLog, type BlockTag as AlchemyBlockTag } from "alchemy-sdk";
 import type { Signer } from '$lib/plugins/Signer';
+import { EthersConverter } from '$lib/plugins/utilities/EthersConverter';
 
 interface AlchemyOptions {
   apiKey?: string | null;
@@ -66,19 +67,54 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the call.
    * @returns A promise that resolves with the result of the call.
    */
-  async call(transaction: Deferrable<TransactionRequest>, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
+  // In the Alchemy class
 
-  /**
-   * Estimates the gas required for a transaction.
-   * @param transaction - The transaction request to estimate gas for.
-   * @returns A promise that resolves with the estimated gas.
-   */
+  async call(transaction: Deferrable<TransactionRequest>, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
+    try {
+      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
+      const resolvedBlockTag = await blockTag;
+      
+      const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
+      const result = await this.alchemy!.core.call(ethersTransaction as any, resolvedBlockTag as any);
+  
+      eventManager.emit('call', { transaction: resolvedTransaction, blockTag: resolvedBlockTag, result });
+      return result;
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'call', error });
+      throw error;
+    }
+  }
+  
   async estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
-    throw new Error('Method not implemented.');
+    try {
+      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
+      
+      const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
+      const gasEstimate = await this.alchemy!.core.estimateGas(ethersTransaction as any);
+  
+      eventManager.emit('estimateGas', { transaction: resolvedTransaction, gasEstimate });
+      return BigInt(gasEstimate.toString());
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'estimateGas', error });
+      throw error;
+    }
   }
-
+  
+  // Helper method to resolve deferred transaction properties
+  private async resolveDeferredTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
+    const resolved: Partial<TransactionRequest> = {};
+    for (const [key, value] of Object.entries(transaction)) {
+      if (value instanceof Promise) {
+        resolved[key as keyof TransactionRequest] = await value as any;
+      } else {
+        resolved[key as keyof TransactionRequest] = value as any;
+      }
+    }
+    return resolved as TransactionRequest;
+  }
+  
   /**
    * Gets the current block number.
    * @returns A promise that resolves with the current block number.
@@ -117,7 +153,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the balance query.
    * @returns A promise that resolves with the balance.
    */
-  async getBalance(addressOrName: string, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<bigint> {
+  async getBalance(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<bigint> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       const address: string = addressOrName as string;
@@ -139,7 +175,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the code query.
    * @returns A promise that resolves with the code.
    */
-  async getCode(addressOrName: string, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
+  async getCode(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       const blockTagish = BigNumber.from(await blockTag).toHex();
@@ -159,9 +195,23 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the storage query.
    * @returns A promise that resolves with the storage value.
    */
-  async getStorageAt(addressOrName: string, position: BigNumberish, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<string> {
-    // const blockTagish = BigNumber.from(await blockTag).toHex();
-    throw new Error('Method not implemented.');
+  async getStorageAt(addressOrName: string, position: BigNumberish, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
+    try {
+      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      const resolvedBlockTag = await blockTag;
+      
+      const storage = await this.alchemy!.core.getStorageAt(
+        addressOrName,
+        EthersConverter.toEthersHex(position) as string || '0x0',
+        resolvedBlockTag as any
+      );
+  
+      eventManager.emit('getStorageAt', { addressOrName, position, blockTag: resolvedBlockTag, storage });
+      return storage;
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'getStorageAt', error });
+      throw error;
+    }
   }
 
   
@@ -218,7 +268,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockHashOrBlockTag - The block hash or block tag to get the block for.
    * @returns A promise that resolves with the block.
    */
-  async getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<Block> {
+  async getBlock(blockHashOrBlockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<Block> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       const blockTagish = BigNumber.from(await blockHashOrBlockTag).toHex();
@@ -236,7 +286,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockHashOrBlockTag - The block hash or block tag to get the block with transactions for.
    * @returns A promise that resolves with the block with transactions.
    */
-  async getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<BlockWithTransactions> {
+  async getBlockWithTransactions(blockHashOrBlockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<BlockWithTransactions> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       const blockTagish = BigNumber.from(await blockHashOrBlockTag).toHex();
@@ -271,7 +321,7 @@ export class Alchemy extends AbstractProvider {
    * @param blockTag - The block tag for the transaction count query.
    * @returns A promise that resolves with the transaction count.
    */
-  async getTransactionCount(addressOrName: string, blockTag: BlockTag | Promise<BlockTag> = 'latest'): Promise<number> {
+  async getTransactionCount(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<number> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
       const blockTagish = BigNumber.from(await blockTag).toHex();
@@ -320,8 +370,65 @@ export class Alchemy extends AbstractProvider {
    * @param filter - The filter to get logs for.
    * @returns A promise that resolves with the logs.
    */
-  async getLogs(filter: Filter): Promise<Log[]> {
-    throw new Error('Method not implemented.');
+  async getLogs(filter: CustomFilter): Promise<CustomLog[]> {
+    try {
+      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      
+      // Convert your custom Filter type to Alchemy Filter type
+      const alchemyFilter: AlchemyFilter = {
+        address: filter.address,
+        topics: filter.topics
+      };
+  
+      if (filter.fromBlock) {
+        alchemyFilter.fromBlock = this.convertToAlchemyBlockTag(filter.fromBlock);
+      }
+  
+      if (filter.toBlock) {
+        alchemyFilter.toBlock = this.convertToAlchemyBlockTag(filter.toBlock);
+      }
+  
+      const logs = await this.alchemy!.core.getLogs(alchemyFilter);
+  
+      // Convert Alchemy logs to your custom Log type
+      const convertedLogs: CustomLog[] = logs.map(log => this.convertAlchemyLogToCustomLog(log));
+  
+      eventManager.emit('getLogs', { filter, logs: convertedLogs });
+      return convertedLogs;
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'getLogs', error });
+      throw error;
+    }
+  }
+  
+  // Helper method to convert custom BlockTag to Alchemy BlockTag
+  private convertToAlchemyBlockTag(blockTag: CustomBlockTag): AlchemyBlockTag {
+    if (typeof blockTag === 'string') {
+      if (blockTag === 'latest' || blockTag === 'pending' || blockTag === 'earliest') {
+        return blockTag;
+      }
+      // If it's a hex string, convert it to a number
+      return parseInt(blockTag, 16);
+    }
+    if (typeof blockTag === 'number' || typeof blockTag === 'bigint') {
+      return Number(blockTag);
+    }
+    throw new Error(`Invalid block tag: ${blockTag}`);
+  }
+  
+  // Helper method to convert Alchemy Log to custom Log
+  private convertAlchemyLogToCustomLog(log: AlchemyLog): CustomLog {
+    return {
+      blockNumber: log.blockNumber,
+      blockHash: log.blockHash,
+      transactionIndex: log.transactionIndex,
+      removed: log.removed,
+      address: log.address,
+      data: log.data,
+      topics: log.topics,
+      transactionHash: log.transactionHash,
+      logIndex: log.logIndex
+    };
   }
 
   /**
@@ -346,75 +453,18 @@ export class Alchemy extends AbstractProvider {
    * @param address - The address to look up.
    * @returns A promise that resolves with the ENS name or null if not found.
    */
-  async lookupAddress(address: string | Promise<string>): Promise<string | null> {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Adds an event listener for the specified event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  on(eventName: EventType, listener: Listener): Provider {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Adds a one-time event listener for the specified event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  once(eventName: EventType, listener: Listener): Provider {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Emits an event.
-   * @param eventName - The name of the event.
-   * @param args - The arguments to pass to the event listeners.
-   * @returns Whether the event had listeners.
-   */
-  emit(eventName: EventType, ...args: any[]): boolean {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Gets the number of listeners for the specified event.
-   * @param eventName - The name of the event.
-   * @returns The number of listeners.
-   */
-  listenerCount(eventName?: EventType): number {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Gets the listeners for the specified event.
-   * @param eventName - The name of the event.
-   * @returns The listeners.
-   */
-  listeners(eventName?: EventType): Listener[] {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Removes an event listener for the specified event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  off(eventName: EventType, listener?: Listener): Provider {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Removes all listeners for the specified event.
-   * @param eventName - The name of the event.
-   * @returns The provider instance.
-   */
-  removeAllListeners(eventName?: EventType): Provider {
-    throw new Error('Method not implemented.');
+  async lookupAddress(address: string): Promise<string | null> {
+    try {
+      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      
+      const name = await this.alchemy!.core.lookupAddress(address);
+  
+      eventManager.emit('lookupAddress', { address, name });
+      return name;
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'lookupAddress', error });
+      throw error;
+    }
   }
 
   /**
@@ -461,6 +511,11 @@ export class Alchemy extends AbstractProvider {
     this.chainId = chainId;
   }
 
+  // Example if needing to override eventManager 
+  // on(eventName: EventType, listener: Listener): Provider {
+    // Custom logic here
+    // return super.on(eventName, listener);
+  // } 
 }
 
 /**

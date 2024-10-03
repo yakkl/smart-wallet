@@ -2,7 +2,7 @@
   import { browser as browserSvelte} from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
-  import { PATH_ACCOUNTS, PATH_IMPORT_PHRASE, PATH_LOCK, PATH_SECURITY, PATH_TOKENS } from "$lib/common/constants";
+  import { PATH_ACCOUNTS, PATH_LOCK, PATH_SECURITY, PATH_TOKENS } from "$lib/common/constants";
   import Back from "$components/Back.svelte";
   import ComingSoon from "$components/ComingSoon.svelte";
 	import ErrorNoAction from "$components/ErrorNoAction.svelte";

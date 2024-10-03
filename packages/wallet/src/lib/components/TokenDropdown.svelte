@@ -26,9 +26,9 @@
     searchQuery = '';
   }
 
-  function getLogoURL(logoURI: string): string {
-    if (logoURI.startsWith('http://') || logoURI.startsWith('ipfs://')) {
-      return '/images/logoBullFav-BW32x32.png';
+  function getLogoURL(logoURI: string | null | undefined): string {
+    if (!logoURI || logoURI.startsWith('http://') || logoURI.startsWith('ipfs://')) {
+      return '/images/logoBullFav32x32.png';
     }
     return logoURI;
   }
@@ -52,18 +52,18 @@
 </script>
 
 <div class="relative w-full">
-  <button class="select select-bordered w-full max-w-xs flex items-center space-x-2 px-4 py-2" on:click={toggleDropdown}>
+  <button class="select select-bordered w-full max-w-xs flex items-center space-x-2 px-4 py-2 " on:click={toggleDropdown}>
     {#if selectedToken}
       <img src={getLogoURL(selectedToken.logoURI)} alt={selectedToken.name} class="w-6 h-6 rounded-full" />
       <div class="flex-1 flex flex-col justify-center">
-        <span class="font-bold text-lg text-gray-300">{selectedToken.symbol}</span>
-        <span class="text-sm text-gray-400 mt-0">{selectedToken.name}</span>
+        <span class="font-bold text-lg text-gray-200">{selectedToken.symbol}</span>
+        <span class="text-sm text-gray-300 mt-0">{selectedToken.name}</span>
       </div>
       <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
       </svg> -->
     {:else}
-      Select token
+      <span class="font-bold text-gray-200">Select token</span>
     {/if}
   </button>
   {#if isOpen}

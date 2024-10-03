@@ -2,17 +2,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SwapManager, type SwapQuote } from './SwapManager';
 import type { Token } from '$plugins/Token';
-import type { Blockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
-import type { BigNumberish, TransactionResponse } from '$lib/common';
+import type { BigNumberish, TransactionRequest, TransactionResponse } from '$lib/common';
 import { ABIs, ADDRESSES } from '$plugins/contracts/evm/constants-evm';
 import { FeeAmount } from '@uniswap/v3-sdk';
+import { ethers } from 'ethers';
+import type { Ethereum } from './blockchains/evm/ethereum/Ethereum';
 
 export class UniswapV3SwapManager extends SwapManager {
   private router: any;
   private quoter: any;
 
-  constructor(blockchain: Blockchain, provider: Provider) {
+  constructor(blockchain: Ethereum, provider: Provider) {
     super(blockchain, provider);
     this.router = this.blockchain.createContract(ADDRESSES.UNISWAP_V3_ROUTER, ABIs.UNISWAP_V3_ROUTER);
     this.quoter = this.blockchain.createContract(ADDRESSES.UNISWAP_V3_QUOTER, ABIs.UNISWAP_V3_QUOTER);
@@ -37,6 +38,37 @@ export class UniswapV3SwapManager extends SwapManager {
       path: [tokenIn.address, tokenOut.address],
       priceImpact
     };
+  }
+
+  async populateSwapTransaction(
+    tokenIn: Token,
+    tokenOut: Token,
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    recipient: string,
+    deadline: number
+  ): Promise<TransactionRequest> {
+    const fee = 3000; // 0.3% fee tier
+    const amountInWei = ethers.parseUnits(amountIn ? amountIn.toString() : '0', tokenIn.decimals);
+    const amountOutMinWei = ethers.parseUnits(amountOutMin ? amountOutMin.toString() : '0', tokenOut.decimals);
+
+    const params = {
+      tokenIn: tokenIn.address,
+      tokenOut: tokenOut.address,
+      fee: fee,
+      recipient: recipient,
+      deadline: deadline,
+      amountIn: amountInWei,
+      amountOutMinimum: amountOutMinWei,
+      sqrtPriceLimitX96: 0
+    };
+
+    const populatedTx = await this.router.populateTransaction('exactInputSingle', [params]);
+    return populatedTx as TransactionRequest;
+  }
+
+  getRouterAddress(): string {
+    return ADDRESSES.UNISWAP_V3_ROUTER;
   }
 
   async executeSwap(
