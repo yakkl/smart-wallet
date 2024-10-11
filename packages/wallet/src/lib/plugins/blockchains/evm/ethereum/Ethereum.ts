@@ -29,7 +29,20 @@ const networks: Network[] = [
     explorer: 'https://sepolia.etherscan.io',
     decimals: 18,
   },
+  {
+    blockchain: 'Unichain',
+    name: 'Sepolia',
+    chainId: 1301,
+    symbol: 'ETH',
+    type: NetworkType.TESTNET,
+    explorer: 'https://sepolia.uniscan.xyz/',
+    decimals: 18,
+  },
+
 ]
+
+// Unichain Sepolia Testnet RPC: https://sepolia.unichain.org/
+
 
 export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
   _options: MetaData | undefined;

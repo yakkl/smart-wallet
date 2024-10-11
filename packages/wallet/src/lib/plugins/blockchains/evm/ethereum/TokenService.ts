@@ -14,19 +14,24 @@ export class TokenService<T extends BaseTransaction> {
     return this.blockchain ? this.blockchain.createContract(tokenAddress, ABIs.ERC20) : null;
   }
 
-  async getTokenInfo(tokenAddress: string) {
-    const contract = this.getTokenContract(tokenAddress);
+  async getTokenInfo( tokenAddress: string ) {
+    try {
+      const contract = this.getTokenContract( tokenAddress );
     
-    console.log('getTokenInfo - contract', contract);
+      console.log( 'getTokenInfo - contract', contract );
 
-    const [name, symbol, decimals, totalSupply] = await Promise.all([
-      contract?.call('name'),
-      contract?.call('symbol'),
-      contract?.call('decimals'),
-      contract?.call('totalSupply')
-    ]);
+      const [ name, symbol, decimals, totalSupply ] = await Promise.all( [
+        contract?.call( 'name' ),
+        contract?.call( 'symbol' ),
+        contract?.call( 'decimals' ),
+        contract?.call( 'totalSupply' )
+      ] );
 
-    return { name, symbol, decimals, totalSupply };
+      return { name, symbol, decimals, totalSupply };
+    } catch ( error ) {
+      console.log( 'Contract - getTokenInfo - error', error );
+      return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
+    }
   }
 
   async getBalance(tokenAddress: string, userAddress: string): Promise<BigNumberish> {
@@ -36,20 +41,26 @@ export class TokenService<T extends BaseTransaction> {
       const contract = this.getTokenContract(tokenAddress);
       console.log('contract', contract);
   
-      return await contract?.call('balanceOf', userAddress);        
+      return await contract?.call('balanceOf', userAddress); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);
       return 0n;
     }
   }
 
-  async transfer(tokenAddress: string, toAddress: string, amount: BigNumberish): Promise<TransactionResponse> {
-    const contract = this.getTokenContract(tokenAddress);
+  async transfer( tokenAddress: string, toAddress: string, amount: BigNumberish ): Promise<TransactionResponse> {
+    try {
+      const contract = this.getTokenContract( tokenAddress );
     
-    const gasEstimate = await contract?.estimateGas('transfer', toAddress, amount);
-    const tx = await contract?.populateTransaction('transfer', toAddress, amount);
-    tx!.gasLimit = gasEstimate;
+      const gasEstimate = await contract?.estimateGas( 'transfer', toAddress, amount );
+      const tx = await contract?.populateTransaction( 'transfer', toAddress, amount );
+      tx!.gasLimit = gasEstimate;
 
-    return await this.blockchain!.sendTransaction(tx!);
+      return await this.blockchain!.sendTransaction( tx! );
+    }
+    catch ( error ) {
+      console.log( 'Contract - transfer - error', error );
+      throw new Error(`Error transferring tokens: ${error}`);
+    }
   }
 }

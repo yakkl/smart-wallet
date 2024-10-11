@@ -55,7 +55,8 @@ import type {
 	YakklConnectedDomain,
 	YakklChat,
 	GasTransStore,
-	ContractData
+	ContractData,
+	// PriceData
 } from '$lib/common/interfaces';
 
 
@@ -147,7 +148,9 @@ export const yakklGasTransStore = writable<GasTransStore | undefined>(undefined)
 export const yakklContactStore = writable<YakklContact | null>(undefined); // The single selcted contact from the yakklContactsStore list
 export const yakklAccountStore = writable<YakklAccount>(undefined); // The single selcted account from the yakklAccountsStore list
 export const yakklWalletProvidersStore = writable<string[]>([]);
-export const yakklWalletBlockchainsStore = writable<string[]>([]);
+export const yakklWalletBlockchainsStore = writable<string[]>( [] );
+// export const yakklPriceStore = writable<PriceData | null>( null );
+
 
 // yakklGPTRunningStore and yakklGPTKeyStore are used for the GPT API
 export const yakklGPTRunningStore = writable(false); // Single indicator for GPT running or not
@@ -353,6 +356,11 @@ export function getYakklConnectionStore() {
 	return store;
 }
 
+// export function getYakklPriceStore() {
+// 	const store = get(yakklPriceStore);
+// 	return store;
+// }
+
 // --------------------------------
 // Call these for setting memory data store only
 // Return previous values
@@ -518,9 +526,17 @@ export function setYakklConnectionStore(values: boolean) {
 	return store;
 }
 
-export function setYakklContractStore(values: ContractData) {
-  yakklContractStore.set(values);
+export function setYakklContractStore( values: ContractData ) {
+	const store = get(yakklContractStore);
+	yakklContractStore.set( values );
+	return store;
 }
+
+// export function setYakklPriceStore(values: PriceData | null) {
+// 	const store = get(yakklPriceStore);
+// 	yakklPriceStore.set(values);
+// 	return store;
+// }
 
 // --------------------------------
 

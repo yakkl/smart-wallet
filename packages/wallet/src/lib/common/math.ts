@@ -487,6 +487,8 @@ export function getBigInt(value: BigNumberish, name?: string): bigint {
       throw new Error("value cannot be null");
     }
 
+    console.log('getBigInt', value, typeof value, name);
+
     switch (typeof value) {
       case "bigint":
         return value;

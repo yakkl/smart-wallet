@@ -7,15 +7,41 @@ export class CoinbasePriceProvider implements PriceProvider {
     return 'Coinbase';
   }
 
-  async getPrice(pair: string): Promise<PriceData> {
-    const json = await fetchJson(`https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${pair}`);
-    if (json.num_products <= 0) {
-      throw new Error('Invalid JSON structure or missing data from Coinbase');
+  async getPrice( pair: string ): Promise<PriceData> {
+    try {
+      if ( !pair ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      const [ tokenIn, tokenOut ] = pair.split( '-' );
+      if ( !tokenIn || !tokenOut ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      if ( tokenIn === 'WETH' ) {
+        pair = `ETH-${ tokenOut }`;
+      }
+      if ( tokenIn === 'WBTC' ) {
+        pair = `BTC-${ tokenOut }`;
+      }
+      // console.log( 'CoinbasePriceProvider - getPrice - pair', pair );
+    
+      const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
+    
+      // console.log( 'CoinbasePriceProvider - getPrice - json', json );
+
+      if ( json.num_products <= 0 ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
+      }
+      return {
+        provider: this.getName(),
+        price: parseFloat( json.products[ 0 ].price ),
+        lastUpdated: new Date(),
+        status: 0,
+        message: ''
+      };
     }
-    return {
-      provider: this.getName(),
-      price: parseFloat(json.products[0].price),
-      lastUpdated: new Date()
-    };
+    catch ( e ) {
+      console.log( 'CoinbasePriceProvider - getPrice - error', e );
+      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+    }
   }
 }

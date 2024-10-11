@@ -17,7 +17,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { truncate, handleOpenInTab, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices, getPricesCoinbase } from '$lib/tokens/prices';
+  import { startCheckPrices, stopCheckPrices, getPricesCoinbase, checkPricesCB } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import { AccountTypeCategory, NetworkType, RegistrationType, isEncryptedData, 
     type CurrentlySelectedData, type Network, type Profile, type ProfileData, 
@@ -167,14 +167,7 @@
 
   async function startPricingChecks() {
     // Keep checking the prices
-    startCheckPrices(checkPricesProvider, checkPricesInterval);
-    // If the value === 0 then stop the checks
-    // const numValue = shortcutsValue.toNumber();
-    // if (numValue !== null && numValue > 0) {
-    //   startCheckPrices(checkPricesProvider, checkPricesInterval);
-    // } else {
-    //   stopCheckPrices();
-    // }
+    await startCheckPrices(checkPricesProvider, checkPricesInterval);
   }
 
   onDestroy(async () => {
@@ -233,7 +226,7 @@
 
           // Set the modified copy back to the store
           yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);    
+          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
         }
         return;
       }
@@ -241,11 +234,14 @@
       currentlySelected = $yakklCurrentlySelectedStore;
 
       if (currentlySelected.shortcuts.address) {
-        startPricingChecks();
+        startPricingChecks(); // Start the price checks if not already started else it will just return
         if (!$yakklPricingStore?.price) {
-          getPricesCoinbase('eth-usd').then(results => {
-            yakklPricingStore.set({ provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price });
-          });
+
+          checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
+          // getPricesCoinbase('eth-usd').then(results => {
+          //   console.log('Price results:>>>>>>>>>>>>>>>>>>>>>', results);
+          //   $yakklPricingStore = { provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price };
+          // });
         }
 
         // Convert the value to EthereumBigNumber
@@ -668,7 +664,6 @@
   </svelte:fragment>
   {toastMessage}
 </Toast>
-
 
 <div class="visible print:hidden relative top-0 mx-2">
   <div style="z-index: 4; background-image: url('/images/{card}'); " class="visible print:hidden relative m-2 ml-0 mr-0 h-[261px] rounded-xl">

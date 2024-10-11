@@ -13,6 +13,9 @@ export class Yakkl extends AbstractProvider {
   getTransactionHistory( address: string ): Promise<any> {
     throw new Error( 'Method not implemented.' );
   }
+  getProviderURL(): Promise<string> {
+    throw new Error( 'Method not implemented.' );
+  }
   getNetwork(): Promise<Network> {
     throw new Error( 'Method not implemented.' );
   }

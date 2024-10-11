@@ -22,16 +22,37 @@ export class BitfinexPriceProvider implements PriceProvider {
     return 'Bitfinex';
   }
 
-  async getPrice(pair: string): Promise<PriceData> {
-    // const json = await fetchJson(`https://api-pub.bitfinex.com/v2/tickers?symbols=t${pair.toUpperCase().replace('-', '')}`); // Can use this to pull multiple pairs
-    const json = await fetchJson(`https://api-pub.bitfinex.com/v2/ticker/t${pair.toUpperCase().replace('-', '')}`);
-    if (!json[6]) {
-      throw new Error('Invalid JSON structure or missing data from Bitfinex');
+  async getPrice( pair: string ): Promise<PriceData> {
+    try {
+      if ( !pair ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      const [ token, symbol ] = pair.split( '-' );
+      if ( !token || !symbol ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      if ( token === 'WETH' ) {
+        pair = `ETH-${ symbol }`;
+      }
+      if ( token === 'WBTC' ) {
+        pair = `BTC-${ symbol }`;
+      }
+      // const json = await fetchJson(`https://api-pub.bitfinex.com/v2/tickers?symbols=t${pair.toUpperCase().replace('-', '')}`); // Can use this to pull multiple pairs
+      const json = await fetchJson( `https://api-pub.bitfinex.com/v2/ticker/t${ pair.toUpperCase().replace( '-', '' ) }` );
+      if ( !json[ 6 ] ) {
+        throw new Error( 'Invalid JSON structure or missing data from Bitfinex' );
+      }
+      return {
+        provider: this.getName(),
+        price: parseFloat( json[ 0 ] ),
+        lastUpdated: new Date(),
+        status: 0,
+        message: '',
+      };
     }
-    return {
-      provider: this.getName(),
-      price: parseFloat(json[0]),
-      lastUpdated: new Date()
-    };
+    catch ( e ) {
+      console.log('BitfinexPriceProvider - getPrice - error', e );
+      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+    }
   }
 }

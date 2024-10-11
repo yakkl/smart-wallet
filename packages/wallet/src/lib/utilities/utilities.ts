@@ -205,6 +205,11 @@ export function getNetworkInfo(chainId: number) {
     //   explorer = 'https://goerli.etherscan.io';
     //   break;
     // case "0xaa36a7":
+    case 1301:
+      blockchain = 'Unichain';
+      type = 'Testnet';
+      explorer = 'https://sepolia.uniscan.xyz/';
+      break;
     case 11155111:
       blockchain = 'Ethereum';
       type = 'Sepolia';

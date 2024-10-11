@@ -61,6 +61,15 @@ export class Alchemy extends AbstractProvider {
     return this.alchemy;
   }
 
+  async getProviderURL() {
+    const provider = await this.alchemy?.config.getProvider();
+    if (provider) {
+      return provider.connection.url;
+    } else {
+      return '';
+    }
+  }
+
   /**
    * Makes a call to the blockchain.
    * @param transaction - The transaction request to call.
