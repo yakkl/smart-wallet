@@ -24,6 +24,12 @@
 	import type { BigNumberish } from '$lib/common';
 	import { getYakklCurrentlySelected } from '$lib/common/stores';
 	import { onMount } from 'svelte';
+  import PriceTracker from '$lib/components/PriceTracker.svelte';
+  import TokenPrice from '$lib/components/TokenPrice.svelte';
+  import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+  // import type { PriceData } from '$lib/common/interfaces';
+
+  const providers = [new CoinbasePriceProvider];
 
   let profileComponent: Profile;
   let preferencesComponent: Preferences;
@@ -50,10 +56,6 @@
   let account: YakklAccount | null = null;
   let mode: 'import' | 'export' = 'export';
 
-  $: {
-    console.log('account', account);
-  }
-
   onMount(async () => {
     const getCurrentlySelected = await getYakklCurrentlySelected();
     if (getCurrentlySelected?.shortcuts?.address) {
@@ -61,15 +63,12 @@
     }
   });
 
-
   function close() {
     goto(PATH_WELCOME);
   }
 
   function onSwap(fundingAddress: string, fromToken: Token, toToken: Token, fromAmount: BigNumberish, toAmount: BigNumberish) {
-    console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
-
-    
+    console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);    
   }
 
   function handleAccounts(selectedAccount: YakklAccount) {
@@ -119,17 +118,17 @@
   }
 
   function handleCreateAccount() {
-    console.log('Create initial account');
+    console.log('Create initial account - actual implementation not provided');
     // Add your logic here
   }
 
   function handleImportPrivateKey() {
-    console.log('Import an existing account');
+    console.log('Import an existing account - actual implementation not provided');
     // Add your logic here
   }
 
   function handleRestore() {
-    console.log('Restore from Emergency Kit');
+    console.log('Restore from Emergency Kit - actual implementation not provided');
     // Add your logic here
   }
 
@@ -158,7 +157,7 @@
   </div>
   
   <div class="my-4">
-    <Swap bind:show={showSwap} {fundingAddress} {onSwap} /> address - where the funds/crypto will come from
+    <Swap bind:show={showSwap} {fundingAddress} {onSwap} />
   </div>
   
   <div class="my-4">
@@ -204,6 +203,41 @@
 
   <div class="my-4">
     <EmergencyKitModal bind:show={showEmergencyKit} {mode} onComplete={handleEmergencyKit} />
+  </div>
+
+  <div class="my-4">
+    <PriceTracker baseToken="ETH" quoteToken="USD" let:price>
+      {#if price !== null}
+        <span class="text-xl font-semibold text-blue-600">{price.price} USD (no formatting using PriceTracker)</span>
+        <span class="text-sm text-gray-500">{price.provider}</span>
+      {:else}
+        <span class="text-gray-500">Fetching price...</span>
+      {/if}
+    </PriceTracker>  
+  </div>
+
+  <div class="my-4">
+    <div class="p-6 space-y-8">
+      <h1 class="text-2xl font-bold mb-4">Crypto Dashboard example using TokenPrice</h1>
+    
+      <div class="bg-white shadow rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2">Ethereum Price</h2>
+        <TokenPrice 
+          baseToken="ETH" 
+          quoteToken="USD" />
+      </div>
+    
+      <div class="bg-gray-100 shadow rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2">WBTC/WETH Price</h2>
+        <TokenPrice 
+          baseToken="WBTC" 
+          quoteToken="WETH" 
+          useProviders={['Uniswap']}
+          customClass="bg-yellow-100 p-2 rounded"
+        />
+      </div>
+
+    </div>
   </div>
 
   <Profile bind:this={profileComponent} />

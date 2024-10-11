@@ -19,25 +19,40 @@ export class UniswapV3SwapManager extends SwapManager {
     this.quoter = this.blockchain.createContract(ADDRESSES.UNISWAP_V3_QUOTER, ABIs.UNISWAP_V3_QUOTER);
   }
 
-  async getQuote(tokenIn: Token, tokenOut: Token, amountIn: BigNumberish): Promise<SwapQuote> {
-    const fee = FeeAmount.MEDIUM; // Assume 0.3% fee, adjust as needed
-    const quotedAmountOut = await this.quoter.call('quoteExactInputSingle', [
-      tokenIn.address,
-      tokenOut.address,
-      fee,
-      amountIn,
-      0
-    ]);
+  async getQuote( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish ): Promise<SwapQuote> {
+    try {
+      const fee = FeeAmount.MEDIUM; // Assume 0.3% fee, adjust as needed
+      const quotedAmountOut = await this.quoter.call( 'quoteExactInputSingle', [
+        tokenIn.address,
+        tokenOut.address,
+        fee,
+        amountIn,
+        0
+      ] );
 
-    // Calculate price impact (simplified)
-    const priceImpact = 0; // Implement price impact calculation
+      // Calculate price impact (simplified)
+      const priceImpact = 0; // Implement price impact calculation
 
-    return {
-      amountIn,
-      amountOut: quotedAmountOut,
-      path: [tokenIn.address, tokenOut.address],
-      priceImpact
-    };
+      return {
+        amountIn,
+        amountOut: quotedAmountOut,
+        path: [ tokenIn.address, tokenOut.address ],
+        priceImpact
+      };
+    } catch ( error ) {
+      console.log( 'UniswapV3SwapManager - getQuote - error', error );
+      return {
+        amountIn: 0,
+        amountOut: 0,
+        path: [],
+        priceImpact: 0
+      };
+    }
+  }
+
+  calculateUniswapFee(swapAmount: bigint, feeTier: number): bigint {
+    const fee = (swapAmount * BigInt(feeTier)) / BigInt(10000); // feeTier is in basis points (10000 = 100%)
+    return fee;
   }
 
   async populateSwapTransaction(
@@ -46,9 +61,9 @@ export class UniswapV3SwapManager extends SwapManager {
     amountIn: BigNumberish,
     amountOutMin: BigNumberish,
     recipient: string,
-    deadline: number
+    deadline: number,
+    fee: number = 3000
   ): Promise<TransactionRequest> {
-    const fee = 3000; // 0.3% fee tier
     const amountInWei = ethers.parseUnits(amountIn ? amountIn.toString() : '0', tokenIn.decimals);
     const amountOutMinWei = ethers.parseUnits(amountOutMin ? amountOutMin.toString() : '0', tokenOut.decimals);
 
@@ -77,21 +92,27 @@ export class UniswapV3SwapManager extends SwapManager {
     amountIn: BigNumberish,
     minAmountOut: BigNumberish,
     recipient: string,
-    deadline: number
+    deadline: number,
+    fee: number = 3000
   ): Promise<TransactionResponse> {
-    const params = {
-      tokenIn: tokenIn.address,
-      tokenOut: tokenOut.address,
-      fee: FeeAmount.MEDIUM, // Assume 0.3% fee, adjust as needed
-      recipient,
-      deadline,
-      amountIn,
-      amountOutMinimum: minAmountOut,
-      sqrtPriceLimitX96: 0
-    };
+    try {
+      const params = {
+        tokenIn: tokenIn.address,
+        tokenOut: tokenOut.address,
+        fee: fee,
+        recipient,
+        deadline,
+        amountIn,
+        amountOutMinimum: minAmountOut,
+        sqrtPriceLimitX96: 0
+      };
 
-    const tx = await this.router.populateTransaction('exactInputSingle', [params]);
-    return await this.blockchain.sendTransaction(tx);
+      const tx = await this.router.populateTransaction( 'exactInputSingle', [ params ] );
+      return await this.blockchain.sendTransaction( tx );
+    } catch ( error ) {
+      console.log( 'UniswapV3SwapManager - executeSwap - error', error );
+      throw new Error(`Error executing swap - ${ error }`);
+    }
   }
 
   async addLiquidity(

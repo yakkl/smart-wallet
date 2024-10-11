@@ -49,6 +49,8 @@ export interface Provider {
    */
   connect(blockchain: string, chainId: number): Promise<void>;
 
+  getProviderURL(): Promise<string>; // Returns the native provider such as ethers.js provider or web3.js provider
+
   /**
    * Gets the current block number.
    * @returns The current block number.
@@ -473,6 +475,8 @@ export abstract class AbstractProvider implements Provider {
    * @returns The logs.
    */
   abstract getLogs(filter: Filter): Promise<Array<Log>>;
+
+  abstract getProviderURL(): Promise<string>; // Returns the native provider such as ethers.js provider or web3.js provider
 
   /**
    * Resolves an ENS name to an address.

@@ -9,15 +9,36 @@ export class BitstampPriceProvider implements PriceProvider {
     return 'Bitstamp';
   }
 
-  async getPrice(pair: string): Promise<PriceData> {
-    const json = await fetchJson(`https://www.bitstamp.net/api/v2/ticker/${pair.toLowerCase().replace('-', '')}`);
-    if (!json['last'] || !json['timestamp']) {
-      throw new Error('Invalid JSON structure or missing data from Bitstamp');
+  async getPrice( pair: string ): Promise<PriceData> {
+    try {
+      if ( !pair ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      const [ token, symbol ] = pair.split( '-' );
+      if ( !token || !symbol ) {
+        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
+      }
+      if ( token === 'WETH' ) {
+        pair = `ETH-${ symbol }`;
+      }
+      if ( token === 'WBTC' ) {
+        pair = `BTC-${ symbol }`;
+      }
+      const json = await fetchJson( `https://www.bitstamp.net/api/v2/ticker/${ pair.toLowerCase().replace( '-', '' ) }` );
+      if ( !json[ 'last' ] || !json[ 'timestamp' ] ) {
+        throw new Error( 'Invalid JSON structure or missing data from Bitstamp' );
+      }
+      return {
+        provider: this.getName(),
+        price: parseFloat( json[ 'last' ] ),
+        lastUpdated: new Date( parseInt( json[ 'timestamp' ] ) * 1000 ),
+        status: 0,
+        message: '',
+      };
     }
-    return {
-      provider: this.getName(),
-      price: parseFloat(json['last']),
-      lastUpdated: new Date(parseInt(json['timestamp'])*1000)
-    };
+    catch ( e ) {
+      console.log( 'BitstampPriceProvider - getPrice - error', e );
+      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+    }
   }
 }

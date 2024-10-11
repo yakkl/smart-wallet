@@ -92,6 +92,20 @@ export interface PriceData {
   provider: string;
   price: number;
   lastUpdated: Date;
+  contractFeePool?: number;
+  isNative?: boolean;
+  status?: number;
+  message?: string;
+  chainId?: number;
+  poolInfo?: {
+    fee: number;
+    liquidity: string;
+    price: number;
+    pricePool: string;
+    tokenAReserve: number;
+    tokenBReserve: number;
+    tvl: number;
+  };
   // Add any other common fields
 }
 
