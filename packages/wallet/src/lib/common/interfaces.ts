@@ -87,31 +87,42 @@ export interface MetaDataParams {
   transaction?: unknown;
 }
 
+export interface PoolInfo {
+  fee: number;
+  liquidity: string;
+  // quoteAmount: number;
+  price: number;
+  tokenInAmount?: string;  // Converted from bigint to string
+  tokenOutAmount: string; // Converted from bigint to string
+  tokenInReserve: string;
+  tokenOutReserve: string;
+  tokenInPrice: number;
+  tokenOutPrice: number;
+  tvl: number;
+}
 
 export interface PriceData {
   provider: string;
   price: number;
   lastUpdated: Date;
-  contractFeePool?: number;
+  contractFeePool?: number; // May be phased out. This is the fee pool for the contract found in PoolInfo as 'fee'
   isNative?: boolean;
   status?: number;
   message?: string;
-  chainId?: number;
-  poolInfo?: {
-    fee: number;
-    liquidity: string;
-    price: number;
-    pricePool: string;
-    tokenAReserve: number;
-    tokenBReserve: number;
-    tvl: number;
-  };
+  chainId?: number; // This is the chainId of the provider and it's used to determine the network. It's optional only because of a few return type areas but it gets completed later in the call stack.
+  poolInfo?: PoolInfo;
   // Add any other common fields
 }
 
 export interface PriceProvider {
   getName(): string;
-  getPrice(pair: string): Promise<PriceData>;
+  getMarketPrice( pair: string ): Promise<MarketPriceData>; // Enchanced version of getPrice
+}
+
+export interface SwapPriceProvider extends PriceProvider {
+  getSwapPriceIn( tokenIn: SwapToken, tokenOut: SwapToken, amountOut: BigNumberish, fee: number ): Promise<SwapPriceData>
+  getSwapPriceOut( tokenIn: SwapToken, tokenOut: SwapToken, amountIn: BigNumberish, fee: number ): Promise<SwapPriceData>
+  getPoolInfo( tokenA: SwapToken, tokenB: SwapToken, fee: number ): Promise<PoolInfoData>;
 }
 
 export interface WeightedProvider {
@@ -837,5 +848,44 @@ export interface YakklNFT {
   createDate: string;
   updateDate: string;
   meta?: MetaData;
+}
+
+// DEX - Decentralized Exchange specific interfaces
+export interface BasePriceData {
+  provider: string;
+  lastUpdated: Date;
+  chainId?: number;
+  status?: number;
+  message?: string;
+}
+
+export interface MarketPriceData extends BasePriceData {
+  price: number;
+  pair?: string;
+  isNative?: boolean;
+}
+
+export interface SwapPriceData extends BasePriceData {
+  tokenIn: SwapToken;
+  tokenOut: SwapToken;
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  price: number;
+  priceImpact: number;
+  path: string[];
+  fee: number;
+  feeBasisPoints: BigNumberish; // Fee in basis points - defaults to 875
+}
+
+export interface PoolInfoData extends BasePriceData {
+  fee: number;
+  liquidity: string;
+  sqrtPriceX96: string;
+  tick: number;
+  tokenInReserve: string;
+  tokenOutReserve: string;
+  tokenInUSDPrice: string;
+  tokenOutUSDPrice: string;
+  tvl: number;
 }
 

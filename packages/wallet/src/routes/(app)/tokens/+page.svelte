@@ -27,7 +27,6 @@
   import PriceTracker from '$lib/components/PriceTracker.svelte';
   import TokenPrice from '$lib/components/TokenPrice.svelte';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
-  // import type { PriceData } from '$lib/common/interfaces';
 
   const providers = [new CoinbasePriceProvider];
 
@@ -66,6 +65,16 @@
   function close() {
     goto(PATH_WELCOME);
   }
+
+
+// This is for future reference:
+// import { swapServices } from './swapService';
+// // ... in your swap function
+// const bestQuote = await swapServices.swapAggregator.getBestQuote(tokenIn, tokenOut, amountIn);
+// console.log(`Best quote from: ${bestQuote.provider}`);
+// // Execute the swap
+// const txResponse = await swapServices.swapAggregator.executeBestSwap(tokenIn, tokenOut, amountIn, minAmountOut, recipient, deadline);
+
 
   function onSwap(fundingAddress: string, fromToken: Token, toToken: Token, fromAmount: BigNumberish, toAmount: BigNumberish) {
     console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);    

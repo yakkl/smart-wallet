@@ -6,7 +6,7 @@ export class KrakenPriceProvider implements PriceProvider {
     return 'Kraken';
   }
 
-  async getPrice( pair: string ): Promise<PriceData> {
+  async getMarketPrice( pair: string ): Promise<PriceData> {
     try {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };

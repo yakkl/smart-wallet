@@ -11,14 +11,11 @@ export async function getTokenBalance(
 ): Promise<BigNumberish> {
   try {
     if ( !token ) return 0n;
-
-    console.log( 'getTokenBalance', token, address, provider, tokenService );
-  
-    if ( token.isNative ) {
+    if ( token.isNative || token.symbol === 'ETH' ) {  // token.isNative needs to be implemented!
       return await provider.getBalance( address );
     }
 
-    return await tokenService.getBalance( token.address, address );
+    return await tokenService.getBalance( token.address, address ); // address is the user's address. This checks the contract to see if it has the given userAddress registered and if it has a balance
   } catch ( error ) {
     console.log( 'getTokenBalance - error', error );
     return 0n;

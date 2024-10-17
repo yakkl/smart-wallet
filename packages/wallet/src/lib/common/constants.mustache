@@ -18,7 +18,10 @@ export const DEV_BASE_DELAY = 1000; //milliseconds
 
 export const ETH_BASE_EOA_GAS_UNITS = 21000; // Base amount of gas units it takes for a EOA transaction
 export const ETH_BASE_SCA_GAS_UNITS = 45000; // Base amount of gas units it takes for a Smart Contract transaction
+export const ETH_BASE_UNISWAP_GAS_UNITS = 500000; // Base amount of gas units it takes for a Uniswap transaction
 export const ETH_BASE_FORCANCEL_GAS_UNITS = ETH_BASE_EOA_GAS_UNITS * 3;
+
+export const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address on Ethereum mainnet
 
 export const YAKKL_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const YAKKL_ZERO_ACCOUNT_NAME = "YAKKL - Zero Account - YAKKL";

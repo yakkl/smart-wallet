@@ -37,14 +37,14 @@ export class PriceManager {
   }
 
   // May want to add a second param that supplied the provider to use instead of picking a random one. If null or undefined, pick a random one.
-  async getPrice(pair: string): Promise<PriceData> {
+  async getMarketPrice(pair: string): Promise<PriceData> {
     const provider = this.getWeightedRandomProvider();
     try {
-      return await provider.getPrice(pair);
+      return await provider.getMarketPrice(pair);
     } catch (error) {
       console.error(`Error fetching price from ${provider.getName()}:`, error);
       // Retry with a different provider
-      return this.getPrice(pair);
+      return this.getMarketPrice(pair); // This will create a circular error if all providers fail so another option is to return an error here
     }
   }
 

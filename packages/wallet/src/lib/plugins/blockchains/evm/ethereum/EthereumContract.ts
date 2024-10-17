@@ -13,12 +13,12 @@ export class EthereumContract extends AbstractContract {
     super(address, abi, providerOrSigner);
     this.contract = new ethers.Contract(address, abi, providerOrSigner as any);
 
-    console.log('EthereumContract - constructor - address, abi, providerOrSigner', address, abi, providerOrSigner);
+    // console.log('EthereumContract - constructor - address, abi, providerOrSigner', address, abi, providerOrSigner);
   }
 
   async call(functionName: string, ...args: any[]): Promise<any> {
     
-    console.log('EthereumContract - call - functionName, args', functionName, args);
+    // console.log('EthereumContract - call - functionName, args', functionName, args);
 
     return await this.contract[functionName](...args);
   }

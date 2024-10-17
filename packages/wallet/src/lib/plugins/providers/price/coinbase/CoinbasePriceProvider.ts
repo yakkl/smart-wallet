@@ -1,5 +1,5 @@
 import { fetchJson } from "@ethersproject/web";
-import type { PriceData, PriceProvider } from '$lib/common/interfaces';
+import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
 
 
 export class CoinbasePriceProvider implements PriceProvider {
@@ -7,7 +7,7 @@ export class CoinbasePriceProvider implements PriceProvider {
     return 'Coinbase';
   }
 
-  async getPrice( pair: string ): Promise<PriceData> {
+  async getMarketPrice( pair: string ): Promise<MarketPriceData> {
     try {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };

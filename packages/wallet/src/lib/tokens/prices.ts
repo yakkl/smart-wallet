@@ -31,7 +31,7 @@ export async function checkPricesCB() {
   try {
     // if (pricingIntervalID) {
       // if (get(yakklConnectionStore) === true) {
-        const result = await priceManager.getPrice( 'ETH-USD' );
+        const result = await priceManager.getMarketPrice( 'ETH-USD' );
         if ( result ) {
           yakklPricingStore.set( {
             provider: result.provider,

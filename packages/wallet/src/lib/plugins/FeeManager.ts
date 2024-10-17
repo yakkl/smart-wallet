@@ -26,23 +26,23 @@ export class BaseFeeManager implements FeeManager {
     this.providers.delete(providerName);
   }
 
+  getProviders(): string[] {
+    return Array.from( this.providers.keys() );
+  }
+
   async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
     if (this.providers.size === 0) {
       throw new Error('No gas providers available');
     }
 
-    // console.log('Getting gas estimates from providers:', Array.from(this.providers.keys()));
-
-    // console.log('Providers:', this.providers);
-    // console.log('Providers keys:', Array.from(this.providers.keys()));
-    // console.log('Providers get:', this.providers.get('EthereumGasProvider'));
-
-    // const gas = await this.providers.get('EthereumGasProvider')!.getGasEstimate(transaction);
-    // console.log('Gas:', gas);
-
     const estimates = await Promise.all(
-      Array.from(this.providers.values()).map(provider =>  provider.getGasEstimate(transaction))
-    );
+      Array.from( this.providers.values() ).map( provider => {
+        return provider.getGasEstimate( transaction ).catch( error => {
+          console.error( `Failed to get gas estimate from ${ provider.getName() }:`, error );
+          return null;
+        } );
+      } )
+    ).then( estimates => estimates.filter( estimate => estimate !== null ) );
 
     // console.log('Gas estimates:', estimates);
 
@@ -125,4 +125,24 @@ export class BaseFeeManager implements FeeManager {
       estimatedPriorityFee: BigNumber.from(prediction.estimatedPriorityFee).div(BigNumber.from(prediction.count)).toString()
     }));
   }
+
+  setPriorityOrder( providerNames: string[] ): void {
+    const orderedProviders = new Map<string, GasProvider>();
+    providerNames.forEach( name => {
+      if ( this.providers.has( name ) ) {
+        orderedProviders.set( name, this.providers.get( name )! );
+      }
+    } );
+    this.providers = orderedProviders;
+  }
+
+  setDefaultProvider( providerName: string ): void {
+    if ( this.providers.has( providerName ) ) {
+      const defaultProvider = this.providers.get( providerName )!;
+      this.providers.delete( providerName );
+      this.providers = new Map( [ [ providerName, defaultProvider ], ...this.providers ] );
+    }
+  }
+
+  
 }
