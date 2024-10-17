@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BigNumber, resolveProperties, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type EventType, type FeeData, type Filter, type Listener, type Log, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type TypedDataDomain, type TypedDataField } from '$lib/common';
+import { type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type EventType, type FeeData, type Filter, type Listener, type Log, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type TypedDataDomain, type TypedDataField } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import eventManager from './EventManager';
+import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 
 // async function resolveProperties<T>(props: T): Promise<T> {
 //   const resolved: any = {};
@@ -544,28 +545,43 @@ export abstract class AbstractProvider implements Provider {
    * Gets the fee data.
    * @returns The fee data.
    */
+
   async getFeeData(): Promise<FeeData> {
-    const { block, gasprice } = await resolveProperties({
-      block: this.getBlock("latest"),
-      gasprice: this.getGasPrice().catch((error) => {
-        return null;
-      })
-    });
-  
-    let lastBaseFeePerGas: bigint = 0n;
-    let maxFeePerGas: bigint = 0n;
-    let maxPriorityFeePerGas: bigint = 0n;
-    const gasPrice: BigNumber = BigNumber.from(gasprice!);
-  
-    if (block && block.baseFeePerGas) {
-      // Convert baseFeePerGas from BigNumber to bigint
-      lastBaseFeePerGas = BigNumber.from(block.baseFeePerGas).toBigInt() as bigint;
-      maxPriorityFeePerGas = 1500000000n; // Example value
-      maxFeePerGas = lastBaseFeePerGas * 2n + maxPriorityFeePerGas;
+    const [ block, gasPrice ] = await Promise.all( [
+      this.getBlock( "latest" ),
+      this.getGasPrice()
+    ] );
+
+    let lastBaseFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+    let maxFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+    let maxPriorityFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+
+    if ( block && block.baseFeePerGas ) {
+      lastBaseFeePerGas = EthereumBigNumber.from( block.baseFeePerGas );
+      maxPriorityFeePerGas = EthereumBigNumber.fromGwei( 1.5 ); // 1.5 Gwei as an example
+      maxFeePerGas = EthereumBigNumber.from(lastBaseFeePerGas.mul( 2 ).add( maxPriorityFeePerGas ));
     }
-  
-    return { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice };
+
+    // Convert gasPrice from Wei to Gwei
+    const gasPriceGwei = EthereumBigNumber.from( gasPrice ).div( 1000000000 );
+
+    console.log( 'gasPrice in wei:', gasPrice );
+
+    console.log( "getFeeData lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice (in Gwei)",
+      lastBaseFeePerGas.toGwei().toString(),
+      maxFeePerGas.toGwei().toString(),
+      maxPriorityFeePerGas.toString(),
+      gasPriceGwei.toString()
+    );
+
+    return {
+      lastBaseFeePerGas: lastBaseFeePerGas.toBigInt() ?? BigInt( 0 ),
+      maxFeePerGas: maxFeePerGas.toBigInt() ?? BigInt( 0 ),
+      maxPriorityFeePerGas: maxPriorityFeePerGas.toBigInt() ?? BigInt( 0 ),
+      gasPrice: gasPriceGwei
+    };
   }
+
   /**
    * Alias for `on` method.
    * @param eventName - The name of the event.

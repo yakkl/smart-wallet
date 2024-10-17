@@ -38,12 +38,14 @@
   "author": "YAKKL",
   "devDependencies": {
     "install": "^0.13.0",
+    "jsbi": "^4.3.0",
     "npm": "^10.8.2",
     "svelte-feather-icons": "^4.1.0"
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
+    "@uniswap/v3-periphery": "^1.4.4",
     "chart.js": "^4.4.4",
     "google-auth-library": "^9.14.1",
     "googleapis": "^144.0.0",

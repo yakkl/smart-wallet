@@ -1,5 +1,5 @@
 import { fetchJson } from "@ethersproject/web";
-import type { PriceData, PriceProvider } from '$lib/common/interfaces';
+import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
 import { splitWords } from '$lib/utilities';
 
 // Coingecko public API pulls from a number of exchanges.
@@ -9,7 +9,7 @@ export class CoingeckoPriceProvider implements PriceProvider {
     return 'Coingecko';
   }
 
-  async getPrice( pair: string ): Promise<PriceData> {
+  async getMarketPrice( pair: string ): Promise<MarketPriceData> {
     try {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };

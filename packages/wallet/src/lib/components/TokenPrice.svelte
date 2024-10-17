@@ -1,21 +1,22 @@
 <script lang="ts">
   import type { PriceProvider } from '$lib/common/interfaces';
-  import { yakklCurrentlySelectedStore } from '$lib/common/stores';
-  import type { Provider } from '$lib/plugins/Provider';
+  // import { yakklCurrentlySelectedStore } from '$lib/common/stores';
+  // import type { Provider } from '$lib/plugins/Provider';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
   import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/CoingeckoPriceProvider';
-  import { UniswapPriceProvider } from '$lib/plugins/providers/price/uniswap/UniswapPriceProvider';
-  import type { Wallet } from '$lib/plugins/Wallet';
-  import WalletManager from '$lib/plugins/WalletManager';
+  // import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
+  // import type { Wallet } from '$lib/plugins/Wallet';
+  // import WalletManager from '$lib/plugins/WalletManager';
   import { onMount } from 'svelte';
   import PriceTracker from './PriceTracker.svelte';
+	import { getCurrencyCodeForUserLocale } from '$lib/utilities';
 
-  export let baseToken: string;
-  export let quoteToken: string = 'USD';
+  export let baseToken: string; 
+  export let quoteToken: string = getCurrencyCodeForUserLocale() ?? 'USD'; 
   export let showLastUpdated: boolean = false;
   export let quantity: number = 1;
   export let customClass: string = '';
-  export let useProviders: string[] = ['Coinbase', 'Coingecko', 'Uniswap'];
+  export let useProviders: string[] = ['Coinbase', 'Coingecko'];
 
   let providersMap = new Map<string, PriceProvider>();
   let activeProviders: PriceProvider[] = [];
@@ -25,17 +26,17 @@
       providersMap.set('Coinbase', new CoinbasePriceProvider());
       providersMap.set('Coingecko', new CoingeckoPriceProvider());
 
-      let wallet: Wallet | null = null;
-      let provider: Provider | null = null;
+      // let wallet: Wallet | null = null;
+      // let provider: Provider | null = null;
 
-      wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], $yakklCurrentlySelectedStore!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
-      if (wallet) {
-        provider = wallet!.getProvider();
+      // wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], $yakklCurrentlySelectedStore!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+      // if (wallet) {
+      //   provider = wallet!.getProvider();
         
-        // console.log('TokenPrice: Wallet initialized', wallet, provider);
+      //   // console.log('TokenPrice: Wallet initialized', wallet, provider);
 
-        providersMap.set('Uniswap', new UniswapPriceProvider(provider!, new CoinbasePriceProvider())); // NOTE: May want to pass in a provider map so we can cycle through them if needed!
-      }
+      //   providersMap.set('Uniswap', new UniswapSwapPriceProvider(provider!, new CoinbasePriceProvider())); // NOTE: May want to pass in a provider map so we can cycle through them if needed!
+      // }
 
       activeProviders = useProviders
         .map(name => providersMap.get(name))
@@ -51,7 +52,7 @@
     try {
       let formattedPrice = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD', //quoteToken,
+        currency: quoteToken,
         minimumFractionDigits: 2,
         maximumFractionDigits: 6,
       }).format(price);

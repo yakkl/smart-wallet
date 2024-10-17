@@ -33,6 +33,11 @@ function updateProfile(p: Profile) {
 }
 **/
 
+// Function to get the currency code for the user's locale
+export function getCurrencyCodeForUserLocale(): string | undefined {
+  const options = new Intl.NumberFormat( navigator.language, { style: 'currency', currency: 'USD' } ).resolvedOptions();
+  return options.currency;
+}
 
 // Increments a property on an object safely. If maxValue is provided, the property will not be incremented beyond that value.
 export function incrementProperty<T extends object, K extends keyof T>(obj: T, property: K, incrementValue: number = 1, maxValue: number = -1): void {

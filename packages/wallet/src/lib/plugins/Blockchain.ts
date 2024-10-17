@@ -183,7 +183,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
       throw new Error('Providers list cannot be empty');
     }
     this.provider = providers[0]; // Default to the first provider
-    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider)]);
+    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider, this)]);
   }
 
   // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;

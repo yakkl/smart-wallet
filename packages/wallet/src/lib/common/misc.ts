@@ -247,7 +247,9 @@ export async function resolveProperties<T>(object: Readonly<Deferrable<T>>): Pro
     return ( { key: key, value: v } );
   });
 
-  const results = await Promise.all(promises);
+  const results = await Promise.all( promises );
+  
+  console.log('resolveProperties results', results);
 
   return results.reduce((accum, result) => {
       accum[<keyof T>(result.key)] = result.value;

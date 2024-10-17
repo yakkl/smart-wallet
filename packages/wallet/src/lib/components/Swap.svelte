@@ -1,164 +1,291 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { yakklCurrentlySelectedStore, yakklMiscStore } from '$lib/common/stores';
-  import type { AccountData, CurrentlySelectedData, SwapToken } from '$lib/common/interfaces';
+  import type { AccountData, CurrentlySelectedData, PriceProvider, SwapToken } from '$lib/common/interfaces';
   import TokenDropdown from './TokenDropdown.svelte';
   import Modal from './Modal.svelte';
   import WalletManager from '$lib/plugins/WalletManager';
-  import { BigNumber, decryptData, isEncryptedData, type BigNumberish, type TransactionRequest } from '$lib/common';
+  import { decryptData, ETH_BASE_UNISWAP_GAS_UNITS, isEncryptedData, type BigNumberish, type TransactionRequest } from '$lib/common';
   import { ethers } from 'ethers';
-  import { UniswapV3SwapManager } from '$plugins/UniswapV3SwapManager';
+  import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
   import { TokenService } from '$plugins/blockchains/evm/ethereum/TokenService';
-	import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
-	import { Token } from '$lib/plugins/Token';
-	import type { Wallet } from '$lib/plugins/Wallet';
-	import type { Provider } from '$lib/plugins/Provider';
-  import TokenPrice from './TokenPrice.svelte';
+  import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
+  import { Token } from '$lib/plugins/Token';
+  import type { Wallet } from '$lib/plugins/Wallet';
+  import type { Provider } from '$lib/plugins/Provider';
+  import SwapTokenPrice from './SwapTokenPrice.svelte';
   import Balance from './Balance.svelte';
   import { getTokenBalance } from '$lib/utilities/balanceUtils';
-  import { estimateGasFee } from '$lib/utilities/gasUtils';
+	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+	import { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
+	import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 
   // Props
   export let fundingAddress: string | null = null;
-  export const initialFromToken: SwapToken | null = null;
-  export const initialToToken: SwapToken | null = null;
+  export let initialFromToken: SwapToken | null = null;
+  export let initialToToken: SwapToken | null = null;
   export let show = false;
-  export let onSwap: (fundingAddress: string, fromToken: SwapToken, toToken: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void = () => {};
+  export let onSwap: (fundingAddress: string, tokenIn: SwapToken, tokenOut: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void = () => {};
   export let className = 'text-gray-600 z-[999]';
 
   // State
-  let fromToken: SwapToken | null = null;
-  let toToken: SwapToken | null = null;
-  let fromAmount: BigNumberish = 0n;
-  let toAmount: BigNumberish = 0n;
+  let tokenIn: SwapToken | null = initialFromToken;
+  let tokenOut: SwapToken | null = initialToToken;
+  let fromAmount = '';
+  let toAmount = '';
   let fromBalance: BigNumberish = 0n;
   let toBalance: BigNumberish = 0n;
   let tokens: SwapToken[] = [];
   let preferredTokens: SwapToken[] = [];
-  let selectedFromToken: SwapToken | null = null;
-  let selectedToToken: SwapToken | null = null;
+  let selectedFromToken: SwapToken | null = tokenIn;
+  let selectedToToken: SwapToken | null = tokenOut;
+  
+  let gasProvider: EthereumGasProvider;
 
   let wallet: Wallet | null = null;
   let blockchain: Ethereum | null = null;
   let provider: Provider | null = null;
-  let swapManager: UniswapV3SwapManager | null = null;
-  let tokenService: any = null;
+  let priceProvider: PriceProvider = new CoinbasePriceProvider();  // NOTE: Provide one for now and then use the price provider service that rotates through them
+  let swapManager: UniswapSwapManager | null = null;
+  let tokenService: TokenService<any> | null = null;
 
   const preferredTokenSymbols = ["ETH", "WETH", "USDC", "WBTC"];
 
-  let sellAmount = "";
-  let buyAmount = "";
-  let sellValueUSD = 0;
-  let buyValueUSD = 0;
   let exchangeRate = "";
-  let gasFee = ""; // You'll need to implement gas fee estimation
+  let gasFee = "";
+  let isLoading = false;
+  let error: string | null = null;
+
+  let slippageTolerance = 0.5; // 0.5% default slippage tolerance
+  let deadline = 20; // 20 minutes default deadline
+
+  let quoteTimer: NodeJS.Timeout | null = null;
+  const QUOTE_DELAY = 300; // 300ms delay
 
   $: {
-    if (fromToken && toToken) {
-      getQuote();
-      updateGasFeeEstimate();
-      // updateTokenPrices();
+    if (tokenIn && tokenOut) {
+      debouncedGetQuote();
     }
   }
 
-  // async function updateTokenPrices() {
-  //   if (fromToken) {
-  //     sellValueUSD = parseFloat(sellAmount) * await getTokenPrice(fromToken);
-  //   }
-  //   if (toToken) {
-  //     buyValueUSD = parseFloat(buyAmount) * await getTokenPrice(toToken);
-  //   }
-  // }
+  onMount(async () => {
+    try {
+      wallet = await getWallet(); 
+      blockchain = wallet.getBlockchain() as Ethereum;
+      provider = wallet.getProvider();
+      swapManager = new UniswapSwapManager(blockchain, provider!);
+      tokenService = new TokenService(blockchain);
+      gasProvider = new EthereumGasProvider(provider!, blockchain!);
+
+      tokens = await fetchTokenList();
+
+      let eth: SwapToken = {
+        chainId: 1,
+        address: '',
+        name: 'Ethereum',
+        symbol: 'ETH',
+        decimals: 18,
+        isNative: true,
+        logoURI: '/images/ethereum.svg',
+      };
+      tokens.unshift(eth);
+      
+      preferredTokens = preferredTokenSymbols.map(symbol => tokens.find(token => token.symbol === symbol)).filter(Boolean) as SwapToken[]; // The ones to appear at top of list
+      tokens = tokens.filter(token => !preferredTokens.includes(token)).sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+      if (!tokenIn) tokenIn = tokens.find(token => token.symbol === 'WETH') || null;
+      
+      if (tokenIn) {
+        await updateBalance(tokenIn, true);
+      }
+      if (tokenOut) {
+        await updateBalance(tokenOut, false);
+      }
+    } catch (err) {
+      console.error('Error initializing swap:', err);
+      error = 'Failed to initialize swap. Please try again.';
+    }
+  });
+
+  function debouncedGetQuote() {
+    if (quoteTimer) clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(() => {
+      getQuote();
+    }, QUOTE_DELAY);
+  }
+
 
   async function getQuote() {
-    if (fromToken && toToken && (parseFloat(sellAmount) > 0 || parseFloat(buyAmount) > 0)) {
+    if (!tokenIn || !tokenOut || (!fromAmount && !toAmount) || !swapManager || !blockchain || !provider) {
+      return;
+    }
 
-      console.log('Getting quote...', fromToken, toToken, sellAmount, buyAmount);
+    isLoading = true;
+    error = null;
 
-      try {
-        if (parseFloat(sellAmount) > 0) {
-          const quote = await swapManager!.getQuote(
-            Token.fromSwapToken(fromToken, blockchain!, provider!),
-            Token.fromSwapToken(toToken, blockchain!, provider!),
-            ethers.parseUnits(sellAmount, fromToken.decimals)
-          );
-          buyAmount = ethers.formatUnits(toBigNumberishString(quote.amountOut), toToken.decimals);
-        } else {
-          const quote = await swapManager!.getQuote(
-            Token.fromSwapToken(toToken, blockchain!, provider!),
-            Token.fromSwapToken(fromToken, blockchain!, provider!),
-            ethers.parseUnits(buyAmount, toToken.decimals)
-          );
-          sellAmount = ethers.formatUnits(toBigNumberishString(quote.amountOut), fromToken.decimals);
-        }
+    try {
+      if (fromAmount && fromAmount !== '0') {
         
-        sellValueUSD = parseFloat(sellAmount) * await getUSDPrice(fromToken);
-        buyValueUSD = parseFloat(buyAmount) * await getUSDPrice(toToken);
+        console.log('Getting quote - from:', tokenIn, 'to:', tokenOut, 'fromAmount:', fromAmount);
 
-        // Calculate and format exchange rate
-        const rate = parseFloat(buyAmount) / parseFloat(sellAmount);
-        exchangeRate = `1 ${fromToken.symbol} = ${rate.toFixed(5)} ${toToken.symbol} ($${await getUSDPrice(fromToken)})`;
+        const quote = await swapManager.getQuote(
+          Token.fromSwapToken(tokenIn, blockchain, provider),
+          Token.fromSwapToken(tokenOut, blockchain, provider),
+          ethers.parseUnits(fromAmount, tokenIn.decimals)
+        );
+        if (!quote || typeof quote.amountOut === 'undefined' || quote.amountOut === null) throw new Error('Invalid quote');
+        toAmount = ethers.formatUnits(quote.amountOut.toString(), tokenOut.decimals);
+      } else if (toAmount && toAmount !== '0') {
 
-        // Estimate gas fee (you'll need to implement this)
-        // gasFee = await estimateGasFee();
-        // gasFee = await estimateGasFee(fromToken, toToken, fromAmount ? fromAmount?.toString() : '0', provider!, swapManager!, blockchain);
-      } catch (error) {
-        console.error('Error getting quote:', error);
+        console.log('Getting quote - from:', tokenOut, 'to:', tokenIn, 'toAmount:', toAmount);
+
+        const quote = await swapManager.getQuote(
+          Token.fromSwapToken(tokenOut, blockchain, provider),
+          Token.fromSwapToken(tokenIn, blockchain, provider),
+          ethers.parseUnits(toAmount, tokenOut.decimals)
+        );
+        if (!quote || typeof quote.amountOut === 'undefined' || quote.amountOut === null) throw new Error('Invalid quote');
+        fromAmount = ethers.formatUnits(quote.amountOut.toString(), tokenIn.decimals);
+      } else {
+        fromAmount = '';
+        toAmount = '';
       }
+
+      await updateExchangeRate();
+      await updateGasFeeEstimate();
+    } catch (err) {
+      console.log('Error getting quote:', err);
+      error = 'Failed to get quote. Please try again.';
+      if (fromAmount) {
+        toAmount = '';
+      } else if (toAmount) {
+        fromAmount = '';
+      }
+    } finally {
+      isLoading = false;
     }
   }
 
-  function calculateUniswapFee(swapAmount: bigint, feeTier: number): bigint {
-    const fee = (swapAmount * BigInt(feeTier)) / BigInt(10000); // feeTier is in basis points (10000 = 100%)
-    return fee;
+  async function updateExchangeRate() {
+    if (!tokenIn || !tokenOut || !fromAmount || !toAmount) return;
+
+    console.log('Updating exchange rate - from:', tokenIn, 'to:', tokenOut, 'fromAmount:', fromAmount, 'toAmount:', toAmount);
+    const rate = parseFloat(toAmount) / parseFloat(fromAmount);
+    const tokenInPrice = await getMarketPrice(tokenIn);
+
+    console.log('Exchange rate:', rate, 'tokenInPrice:', tokenInPrice);
+
+    exchangeRate = `1 ${tokenIn.symbol} = ${rate.toFixed(5)} ${tokenOut.symbol} ($${tokenInPrice.toFixed(2)})`;
+
+    console.log('Exchange rate:', exchangeRate);
   }
+
 
   async function updateGasFeeEstimate() {
-    if (fromToken && toToken && fromAmount) {
-      gasFee = await estimateGasFee(
-        fromToken,
-        toToken,
-        fromAmount.toString(),
-        provider!,
-        swapManager!,
-        blockchain!
+    if (!tokenIn || !tokenOut || !fromAmount || !wallet || !swapManager) return;
+
+    try {
+      gasFee = await gasProvider.estimateSwapGasFee(
+        tokenIn,
+        tokenOut,
+        fromAmount,
+        slippageTolerance,
+        deadline,
+        swapManager
       );
+    } catch (err) {
+      console.error('Error estimating gas fee:', err);
+      gasFee = 'Unable to estimate';
     }
   }
 
-  // async function estimateGasFee() {
-  //   // Implement gas fee estimation
-  //   return "$7.01"; // Placeholder
+  // async function updateGasFeeEstimate() {
+  //   if (!tokenIn || !tokenOut || !fromAmount || !provider || !swapManager || !blockchain || !wallet) return;
+
+  //   try {
+  //     const fromAmountBN = EthereumBigNumber.fromEther(fromAmount);
+  //     const slippageBN = fromAmountBN.mul(EthereumBigNumber.from(Math.floor(slippageTolerance * 100))).div(EthereumBigNumber.from(10000));
+  //     const minAmountOut: EthereumBigNumber = EthereumBigNumber.from(fromAmountBN.sub(slippageBN));
+  //     const deadlineTimestamp = Math.floor(Date.now() / 1000) + deadline * 60;
+
+  //     const swapTx = await swapManager.populateSwapTransaction(
+  //       Token.fromSwapToken(tokenIn, blockchain, provider),
+  //       Token.fromSwapToken(tokenOut, blockchain, provider),
+  //       fromAmountBN.toWei().toBigInt() ?? BigInt(0),
+  //       minAmountOut.toWei().toBigInt() ?? BigInt(0),
+  //       await wallet.getSigner()!.getAddress(),
+  //       deadlineTimestamp,
+  //       3000
+  //     );
+
+  //     let estimatedGas;
+  //     try {
+  //       estimatedGas = await provider.estimateGas(swapTx);
+  //     } catch (estimateError) {
+  //       console.error('Gas estimation failed:', estimateError);
+  //       // Use a default gas limit as fallback
+  //       estimatedGas = EthereumBigNumber.from(ETH_BASE_UNISWAP_GAS_UNITS); // Adjust this value based on typical swap gas usage
+  //       // estimatedGas = getFallbackGasFee(gasPriceGwei);
+  //     }
+
+  //     console.log('Estimated gas:', estimatedGas.toString());
+
+  //     const feeData = await provider.getFeeData();
+  //     console.log('Fee data:', feeData);
+
+  //     const gasPriceGwei = EthereumBigNumber.from(feeData.maxFeePerGas || feeData.gasPrice || 0);
+  //     const gasFeeGwei = EthereumBigNumber.from(estimatedGas).mul(gasPriceGwei);
+
+  //     console.log('Gas price (Gwei):', gasPriceGwei.toString());
+  //     console.log('Gas fee (Gwei):', gasFeeGwei.toString());
+
+  //     // Convert Gwei to ETH
+  //     const gasFeeEth = EthereumBigNumber.fromGwei(gasFeeGwei.toString()).toEtherString();
+      
+  //     // Get current ETH price (you'll need to implement this function)
+  //     const ethPrice = await getEthPrice();
+
+  //     // Calculate gas fee in USD
+  //     const gasFeeUsd = parseFloat(gasFeeEth) * ethPrice;
+
+  //     gasFee = `$${gasFeeUsd.toFixed(2)} (${gasFeeEth} ETH)`;
+
+  //     console.log('Gas fee:', gasFee);
+  //   } catch (err) {
+  //     console.error('Error estimating gas fee:', err);
+  //     gasFee = 'Unable to estimate';
+  //   }
   // }
 
-  function handleSellAmountChange() {
-    buyAmount = "";
-    getQuote();
+  function getFallbackGasFee(gasPrice: EthereumBigNumber): string {
+    const fixedGasLimit = EthereumBigNumber.from(ETH_BASE_UNISWAP_GAS_UNITS); // Typical gas limit for Uniswap swaps
+    const gasFeeGwei = fixedGasLimit.mul(gasPrice);
+    const gasFeeEth = EthereumBigNumber.fromGwei(gasFeeGwei.toString()).toEtherString();
+    return gasFeeEth;
   }
 
-  function handleBuyAmountChange() {
-    sellAmount = "";
-    getQuote();
+  function handleFromAmountChange() {
+    if (tokenIn && tokenOut) {
+      toAmount = '';
+      debouncedGetQuote();
+    }
   }
 
-  function toBigNumberishString(value: BigNumberish): string {
-    if (value === null || value === undefined) {
-      return '0';
+  function handleToAmountChange() {
+    if (tokenIn && tokenOut) {
+      fromAmount = '';
+      debouncedGetQuote();
     }
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint') {
-      return value.toString();
-    }
-    if (value instanceof BigNumber) {
-      return value.toString();
-    }
-    // Add any other cases you need to handle
-    return '0';
   }
 
-  async function getUSDPrice(token: SwapToken): Promise<number> {
-    // Implement this function to get the USD price of a token
-    // You might want to use an oracle or price feed service
-    return 1; // Placeholder
+  async function getMarketPrice(token: SwapToken): Promise<number> {
+    try {
+      const priceData = await priceProvider.getMarketPrice(`${token.symbol}-USD`);
+      return priceData.price;
+    } catch (error) {
+      console.error('Error fetching market price:', error); // This could be for a number of reasons but for sure if the token symbol is not found (this means that the given token is not currently supported by the price provider) 
+      return 0;
+    }
   }
 
   async function fetchTokenList(): Promise<SwapToken[]> {
@@ -190,7 +317,7 @@
     }
 
     if (privateKey === null) {
-      throw 'Private key for fundingAddress (current address) was not obtained'; 
+      throw new Error('Private key for fundingAddress (current address) was not obtained');
     }
 
     let wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], $yakklCurrentlySelectedStore!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD, privateKey);
@@ -199,66 +326,75 @@
     return wallet;
   } 
 
-  // Fetches the balance of a token for the current wallet
   async function fetchBalance(token: SwapToken | null): Promise<BigNumberish> {
     if (!token || !wallet || !provider) return 0n;
     
-    console.log('Fetching balance for token:', token, wallet, provider, provider!.getSigner());
-
-    return await getTokenBalance(token, await provider.getSigner().getAddress(), provider, tokenService); // This returns the native token balance or the erc20 token balance
-    // if (token.isNative) {
-    //   return await provider!.getBalance(await provider!.getSigner().getAddress());
-    // }
-
-    // return await tokenService.getBalance(token.address, await provider!.getSigner().getAddress());
+    try {
+      if (token.isNative || token.symbol === 'ETH') {
+        const balance = await provider.getBalance(await provider.getSigner().getAddress());
+        return balance;
+      } else {
+        return await getTokenBalance(token, await provider.getSigner().getAddress(), provider, tokenService);
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      return 0n;
+    }
   }
 
   async function swapTokens() {
-    if (!fromAmount || !toAmount) {
-      throw new Error("Invalid amounts");
+    if (!tokenIn || !tokenOut || !fromAmount || !toAmount || !fundingAddress || !wallet || !blockchain || !swapManager || !provider) {
+      error = 'Invalid swap parameters';
+      return;
     }
-    if (!fundingAddress) {
-      throw new Error("Invalid funding address");
+
+    const fromAmountBN = ethers.parseUnits(fromAmount, tokenIn.decimals);
+    const toAmountBN = ethers.parseUnits(toAmount, tokenOut.decimals);
+
+    if (fromAmountBN <= 0n || toAmountBN <= 0n) {
+      error = 'Invalid amounts';
+      return;
     }
-    if (fromToken && toToken && BigInt(fromAmount.toString()) > 0n && BigInt(toAmount.toString()) > 0n && wallet) {
-      try {
-        if (!blockchain) throw new Error('Blockchain not available - (swapTokens)');
-        if (!swapManager) throw new Error('Swap manager not available - (swapTokens)');
 
-        const signer = wallet.getSigner();
-        if (!signer) throw new Error('Signer not available - (swapTokens)');
+    try {
+      const signer = wallet.getSigner();
+      if (!signer) throw new Error('Signer not available');
 
-        const fromTokenContract = blockchain.createContract(fromToken.address, ['function approve(address spender, uint256 amount) public returns (bool)']);
-        await fromTokenContract.sendTransaction('approve', swapManager.getRouterAddress(), fromAmount);
+      const tokenInContract = blockchain.createContract(tokenIn.address, ['function approve(address spender, uint256 amount) public returns (bool)']);
+      await tokenInContract.sendTransaction('approve', swapManager.getRouterAddress(), fromAmountBN);
 
-        const swapTx: TransactionRequest = await swapManager.populateSwapTransaction(
-          Token.fromSwapToken(fromToken, blockchain!, provider!), // Optimize these later plus the two above
-          Token.fromSwapToken(toToken, blockchain!, provider!),
-          fromAmount,
-          toAmount,
-          await signer.getAddress(),
-          Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes deadline
-        );
+      const slippageBN = toAmountBN * BigInt(Math.floor(slippageTolerance * 100)) / BigInt(10000);
+      const minAmountOut = toAmountBN - slippageBN;
+      const deadlineTimestamp = Math.floor(Date.now() / 1000) + deadline * 60;
 
-        const tx = await wallet.sendTransaction(swapTx);
-        console.log('Swap transaction:', tx);
-        
-        onSwap(fundingAddress, fromToken, toToken, fromAmount, toAmount);
+      const swapTx: TransactionRequest = await swapManager.populateSwapTransaction(
+        Token.fromSwapToken(tokenIn, blockchain, provider),
+        Token.fromSwapToken(tokenOut, blockchain, provider),
+        fromAmountBN,
+        minAmountOut,
+        await signer.getAddress(),
+        deadlineTimestamp
+      ) as TransactionRequest;
 
-        // Handle successful swap (e.g., show confirmation, update balances)
-      } catch (error) {
-        console.error('Error executing swap:', error);
-        // Handle error (e.g., show error message)
-      }
+      const tx = await wallet.sendTransaction(swapTx);
+      console.log('Swap transaction:', tx);
+      
+      onSwap(fundingAddress, tokenIn, tokenOut, fromAmountBN, toAmountBN);
+
+      error = null;
+      // You might want to add a success message or trigger a UI update here
+    } catch (error: any) {
+      console.error('Error executing swap:', error);
+      error = `Failed to execute swap: ${error.message}`;
     }
   }
 
   function switchTokens() {
-    [fromToken, toToken] = [toToken, fromToken];
+    [tokenIn, tokenOut] = [tokenOut, tokenIn];
     [fromAmount, toAmount] = [toAmount, fromAmount];
     [fromBalance, toBalance] = [toBalance, fromBalance];
     [selectedFromToken, selectedToToken] = [selectedToToken, selectedFromToken];
-    getQuote();
+    debouncedGetQuote();
   }
 
   async function updateBalance(token: SwapToken | null, isFromToken: boolean) {
@@ -271,75 +407,45 @@
   }
 
   async function handleTokenSelect(token: SwapToken | null, isFromToken: boolean) {
-
-    console.log('Swap - Token selected:', token, isFromToken);
-
     if (isFromToken) {
-      fromToken = token;
+      tokenIn = token;
       selectedFromToken = token;
     } else {
-      toToken = token;
+      tokenOut = token;
       selectedToToken = token;
     }
     if (token) {
       await updateBalance(token, isFromToken);
-      getQuote();
+      if (tokenIn && tokenOut) {
+        if (fromAmount) {
+          await getQuote();
+        } else if (toAmount) {
+          await getQuote();
+        }
+      }
     }
-  }
-
-  function handleFromAmountChange() {
-    getQuote();
   }
 
   function close() {
     show = false;
   }
 
-  onMount(async () => {
-    wallet = await getWallet(); 
-    blockchain = wallet.getBlockchain() as Ethereum;
-    provider = wallet.getProvider();
-    swapManager = new UniswapV3SwapManager(blockchain, provider!);
-    tokenService = new TokenService(blockchain as Ethereum);
-
-    console.log('Wallet:', wallet, blockchain, provider, swapManager, tokenService);
-
-    tokens = await fetchTokenList();
-    let eth: SwapToken = {
-      chainId: 1,
-      address: '',  // There is no contract address for eth since it is native
-      name: 'Ethereum',
-      symbol: 'ETH',
-      decimals: 18,
-      isNative: true,
-      logoURI: '/images/ethereum.svg',
-    };
-    tokens.unshift(eth);
-    
-    preferredTokens = preferredTokenSymbols.map(symbol => tokens.find(token => token.symbol === symbol)).filter(Boolean) as SwapToken[];
-    tokens = tokens.filter(token => !preferredTokens.includes(token)).sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-    if (fromToken) {
-      await updateBalance(fromToken, true);
-    }
-    if (toToken) {
-      await updateBalance(toToken, false);
-    }
-  });
 </script>
 
 <Modal bind:show title="Swap" {className}>
   <div class="p-6">
     <div class="space-y-4">
       <!-- Sell section -->
+      <span>Sell</span>
       <div class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-lg p-4">
         <div class="flex justify-between items-center">
           <input
-            type="number"
+            type="text"
             bind:value={fromAmount}
             on:input={handleFromAmountChange}
             class="bg-transparent text-3xl font-bold focus:outline-none w-1/2 mr-4"
             placeholder="0"
+            min="0"
           />
           <TokenDropdown
             tokens={[...preferredTokens, ...tokens]}
@@ -348,14 +454,15 @@
           />
         </div>
         <div class="flex justify-between items-center mt-2 text-sm">
-          <TokenPrice 
-            baseToken={fromToken?.symbol ?? ''}
-            quantity={Number(fromAmount)}
-            quoteToken="USD"
-            customClass="text-gray-500"
-          />
-          {#if fromToken}
-            <Balance token={fromToken} address={fundingAddress} {provider} {tokenService} />
+          {#if tokenIn}
+            <SwapTokenPrice 
+              tokenIn={tokenIn}
+              tokenOut={tokenOut}
+              amountIn={fromAmount}
+              isExactIn={true}
+              customClass="text-gray-500"
+            />
+            <Balance token={tokenIn} address={fundingAddress} {provider} {tokenService} />
           {/if}
         </div>
       </div>
@@ -371,13 +478,16 @@
       </button>
 
       <!-- Buy section -->
+      <span>Buy</span>
       <div class="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-lg p-4">
         <div class="flex justify-between items-center">
           <input
-            type="number"
+            type="text"
             bind:value={toAmount}
+            on:input={handleToAmountChange}
             class="bg-transparent text-3xl font-bold focus:outline-none w-1/2 mr-4"
             placeholder="0"
+            min="0"
           />
           <TokenDropdown
             tokens={[...preferredTokens, ...tokens]}
@@ -386,14 +496,15 @@
           />
         </div>
         <div class="flex justify-between items-center mt-2 text-sm">
-          <TokenPrice 
-            baseToken={toToken?.symbol ?? ''}
-            quantity={Number(toAmount)}
-            quoteToken="USD"
-            customClass="text-gray-500"
-          />
-          {#if toToken}
-            <Balance token={toToken} address={fundingAddress} {provider} {tokenService} />
+          {#if tokenOut}
+            <SwapTokenPrice 
+              tokenIn={tokenIn}
+              tokenOut={tokenOut}
+              amountOut={toAmount}
+              isExactIn={false}
+              customClass="text-gray-500"
+            />
+            <Balance token={tokenOut} address={fundingAddress} {provider} {tokenService} />
           {/if}
         </div>
       </div>
@@ -404,18 +515,40 @@
         <span>Gas fee ≈ {gasFee}</span>
       </div>
 
+      <!-- Slippage and Deadline settings -->
+      <div class="flex justify-between items-center">
+        <div>
+          <label for="slippage" class="block text-sm font-medium text-gray-700">Slippage Tolerance</label>
+          <select id="slippage" bind:value={slippageTolerance} class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+            <option value={0.1}>0.1%</option>
+            <option value={0.5}>0.5%</option>
+            <option value={1}>1%</option>
+            <option value={3}>3%</option>
+          </select>
+        </div>
+        <div>
+          <label for="deadline" class="block text-sm font-medium text-gray-700">Transaction Deadline</label>
+          <select id="deadline" bind:value={deadline} class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+            <option value={10}>10 minutes</option>
+            <option value={20}>20 minutes</option>
+            <option value={30}>30 minutes</option>
+            <option value={60}>1 hour</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Error message -->
-      {#if parseFloat(sellAmount) > parseFloat(ethers.formatUnits(toBigNumberishString(fromBalance), fromToken?.decimals || 18))}
-        <div class="text-red-500 text-center">Insufficient {fromToken?.symbol} balance</div>
+      {#if error}
+        <div class="text-red-500 text-center">{error}</div>
       {/if}
 
       <!-- Swap button -->
       <button
         on:click={swapTokens}
         class="w-full px-4 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        disabled={!fromToken || !toToken || !sellAmount || !buyAmount || parseFloat(sellAmount) > parseFloat(ethers.formatUnits(toBigNumberishString(fromBalance), fromToken?.decimals || 18))}
+        disabled={!tokenIn || !tokenOut || !fromAmount || !toAmount || isLoading || !!error || (tokenIn && fromBalance !== undefined && fromBalance !== null && parseFloat(fromAmount) > parseFloat(ethers.formatUnits(fromBalance.toString(), tokenIn.decimals)))}
       >
-        Swap
+        {isLoading ? 'Loading...' : 'Swap'}
       </button>
     </div>
   </div>
