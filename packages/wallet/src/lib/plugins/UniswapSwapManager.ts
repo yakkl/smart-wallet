@@ -1,122 +1,268 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// UniswapSwapManager.ts
+import { abi as ISwapRouterABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
 import { SwapManager } from './SwapManager';
-import type { Token } from '$plugins/Token';
-import type { Provider } from '$plugins/Provider';
-import { type BigNumberish, type TransactionRequest, type TransactionResponse, type SwapToken, WETH_ADDRESS, type SwapPriceData } from '$lib/common';
-import { ABIs, ADDRESSES } from '$plugins/contracts/evm/constants-evm';
+import type { Token } from './Token';
+import type { BigNumberish, TransactionResponse, PoolInfoData, TransactionRequest, SwapParams, SwapPriceData } from '$lib/common';
+import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+import { ADDRESSES } from './contracts/evm/constants-evm';
+import type { ExactInputSingleParams } from '$lib/common/ISwapRouter';
+import { ABIs } from './contracts/evm/constants-evm';
+import { EVMToken } from './tokens/evm/EVMToken';
 import { ethers } from 'ethers';
 import type { Ethereum } from './blockchains/evm/ethereum/Ethereum';
-import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
+import type { Provider } from './Provider';
+import { formatEther } from '../utilities/utilities';
+import { UniswapSwapPriceProvider } from './providers/swapprice/uniswap/UniswapSwapPriceProvider';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
-import { abi as SwapRouterABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
-import type { ExactInputSingleParams } from '$lib/common/ISwapRouter';
 
-// These are here for reference at the moment. They come from the Uniswap V3 SDK constants.ts file.
-/**
- * The default factory enabled fee amounts, denominated in hundredths of bips.
- */
-// export enum FeeAmount {
-//   LOWEST = 100,
-//   LOW_200 = 200,
-//   LOW_300 = 300,
-//   LOW_400 = 400,
-//   LOW = 500,
-//   MEDIUM = 3000,
-//   HIGH = 10000,
-// }
-
-/**
- * The default factory tick spacings by fee amount.
- */
-// export const TICK_SPACINGS: { [ amount in FeeAmount ]: number } = {
-//   [ FeeAmount.LOWEST ]: 1,
-//   [ FeeAmount.LOW_200 ]: 4,
-//   [ FeeAmount.LOW_300 ]: 6,
-//   [ FeeAmount.LOW_400 ]: 8,
-//   [ FeeAmount.LOW ]: 10,
-//   [ FeeAmount.MEDIUM ]: 60,
-//   [ FeeAmount.HIGH ]: 200,
-// };
 
 export class UniswapSwapManager extends SwapManager {
-  private router: any;
-  private quoter: any;
-  private uniswapPriceProvider: UniswapSwapPriceProvider;
-  private ethersProvider: ethers.JsonRpcProvider | null;
+  protected priceProvider: UniswapSwapPriceProvider;
+  private routerContract: ethers.Contract;
 
-  constructor ( blockchain: Ethereum, provider: Provider, initialFeeBasisPoints: number = 875 ) {
+  constructor (
+    blockchain: Ethereum,
+    provider: Provider,
+    initialFeeBasisPoints: number = 875
+  ) {
     super( blockchain, provider, initialFeeBasisPoints );
-    this.uniswapPriceProvider = new UniswapSwapPriceProvider( provider, new CoinbasePriceProvider(), initialFeeBasisPoints );
-    this.ethersProvider = null;
-    this.initializeProvider();
-  }
 
-  private async initializeProvider(): Promise<void> {
-    try {
-      // this.router = this.blockchain.createContract( ADDRESSES.UNISWAP_V3_ROUTER, SwapRouterABI );
-      const url = await this.provider.getProviderURL();
-      this.ethersProvider = new ethers.JsonRpcProvider( url );
-      this.router = new ethers.Contract( ADDRESSES.UNISWAP_V3_ROUTER, SwapRouterABI, this.ethersProvider );
-      this.quoter = this.blockchain.createContract( ADDRESSES.UNISWAP_V3_QUOTER, ABIs.UNISWAP_V3_QUOTER );
-    } catch ( error ) {
-      console.error( 'Failed to initialize provider:', error );
-      throw new Error( 'Provider initialization failed' );
-    }
+    this.priceProvider = new UniswapSwapPriceProvider( provider, new CoinbasePriceProvider() ); // May want to change to a more abstract provider like coingecko later
+
+    this.routerContract = new ethers.Contract(
+      ADDRESSES.UNISWAP_V3_ROUTER,
+      ISwapRouterABI,
+      this.provider as any
+    );
   }
 
   getName(): string {
     return 'Uniswap V3';
   }
 
-  async getQuote( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish, fee: number = 3000 ): Promise<SwapPriceData> {
+  async getQuote(
+    tokenIn: Token,
+    tokenOut: Token,
+    amount: BigNumberish,
+    isExactIn: boolean = true,
+    fee: number = 3000
+  ): Promise<SwapPriceData> {
+    if ( !tokenIn?.address || !tokenOut?.address || !amount ) {
+      throw new Error( 'Invalid token addresses or amount' );
+    }
+
+    console.log( 'Hello from UniswapSwapManager' );
+
+    console.log( 'Getting quote:', {tokenIn, tokenOut, amount, isExactIn, fee} );
+
     try {
-      if ( !tokenIn || !tokenOut || !amountIn ) {
-        throw new Error( 'Invalid token or amount' );
-      }
-      const swapTokenIn: SwapToken = {
-        address: tokenIn.address,
-        symbol: tokenIn.symbol,
-        decimals: tokenIn.decimals,
-        chainId: tokenIn.chainId,
-        name: tokenIn.name,
-      };
+      const poolAddress = await this.factory.call(
+        'getPool',
+        tokenIn.address,
+        tokenOut.address,
+        fee
+      );
 
-      const swapTokenOut: SwapToken = {
-        address: tokenOut.address,
-        symbol: tokenOut.symbol,
-        decimals: tokenOut.decimals,
-        chainId: tokenOut.chainId,
-        name: tokenOut.name,
-      };
-
-      const swapPriceData = await this.uniswapPriceProvider.getSwapPriceOut( swapTokenIn, swapTokenOut, amountIn, 3000 );
-      if ( !swapPriceData || !swapPriceData.amountOut ) {
-        throw new Error( 'Failed to get price data' );
+      if ( poolAddress === ethers.ZeroAddress ) {
+        throw new Error( 'Pool does not exist' );
       }
+
+      const amountBigInt = EthereumBigNumber.from( amount ).toBigInt();
+      if ( !amountBigInt ) throw new Error( 'Invalid amount' );
+
+      // Create ethers contract instance for the quoter
+      const quoterContract = new ethers.Contract(
+        ADDRESSES.UNISWAP_V3_QUOTER,
+        [
+          'function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external returns (uint256 amountOut)',
+          'function quoteExactOutputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountOut, uint160 sqrtPriceLimitX96) external returns (uint256 amountIn)'
+        ],
+        this.provider as any
+      );
+
+      let quoteAmount: bigint;
+      if ( isExactIn ) {
+        quoteAmount = await quoterContract.quoteExactInputSingle.staticCall(
+          tokenIn.address,
+          tokenOut.address,
+          fee,
+          amountBigInt,
+          0
+        );
+      } else {
+        quoteAmount = await quoterContract.quoteExactOutputSingle.staticCall(
+          tokenIn.address,
+          tokenOut.address,
+          fee,
+          amountBigInt,
+          0
+        );
+      }
+
+      console.log( 'Quote amount:', quoteAmount.toString(), {
+        tokenIn: tokenIn.address,
+        tokenOut: tokenOut.address,
+        fee,
+        amount: amountBigInt.toString()
+      } );
+
+      const feeAmount = this.calculateFee( quoteAmount );
+      const amountAfterFee = quoteAmount - feeAmount;
+
+      const price = Number( amountAfterFee ) / Number( amountBigInt ); // TODO: Check if this is correct
+      const priceImpact = ( ( Number( quoteAmount ) - Number( amountAfterFee ) ) / Number( quoteAmount ) ) * 100;
+
+      const fAmount = formatEther( feeAmount );
+      const qAmount = formatEther( quoteAmount );
+      const aAFee = formatEther( amountAfterFee );
+      const aBInt = formatEther( amountBigInt );
+
+      console.log( 'Quote:>>>>====<<<< (feeAmount, quoteAmount, amountAfterFee, amountBigInt, price, priceImpact)',
+        {
+          fAmount,
+          qAmount,
+          aAFee,
+          aBInt,
+          price,
+          priceImpact
+        } )
+
+      console.log( 'Quote: Going to call getPoolInfo' );
+
+      const priceProvider = new UniswapSwapPriceProvider( this.provider, new CoinbasePriceProvider() ); // Calling it here but may need to be called earlier in the stack.
+
+      const poolInfo = await this.getPoolInfo( tokenIn, tokenOut, fee );
+
+      console.log( 'Quote: (UniswapSwapManager) getPoolInfo:', poolInfo );
+
+      console.log( 'Quote: Going to call UniswapSwapPriceProvider - provider', this.provider );
       
-      const amountOutBigInt = BigInt( swapPriceData.amountOut.toString() );
-      const feeAmount = this.calculateFee( amountOutBigInt );
-      const amountOutWithFee = amountOutBigInt - feeAmount;
+      console.log( 'Quote: (UniswapSwapPriceProvider) priceProvider:', priceProvider );
+
+      const priceProviderData = await priceProvider.getPoolInfo( tokenIn, tokenOut );
+
+      console.log( 'Quote: (UniswapSwapPriceProvider) priceProviderData:', { priceProviderData } );
 
       return {
-        provider: this.uniswapPriceProvider.getName(),
+        provider: this.getName(),
         lastUpdated: new Date(),
-        chainId: this.provider.getChainId(),
-        tokenIn: swapTokenIn,
-        tokenOut: swapTokenOut,
-        amountIn: BigInt( amountIn.toString() ),
-        amountOut: amountOutWithFee,//swapPriceData.amountOut,
-        price: swapPriceData.price,
-        priceImpact: swapPriceData.priceImpact,
+        chainId: this.blockchain.getChainId(),
+        tokenIn,
+        tokenOut,
+        amountIn: isExactIn ? amount : amountAfterFee,
+        amountOut: isExactIn ? amountAfterFee : amount,
+        exchangeRate: price, // TODO: Check if this is correct
+        price,
+        priceImpact,
         path: [ tokenIn.address, tokenOut.address ],
         fee,
-        feeBasisPoints: feeAmount,
+        feeBasisPoints: feeAmount
       };
     } catch ( error ) {
-      console.log( 'UniswapSwapManager - getQuote - error', error );
+      console.error( 'Error in getQuote:', error, {
+        tokenIn: tokenIn.address,
+        tokenOut: tokenOut.address,
+        amount: amount.toString()
+      } );
       throw error;
     }
+  }
+
+  private async calculatePriceImpact(
+    tokenIn: Token,
+    tokenOut: Token,
+    amountIn: BigNumberish,
+    amountOut: BigNumberish,
+    fee: number
+  ): Promise<number> {
+    const poolInfo = await this.getPoolInfo( tokenIn, tokenOut, fee );
+    const spotPrice = Number( poolInfo.sqrtPriceX96 ) / 2 ** 96;
+
+    const amountInDecimal = Number( amountIn ) / 10 ** tokenIn.decimals;
+    const amountOutDecimal = Number( amountOut ) / 10 ** tokenOut.decimals;
+    const executionPrice = amountOutDecimal / amountInDecimal;
+
+    return Math.abs( ( executionPrice - spotPrice ) / spotPrice * 100 );
+  }
+
+  async getPoolInfo(
+    tokenA: Token,
+    tokenB: Token,
+    fee: number = 3000
+  ): Promise<PoolInfoData> {
+    const poolAddress = await this.factory.call(
+      'getPool',
+      tokenA.address,
+      tokenB.address,
+      fee
+    );
+
+    if ( poolAddress === '0x0000000000000000000000000000000000000000' ) {
+      throw new Error( 'Pool does not exist' );
+    }
+
+    const pool = this.blockchain.createContract( poolAddress, ABIs.UNISWAP_V3_POOL );
+
+    const [ slot0, liquidity ] = await Promise.all( [
+      pool.call( 'slot0' ),
+      pool.call( 'liquidity' )
+    ] );
+
+    return {
+      fee,
+      liquidity: liquidity.toString(),
+      sqrtPriceX96: slot0.sqrtPriceX96.toString(),
+      tick: slot0.tick,
+      tokenInReserve: await this.getTokenReserve( tokenA, poolAddress ),
+      tokenOutReserve: await this.getTokenReserve( tokenB, poolAddress ),
+      tokenInUSDPrice: (await this.getTokenUSDPrice( tokenA )).toString(),
+      tokenOutUSDPrice: (await this.getTokenUSDPrice( tokenB )).toString(),
+      tvl: await this.calculateTVL( tokenA, tokenB, poolAddress ),
+      lastUpdated: new Date(),
+      provider: this.getName()
+    };
+  }
+
+  // UniswapSwapManager.ts (continuation)
+  private async getTokenReserve( token: Token, poolAddress: string ): Promise<string> {
+    const balance = await token.getBalance( poolAddress );
+    return balance ? balance.toString() : '0';
+  }
+
+  private async getTokenUSDPrice( token: Token ): Promise<number> {
+    try {
+      const price = await this.priceProvider.getMarketPrice( token.symbol + '-USD' );
+      return price.price;
+    } catch ( error ) {
+      console.error( 'Error getting token price. Defaulting to 0:', error );
+      return 0;
+    }
+  }
+
+  private async calculateTVL(
+    tokenA: Token,
+    tokenB: Token,
+    poolAddress: string
+  ): Promise<number> {
+    const [ reserveA, reserveB ] = await Promise.all( [
+      this.getTokenReserve( tokenA, poolAddress ),
+      this.getTokenReserve( tokenB, poolAddress )
+    ] );
+
+    const [ priceA, priceB ] = await Promise.all( [
+      this.getTokenUSDPrice( tokenA ),
+      this.getTokenUSDPrice( tokenB )
+    ] );
+
+    const valueA = ( Number( reserveA ) / 10 ** tokenA.decimals ) * priceA;
+    const valueB = ( Number( reserveB ) / 10 ** tokenB.decimals ) * priceB;
+
+    return valueA + valueB;
+  }
+
+  getRouterAddress(): string {
+    return this.routerContract.target as string;
   }
 
   async populateSwapTransaction(
@@ -127,117 +273,119 @@ export class UniswapSwapManager extends SwapManager {
     recipient: string,
     deadline: number,
     fee: number = 3000,
-    estimateOnly: boolean = false // New parameter, defaulting to false
+    estimateOnly: boolean = false
   ): Promise<TransactionRequest | bigint> {
-    try {
-      const params: ExactInputSingleParams = {
-        tokenIn: tokenIn.address,
-        tokenOut: tokenOut.address,
-        fee: fee,
-        recipient: recipient,
-        deadline: deadline,
-        amountIn: BigInt( amountIn?.toString() || 0n ), // ensure it's a BigInt
-        amountOutMinimum: BigInt( amountOutMin?.toString() || 0n ), // ensure it's a BigInt
-        sqrtPriceLimitX96: 0,
-      };
+    const params: ExactInputSingleParams = {
+      tokenIn: tokenIn.address,
+      tokenOut: tokenOut.address,
+      fee,
+      recipient,
+      deadline,
+      amountIn: EthereumBigNumber.from( amountIn ).toBigInt() ?? 0n,
+      amountOutMinimum: EthereumBigNumber.from( amountOutMin ).toBigInt() ?? 0n,
+      sqrtPriceLimitX96: 0
+    };
 
-      const data = this.router.interface.encodeFunctionData( 'exactInputSingle', [ params ] );
+    // const router = this.blockchain.createContract(
+    //   ADDRESSES.UNISWAP_V3_ROUTER,
+    //   ABIs.UNISWAP_V3_ROUTER
+    // );
 
-      if ( estimateOnly ) {
-        // Perform a gas estimate using eth_estimateGas
-        const gasEstimate = await this.provider.estimateGas( {
-          from: await this.provider.getSigner().getAddress(), // Ensure valid address
-          to: this.router.address,
-          data: data,
-          value: tokenIn.address === WETH_ADDRESS ? amountIn : 0,
-          chainId: this.provider.getChainId(), // Get chainId from provider
-        } );
+    // const data = await router.populateTransaction( 'exactInputSingle', [ params ] );
+    // const signer = this.provider.getSigner();
+    // if ( !signer ) throw new Error( 'No signer available' );
+    // const from = await signer.getAddress();
 
-        return gasEstimate; // Return the gas estimate as BigInt
-      } else {
-        // Populate the transaction normally
-        const populatedTransaction: TransactionRequest = {
-          to: this.router.address,
-          data: data,
-          value: tokenIn.address === WETH_ADDRESS ? amountIn : 0,
-          from: await this.provider.getSigner().getAddress(), // Get the address of the signer
-          chainId: this.provider.getChainId(), // Get chainId from provider
-        };
+    const populatedTx = await this.routerContract.exactInputSingle.populateTransaction( params );
 
-        return populatedTransaction; // Return the full transaction request object
-      }
-    } catch ( error ) {
-      console.error( 'Error in populateSwapTransaction:', error );
-      throw error;
-    }
-  }
-
-  getRouterAddress(): string {
-    return ADDRESSES.UNISWAP_V3_ROUTER;
-  }
-
-  async executeSwap(
-    tokenIn: Token,
-    tokenOut: Token,
-    amountIn: BigNumberish,
-    minAmountOut: BigNumberish,
-    recipient: string,
-    deadline: number,
-    fee: number = 3000,
-  ): Promise<TransactionResponse> {
-    try {
-      const params = {
-        tokenIn: tokenIn.address,
-        tokenOut: tokenOut.address,
-        fee: fee,
-        recipient,
-        deadline,
-        amountIn,
-        amountOutMinimum: minAmountOut,
-        sqrtPriceLimitX96: 0,
-      };
-
+    if ( estimateOnly ) {
       const signer = this.provider.getSigner();
-      const routerWithSigner = this.router.connect( signer );
+      if ( !signer ) throw new Error( 'No signer available' );
 
-      const tx = await routerWithSigner.exactInputSingle( params, {
-        value: tokenIn.address === WETH_ADDRESS ? amountIn : 0,
+      const gasEstimate = await this.provider.estimateGas( {
+        from: await signer.getAddress(),
+        to: this.routerContract.target as string,
+        data: populatedTx.data,
+        value: tokenIn.isNative ? amountIn : 0,
+        chainId: this.provider.getChainId()
       } );
 
-      return tx;
-    } catch ( error ) {
-      console.log( 'UniswapSwapManager - executeSwap - error', error );
-      throw new Error( `Error executing swap - ${ error }` );
+      return gasEstimate;
     }
+
+    return {
+      to: this.routerContract.target as string,
+      data: populatedTx.data,
+      value: tokenIn.isNative ? amountIn : 0,
+      from: await this.provider.getSigner()?.getAddress() as string,
+      chainId: this.provider.getChainId()
+    };
   }
 
-  async addLiquidity(
-    tokenA: Token,
-    tokenB: Token,
-    amountA: BigNumberish,
-    amountB: BigNumberish,
-    minAmountA: BigNumberish,
-    minAmountB: BigNumberish,
-    recipient: string,
-    deadline: number,
-  ): Promise<TransactionResponse> {
-    // TODO: Implement Uniswap V3 add liquidity logic
-    // Parameters are defined for future implementation
-    throw new Error( 'Method not implemented.' );
+  private async getWETHToken(): Promise<Token> {
+    const chainId = this.blockchain.getChainId();
+    const wethAddress = chainId === 1 ? ADDRESSES.WETH : ADDRESSES.WETH_SEPOLIA;
+
+    return new EVMToken(
+      wethAddress,
+      'Wrapped Ether',
+      'WETH',
+      18,
+      '/images/weth.png',
+      'Wrapped version of Ether',
+      chainId,
+      false, // Not native since it's wrapped
+      this.blockchain,
+      this.provider
+    );
   }
 
-  async removeLiquidity(
-    tokenA: Token,
-    tokenB: Token,
-    liquidity: BigNumberish,
-    minAmountA: BigNumberish,
-    minAmountB: BigNumberish,
-    recipient: string,
-    deadline: number,
-  ): Promise<TransactionResponse> {
-    // TODO: Implement Uniswap V3 remove liquidity logic
-    // Parameters are defined for future implementation
-    throw new Error( 'Method not implemented.' );
+  async prepareTokensForSwap(
+    tokenIn: Token,
+    tokenOut: Token
+  ): Promise<[ Token, Token ]> {
+    let actualTokenIn = tokenIn;
+    let actualTokenOut = tokenOut;
+
+    // Handle ETH -> WETH conversion
+    if ( tokenIn.isNative ) {
+      actualTokenIn = await this.getWETHToken();
+    }
+    if ( tokenOut.isNative ) {
+      actualTokenOut = await this.getWETHToken();
+    }
+
+    return [ actualTokenIn, actualTokenOut ];
+  }
+
+  async executeSwap( params: SwapParams ): Promise<TransactionResponse> {
+    const {
+      tokenIn,
+      tokenOut,
+      amount,
+      slippage,
+      deadline,
+      recipient
+    } = params;
+
+    const quote = await this.getQuote( tokenIn, tokenOut, amount );
+    const minOut = EthereumBigNumber.from( quote.amountOut )
+      .mul( 1000 - Math.floor( slippage * 10 ) )
+      .div( 1000 );
+
+    const tx = await this.populateSwapTransaction(
+      tokenIn,
+      tokenOut,
+      amount,
+      minOut,
+      recipient,
+      Math.floor( Date.now() / 1000 ) + ( deadline * 60 )
+    );
+
+    if ( typeof tx === 'bigint' ) {
+      throw new Error( 'Received gas estimate instead of transaction request' );
+    }
+
+    return await this.provider.sendTransaction( tx );
   }
 }
-

@@ -34,13 +34,9 @@ export class TokenService<T extends BaseTransaction> {
     }
   }
 
-  async getBalance(tokenAddress: string, userAddress: string): Promise<BigNumberish> {
+  async getBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
-      console.log('tokenAddress, user', tokenAddress, userAddress);
-
       const contract = this.getTokenContract(tokenAddress);
-      console.log('contract', contract);
-  
       return await contract?.call('balanceOf', userAddress); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);

@@ -92,7 +92,7 @@ export abstract class Token implements IToken {
       swapToken.symbol,
       swapToken.decimals,
       swapToken.logoURI || '', // Use an empty string if logoURI is undefined
-      swapToken.description || '', // Use an empty string if description is undefined
+      swapToken.description || `${ swapToken.name } token`, // Use an empty string if description is undefined
       swapToken.chainId,
       swapToken.isNative || false, // Use false if isNative is undefined
       blockchain,

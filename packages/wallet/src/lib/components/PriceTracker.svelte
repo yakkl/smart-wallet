@@ -4,8 +4,8 @@
   import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 
-  export let baseToken: string; // In a swap this would be the fromToken
-  export let quoteToken: string; // In a swap this would be the toToken
+  export let symbol: string; // In a swap this would be the fromToken
+  export let currency: string; // In a swap this would be the toToken
   export let providers: PriceProvider[] = [new CoinbasePriceProvider()];
   export let updateInterval: number = 10000;
 
@@ -16,9 +16,9 @@
     try {
       for (const provider of providers) {
         try {
-            const priceData = await provider.getMarketPrice(`${baseToken}-${quoteToken}`);
+            const priceData = await provider.getMarketPrice(`${symbol}-${currency}`);
             if (priceData === null) {
-              console.log(`PriceTracker failed to fetch price from ${provider.getName()}: ${baseToken}-${quoteToken}`);
+              console.log(`PriceTracker failed to fetch price from ${provider.getName()}: ${symbol}-${currency}`);
               continue;
             }
             priceStore.set(priceData);
@@ -35,7 +35,6 @@
   onMount(() => {
     try {
       if (providers.length === 0) {
-        console.log('PriceTracker: No providers specified, allocating one...');
         providers = [new CoinbasePriceProvider()];
       }
 

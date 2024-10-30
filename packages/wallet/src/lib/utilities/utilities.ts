@@ -33,6 +33,13 @@ function updateProfile(p: Profile) {
 }
 **/
 
+export function safeConvertBigIntToNumber( bigIntValue: bigint ): number {
+  if ( bigIntValue < BigInt( Number.MIN_SAFE_INTEGER ) || bigIntValue > BigInt( Number.MAX_SAFE_INTEGER ) ) {
+    throw new Error( 'BigInt value is outside the safe integer range' );
+  }
+  return Number( bigIntValue );
+}
+
 // Function to get the currency code for the user's locale
 export function getCurrencyCodeForUserLocale(): string | undefined {
   const options = new Intl.NumberFormat( navigator.language, { style: 'currency', currency: 'USD' } ).resolvedOptions();
