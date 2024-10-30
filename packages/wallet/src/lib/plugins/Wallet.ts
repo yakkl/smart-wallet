@@ -21,6 +21,7 @@ import { Ethereum, EthereumSigner } from '$plugins/blockchains';
 import { writable } from 'svelte/store';
 import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
 import type { Token } from '$plugins/Token';
+import { TokenService } from './blockchains/evm/TokenService';
 
 export const walletStore = writable<Wallet | null>(null);
 
@@ -38,6 +39,7 @@ export class Wallet {
   private apiKey: string | null = null;
   private chainId: number;
   private privateKey: string | null = null; // This is the user's private key
+  private tokenService: TokenService<any> | null = null;
 
   /**
    * Creates an instance of Wallet.
@@ -52,6 +54,33 @@ export class Wallet {
     this.privateKey = privateKey; // This is the user's private key
     this.initialize();
     Wallet.setInstance(this); // Any change to the wallet instance should update the store
+  }
+
+  /**
+ * Initializes the wallet by setting up providers and blockchains.
+ */
+  private initialize(): void {
+    if ( this.providerNames.length > 0 ) {
+      // Initialize all providers
+      const providers = this.providerNames.map( name => ProviderFactory.createProvider( { name, apiKey: this.apiKey, chainId: this.chainId } ) );
+      // Set the first provider as the primary provider
+      this.provider = providers[ 0 ];
+      // Initialize the blockchain with all providers
+      const blockchainName = this.getBlockchainFromChainId( this.chainId );
+      this.blockchain = BlockchainFactory.createBlockchain( blockchainName, providers );
+      this.tokenService = new TokenService<any>( this.blockchain as Ethereum);
+    }
+
+    this.setupEventListeners();
+    if ( this.privateKey ) {
+      this.setSigner( this.privateKey );
+    }
+    Wallet.setInstance( this );
+  }
+
+
+  private static setInstance( instance: Wallet ): void {
+    walletStore.set( instance );
   }
 
   /**
@@ -142,6 +171,10 @@ export class Wallet {
     }
   }
 
+  public getTokenService(): TokenService<any> | null {
+    return this.tokenService;
+  }
+    
   public getChainId(): number {
     return this.chainId;
   }
@@ -180,32 +213,6 @@ export class Wallet {
       throw new Error('Blockchain not initialized');
     }
     return await this.blockchain.getTransactionHistory(address);
-  }
-
-  /**
-   * Initializes the wallet by setting up providers and blockchains.
-   */
-  private initialize(): void {
-    if (this.providerNames.length > 0) {
-      // Initialize all providers
-      const providers = this.providerNames.map(name => ProviderFactory.createProvider({ name, apiKey: this.apiKey, chainId: this.chainId }));
-      // Set the first provider as the primary provider
-      this.provider = providers[0];  
-      // Initialize the blockchain with all providers
-      const blockchainName = this.getBlockchainFromChainId(this.chainId);
-      this.blockchain = BlockchainFactory.createBlockchain(blockchainName, providers);
-    }
-  
-    this.setupEventListeners();
-    if (this.privateKey) {
-      this.setSigner(this.privateKey);
-    }
-    Wallet.setInstance(this);
-  }
-
-  
-  private static setInstance(instance: Wallet): void {
-    walletStore.set(instance);
   }
 
   /**
@@ -302,7 +309,8 @@ export class Wallet {
   public setSigner(privateKey: string | null): Promise<Signer> | null {
     try {
       if (!this.blockchain) {
-        throw new Error('Blockchain is not initialized');
+        console.log( 'Blockchain is not initialized yet' );
+        return null;
       }
       // privateKey can be null if the system is initializing so we simply log and return
       if (!privateKey && !this.privateKey) {

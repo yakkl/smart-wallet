@@ -4,7 +4,7 @@
 
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-import { ETH_BASE_UNISWAP_GAS_UNITS } from '$lib/common/constants';
+// import { ETH_BASE_UNISWAP_GAS_UNITS } from '$lib/common/constants';
 import type {
   GasProvider,
   GasEstimate,
@@ -12,20 +12,28 @@ import type {
   GasPrediction,
   FeeEstimate
 } from '$lib/common/gas-types';
-import type { SwapToken, TransactionRequest } from '$lib/common/interfaces';
+import type { PriceProvider, SwapToken, TransactionRequest } from '$lib/common/interfaces';
 import type { Blockchain, Wallet } from '$lib/plugins';
 import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
 import { Token } from '$lib/plugins/Token';
 import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
 import type { Provider } from '$plugins/Provider';
 
+const DEFAULT_GAS_ESTIMATES = {
+  ERC20_APPROVE: 46000n,
+  SWAP_EXACT_IN: 180000n,
+  SWAP_EXACT_OUT: 250000n
+};
+
 export class EthereumGasProvider implements GasProvider {
   private provider: Provider;
   private blockchain: Ethereum;
+  private priceProvider: PriceProvider;
 
-  constructor ( provider: Provider, blockchain: Blockchain ) {
+  constructor ( provider: Provider, blockchain: Blockchain, priceProvider: PriceProvider ) {
     this.provider = provider;
     this.blockchain = blockchain as Ethereum;
+    this.priceProvider = priceProvider;
   }
 
   getName(): string {
@@ -33,11 +41,14 @@ export class EthereumGasProvider implements GasProvider {
   }
 
   async getGasEstimate( transaction: TransactionRequest ): Promise<GasEstimate> {
+    let gasLimit: bigint = 0n;
+    let feeEstimate: FeeEstimate | null = null;
+    let feeData: any;
     try {
-      const gasLimit = await this.provider.estimateGas( transaction );
-      const feeData = await this.provider.getFeeData();
+      gasLimit = await this.provider.estimateGas( transaction );
+      feeData = await this.provider.getFeeData();
 
-      const feeEstimate: FeeEstimate = {
+      feeEstimate = {
         baseFee: feeData.lastBaseFeePerGas.toString(),
         priorityFee: feeData.maxPriorityFeePerGas.toString(),
         totalFee: BigNumber.from( feeData.lastBaseFeePerGas ).add( feeData.maxPriorityFeePerGas ).toString()
@@ -48,6 +59,8 @@ export class EthereumGasProvider implements GasProvider {
         feeEstimate: feeEstimate
       };
     } catch ( error ) {
+      console.log('Error estimating gas gasLimit, feeEstimate, feeData :==>>', { gasLimit, feeEstimate, feeData });
+
       console.error( 'Error estimating gas:', error );
       throw error;
     }
@@ -100,181 +113,216 @@ export class EthereumGasProvider implements GasProvider {
   }
 
   async estimateSwapGasFee(
-    fromToken: SwapToken,
-    toToken: SwapToken,
+    tokenIn: SwapToken,
+    tokenOut: SwapToken,
     fromAmount: BigNumberish,
     slippageTolerance: number,
     deadline: number,
     swapManager: UniswapSwapManager,
-    fee: number = 3000,
-    dummyFromAddress: string = '0x0000000000000000000000000000000000000000' // Dummy from address for ETH swaps estimates
+    fee: number = 3000
   ): Promise<string> {
     try {
-      if ( !fromToken || !toToken || !fromAmount || !slippageTolerance || !deadline || !swapManager ) {
-        return 'Invalid parameters'; // Return an error message if any required parameters are missing
+      // Base gas units for different operations
+      const BASE_SWAP_GAS = 150000n;
+      const APPROVAL_GAS = 46000n;
+
+      // Calculate total gas units needed
+      let totalGasUnits = BASE_SWAP_GAS;
+      if ( !tokenIn.isNative ) {
+        totalGasUnits += APPROVAL_GAS;
       }
 
-      const fromAmountBN = EthereumBigNumber.fromEther( fromAmount.toString() );
-      const slippageBN = fromAmountBN.mul( EthereumBigNumber.from( Math.floor( slippageTolerance * 100 ) ) ).div( EthereumBigNumber.from( 10000 ) );
-      const minAmountOut: EthereumBigNumber = EthereumBigNumber.from( fromAmountBN.sub( slippageBN ) );
-      const deadlineTimestamp = Math.floor( Date.now() / 1000 ) + deadline * 60;
-
-      // const swapTx: TransactionRequest | bigint;
-
-      // if ( fromToken.symbol === 'ETH' ) {
-      // Handle ETH swap
-      // swapTx = await swapManager.populateSwapTransactionWithETH(
-      //   Token.fromSwapToken( toToken, this.blockchain, this.provider ),
-      //   minAmountOut.toWei().toBigInt() ?? BigInt( 0 ),
-      //   dummyFromAddress,
-      //   deadlineTimestamp,
-      //   3000,
-      //   true // Set estimateOnly to true
-      // );
-      // } else {
-      // Handle token swap
-      const swapTx = await swapManager.populateSwapTransaction(
-        Token.fromSwapToken( fromToken, this.blockchain, this.provider ),
-        Token.fromSwapToken( toToken, this.blockchain, this.provider ),
-        fromAmountBN.toWei().toBigInt() ?? BigInt( 0 ),
-        minAmountOut.toWei().toBigInt() ?? BigInt( 0 ),
-        dummyFromAddress,
-        deadlineTimestamp,
-        fee,
-        true // Set estimateOnly to true
-      );
-      // }
-
-      if ( typeof swapTx === 'bigint' ) {
-        // If the returned value is a gas estimate, handle it here
-        return `${ swapTx.toString() } gas units`;
-      }
-
-      let estimatedGas;
-      try {
-        estimatedGas = await this.provider.estimateGas( swapTx );
-      } catch ( estimateError: any ) {
-        console.log( 'Gas estimation failed:', estimateError );
-        if ( estimateError.code === 'UNPREDICTABLE_GAS_LIMIT' ) {
-          const revertReason = estimateError.error?.data?.message;
-          if ( revertReason === 'STF' ) {
-            console.log( 'Swap failed due to insufficient token balance or allowance' );
-          } else {
-            console.log( 'Swap failed due to:', revertReason );
-          }
-        }
-        estimatedGas = EthereumBigNumber.from( ETH_BASE_UNISWAP_GAS_UNITS ).mul( 120 ).div( 100 );
-        console.log( 'Using default gas estimate:', estimatedGas.toString() );
-      }
-
+      // Get current gas prices
       const feeData = await this.provider.getFeeData();
-      const gasPriceGwei = EthereumBigNumber.from( feeData.maxFeePerGas || feeData.gasPrice || 0 );
-      const gasFeeGwei = EthereumBigNumber.from( estimatedGas ).mul( gasPriceGwei );
-      const gasFeeEth = EthereumBigNumber.fromGwei( gasFeeGwei.toString() ).toEtherString();
+      const maxFeePerGas = feeData.maxFeePerGas || feeData.gasPrice;
+      if ( !maxFeePerGas ) throw new Error( 'Could not get gas price' );
 
+      // Calculate total gas cost in wei
+      const gasCostWei = totalGasUnits * BigInt( maxFeePerGas.toString() );
+
+      // Convert to ETH
+      const gasCostEth = EthereumBigNumber.fromWei( gasCostWei.toString() ).toEtherString();
+
+      // Get ETH price
       const ethPrice = await this.getEthPrice();
-      const gasFeeUsd = parseFloat( gasFeeEth ) * ethPrice;
 
-      return `$${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
+      // Calculate USD cost
+      const gasCostUsd = parseFloat( gasCostEth ) * ethPrice;
+
+      return `$${ gasCostUsd.toFixed( 2 ) } (${ gasCostEth } ETH)`;
     } catch ( error ) {
-      console.log( 'Error estimating swap gas fee:', error );
-      return `Unable to estimate: ${ error }`;
+      console.error( 'Gas estimation error:', error );
+      return 'Unable to estimate gas';
     }
   }
-
+  
+  // First one was tested after bottom one
   // async estimateSwapGasFee(
-  //   fromToken: SwapToken,
-  //   toToken: SwapToken,
+  //   tokenIn: SwapToken,
+  //   tokenOut: SwapToken,
   //   fromAmount: BigNumberish,
   //   slippageTolerance: number,
-  //   deadline: number, 
-  //   swapManager: UniswapV3SwapManager,
-  //   dummyFromAddress: string = '0x0000000000000000000000000000000000000000' // Dummy from address for ETH swaps estimates
+  //   deadline: number,
+  //   swapManager: UniswapSwapManager,
+  //   fee: number = 3000,
+  //   dummyFromAddress: string = '0x0000000000000000000000000000000000000000'
   // ): Promise<string> {
   //   try {
-  //     if ( !fromToken || !toToken || !fromAmount || !slippageTolerance || !deadline || !swapManager ) {
-  //       return 'Invalid parameters'; // Return an error message if any required parameters are missing
-  //     }
-  //     const fromAmountBN = EthereumBigNumber.fromEther( fromAmount.toString() );
-  //     const slippageBN = fromAmountBN.mul( EthereumBigNumber.from( Math.floor( slippageTolerance * 100 ) ) ).div( EthereumBigNumber.from( 10000 ) );
-  //     const minAmountOut: EthereumBigNumber = EthereumBigNumber.from( fromAmountBN.sub( slippageBN ) );
+  //     // Convert input values
+  //     const fromAmountBN = EthereumBigNumber.from( fromAmount );
+  //     const slippageBN = fromAmountBN.mul( Math.floor( slippageTolerance * 10 ) ).div( 1000 );
+  //     const minAmountOut = fromAmountBN.sub( slippageBN );
   //     const deadlineTimestamp = Math.floor( Date.now() / 1000 ) + deadline * 60;
+  //     let totalGasEstimate: bigint;
 
-  //     let swapTx: TransactionRequest;
-
-  //     if ( fromToken.symbol === 'ETH' ) {
-  //       // Handle ETH swap
-  //       swapTx = await swapManager.populateSwapTransactionWithETH(
-  //         Token.fromSwapToken( toToken, this.blockchain, this.provider ),
-  //         minAmountOut.toWei().toBigInt() ?? BigInt( 0 ),
-  //         //await wallet.getSigner()!.getAddress(),  // Would have to add wallet as a parameter again
-  //         dummyFromAddress,
-  //         deadlineTimestamp,
-  //         3000
-  //       );
-  //       swapTx.value = fromAmountBN.toWei().toBigInt() ?? BigInt( 0 );
-  //     } else {
-  //       // Handle token swap
-  //       swapTx = await swapManager.populateSwapTransaction(
-  //         Token.fromSwapToken( fromToken, this.blockchain, this.provider ),
-  //         Token.fromSwapToken( toToken, this.blockchain, this.provider ),
-  //         fromAmountBN.toWei().toBigInt() ?? BigInt( 0 ),
-  //         minAmountOut.toWei().toBigInt() ?? BigInt( 0 ),
-  //         // await wallet.getSigner()!.getAddress(),
-  //         dummyFromAddress,
-  //         deadlineTimestamp,
-  //         3000
-  //       );
-  //     }
-
-  //     // const swapTx = await swapManager.populateSwapTransaction(
-  //     //   Token.fromSwapToken( fromToken, this.blockchain, this.provider ),
-  //     //   Token.fromSwapToken( toToken, this.blockchain, this.provider ),
-  //     //   fromAmountBN.toWei().toBigInt() ?? BigInt( 0 ),
-  //     //   minAmountOut.toWei().toBigInt() ?? BigInt( 0 ),
-  //     //   await wallet.getSigner()!.getAddress(),
-  //     //   deadlineTimestamp,
-  //     //   3000
-  //     // );
-
-  //     let estimatedGas;
   //     try {
-  //       estimatedGas = await this.provider.estimateGas( swapTx );
-  //     } catch ( estimateError: any ) {
-  //       console.log( 'Gas estimation failed:', estimateError );
-  //       if ( estimateError.code === 'UNPREDICTABLE_GAS_LIMIT' ) {
-  //         // Handle specific error cases based on the revert reason
-  //         const revertReason = estimateError.error?.data?.message;
-  //         if ( revertReason === 'STF' ) {
-  //           // Handle insufficient token balance or allowance
-  //           console.log( 'Swap failed due to insufficient token balance or allowance' );
-  //         } else {
-  //           // Handle other revert reasons
-  //           console.log( 'Swap failed due to:', revertReason );
-  //         }
+  //       // Attempt to get the exact gas estimate
+  //       const swapGasEstimate = await swapManager.populateSwapTransaction(
+  //         Token.fromSwapToken( tokenIn, this.blockchain, this.provider ),
+  //         Token.fromSwapToken( tokenOut, this.blockchain, this.provider ),
+  //         fromAmountBN.toString(),
+  //         minAmountOut.toString(),
+  //         dummyFromAddress,
+  //         deadlineTimestamp,
+  //         fee,
+  //         true
+  //       );
+
+  //       // Check if the result is a bigint (gas estimate) or a TransactionRequest
+  //       if ( typeof swapGasEstimate === 'bigint' ) {
+  //         totalGasEstimate = swapGasEstimate;
+  //       } else {
+  //         // Use default estimates based on transaction type
+  //         const isMultiHop = false; // Optional: Set this dynamically based on external logic if available
+  //         totalGasEstimate = isMultiHop ? 200000n : 150000n;
   //       }
-  //       estimatedGas = EthereumBigNumber.from( ETH_BASE_UNISWAP_GAS_UNITS ).mul( 120 ).div( 100 );
-  //       console.log( 'Using default gas estimate:', estimatedGas.toString() );
+
+  //       // Add approval gas if not native
+  //       if ( !tokenIn.isNative ) {
+  //         totalGasEstimate += 46000n;
+  //       }
+  //     } catch {
+  //       console.log( 'Gas estimation failed, using default.' );
+  //       totalGasEstimate = ( tokenIn.isNative ? 150000n : 196000n );
   //     }
 
+  //     // Calculate fee in ETH and USD
   //     const feeData = await this.provider.getFeeData();
   //     const gasPriceGwei = EthereumBigNumber.from( feeData.maxFeePerGas || feeData.gasPrice || 0 );
-  //     const gasFeeGwei = EthereumBigNumber.from( estimatedGas ).mul( gasPriceGwei );
+  //     const gasFeeGwei = EthereumBigNumber.from( totalGasEstimate ).mul( gasPriceGwei );
   //     const gasFeeEth = EthereumBigNumber.fromGwei( gasFeeGwei.toString() ).toEtherString();
-
   //     const ethPrice = await this.getEthPrice();
   //     const gasFeeUsd = parseFloat( gasFeeEth ) * ethPrice;
 
   //     return `$${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
   //   } catch ( error ) {
   //     console.log( 'Error estimating swap gas fee:', error );
-  //     return `Unable to estimate: ${ error }`;
+  //     return 'N/A';
+  //   }
+  // }
+
+  // async estimateSwapGasFee(
+  //   tokenIn: SwapToken,
+  //   tokenOut: SwapToken,
+  //   fromAmount: BigNumberish,
+  //   slippageTolerance: number,
+  //   deadline: number,
+  //   swapManager: UniswapSwapManager,
+  //   fee: number = 3000,
+  //   dummyFromAddress: string = '0x0000000000000000000000000000000000000000' // Dummy from address for ETH swaps estimates
+  // ): Promise<string> {
+  //   try {
+  //     if ( !tokenIn || !tokenOut || !fromAmount || !slippageTolerance || !deadline || !swapManager ) {
+  //       return 'N/A'; //'Invalid parameters'; // Return an error message if any required parameters are missing
+  //     }
+
+  //     const fromAmountBN = EthereumBigNumber.from( fromAmount );
+  //     const slippageBN = fromAmountBN.mul( Math.floor( slippageTolerance * 10 ) ).div( 1000 );
+  //     const minAmountOut = fromAmountBN.sub( slippageBN );
+  //     const deadlineTimestamp = Math.floor( Date.now() / 1000 ) + ( deadline * 60 );
+
+  //     let totalGasEstimate: bigint;
+
+  //     try {
+  //       const swapGasEstimate = await swapManager.populateSwapTransaction(
+  //         Token.fromSwapToken( tokenIn, this.blockchain, this.provider ),
+  //         Token.fromSwapToken( tokenOut, this.blockchain, this.provider ),
+  //         fromAmountBN.toString(),
+  //         minAmountOut.toString(),
+  //         dummyFromAddress,
+  //         deadlineTimestamp,
+  //         fee,
+  //         true
+  //       );
+
+  //       if ( typeof swapGasEstimate === 'bigint' ) {
+  //         totalGasEstimate = swapGasEstimate;
+  //       } else {
+  //         // If we couldn't get an exact estimate, use defaults
+  //         totalGasEstimate = DEFAULT_GAS_ESTIMATES.SWAP_EXACT_IN;
+
+  //         // Add approval gas if it's not a native token
+  //         if ( !tokenIn.isNative ) {
+  //           totalGasEstimate += DEFAULT_GAS_ESTIMATES.ERC20_APPROVE;
+  //         }
+  //       }
+  //     } catch ( error ) {
+  //       // console.log( 'Gas estimation failed, using default:', error );
+  //       console.log( 'Gas estimation failed, using defaults...');
+
+  //       // Use default estimates
+  //       totalGasEstimate = DEFAULT_GAS_ESTIMATES.SWAP_EXACT_IN;
+
+  //       // Add approval gas if it's not a native token
+  //       if ( !tokenIn.isNative ) {
+  //         totalGasEstimate += DEFAULT_GAS_ESTIMATES.ERC20_APPROVE;
+  //       }
+  //     }
+
+  //     // Calculate fee in ETH
+  //     const feeData = await this.provider.getFeeData();
+  //     const gasPriceGwei = EthereumBigNumber.from( feeData.maxFeePerGas || feeData.gasPrice || 0 );
+  //     const gasFeeGwei = EthereumBigNumber.from( totalGasEstimate ).mul( gasPriceGwei );
+  //     const gasFeeEth = EthereumBigNumber.fromGwei( gasFeeGwei.toString() ).toEtherString();
+
+  //     // Get ETH price and calculate USD value
+  //     const ethPrice = await this.getEthPrice();
+  //     const gasFeeUsd = parseFloat( gasFeeEth ) * ethPrice;
+
+  //     return `$${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
+  //   } catch ( error ) {
+  //     console.log( 'Error estimating swap gas fee:', error );
+  //     // Even if everything fails, return a conservative estimate
+  //     const conservativeGasEstimate = DEFAULT_GAS_ESTIMATES.SWAP_EXACT_IN +
+  //       ( !tokenIn.isNative ? DEFAULT_GAS_ESTIMATES.ERC20_APPROVE : 0n );
+
+  //     try {
+  //       const feeData = await this.provider.getFeeData();
+  //       const gasPriceGwei = EthereumBigNumber.from( feeData.maxFeePerGas || feeData.gasPrice || 0 );
+  //       const gasFeeGwei = EthereumBigNumber.from( conservativeGasEstimate ).mul( gasPriceGwei );
+  //       const gasFeeEth = EthereumBigNumber.fromGwei( gasFeeGwei.toString() ).toEtherString();
+  //       const ethPrice = await this.getEthPrice();
+  //       const gasFeeUsd = parseFloat( gasFeeEth ) * ethPrice;
+
+  //       return `≈ $${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
+  //     } catch {
+  //       return 'N/A';
+  //     }
   //   }
   // }
 
   async getEthPrice(): Promise<number> {
-    // throw new Error( 'Method not implemented.' );
-    return 2500; // Return a mock ETH price for testing
+    try {
+      const marketPrice = this.priceProvider.getMarketPrice( 'ETH-USD' );
+      return ( await marketPrice ).price;
+    } catch ( error ) {
+      console.error( 'Error fetching ETH price:', error );
+      // throw error;
+      return 0;
+    }
   }
 
+  setPriceProvider( priceProvider: PriceProvider ): void {
+    this.priceProvider = priceProvider;
+  }
 }

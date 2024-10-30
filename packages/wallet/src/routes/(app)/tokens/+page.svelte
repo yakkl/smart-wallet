@@ -162,6 +162,7 @@
   </div>
 
   <div class="my-4">
+    <!-- Shows SwapPriceTracker and SwapTokenPrice -->
     <SwapModal bind:show={showSwapModal} {fundingAddress} /> 
   </div>
   
@@ -215,7 +216,7 @@
   </div>
 
   <div class="my-4">
-    <PriceTracker baseToken="ETH" quoteToken="USD" let:price>
+    <PriceTracker symbol="ETH" currency="USD" let:price>
       {#if price !== null}
         <span class="text-xl font-semibold text-blue-600">{price.price} USD (no formatting using PriceTracker)</span>
         <span class="text-sm text-gray-500">{price.provider}</span>
@@ -232,16 +233,14 @@
       <div class="bg-white shadow rounded-lg p-4">
         <h2 class="text-lg font-semibold mb-2">Ethereum Price</h2>
         <TokenPrice 
-          baseToken="ETH" 
-          quoteToken="USD" />
+          symbol="ETH" 
+          currency="USD" />
       </div>
     
       <div class="bg-gray-100 shadow rounded-lg p-4">
-        <h2 class="text-lg font-semibold mb-2">WBTC/WETH Price</h2>
+        <h2 class="text-lg font-semibold mb-2">BTC Price</h2>
         <TokenPrice 
-          baseToken="WBTC" 
-          quoteToken="WETH" 
-          useProviders={['Uniswap']}
+          symbol="BTC" 
           customClass="bg-yellow-100 p-2 rounded"
         />
       </div>

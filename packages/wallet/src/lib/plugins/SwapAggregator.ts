@@ -1,8 +1,7 @@
 // SwapAggregator.ts
-
 import type { SwapManager } from './SwapManager';
 import type { Token } from '$plugins/Token';
-import type { BigNumberish, SwapPriceData, TransactionResponse } from '$lib/common';
+import type { BigNumberish, SwapPriceData, TransactionResponse, SwapParams } from '$lib/common';
 
 export class SwapAggregator {
   private swapManagers: SwapManager[];
@@ -11,11 +10,16 @@ export class SwapAggregator {
     this.swapManagers = swapManagers;
   }
 
-  async getBestQuote( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish ): Promise<SwapPriceData | null> {
+  async getBestQuote(
+    tokenIn: Token,
+    tokenOut: Token,
+    amountIn: BigNumberish,
+    isExactIn: boolean = true
+  ): Promise<SwapPriceData | null> {
     const quotes = await Promise.all(
       this.swapManagers.map( async manager => {
         try {
-          return await manager.getQuote( tokenIn, tokenOut, amountIn );
+          return await manager.getQuote( tokenIn, tokenOut, amountIn, isExactIn );
         } catch ( error ) {
           console.error( `Error getting quote from ${ manager.getName() }:`, error );
           return null;
@@ -33,8 +37,8 @@ export class SwapAggregator {
     }
 
     return validQuotes.reduce( ( best, current ) => {
-      if ( !best || !best.amountOut) return current;
-      if ( !current || !current.amountOut) return best;
+      if ( !best || !best.amountOut ) return current;
+      if ( !current || !current.amountOut ) return best;
 
       const bestAmount = BigInt( best.amountOut.toString() );
       const currentAmount = BigInt( current.amountOut.toString() );
@@ -43,18 +47,95 @@ export class SwapAggregator {
     } );
   }
 
-  async executeBestSwap( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish, minAmountOut: BigNumberish, recipient: string, deadline: number ): Promise<TransactionResponse> {
-    const bestQuote = await this.getBestQuote( tokenIn, tokenOut, amountIn );
+  async executeBestSwap( params: SwapParams ): Promise<TransactionResponse> {
+    const { tokenIn, tokenOut, amount } = params;
+
+    const bestQuote = await this.getBestQuote( tokenIn, tokenOut, amount );
     if ( !bestQuote ) {
       throw new Error( 'No valid quotes received' );
     }
-    
-    const bestManager = this.swapManagers.find( manager => manager.getName() === bestQuote.provider );
+
+    const bestManager = this.swapManagers.find(
+      manager => manager.getName() === bestQuote.provider
+    );
 
     if ( !bestManager ) {
       throw new Error( 'No suitable swap manager found' );
     }
 
-    return bestManager.executeSwap( tokenIn, tokenOut, amountIn, minAmountOut, recipient, deadline );
+    return bestManager.executeSwap( params );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // SwapAggregator.ts
+
+// import type { SwapManager } from './SwapManager';
+// import type { Token } from '$plugins/Token';
+// import type { BigNumberish, SwapPriceData, TransactionResponse } from '$lib/common';
+
+// export class SwapAggregator {
+//   private swapManagers: SwapManager[];
+
+//   constructor ( swapManagers: SwapManager[] ) {
+//     this.swapManagers = swapManagers;
+//   }
+
+//   async getBestQuote( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish ): Promise<SwapPriceData | null> {
+//     const quotes = await Promise.all(
+//       this.swapManagers.map( async manager => {
+//         try {
+//           return await manager.getQuote( tokenIn, tokenOut, amountIn );
+//         } catch ( error ) {
+//           console.error( `Error getting quote from ${ manager.getName() }:`, error );
+//           return null;
+//         }
+//       } )
+//     );
+
+//     const validQuotes = quotes.filter( ( quote ): quote is SwapPriceData =>
+//       quote !== null && quote.amountOut !== undefined && quote.amountOut !== null
+//     );
+
+//     if ( validQuotes.length === 0 ) {
+//       console.warn( 'No valid quotes received' );
+//       return null;
+//     }
+
+//     return validQuotes.reduce( ( best, current ) => {
+//       if ( !best || !best.amountOut) return current;
+//       if ( !current || !current.amountOut) return best;
+
+//       const bestAmount = BigInt( best.amountOut.toString() );
+//       const currentAmount = BigInt( current.amountOut.toString() );
+
+//       return currentAmount > bestAmount ? current : best;
+//     } );
+//   }
+
+//   async executeBestSwap( tokenIn: Token, tokenOut: Token, amountIn: BigNumberish, minAmountOut: BigNumberish, recipient: string, deadline: number ): Promise<TransactionResponse> {
+//     const bestQuote = await this.getBestQuote( tokenIn, tokenOut, amountIn );
+//     if ( !bestQuote ) {
+//       throw new Error( 'No valid quotes received' );
+//     }
+    
+//     const bestManager = this.swapManagers.find( manager => manager.getName() === bestQuote.provider );
+
+//     if ( !bestManager ) {
+//       throw new Error( 'No suitable swap manager found' );
+//     }
+
+//     return bestManager.executeSwap( tokenIn, tokenOut, amountIn, minAmountOut, recipient, deadline );
+//   }
+// }

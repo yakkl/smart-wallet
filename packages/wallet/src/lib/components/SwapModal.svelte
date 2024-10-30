@@ -19,4 +19,4 @@
 
 </script>
 
-<Swap {show} {initialFromToken} {initialToToken} {fundingAddress} {className} {onSwap}/>
+<Swap bind:show={show} {initialFromToken} {initialToToken} {fundingAddress} {className} {onSwap}/>

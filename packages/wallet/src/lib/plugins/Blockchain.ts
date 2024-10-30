@@ -7,6 +7,7 @@ import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, 
 // import type { Signer } from '$plugins/Signer';
 import type { Provider } from '$plugins/Provider';
 import type { AbstractContract } from './Contract';
+import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 
 export interface ContractInterface {
   address: string;
@@ -183,7 +184,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
       throw new Error('Providers list cannot be empty');
     }
     this.provider = providers[0]; // Default to the first provider
-    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider, this)]);
+    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider, this, new CoinbasePriceProvider())]);
   }
 
   // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;

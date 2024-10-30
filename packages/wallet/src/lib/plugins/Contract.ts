@@ -8,6 +8,7 @@ export abstract class AbstractContract {
   readonly abi: readonly any[];
   protected provider: Provider | null;
   protected signer?: Signer;
+  abstract interface: any; // Add this to support interface operations
 
   constructor(address: string, abi: any[], providerOrSigner: Provider | Signer) {
     this.address = address;
@@ -29,28 +30,11 @@ export abstract class AbstractContract {
   abstract call(functionName: string, ...args: any[]): Promise<any>;
   abstract estimateGas(functionName: string, ...args: any[]): Promise<BigNumberish>;
   abstract populateTransaction(functionName: string, ...args: any[]): Promise<TransactionRequest>;
-  abstract sendTransaction(functionName: string, ...args: any[]): Promise<TransactionResponse>;
+  abstract sendTransaction( functionName: string, ...args: any[] ): Promise<TransactionResponse>;
+  abstract encodeFunctionData( functionName: string, args?: any[] ): string;
   abstract on(eventName: string, listener: (...args: any[]) => void): void;
   abstract off(eventName: string, listener: (...args: any[]) => void): void;
   abstract once(eventName: string, listener: (...args: any[]) => void): void;
-
   abstract getFunctions(): Record<string, (...args: any[]) => Promise<any>>;
-  // In AbstractContract class
-  // getFunctions(): ContractFunction[] {
-  //   const functions: ContractFunction[] = [];
-  //   for (const functionName in this.contract.functions) {
-  //     const functionFragment = this.contract.interface.getFunction(functionName);
-  //     functions.push({
-  //       name: functionName,
-  //       inputs: functionFragment.inputs.map(input => ({
-  //         name: input.name,
-  //         type: input.type,
-  //       })),
-  //       stateMutability: functionFragment.stateMutability,
-  //     });
-  //   }
-  //   return functions;
-  // }
-  
   abstract getEvents(): string[];
 }

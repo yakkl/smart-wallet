@@ -104,7 +104,7 @@ export interface Provider {
    */
   getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
 
-  getSigner(): Signer;
+  getSigner(): Signer | null;
 
   setSigner(signer: Signer): void; // This one sets the signer for the provider after it has been created by the wallet and/or Signer 
 
@@ -351,9 +351,9 @@ export abstract class AbstractProvider implements Provider {
    */
   abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
 
-  getSigner(): Signer {
+  getSigner(): Signer | null {
     if (!this.signer) {
-      throw new Error('Signer not initialized');
+      return null;
     }
     return this.signer;
   }

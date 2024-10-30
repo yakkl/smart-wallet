@@ -4,6 +4,7 @@
 import type { AccessList, Log, Transaction } from '$lib/common/evm';
 import type { AccountTypeCategory, BytesLike, NetworkType, RegistrationType, SystemTheme, URL } from '$lib/common/types';
 import type { BigNumberish } from '$lib/common/bignumber';
+import type { Token } from '$lib/plugins/Token';
 
 // Ethereum JSON-RPC request arguments
 export interface RequestArguments {
@@ -870,15 +871,16 @@ export interface SwapPriceData extends BasePriceData {
   tokenOut: SwapToken;
   amountIn: BigNumberish;
   amountOut: BigNumberish;
+  exchangeRate: number;
   price: number;
   priceImpact: number;
   path: string[];
-  fee: number;
+  fee?: number;
   feeBasisPoints: BigNumberish; // Fee in basis points - defaults to 875
 }
 
 export interface PoolInfoData extends BasePriceData {
-  fee: number;
+  fee?: number;
   liquidity: string;
   sqrtPriceX96: string;
   tick: number;
@@ -889,3 +891,59 @@ export interface PoolInfoData extends BasePriceData {
   tvl: number;
 }
 
+export interface GraphTick {
+  tickIdx: string;
+  liquidityGross: string;
+  liquidityNet: string;
+}
+
+// interfaces.ts (add these)
+export interface SwapCalculation {
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  yakklFee: BigNumberish;
+  poolFee: BigNumberish;
+  gasEstimate: BigNumberish;
+  priceImpact: number;
+  exchangeRate?: number;
+}
+
+export interface PoolPriceData {
+  price: number;
+  token0Price: number;
+  token1Price: number;
+  token0Reserve: string;
+  token1Reserve: string;
+  liquidityUSD: number;
+  priceImpact: number;
+}
+
+// interfaces.ts (add this)
+export interface SwapQuote {
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  priceImpact: number;
+  path: string[];
+  fee?: number;
+  feeBasisPoints?: BigNumberish;
+}
+
+export interface SwapParams {
+  tokenIn: Token;
+  tokenOut: Token;
+  amount: BigNumberish;
+  slippage: number;
+  deadline: number;
+  recipient: string;
+}
+
+export interface ExactInputSingleParams {
+  tokenIn: string;
+  tokenOut: string;
+  fee: number;
+  recipient: string;
+  deadline: number;
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  sqrtPriceLimitX96: number;
+}

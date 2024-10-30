@@ -18,7 +18,7 @@ async function initializeServices() {
   const uniswapManager = new UniswapSwapManager( blockchain, provider );
   const sushiSwapManager = new SushiSwapManager( blockchain, provider, 'SUSHISWAP_ROUTER_ADDRESS' );
 
-  const swapAggregator = new SwapAggregator( [ uniswapManager, sushiSwapManager ] );
+  const swapAggregator = new SwapAggregator( [ uniswapManager, /* sushiSwapManager */ ] );
 
   return { swapAggregator, uniswapManager, sushiSwapManager };
 }

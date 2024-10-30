@@ -1,13 +1,12 @@
 <script lang="ts">
   import type { SwapPriceProvider, SwapToken } from '$lib/common/interfaces';
-  import { yakklCurrentlySelectedStore } from '$lib/common/stores';
   import type { Provider } from '$lib/plugins/Provider';
-  import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
   import type { Wallet } from '$lib/plugins/Wallet';
   import WalletManager from '$lib/plugins/WalletManager';
   import { onMount } from 'svelte';
   import SwapPriceTracker from './SwapPriceTracker.svelte';
 	import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+  import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
 
   export let chainId: number = 1;
   export let tokenIn: SwapToken | null = null;
@@ -15,20 +14,26 @@
   export let amountIn: string = '0';
   export let amountOut: string = '0';
   export let isExactIn: boolean = true;
+  export let updateInterval: number = 15000;
+  export let fee: number = 3000;
   export let showLastUpdated: boolean = false;
   export let customClass: string = '';
 
-  let provider: SwapPriceProvider;
+  let swapProvider: SwapPriceProvider | null = null;
+  let provider: Provider | null = null;
 
   onMount(async () => {
     try {
       let wallet: Wallet | null = null;
-      let providerInstance: Provider | null = null;
 
-      wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], $yakklCurrentlySelectedStore!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+      wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
       if (wallet) {
-        providerInstance = wallet!.getProvider();
-        provider = new UniswapSwapPriceProvider(providerInstance!, new CoinbasePriceProvider());
+        provider = wallet!.getProvider();
+        if (provider) {
+          swapProvider = new UniswapSwapPriceProvider(provider, new CoinbasePriceProvider());
+
+          console.log('SwapTokenPrice: Provider initialized', swapProvider);
+        }
       }
     } catch(error) {
       console.log('SwapTokenPrice:', error);
@@ -46,7 +51,7 @@
 
       return formattedPrice;
     } catch (error) {
-      console.log('SwapTokenPrice:', error);
+      console.log('SwapTokenPrice and price to format:', error, price);
       return price.toString();
     }
   }
@@ -54,24 +59,60 @@
   function formatDate(date: Date): string {
     return date.toLocaleString();
   }
+
+  function getSymbolPair(tokenIn: SwapToken | null, tokenOut: SwapToken | null): string {
+    const inSymbol = tokenIn?.symbol || '';
+    const outSymbol = tokenOut?.symbol || '';
+    return inSymbol && outSymbol ? `${inSymbol}/${outSymbol}` : '';
+  }
+
+  function formatConversionRate(price: number | null | undefined, tokenIn: SwapToken | null, tokenOut: SwapToken | null): string {
+    if (!price || !tokenIn || !tokenOut) return '';
+    return `1 ${tokenIn.symbol} = ${price.toFixed(6)} ${tokenOut.symbol}`;
+  }
 </script>
 
-<SwapPriceTracker {chainId} {tokenIn} {tokenOut} {amountIn} {amountOut} {isExactIn} providers={[provider]} let:price>
-  <div class={`flex flex-col items-start ${customClass}`}>
-    {#if price !== null}
-      <span class="text-xl font-bold">{formatPrice(price.price)}</span>
-      <span class="text-xs text-gray-600">{tokenIn ? tokenIn.symbol : '--'}/{tokenOut ? tokenOut.symbol : '--'}</span>
-      <span class="text-xs text-gray-500">Price Impact: {price.priceImpact.toFixed(2)}%</span>
-      {#if showLastUpdated && price.lastUpdated}
-        <span class="text-xs text-gray-500">Last updated: {formatDate(price.lastUpdated)}</span>
+<SwapPriceTracker {tokenIn} {tokenOut} {amountIn} {amountOut} {isExactIn} priceProvider={swapProvider} {updateInterval} {fee} let:price>
+  <div class="flex flex-col w-full gap-1 {customClass}">
+    <!-- Top row: Price and Balance -->
+    <div class="flex justify-between items-center w-full">
+      <div class="flex items-center gap-2">
+        <!-- Token pair -->
+        {#if tokenIn && tokenOut}
+          <span class="text-sm text-gray-600">
+            {getSymbolPair(tokenIn, tokenOut)}
+          </span>
+        {/if}
+        
+        <!-- Price display -->
+        {#if price !== null && price !== undefined && typeof price.price === 'number'}
+          <span class="text-sm font-semibold">
+            {formatPrice(price.price)}
+          </span>
+        {:else}
+          <span class="text-sm font-semibold text-gray-400">
+            --
+          </span>
+        {/if}
+      </div>
+    </div>
+
+    <!-- Bottom row: Last Updated -->
+    <div class="flex justify-between items-center w-full text-xs text-gray-500">
+      {#if showLastUpdated && price?.lastUpdated}
+        <span>
+          Last updated: {formatDate(price.lastUpdated)}
+        </span>
       {/if}
-    {:else}
-      <span class="text-xl font-bold">--</span>
-      <span class="text-xs text-gray-600">{tokenIn ? tokenIn.symbol : '--'}/{tokenOut ? tokenOut.symbol : '--'}</span>
-      <span class="text-xs text-gray-500">Price Impact: -- </span>
-      {#if showLastUpdated}
-        <span class="text-xs text-gray-500">Last updated: -- </span>
-      {/if}
-    {/if}
+    </div>
   </div>
 </SwapPriceTracker>
+
+<style>
+  /* Ensure text doesn't overflow */
+  .text-sm, .text-xs {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

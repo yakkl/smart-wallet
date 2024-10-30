@@ -1,28 +1,28 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { SwapToken } from '$lib/common/interfaces';
-  import type { BigNumberish } from '$lib/common';
+  import type { BigNumberish, BlockTag } from '$lib/common';
   import { ethers } from 'ethers';
-  import { getTokenBalance } from '$lib/utilities/balanceUtils';
+	import type { Provider } from '$lib/plugins';
 
-  export let token: SwapToken;
+  export let symbol: string;
   export let address: string | null = null;
-  export let provider: any;
-  export let tokenService: any;
+  export let blockTag: BlockTag | 'latest' = 'latest';
+  export let units: number | string = 18;
+  export let provider: Provider;
   export let className: string = '';
   export let balanceText: string = 'Balance: ';
 
   let balance: BigNumberish = 0n;
 
   onMount(async () => {
-    if (!address || !token) {
+    if (!address || !provider) {
       return;
     }
-    balance = await getTokenBalance(token, address, provider, tokenService);
+    balance = await provider.getBalance(address, blockTag);
   });
 </script>
 
 <span class="text-gray-500 {className}">
-  {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', token.decimals)} {token.symbol}
+  {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', units)} {symbol.toUpperCase()}
 </span>
 
