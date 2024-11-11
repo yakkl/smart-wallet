@@ -4,7 +4,7 @@ import type { Provider } from '$plugins/Provider';
 import { SwapManager } from './SwapManager';
 import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest } from '$lib/common/interfaces';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-import type { BigNumberish } from '$lib/common';
+import { YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
 import type { AbstractContract } from '$plugins/Contract';
 import type { Token } from '$plugins/Token';
 import { EVMToken } from './tokens/evm/EVMToken';
@@ -19,13 +19,13 @@ const SUSHISWAP_ROUTER_ABI = [
 ];
 
 export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
-  private router: AbstractContract;
+  private router: AbstractContract | null = null;
 
   constructor (
     blockchain: AbstractBlockchain<T>,
     provider: Provider,
     routerAddress: string = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
-    initialFeeBasisPoints: number = 875
+    initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
     this.router = blockchain.createContract( routerAddress, SUSHISWAP_ROUTER_ABI );
@@ -35,7 +35,8 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     return 'SushiSwap';
   }
 
-  getRouterAddress(): string {
+  getRouterAddress(): string | null {
+    if ( !this.router ) return null;
     return this.router.address;
   }
 
@@ -82,9 +83,12 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _fee?: number // SushiSwap doesn't use fee tiers like Uniswap
   ): Promise<SwapPriceData> {
-    if ( !tokenIn || !tokenOut || !amount ) {
-      throw new Error( 'Invalid token or amount' );
+    if ( !tokenIn || !tokenOut || !amount || !this.router ) {
+      throw new Error( 'Invalid token or amount or swap router' );
     }
+
+    // TODO: Refactor
+
 
     const [ actualTokenIn, actualTokenOut ] = await this.prepareTokensForSwap( tokenIn, tokenOut );
     const path = [ actualTokenIn.address, actualTokenOut.address ];
@@ -105,7 +109,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const feeAmount = this.calculateFee( amountOutBigInt );
     const amountOutWithFee = amountOutBigInt - feeAmount;
 
-    const priceImpact = ( ( Number( amountOutBigInt ) - Number( amountOutWithFee ) ) / Number( amountOutBigInt ) ) * 100;
+    const priceImpactRatio = ( ( Number( amountOutBigInt ) - Number( amountOutWithFee ) ) / Number( amountOutBigInt ) ) * 100;
     const price = Number( amountOutWithFee ) / Number( amountInBigInt );
 
     return {
@@ -126,14 +130,27 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
         chainId: tokenOut.chainId,
         name: tokenOut.name,
       },
+      quoteAmount: 0n,
+      feeAmount: 0n,
+      amountAfterFee: 0n,
       amountIn: amountInBigInt,
       amountOut: amountOutWithFee,
       exchangeRate: price, // TODO: Check if this is correct
-      price,
-      priceImpact,
+      // price,
+      marketPriceIn: 0,
+      marketPriceOut: 0,
+      priceImpactRatio,
       path,
-      feeBasisPoints: feeAmount
-    };
+      feeBasisPoints: this.feeBasisPoints,
+      feeAmountPrice: 0,
+      feeAmountInUSD: '',
+      gasEstimate: 0n,
+      gasEstimateInUSD: '',
+      tokenOutPriceInUSD: '',
+      sqrtPriceX96After: 0n,
+      initializedTicksCrossed: 0,
+      error: null,
+      isLoading: false,    };
   }
 
   async getPoolInfo(
@@ -157,6 +174,8 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       'function token0() external view returns (address)',
       'function token1() external view returns (address)'
     ] );
+
+    if ( !pair ) throw new Error( 'Invalid pair contract' );
 
     const [ reserves, token0 ] = await Promise.all( [
       pair.call( 'getReserves' ),
@@ -195,6 +214,8 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     _fee?: number, // SushiSwap doesn't use fee tiers
     estimateOnly: boolean = false
   ): Promise<TransactionRequest | bigint> {
+    if ( !this.router ) throw new Error( 'Invalid router contract' );
+
     const [ actualTokenIn, actualTokenOut ] = await this.prepareTokensForSwap( tokenIn, tokenOut );
     const path = [ actualTokenIn.address, actualTokenOut.address ];
 
@@ -236,6 +257,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       ADDRESSES.SUSHISWAP_FACTORY,
       [ 'function getPair(address tokenA, address tokenB) external view returns (address pair)' ]
     );
+    if ( !factory ) throw new Error( 'Invalid factory contract' );
     return await factory.call( 'getPair', tokenA, tokenB );
   }
 
@@ -273,6 +295,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       recipient
     } = params;
 
+    if ( !this.router ) throw new Error( 'Invalid router contract' );
     const [ actualTokenIn, actualTokenOut ] = await this.prepareTokensForSwap( tokenIn, tokenOut );
     const path = [ actualTokenIn.address, actualTokenOut.address ];
 
@@ -289,6 +312,29 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       recipient,
       deadline
     );
+  }
+
+  async distributeFeeManually(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    tokenOut: Token,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    feeAmount: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    feeRecipient: string
+  ): Promise<TransactionResponse> {
+    throw new Error("Method not implemented.");
+  }
+
+  async distributeFeeThroughSmartContract(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    tokenOut: Token,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    feeAmount: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    feeRecipient: string
+  ): Promise<TransactionResponse> {
+    throw new Error("Method not implemented.");
+    
   }
 }
 

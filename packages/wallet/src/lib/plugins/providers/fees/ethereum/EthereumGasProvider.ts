@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumGasProvider.ts
 
+import { debug_log } from '$lib/common';
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 // import { ETH_BASE_UNISWAP_GAS_UNITS } from '$lib/common/constants';
@@ -15,9 +16,9 @@ import type {
 import type { PriceProvider, SwapToken, TransactionRequest } from '$lib/common/interfaces';
 import type { Blockchain, Wallet } from '$lib/plugins';
 import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
-import { Token } from '$lib/plugins/Token';
 import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
 import type { Provider } from '$plugins/Provider';
+import { ethers } from 'ethers';
 
 const DEFAULT_GAS_ESTIMATES = {
   ERC20_APPROVE: 46000n,
@@ -320,6 +321,71 @@ export class EthereumGasProvider implements GasProvider {
       // throw error;
       return 0;
     }
+  }
+
+  // factor is a multiplier to adjust the gas price. Default of 1 will return the current gas price
+  async getCurrentGasPriceInGwei(factor: number = 1): Promise<number> {
+    const gasPrice = await this.provider.getGasPrice();
+    // Convert from wei to gwei (1 gwei = 10^9 wei)
+    return Number( ethers.formatUnits( gasPrice, "gwei" ) ) * factor;
+  }
+
+  async getGasPriceFromEtherscan( apiKey: string ): Promise<number> {
+    const response = await fetch( `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${ apiKey }` );
+    const data = await response.json();
+    return Number( data.result.ProposeGasPrice ); // returns a standard gas price in gwei
+  }
+
+  async getFormattedGasEstimates( gasEstimate: BigNumberish, factor: number = 1.5, gasPriceInGwei: number = 0, ethPriceInUsd: number = 0 ) {
+    if ( !gasEstimate ) {
+      throw new Error("Gas estimate must be provided");
+    }
+
+    const gasEstimateBigInt = BigNumber.from( gasEstimate ).toBigInt();
+
+    if ( gasEstimateBigInt! <= 0n ) {
+      return 0;
+    }
+
+    if ( factor <= 0 ) {
+      factor = 1;
+      console.log( 'Warning: Factor must be greater than 0 - set to 1' );
+    }
+
+    if ( gasPriceInGwei < 0 ) {
+      gasPriceInGwei = 0;
+      console.log( 'Warning: Gas price must be greater than or equal to 0 - set to 0' );
+    }
+
+    if ( ethPriceInUsd <= 0 ) {
+      ethPriceInUsd = 0;
+      console.log( 'Warning: ETH price must be greater than 0 - set to 0' );
+    }
+
+    if ( gasPriceInGwei === 0 ) {
+      // Get the current gas price in gwei
+      gasPriceInGwei = await this.getCurrentGasPriceInGwei(factor);
+    }
+
+    if ( ethPriceInUsd === 0 ) {
+      // Get the current ETH price in USD
+      ethPriceInUsd = await this.getEthPrice();
+    }
+
+    // Convert gas price from gwei to ETH (1 gwei = 10^-9 ETH)
+    const gasPriceInEth = gasPriceInGwei * 1e-9;
+
+    debug_log( 'gasEstimate, gasPriceGwei, gasPriceInEth, ethPriceInUsd :==>>', { gasEstimate, gasPriceInGwei, gasPriceInEth, ethPriceInUsd } );
+    
+    // Calculate the gas cost in ETH
+    const gasEstimateInEth = Number(gasEstimate) * gasPriceInEth;  // May want to stay as bigint
+
+    debug_log( 'gasEstimateInEth :==>>', gasEstimateInEth );
+
+    // Calculate the gas cost in USD
+    const gasEstimateInUsd = gasEstimateInEth * ethPriceInUsd; 
+
+    return gasEstimateInUsd;
   }
 
   setPriceProvider( priceProvider: PriceProvider ): void {

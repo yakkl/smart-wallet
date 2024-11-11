@@ -42,16 +42,18 @@ Instead of using basis points (which are 1/10,000th), you can define a custom un
 
 #### Step 2: Calculate the Fee Using the Custom Precision
 
-Given the fee of 0.00875%, let's express this in terms of the custom precision:
+// TODO: REVIEW THIS SECTION since changes were made to the contract
+
+Given the fee of 0.875%, let's express this in terms of the custom precision:
 
 $$
-0.00875\% = 0.00875 \times 10,000 \text{ basis points} = 87.5 \text{ basis points}
+0.875\% = 0.00875 \times 10,000 \text{ basis points} = 87.5 \text{ basis points}
 $$
 
 But to avoid fractional values, we instead express it as:
 
 $$
-0.00875\% = 875 \text{ (in millionths of a percent)}
+0.875\% = 875 \text{ (in millionths of a percent)}
 $$
 
 ### Representing Different Fee Percentages

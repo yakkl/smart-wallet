@@ -1,12 +1,21 @@
 <script lang="ts">
-  import Swap from '$lib/components/Swap.svelte';
-  import type { SwapToken } from '$lib/common/interfaces';
+  import type { SwapPriceProvider, SwapToken } from '$lib/common/interfaces';
 	import type { BigNumberish } from '$lib/common';
+	import type { Provider } from '$lib/plugins/Provider';
+	import type { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
+	import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
+	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+	import type { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
+	import Swap from './Swap.svelte';
 
 	export let show: boolean = true;
-	export let initialFromToken: SwapToken | null = null;
-	export let initialToToken: SwapToken | null = null;
-	export let fundingAddress: string | null = null;
+  export let fundingAddress: string;
+  export let provider: Provider;
+  export let blockchain: Ethereum;
+  export let url: string;
+  export let swapManager: UniswapSwapManager;
+  export let tokenService: TokenService<any>;
+  export let gasProvider: EthereumGasProvider;
   export let className = 'text-gray-600 z-[999]';
 
   // Note: This calls the actual Swap component but handles the onSwap function. If you want to handle the onSwap function then do not use this but call Swap itself.
@@ -19,4 +28,4 @@
 
 </script>
 
-<Swap bind:show={show} {initialFromToken} {initialToToken} {fundingAddress} {className} {onSwap}/>
+<Swap bind:show={show} {fundingAddress} {provider} {blockchain} {url} {swapManager} {tokenService} {gasProvider} {className} {onSwap}/>

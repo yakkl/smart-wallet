@@ -25,7 +25,7 @@ export class EVMToken extends Token {
     super(address, name, symbol, decimals, iconUrl, description, chainId, isNative, blockchain, provider, privateKey);
   }
 
-  async getContract(): Promise<AbstractContract> {
+  async getContract(): Promise<AbstractContract | null> {
     if (!this._contract) {
       this._contract = this.blockchain.createContract(this.address, ABIs.ERC20);
     }
@@ -34,14 +34,16 @@ export class EVMToken extends Token {
 
   async getBalance(userAddress: string): Promise<BigNumberish> {
     const contract = await this.getContract();
+    if (!contract) return 0n; // Want a graceful way to handle this instead of throwing an error
     return await contract.call('balanceOf', userAddress);
   }
 
   async transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse> {
     const contract = await this.getContract();
-    
+    if (!contract) throw new Error('Invalid contract');
     const gasEstimate = await contract.estimateGas('transfer', toAddress, amount);
-    const tx = await contract.populateTransaction('transfer', toAddress, amount);
+    const tx = await contract.populateTransaction( 'transfer', toAddress, amount );
+    if (!tx) throw new Error('Invalid transaction');
     tx.gasLimit = gasEstimate;
 
     return await this.blockchain.sendTransaction(tx);

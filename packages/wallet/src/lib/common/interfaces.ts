@@ -860,23 +860,50 @@ export interface BasePriceData {
   message?: string;
 }
 
+// Amounts reference quantity of tokens and Price reference the price of a given token
+export interface SwapPriceData extends BasePriceData {
+  tokenIn: SwapToken;           // Sell token
+  tokenOut: SwapToken;          // Buy token
+  quoteAmount: BigNumberish;    // Amount of token out or in depending on the direction of the swap
+  feeAmount: BigNumberish;      // Fee in the tokenOut or buy side token
+  amountAfterFee: BigNumberish; // Amount of token out or in after fee depending on the direction of the swap
+  amountIn: BigNumberish;       // Amount of sell token
+  amountOut: BigNumberish;      // Amount of buy token
+  exchangeRate: BigNumberish;   // Amount of buy token per sell token
+
+  // MarketPrice
+  marketPriceIn: number;        // Fiat price of tokenIn which updates in interval. It is here so that we can show the price of the tokenIn in the UI
+  marketPriceOut: number;       // Fiat price of tokenOut which updates in interval. It is here so that we can show the price of the tokenOut in the UI. This is only used if priceIn is not available
+  // price: number; //???
+
+  priceImpactRatio: number;     // Price impact ratio percentage 
+  path: string[];               // Path of tokens for the swap
+  fee?: number;                 // Pool fee if used by the provider
+  feeBasisPoints: number;       // Fee in basis points - constant - YAKKL_FEE_BASIS_POINTS
+  feeAmountPrice: number;       // Fee in price 
+  feeAmountInUSD?: string;      // Fee in USD formatted
+  gasEstimate: BigNumberish;    // Gas estimate for the swap
+  gasEstimateInUSD?: string;    // Gas estimate in USD formatted
+  tokenOutPriceInUSD?: string;  // Token out price in USD formatted
+
+  sqrtPriceX96After?: BigNumberish;  // Uniswap specific - sqrtPriceX96 after the swap
+  initializedTicksCrossed?: number;  // Uniswap specific - initialized ticks crossed
+  poolInfo?: PoolInfo;               // Uniswap specific - Pool information
+
+  error?: any;
+  isLoading?: boolean;
+}
+
+// export interface UniswapSwapPriceData extends SwapPriceData {
+//   poolInfo: PoolInfo;
+//   sqrtPriceX96After: BigNumberish;
+//   initializedTicksCrossed: number;
+// }
+
 export interface MarketPriceData extends BasePriceData {
   price: number;
   pair?: string;
   isNative?: boolean;
-}
-
-export interface SwapPriceData extends BasePriceData {
-  tokenIn: SwapToken;
-  tokenOut: SwapToken;
-  amountIn: BigNumberish;
-  amountOut: BigNumberish;
-  exchangeRate: number;
-  price: number;
-  priceImpact: number;
-  path: string[];
-  fee?: number;
-  feeBasisPoints: BigNumberish; // Fee in basis points - defaults to 875
 }
 
 export interface PoolInfoData extends BasePriceData {
@@ -905,7 +932,7 @@ export interface SwapCalculation {
   poolFee: BigNumberish;
   gasEstimate: BigNumberish;
   priceImpact: number;
-  exchangeRate?: number;
+  exchangeRate?: BigNumberish;
 }
 
 export interface PoolPriceData {
@@ -924,8 +951,9 @@ export interface SwapQuote {
   amountOut: BigNumberish;
   priceImpact: number;
   path: string[];
-  fee?: number;
+  fee: number;
   feeBasisPoints?: BigNumberish;
+  gasEstimate: BigNumberish;
 }
 
 export interface SwapParams {

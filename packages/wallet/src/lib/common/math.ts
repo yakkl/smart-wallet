@@ -422,6 +422,16 @@ const maxValue = BigInt(2) ** BigInt(256) - BigInt(1);
 // console.log('To Gwei Base:', baseValue.toGweiBase().toBigInt()); // Output: 1000000000n
 // console.log('To Wei Base:', baseValue.toWeiBase().toBigInt()); // Output: 1000000000000000000n
 
+export function convertBasisPointsToDecimal( basisPoints: number ): number {
+  try {
+    if ( basisPoints < 1 ) { // All calculations are done in basis points so we need to check if the value is less than 1 (1 - return of this)
+      return basisPoints;
+    }
+    return basisPoints / 10000;
+  } catch ( error ) {
+    return 0;
+  }
+}
 
 /**
  * Converts a hex string to a BigInt

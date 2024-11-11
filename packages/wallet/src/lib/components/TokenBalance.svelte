@@ -10,7 +10,7 @@
   export let address: string | null = null;
   export let provider: Provider | null = null;
   export let tokenService: TokenService<any> | null = null;
-  export let className: string = '';
+  export let className: string = 'text-gray-500 ';
   export let balanceText: string = 'Balance: ';
 
   let balance: bigint = 0n;
@@ -29,6 +29,6 @@
   });
 </script>
 
-<span class="text-gray-500 {className}">
+<span class="{className}">
   {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', token.decimals)} {token.symbol}
 </span>

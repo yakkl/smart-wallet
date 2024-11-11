@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { PATH_WELCOME } from '$lib/common';
-	import type { TokenData, YakklAccount, YakklContact, YakklWatch } from '$lib/common/interfaces';
+	import type { SwapPriceProvider, TokenData, YakklAccount, YakklContact, YakklWatch } from '$lib/common/interfaces';
 	import Accounts from '$lib/components/Accounts.svelte';
 	import Contacts from '$lib/components/Contacts.svelte';
 	import ExportPrivateKey from '$lib/components/ExportPrivateKey.svelte';
@@ -18,7 +18,6 @@
   import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
   import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
-	import Swap from '$lib/components/Swap.svelte';
 	import SwapModal from '$lib/components/SwapModal.svelte';
   import type { SwapToken as Token } from '$lib/common/interfaces';
 	import type { BigNumberish } from '$lib/common';
@@ -27,6 +26,15 @@
   import PriceTracker from '$lib/components/PriceTracker.svelte';
   import TokenPrice from '$lib/components/TokenPrice.svelte';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+	// import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
+	import type { Wallet } from '$lib/plugins/Wallet';
+	import WalletManager from '$lib/plugins/WalletManager';
+	import type { Blockchain, Provider } from '$lib/plugins';
+	import type { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
+	import { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+	import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
+	import { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
+	import Swap from '$lib/components/Swap.svelte';
 
   const providers = [new CoinbasePriceProvider];
 
@@ -51,14 +59,44 @@
   let showSwap = false;
   let showSwapModal = false;
 
-  let fundingAddress: string | null = null;
+  let fundingAddress: string;
   let account: YakklAccount | null = null;
   let mode: 'import' | 'export' = 'export';
+  
+  let swapPriceProvider: SwapPriceProvider | null = null; // Don't have to set it to null
+  let provider: Provider;
+  let chainId = 1;
+  let blockchain: Ethereum;
+  let url: string;
+  let swapManager: UniswapSwapManager;
+  let tokenService: TokenService<any>;
+  let gasProvider: EthereumGasProvider;
 
   onMount(async () => {
-    const getCurrentlySelected = await getYakklCurrentlySelected();
-    if (getCurrentlySelected?.shortcuts?.address) {
-      fundingAddress = getCurrentlySelected.shortcuts.address;
+    try {
+      const getCurrentlySelected = await getYakklCurrentlySelected();
+      if (getCurrentlySelected?.shortcuts?.address) {
+        fundingAddress = getCurrentlySelected.shortcuts.address;
+      }
+      if (swapPriceProvider === null) {
+        let wallet: Wallet | null = null;
+        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+        if (wallet) {
+          provider = wallet!.getProvider()!;
+          if (provider) {
+            blockchain = wallet.getBlockchain() as Ethereum;
+            url = await provider.getProviderURL();
+
+            swapManager = new UniswapSwapManager(blockchain as Ethereum, provider!);
+            tokenService = new TokenService(blockchain as Ethereum);
+            gasProvider = new EthereumGasProvider(provider!, blockchain!, new CoinbasePriceProvider());
+
+            // swapPriceProvider = new UniswapSwapPriceProvider(provider, new CoinbasePriceProvider());
+          }
+        }
+      }
+    } catch (error) {
+      console.error('SwapTokenPrice:', error);
     }
   });
 
@@ -163,11 +201,11 @@
 
   <div class="my-4">
     <!-- Shows SwapPriceTracker and SwapTokenPrice -->
-    <SwapModal bind:show={showSwapModal} {fundingAddress} /> 
+    <SwapModal bind:show={showSwapModal} {fundingAddress} {provider} {blockchain} {url} {swapManager} {tokenService} {gasProvider} /> 
   </div>
   
   <div class="my-4">
-    <Swap bind:show={showSwap} {fundingAddress} {onSwap} />
+    <Swap bind:show={showSwap} {fundingAddress} {onSwap} {provider} {blockchain} {url} {swapManager} {tokenService} />
   </div>
   
   <div class="my-4">
@@ -267,6 +305,7 @@
       Open Preferences
     </button>
   </div>
+
 
   <button
     on:click={() => showSwapModal = true}

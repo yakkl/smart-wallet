@@ -17,16 +17,22 @@
     <div class="bg-surface-light dark:bg-surface-dark text-primary-light dark:text-primary-dark rounded-lg shadow-lg w-full max-w-md mx-auto z-10 max-h-[80%] flex flex-col {className}">
       
       <!-- Modal header -->
-      <div class="p-6 relative">
+      <div class="p-4 relative">
         <button class="absolute top-4 right-4 text-2xl font-bold hover:text-primary-light dark:hover:text-primary-dark focus:outline-none" on:click={onClose}>
           &times;
         </button>
-        <h2 class="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">
-          {title}
-        </h2>
-        <p class="text-sm mb-4 text-secondary-light dark:text-secondary-dark">
-          {description}
-        </p>
+        {#if description}
+          <h2 class="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">
+            {title}
+          </h2>
+          <p class="text-sm mb-2 text-secondary-light dark:text-secondary-dark">
+            {description}
+          </p>
+        {:else}
+          <h2 class="text-2xl font-bold mb-2 text-primary-light dark:text-primary-dark">
+            {title}
+         </h2>
+        {/if}
       </div>
       
       <!-- Modal body content -->

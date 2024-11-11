@@ -30,7 +30,7 @@ export interface Blockchain {
   options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
 
   // Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
-  createContract(address: string, abi: any[]): AbstractContract;
+  createContract(address: string, abi: any[]): AbstractContract | null;
 
   // getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
@@ -84,7 +84,7 @@ export interface Blockchain {
   getBlockchainName(): string;
   getChainId(): number;
   getNetwork(): Network;
-  getNetworkByChainId(chainId: number): Network;
+  getNetworkByChainId( chainId: number ): Network;
   getIcon(): IMAGEPATH;
   getNetworks(): Network[];
   getSymbol(): string;
@@ -111,6 +111,8 @@ export interface Blockchain {
   getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
   getTransactionHistory(address: string): Promise<any>;
 
+  isNetworkAndChainIdValid( chainId: number ): boolean;
+  
   /**
    * Checks if an address is valid.
    * @param address - The address to check.
@@ -173,38 +175,42 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   constructor(name: string, chainId: number, providers: Provider[], networks: Network[], symbol: string, icon: IMAGEPATH, options: { [key: string]: MetaData } = {}) {
     this.name = name;
     this.providers = providers;
-    this.chainId = chainId;
-    this.networks = networks;
+    this.chainId = chainId; 
+    this.networks = networks; // providers, networks and chainId are critical
     this.options = options;
     this.symbol = symbol;
     this.icon = icon;
     this.network = this.getNetwork();
 
-    if (this.providers.length === 0) {
-      throw new Error('Providers list cannot be empty');
-    }
+    if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( "Unsupported network and chain. Please check the chain ID and/or networks" );
+    if (!this.providers || this.providers.length === 0) throw new Error('Providers list cannot be empty');
+    
     this.provider = providers[0]; // Default to the first provider
-    this.feeManager = new BaseFeeManager([new EthereumGasProvider(this.provider, this, new CoinbasePriceProvider())]);
+    this.feeManager = new BaseFeeManager( [ new EthereumGasProvider( this.provider, this, new CoinbasePriceProvider() ) ] );
+    if (!this.feeManager) throw new Error('Fee manager not set');
   }
 
   // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
   // abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
-  abstract createContract(address: string, abi: any[]): AbstractContract;
+  abstract createContract(address: string, abi: any[]): AbstractContract | null;
 
   // async estimateGas(transaction: TransactionRequest): Promise<bigint> {
   //   const estimate = await this.feeManager.getGasEstimate(transaction);
   //   return BigNumber.from(estimate.gasLimit).toBigInt() ?? BigInt(0);
   // }
 
-  async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
+  async getGasEstimate( transaction: TransactionRequest ): Promise<GasEstimate> {
+    if ( !this.feeManager || !transaction ) throw new Error( 'Fee manager or transaction not set' );
     return await this.feeManager.getGasEstimate(transaction);
   }
 
-  async getHistoricalGasData(duration: number): Promise<HistoricalGasData[]> {
+  async getHistoricalGasData( duration: number ): Promise<HistoricalGasData[]> {
+    if ( !this.feeManager || !duration ) throw new Error( 'Fee manager or duration not set' );
     return await this.feeManager.getHistoricalGasData(duration);
   }
 
   async predictFutureFees(duration: number): Promise<GasPrediction[]> {
+    if ( !this.feeManager || !duration ) throw new Error( 'Fee manager or duration not set' );
     return await this.feeManager.predictFutureFees(duration);
   }
 
@@ -214,7 +220,8 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param blockTag - Optional block tag.
    * @returns The result of the call.
    */
-  async call(transaction: Deferrable<TransactionRequest>, blockTag: any): Promise<string> {
+  async call( transaction: Deferrable<TransactionRequest>, blockTag: any ): Promise<string> {
+    if (!transaction) throw new Error("Transaction not set");
     try {
       return await this.provider.call(transaction, blockTag);
     } catch (e) {
@@ -228,9 +235,9 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param chainId - The chain ID to connect.
    */
   connect(provider: Provider, chainId: number): void {
-    if (!this.providers.includes(provider)) {
-      throw new Error('Provider not supported');
-    }
+    if ( !this.providers || !this.providers.includes(provider)) throw new Error('Provider(s) not supported');
+    if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
+
     this.provider = provider;
     this.chainId = chainId;
   }
@@ -251,7 +258,9 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     return this.network;
   }
 
-  getNetworkByChainId(chainId: number): Network {
+  getNetworkByChainId( chainId: number ): Network {
+    if ( !chainId ) throw new Error( 'Chain ID not set' );
+    if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
     return this.networks.find((network) => network.chainId === chainId) || this.networks[0];
   }
 
@@ -260,7 +269,6 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   getNetworks(): Network[] {
-
     console.log('Blockchain networks', this.networks);
     return this.networks;
   }
@@ -274,7 +282,10 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   // May also need to check if the chainId is supported by the blockchain itself (e.g. Ethereum)
   // If not, throw an error or switch to a chainId that is supported
   // May also need to make sure that the chainId is valid (e.g. not 0) - if not, throw an error. We don't want to change to chainId on a different blockchain! The blockchain should be able to handle this.
-  async setChainId(chainId: number): Promise<void> {
+  async setChainId( chainId: number ): Promise<void> {
+    if ( !chainId ) throw new Error( 'Chain ID not set' );
+    if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
+
     if (this.chainId === chainId) {
       return;
     }
@@ -294,7 +305,8 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   // Everything pulls from the current network object
-  setNetwork(network: Network): Network {
+  setNetwork( network: Network ): Network {
+    if (!network) throw new Error('Network not set');
     try {
       if (!this.networks.includes(network)) {
         return this.network; // Return the current network if not found
@@ -307,7 +319,8 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     }
   }
 
-  setNetworkByChainId(chainId: number): Network {
+  setNetworkByChainId( chainId: number ): Network {
+    if (!chainId) throw new Error('Chain ID not set');
     try {
       const network = this.getNetworkByChainId(chainId);
       return this.setNetwork(network);
@@ -323,6 +336,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    */
   async getBalance(address: string): Promise<bigint> {
     try {
+      if ( !address ) return 0n;
       return await this.provider.getBalance(address);
     } catch (e) {
       throw new Error(`Error calling - getBalance: ${e}`);
@@ -342,7 +356,8 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param blockchain - The blockchain to get options for.
    * @returns The options for the blockchain.
    */
-  getOptions(blockchain: string): MetaData | undefined {
+  getOptions( blockchain: string ): MetaData | undefined {
+    if ( !blockchain ) throw new Error( 'Blockchain not set' );
     return this.options[blockchain];
   }
 
@@ -368,6 +383,11 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    */
   getProviderList(): string[] {
     return this.providers.map((provider) => provider.name);
+  }
+
+  isNetworkAndChainIdValid( chainId: number ): boolean {
+    if ( !chainId ) throw new Error( 'Chain ID not set' );
+    return this.networks.find((network) => network.chainId === chainId) !== undefined;
   }
 
   abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
