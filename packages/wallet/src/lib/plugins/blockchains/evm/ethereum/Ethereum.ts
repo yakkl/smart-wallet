@@ -55,7 +55,8 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     this._options = this.getOptions('ethereum');
   }
 
-  async createAccount<T>(accountToDeriveFrom: YakklPrimaryAccount | null = null, accountInfo: AccountInfo): Promise<T> {
+  async createAccount<T>( accountToDeriveFrom: YakklPrimaryAccount | null = null, accountInfo: AccountInfo ): Promise<T> {
+    if (!accountInfo) throw new Error('Account info is missing');
     if (accountToDeriveFrom === null) {
       return this.createPrimaryAccount(accountInfo) as unknown as T;
     } else {
@@ -64,15 +65,18 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     }
   }
 
-  async estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
+  async estimateGas( transaction: Deferrable<TransactionRequest> ): Promise<bigint> {
+    if (!transaction) throw new Error('Transaction is missing');
     return await this.provider.estimateGas(transaction);
   }
 
-  async getBalance(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<bigint> {
+  async getBalance( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<bigint> {
+    if (!addressOrName) throw new Error('Address is missing');
     return await this.provider.getBalance(addressOrName, blockTag !== undefined ? blockTag : 'latest');
   }
 
-  async getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<Block> {
+  async getBlock( blockHashOrBlockTag: BlockTag | Promise<BlockTag> ): Promise<Block> {
+    if (!blockHashOrBlockTag) throw new Error('Block hash or tag is missing');
     throw new Error('Method not implemented.');
   }
 
@@ -80,11 +84,13 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     throw new Error('Method not implemented.');
   }
 
-  async getBlockWithTransactions(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<BlockWithTransactions> {
+  async getBlockWithTransactions( blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string> ): Promise<BlockWithTransactions> {
+    if (!blockHashOrBlockTag) throw new Error('Block hash or tag is missing');
     throw new Error('Method not implemented.');
   }
 
-  async getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string> {
+  async getCode( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string> {
+    if (!addressOrName) throw new Error('Address is missing');
     throw new Error('Method not implemented.');
   }
 
@@ -96,35 +102,43 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     throw new Error('Method not implemented.');
   }
 
-  async getLogs(filter: Filter): Promise<Array<Log>> {
+  async getLogs( filter: Filter ): Promise<Array<Log>> {
+    if (!filter) throw new Error('Filter is missing');
     throw new Error('Method not implemented.');
   }
 
   async getStorageAt( addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string> {
+    if (!addressOrName) throw new Error('Address is missing');
     throw new Error( 'Method not implemented.' );
   }
 
   async signTypedData( transction: TransactionRequest ): Promise<string> {
+    if (!transction) throw new Error('Transaction is missing');
     throw new Error( 'Method not implemented.' );
   }
 
-  async getTransaction(transactionHash: string): Promise<EthereumTransaction> {
+  async getTransaction( transactionHash: string ): Promise<EthereumTransaction> {
+    if (!transactionHash) throw new Error('Transaction hash is missing');
     return await this.provider.getTransaction(transactionHash);
   }
 
-  async getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number> {
+  async getTransactionCount( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<number> {
+    if (!addressOrName) throw new Error('Address is missing');
     return await this.provider.getTransactionCount(addressOrName, blockTag);
   }
 
-  async getTransactionHistory(address: string): Promise<any> {
+  async getTransactionHistory( address: string ): Promise<any> {
+    if (!address) throw new Error('Address is missing');
     return await this.provider.getTransactionHistory(address);
   }
 
-  async getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
+  async getTransactionReceipt( transactionHash: string ): Promise<TransactionReceipt> {
+    if (!transactionHash) throw new Error('Transaction hash is missing');
     return await this.provider.getTransactionReceipt(transactionHash);
   }
 
-  isAddress(address: string): boolean {
+  isAddress( address: string ): boolean {
+    if (!address) return false;
     const ethereumRegex = /^(0x)?[0-9a-fA-F]{40}$/;
     let returnValue = ethereumRegex.test(address);
     if (!returnValue) {
@@ -134,7 +148,8 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     return returnValue;
   }
 
-  async isSmartContract(address: string): Promise<boolean> {
+  async isSmartContract( address: string ): Promise<boolean> {
+    if (!this.isAddress(address)) return false;
     let contractCode: string | null;
     try {
       contractCode = await this.provider.getCode(address);
@@ -161,17 +176,22 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
   }
 
   async signTransaction(transaction: TransactionRequest): Promise<string> {
-    return this.provider.signTransaction(transaction);
+    return await this.provider.signTransaction(transaction);
   }
 
   async signMessage(message: string): Promise<string> {
-    return this.provider.signMessage(message);
+    return await this.provider.signMessage(message);
   }
 
   private async createPrimaryAccount(accountInfo: AccountInfo): Promise<YakklPrimaryAccount> {
-    const entropy = ethers.randomBytes(32);
-    const randomMnemonic = ethers.Mnemonic.fromEntropy(entropy);
-    const ethWallet = ethers.HDNodeWallet.fromMnemonic(randomMnemonic, accountInfo.path);
+    const entropy = ethers.randomBytes( 32 );
+    if ( !entropy ) throw new Error( 'Error generating entropy for the mnemonic' );
+    
+    const randomMnemonic = ethers.Mnemonic.fromEntropy( entropy );
+    if ( !randomMnemonic ) throw new Error( 'Error generating mnemonic from entropy' );
+
+    const ethWallet = ethers.HDNodeWallet.fromMnemonic( randomMnemonic, accountInfo.path );
+    if ( !ethWallet ) throw new Error( 'Error creating wallet from mnemonic' );
 
     const accountData: AccountData = {
       extendedKey: ethWallet.extendedKey,
@@ -251,7 +271,8 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     const mnemonic = (primaryAccount.data as PrimaryAccountData).mnemonic;
     if (!mnemonic) throw new Error('Mnemonic is missing from the primary account data');
 
-    const ethWallet = ethers.HDNodeWallet.fromPhrase(mnemonic, undefined, derivedPath);
+    const ethWallet = ethers.HDNodeWallet.fromPhrase( mnemonic, undefined, derivedPath );
+    if (!ethWallet) throw new Error('Error deriving sub account from primary account');
 
     const accountData: AccountData = {
       extendedKey: ethWallet.extendedKey,
@@ -295,14 +316,17 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
   }
 
   async resolveName(name: string | Promise<string>): Promise<null | string> {
-    return this.provider.resolveName(name);
+    if (!name) return null;
+    return await this.provider.resolveName( name );
   }
 
-  async lookupAddress(address: string | Promise<string>): Promise<null | string> {
-    return this.provider.lookupAddress(address);
+  async lookupAddress( address: string | Promise<string> ): Promise<null | string> {
+    if ( !address ) return null;
+    return await this.provider.lookupAddress(address);
   }
 
-  createContract(address: string, abi: any[]): AbstractContract {
+  createContract( address: string, abi: any[] ): AbstractContract | null {
+    if ( !address || !abi ) return null;
     return new EthereumContract(address, abi, this.provider);
   }
   

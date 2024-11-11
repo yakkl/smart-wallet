@@ -7,7 +7,7 @@ export class PriceManager {
   private readonly DEFAULT_WEIGHT = 1;
 
   constructor(weightedProviders: WeightedProvider[]) {
-    if (weightedProviders.length === 0) {
+    if (!weightedProviders || weightedProviders.length === 0) {
       throw new Error("At least one provider must be specified");
     }
 

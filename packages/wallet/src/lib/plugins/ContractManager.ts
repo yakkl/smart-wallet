@@ -10,7 +10,7 @@ export class ContractManager<T extends BaseTransaction> {
     this.blockchain = blockchain;
   }
 
-  createContract(address: string, abi: any[]): AbstractContract {
+  createContract(address: string, abi: any[]): AbstractContract | null {
     return this.blockchain.createContract(address, abi);
   }
 
@@ -20,7 +20,8 @@ export class ContractManager<T extends BaseTransaction> {
     functionName: string,
     ...args: any[]
   ): Promise<any> {
-    const contract = this.createContract(contractAddress, contractAbi);
+    const contract = this.createContract( contractAddress, contractAbi );
+    if ( !contract ) throw new Error( 'Invalid contract' );
     return await contract.call(functionName, ...args);
   }
 
@@ -30,7 +31,8 @@ export class ContractManager<T extends BaseTransaction> {
     functionName: string,
     ...args: any[]
   ): Promise<BigNumberish> {
-    const contract = this.createContract(contractAddress, contractAbi);
+    const contract = this.createContract( contractAddress, contractAbi );
+    if ( !contract ) throw new Error( 'Invalid contract' );
     return await contract.estimateGas(functionName, ...args);
   }
 
@@ -40,7 +42,8 @@ export class ContractManager<T extends BaseTransaction> {
     functionName: string,
     ...args: any[]
   ): Promise<TransactionResponse> {
-    const contract = this.createContract(contractAddress, contractAbi);
+    const contract = this.createContract( contractAddress, contractAbi );
+    if ( !contract ) throw new Error( 'Invalid contract' );
     return await contract.sendTransaction(functionName, ...args);
   }
 
@@ -49,8 +52,9 @@ export class ContractManager<T extends BaseTransaction> {
     contractAbi: any[],
     functionName: string,
     ...args: any[]
-  ): Promise<TransactionRequest> {
-    const contract = this.createContract(contractAddress, contractAbi);
+  ): Promise<TransactionRequest | null> {
+    const contract = this.createContract( contractAddress, contractAbi );
+    if ( !contract ) throw new Error( 'Invalid contract' );
     return await contract.populateTransaction(functionName, ...args);
   }
 }

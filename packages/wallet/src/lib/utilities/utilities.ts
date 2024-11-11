@@ -18,6 +18,30 @@ import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser; 
 if (browserSvelte) browser_ext = getBrowserExt();
 
+
+export function formatPrice( price: number ): string {
+  try {
+    const formattedPrice = new Intl.NumberFormat( 'en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    } ).format( price );
+
+    return formattedPrice;
+  } catch ( error ) {
+    console.log( 'formatPrice - SwapTokenPrice and price to format:', error, price );
+    return price.toString();
+  }
+}
+
+export function formatBasisPointsToPercentage( basisPoints: number ): string {
+  // Convert basis points to percentage by dividing by 1000
+  const percentage = basisPoints / 1000;
+  // Format to three decimal places and trim any trailing zeros
+  return `${ percentage.toFixed( 3 ).replace( /\.?0+$/, '' ) }%`;
+}
+
 // gets or sets a default value safely
 export function getOrDefault<T>(value: T | undefined, defaultValue: T): T {
   return value === undefined ? defaultValue : value;

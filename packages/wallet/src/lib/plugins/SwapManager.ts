@@ -2,35 +2,40 @@
 import type { Blockchain } from './Blockchain';
 import type { Provider } from './Provider';
 import type { Token } from './Token';
-import type { BigNumberish, TransactionResponse } from '$lib/common';
-import { ADDRESSES, ABIs } from './contracts/evm/constants-evm';
-import type { AbstractContract } from './Contract';
-import type { PoolInfoData, SwapParams, SwapQuote, TransactionRequest } from '$lib/common/interfaces';
+import { YAKKL_FEE_BASIS_POINTS, YAKKL_FEE_BASIS_POINTS_MAX, type BigNumberish, type TransactionResponse } from '$lib/common';
+import type { PoolInfoData, SwapParams, SwapPriceData, TransactionRequest } from '$lib/common/interfaces';
+import { PriceManager } from './PriceManager';
+import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
+import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
+import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
+
 
 export abstract class SwapManager {
   protected blockchain: Blockchain;
   protected provider: Provider;
-  protected factory: AbstractContract;
-  protected quoter: AbstractContract;
-  protected feeBasisPoints: number;
+  protected feeBasisPoints: number = YAKKL_FEE_BASIS_POINTS;
+  protected priceManager: PriceManager;
 
-  constructor ( blockchain: Blockchain, provider: Provider, initialFeeBasisPoints: number = 875 ) {
+  constructor ( blockchain: Blockchain, provider: Provider, initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS ) {
     this.blockchain = blockchain;
     this.provider = provider;
-    this.feeBasisPoints = initialFeeBasisPoints;
+    this.feeBasisPoints = initialFeeBasisPoints < 0 ? YAKKL_FEE_BASIS_POINTS : initialFeeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ? YAKKL_FEE_BASIS_POINTS_MAX : initialFeeBasisPoints;
 
-    this.factory = this.blockchain.createContract(
-      ADDRESSES.UNISWAP_FACTORY,
-      ABIs.UNISWAP_V3_FACTORY
-    );
+    this.priceManager = new PriceManager( [
+      { provider: new CoinbasePriceProvider(), weight: 5 },
+      { provider: new CoingeckoPriceProvider(), weight: 3 },
+      { provider: new KrakenPriceProvider(), weight: 2 },
+      // Add other providers with their weights...
+    ] );
 
-    this.quoter = this.blockchain.createContract(
-      ADDRESSES.UNISWAP_V3_QUOTER,
-      [
-        'function quoteExactInputSingle(address,address,uint24,uint256,uint160) external returns (uint256)',
-        'function quoteExactOutputSingle(address,address,uint24,uint256,uint160) external returns (uint256)'
-      ]
-    );
+  }
+
+  getChainId(): number {
+    return this.blockchain.chainId;
+  }
+
+  getMarketPrice( pair: string ) {
+    return this.priceManager.getMarketPrice( pair );
   }
 
   getFeeBasisPoints(): number {
@@ -42,7 +47,17 @@ export abstract class SwapManager {
   }
 
   protected calculateFee( amount: bigint ): bigint {
-    return ( amount * BigInt( this.feeBasisPoints ) ) / BigInt( 100000 );
+    try {
+      if ( amount === 0n || this.feeBasisPoints <= 0 ) return 0n;  // No fee if amount is zero or fee is <= zero
+      if ( this.feeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ) {
+        this.feeBasisPoints = YAKKL_FEE_BASIS_POINTS_MAX;
+        console.log( 'Fee basis points greater than max, setting to guard amount:', this.feeBasisPoints );
+      } 
+      return ( amount * BigInt( this.feeBasisPoints ) ) / BigInt( 100000 );
+    } catch ( error ) {
+      console.log( 'Error calculating fee:', error );
+      return 0n;
+    }
   }
 
   abstract getName(): string;
@@ -51,9 +66,9 @@ export abstract class SwapManager {
     tokenIn: Token,
     tokenOut: Token,
     amount: BigNumberish,
-    isExactIn?: boolean,
+    isExactIn: boolean,
     fee?: number
-  ): Promise<SwapQuote>;
+  ): Promise<SwapPriceData>;
 
   abstract executeSwap( params: SwapParams ): Promise<TransactionResponse>;
 
@@ -73,4 +88,17 @@ export abstract class SwapManager {
     fee?: number,
     estimateOnly?: boolean
   ): Promise<TransactionRequest | bigint>;
+
+  abstract distributeFeeManually(
+    tokenOut: Token,
+    feeAmount: BigNumberish,
+    feeRecipient: string
+  ): Promise<TransactionResponse>;
+
+  abstract distributeFeeThroughSmartContract(
+    tokenOut: Token,
+    feeAmount: BigNumberish,
+    feeRecipient: string
+  ): Promise<TransactionResponse>;
+
 }

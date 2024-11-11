@@ -16,7 +16,7 @@ export interface IToken {
   blockchain: Blockchain;
   provider: Provider;
   privateKey?: string;
-  getContract(): Promise<AbstractContract>;
+  getContract(): Promise<AbstractContract | null>;
   getBalance(userAddress: string): Promise<BigNumberish>;
   transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse>;
 }
@@ -60,7 +60,7 @@ export abstract class Token implements IToken {
     this.privateKey = privateKey;
   }
 
-  abstract getContract(): Promise<AbstractContract>;
+  abstract getContract(): Promise<AbstractContract | null>;
   abstract getBalance(userAddress: string): Promise<BigNumberish>;
   abstract transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse>;
 
@@ -106,7 +106,7 @@ export abstract class Token implements IToken {
 
 // Concrete implementation of Token
 class ConcreteToken extends Token {
-  async getContract(): Promise<AbstractContract> {
+  async getContract(): Promise<AbstractContract | null> {
     // Implement contract creation logic here
     // For example:
     return this.blockchain.createContract(this.address, [
@@ -117,11 +117,13 @@ class ConcreteToken extends Token {
 
   async getBalance(userAddress: string): Promise<BigNumberish> {
     const contract = await this.getContract();
+    if (!contract) return 0n; // Return 0 if contract is null
     return contract.call('balanceOf', userAddress);
   }
 
   async transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse> {
     const contract = await this.getContract();
+    if (!contract) throw new Error('Invalid contract');
     return contract.sendTransaction('transfer', toAddress, amount);
   }
 }

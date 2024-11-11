@@ -4,8 +4,8 @@
   import type { SwapToken as Token } from '$lib/common/interfaces';
 
   export let tokens: Token[];
-  export let selectedToken: Token | null;
-  export let onTokenSelect: (token: Token | null) => void;
+  export let selectedToken: Token;
+  export let onTokenSelect: (token: Token) => void;
 
   let isOpen = false;
   let searchQuery = '';
@@ -19,7 +19,7 @@
     }
   }
 
-  function selectToken(token: Token | null) {
+  function selectToken(token: Token) {
     selectedToken = token;
     onTokenSelect(token);
     isOpen = false;
@@ -51,41 +51,42 @@
   });
 </script>
 
-<div class="relative w-full">
-  <button class="select select-bordered w-full max-w-xs flex items-center space-x-2 px-4 py-2 " on:click={toggleDropdown}>
-    {#if selectedToken}
-      <img src={getLogoURL(selectedToken.logoURI)} alt={selectedToken.name} class="w-6 h-6 rounded-full" />
-      <div class="flex-1 flex flex-col justify-center">
-        <span class="font-bold text-lg text-gray-200">{selectedToken.symbol}</span>
-        <span class="text-sm text-gray-300 mt-0">{selectedToken.name}</span>
+<div class="relative w-full max-w-sm mx-auto">
+  <button class="w-full flex items-center px-4 py-3 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500" on:click={toggleDropdown}>
+    {#if selectedToken && selectedToken.symbol && selectedToken.name}
+      <img src={getLogoURL(selectedToken.logoURI)} alt={selectedToken.name} class="w-8 h-8 rounded-full" />
+      <div class="flex-1 flex flex-col ml-3">
+        <span class="font-bold text-lg">{selectedToken.symbol}</span>
+        <span class="text-sm text-gray-200 mt-0.5">{selectedToken.name}</span>
       </div>
-      <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-      </svg> -->
     {:else}
-      <span class="font-bold text-gray-200">Select token</span>
+      <span class="ml-3">Select Token</span>
     {/if}
+    <svg xmlns="http://www.w3.org/2000/svg" class="ml-auto h-5 w-5 transition-transform duration-300" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+    </svg>
   </button>
+  
   {#if isOpen}
-    <div class="absolute z-10 w-full bg-white rounded-md shadow-lg mt-1">
+    <div class="absolute z-10 w-full bg-white rounded-md shadow-lg mt-2 p-2 border border-gray-200">
       <input
         type="text"
         placeholder="Search..."
-        class="w-full px-4 py-2 border-b border-gray-200 focus:outline-none"
+        class="w-full px-4 py-2 mb-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition duration-200"
         value={searchQuery}
         on:input={handleSearch}
       />
       <ul class="max-h-60 overflow-y-auto w-full">
         {#each filteredTokens as token}
-          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <li
-            class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center space-x-2"
+            class="px-4 py-2 flex items-center space-x-3 hover:bg-gray-100 cursor-pointer transition duration-200"
             on:click={() => selectToken(token)}
           >
-            <img src={getLogoURL(token.logoURI)} alt={token.name} class="w-6 h-6 rounded-full" />
-            <div class="flex-1 flex flex-col justify-center">
-              <span class="font-bold text-lg text-gray-800">{token.symbol}</span>
+            <img src={getLogoURL(token.logoURI)} alt={token.name} class="w-8 h-8 rounded-full" />
+            <div class="flex-1 flex flex-col">
+              <span class="font-bold text-gray-800">{token.symbol}</span>
               <span class="text-sm text-gray-600">{token.name}</span>
             </div>
           </li>
@@ -96,3 +97,4 @@
     </div>
   {/if}
 </div>
+

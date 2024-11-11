@@ -1,7 +1,7 @@
 import type { AbstractBlockchain } from '$plugins/Blockchain';
-import type { BaseTransaction, BigNumberish, TransactionResponse } from '$lib/common';
+import { debug_log, type BaseTransaction, type BigNumberish, type TransactionResponse } from '$lib/common';
 import { AbstractContract } from '$plugins/Contract';
-import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';
+import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';  // Only ERC20 ABI is used
 
 export class TokenService<T extends BaseTransaction> {
   private blockchain: AbstractBlockchain<T> | null = null;
@@ -10,21 +10,24 @@ export class TokenService<T extends BaseTransaction> {
     this.blockchain = blockchain;
   }
 
-  private getTokenContract(tokenAddress: string): AbstractContract | null{
+  private getTokenContract( tokenAddress: string ): AbstractContract | null{
+    if ( !tokenAddress ) return null; // Want a graceful way to handle this instead of throwing an error
     return this.blockchain ? this.blockchain.createContract(tokenAddress, ABIs.ERC20) : null;
   }
 
   async getTokenInfo( tokenAddress: string ) {
+    if ( !tokenAddress ) return { name: '', symbol: '', decimals: 0, totalSupply: 0n }; // Want a graceful way to handle this instead of throwing an error
     try {
       const contract = this.getTokenContract( tokenAddress );
+      if ( !contract ) return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
     
-      console.log( 'getTokenInfo - contract', contract );
+      debug_log( 'getTokenInfo - contract', contract );
 
       const [ name, symbol, decimals, totalSupply ] = await Promise.all( [
-        contract?.call( 'name' ),
-        contract?.call( 'symbol' ),
-        contract?.call( 'decimals' ),
-        contract?.call( 'totalSupply' )
+        contract.call( 'name' ),
+        contract.call( 'symbol' ),
+        contract.call( 'decimals' ),
+        contract.call( 'totalSupply' )
       ] );
 
       return { name, symbol, decimals, totalSupply };
@@ -36,8 +39,13 @@ export class TokenService<T extends BaseTransaction> {
 
   async getBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
-      const contract = this.getTokenContract(tokenAddress);
-      return await contract?.call('balanceOf', userAddress); // This checks the contract to see if it has the given userAddress registered and if it has a balance
+      if ( !tokenAddress || !userAddress ) return 0n; // Want a graceful way to handle this instead of throwing an error
+      const contract = this.getTokenContract( tokenAddress );
+      if ( !contract ) return 0n;
+
+      debug_log( 'TokenService.getBalance - contract, tokenAddress, userAddress', contract, tokenAddress, userAddress );
+      
+      return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);
       return 0n;
@@ -46,13 +54,16 @@ export class TokenService<T extends BaseTransaction> {
 
   async transfer( tokenAddress: string, toAddress: string, amount: BigNumberish ): Promise<TransactionResponse> {
     try {
+      if ( !tokenAddress || !toAddress || !amount ) throw new Error( 'Invalid parameters' ); 
       const contract = this.getTokenContract( tokenAddress );
+      if ( !contract ) throw new Error( 'Invalid contract' );
     
-      const gasEstimate = await contract?.estimateGas( 'transfer', toAddress, amount );
-      const tx = await contract?.populateTransaction( 'transfer', toAddress, amount );
-      tx!.gasLimit = gasEstimate;
+      const gasEstimate = await contract.estimateGas( 'transfer', toAddress, amount );
+      const tx = await contract.populateTransaction( 'transfer', toAddress, amount );
+      if ( !tx ) throw new Error( 'Invalid transaction' );
+      tx.gasLimit = gasEstimate;
 
-      return await this.blockchain!.sendTransaction( tx! );
+      return await this.blockchain!.sendTransaction( tx );
     }
     catch ( error ) {
       console.log( 'Contract - transfer - error', error );

@@ -85,7 +85,7 @@ export class EthersConverter {
     };
   }
 
-  static ethersLogToLog(log: ethers.Log): Log {
+  static ethersLogToLog( log: ethers.Log ): Log {
     return {
       blockNumber: log.blockNumber,
       blockHash: log.blockHash,
@@ -99,22 +99,28 @@ export class EthersConverter {
     };
   }
 
-  static ethersTransactionRequestToTransactionRequest(tx: ethers.TransactionRequest): TransactionRequest {
-    return {
-      to: tx.to as string,
-      from: tx.from as string,
-      nonce: tx.nonce as number,
-      gasLimit: tx.gasLimit ? BigInt(tx.gasLimit.toString()) : undefined,
-      gasPrice: tx.gasPrice ? BigInt(tx.gasPrice.toString()) : undefined,
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? BigInt(tx.maxPriorityFeePerGas.toString()) : undefined,
-      maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas.toString()) : undefined,
-      data: tx.data as string,
-      value: tx.value ? BigInt(tx.value.toString()) : null,
-      chainId: tx.chainId as number,
-      accessList: this.convertAccessList(tx.accessList),
-      customData: tx.customData,
-      type: tx.type,
-    };
+  static ethersTransactionRequestToTransactionRequest( tx: ethers.TransactionRequest ): TransactionRequest | null {
+    try {
+      if ( !tx ) return null;
+      return {
+        to: tx.to as string,
+        from: tx.from as string,
+        nonce: tx.nonce as number,
+        gasLimit: tx.gasLimit ? BigInt( tx.gasLimit.toString() ) : undefined,
+        gasPrice: tx.gasPrice ? BigInt( tx.gasPrice.toString() ) : undefined,
+        maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? BigInt( tx.maxPriorityFeePerGas.toString() ) : undefined,
+        maxFeePerGas: tx.maxFeePerGas ? BigInt( tx.maxFeePerGas.toString() ) : undefined,
+        data: tx.data as string,
+        value: tx.value ? BigInt( tx.value.toString() ) : null,
+        chainId: tx.chainId as number,
+        accessList: this.convertAccessList( tx.accessList ),
+        customData: tx.customData,
+        type: tx.type,
+      };
+    } catch ( error ) {
+      console.log( 'Error converting ethers transaction request to transaction request:', error );
+      return null;
+    }
   }
 
   private static convertAccessList(accessList: ethers.AccessListish | null | undefined): AccessList | undefined {

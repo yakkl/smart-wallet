@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AbstractContract } from '$plugins/Contract';
-import type { BigNumberish, TransactionRequest, TransactionResponse } from '$lib/common';
+import { debug_log, type BigNumberish, type TransactionRequest, type TransactionResponse } from '$lib/common';
 import type { Provider } from '$plugins/Provider';
 import type { Signer } from '$plugins/Signer';
 import { ethers } from 'ethers';
@@ -14,28 +14,30 @@ export class EthereumContract extends AbstractContract {
   constructor ( address: string, abi: any[], providerOrSigner: Provider | Signer ) {
     super( address, abi, providerOrSigner );
     this.contract = new ethers.Contract( address, abi, providerOrSigner as any );
+    if ( !this.contract ) throw new Error( 'Invalid contract' );
     this.interface = new ethers.Interface( abi );
+    if ( !this.interface ) throw new Error( 'Invalid interface' );
   }
 
   async call( functionName: string, ...args: any[] ): Promise<any> {
     try {
-      if ( !this.interface.getFunction( functionName ) ) {
-        throw new Error( `Function ${ functionName } does not exist on contract` );
-      }
+      if ( !functionName || !this.interface ) throw new Error( 'Invalid function name or invalid interface' );
+      if ( !this.interface.getFunction( functionName ) ) throw new Error( `Function ${ functionName } does not exist on contract` );
 
+      debug_log( 'EthereumContract.call', functionName, args );
+      
       return await this.contract[ functionName ]( ...args );
     } catch ( error ) {
-      console.error( `Error calling ${ functionName }:`, error );
+      console.log( `Error calling ${ functionName }:`, error );
       throw error;
     }
   }
 
   async estimateGas( functionName: string, ...args: any[] ): Promise<BigNumberish> {
     try {
-      if ( !this.interface.getFunction( functionName ) ) {
-        throw new Error( `Function ${ functionName } does not exist on contract` );
-      }
-
+      if ( !functionName || !this.interface ) throw new Error( 'Invalid function name or invalid interface' );
+      if ( !this.interface.getFunction( functionName ) ) throw new Error( `Function ${ functionName } does not exist on contract` );
+      
       // Get the function from the contract
       const contractFunction = ( this.contract as any )[ functionName ];
       if ( typeof contractFunction !== 'function' ) {
@@ -46,16 +48,15 @@ export class EthereumContract extends AbstractContract {
       const estimation = await contractFunction.estimateGas( ...args );
       return BigInt( estimation.toString() );
     } catch ( error ) {
-      console.error( `Error estimating gas for ${ functionName }:`, error );
+      console.log( `Error estimating gas for ${ functionName }:`, error );
       throw error;
     }
   }
 
-  async populateTransaction( functionName: string, ...args: any[] ): Promise<TransactionRequest> {
+  async populateTransaction( functionName: string, ...args: any[] ): Promise<TransactionRequest | null> {
     try {
-      if ( !this.interface.getFunction( functionName ) ) {
-        throw new Error( `Function ${ functionName } does not exist on contract` );
-      }
+      if ( !functionName || !this.interface ) throw new Error( 'Invalid function name or invalid interface' );
+      if ( !this.interface.getFunction( functionName ) ) throw new Error( `Function ${ functionName } does not exist on contract` );
 
       // Get the function from the contract
       const contractFunction = ( this.contract as any )[ functionName ];
@@ -65,6 +66,7 @@ export class EthereumContract extends AbstractContract {
 
       // Populate the transaction using the bound populateTransaction function
       const tx = await contractFunction.populateTransaction( ...args );
+      if ( !tx ) throw new Error( 'Invalid transaction from populate transaction' );
       return EthersConverter.ethersTransactionRequestToTransactionRequest( tx );
     } catch ( error ) {
       console.error( `Error populating transaction for ${ functionName }:`, error );

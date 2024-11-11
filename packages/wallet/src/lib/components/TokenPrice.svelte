@@ -4,6 +4,8 @@
   import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/CoingeckoPriceProvider';
   import { onMount } from 'svelte';
   import PriceTracker from './PriceTracker.svelte';
+  import { formatPrice } from '$lib/utilities';
+  import { formatDate } from '$lib/common/datetime';
 	// import { getCurrencyCodeForUserLocale } from '$lib/utilities';
 
   export let symbol: string; 
@@ -29,25 +31,6 @@
     }
   });
 
-  function formatPrice(price: number): string {
-    try {
-      let formattedPrice = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 6,
-      }).format(price);
-
-      return formattedPrice;
-    } catch (error) {
-      console.log('TokenPrice:', error);
-      return price.toString(); // Fallback to raw price
-    }
-  }
-
-  function formatDate(date: Date): string {
-    return date.toLocaleString();
-  }
 </script>
 
 <PriceTracker {symbol} {currency} providers={activeProviders} let:price>
