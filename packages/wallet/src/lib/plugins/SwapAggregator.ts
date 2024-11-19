@@ -14,12 +14,13 @@ export class SwapAggregator {
     tokenIn: Token,
     tokenOut: Token,
     amountIn: BigNumberish,
+    fundingAddress: string,
     isExactIn: boolean = true
   ): Promise<SwapPriceData | null> {
     const quotes = await Promise.all(
       this.swapManagers.map( async manager => {
         try {
-          return await manager.getQuote( tokenIn, tokenOut, amountIn, isExactIn );
+          return await manager.getQuote( tokenIn, tokenOut, amountIn, fundingAddress, isExactIn );
         } catch ( error ) {
           console.error( `Error getting quote from ${ manager.getName() }:`, error );
           return null;
@@ -48,9 +49,9 @@ export class SwapAggregator {
   }
 
   async executeBestSwap( params: SwapParams ): Promise<TransactionResponse> {
-    const { tokenIn, tokenOut, amount } = params;
+    const { tokenIn, tokenOut, amount, recipient } = params;
 
-    const bestQuote = await this.getBestQuote( tokenIn, tokenOut, amount );
+    const bestQuote = await this.getBestQuote( tokenIn, tokenOut, amount, recipient );
     if ( !bestQuote ) {
       throw new Error( 'No valid quotes received' );
     }

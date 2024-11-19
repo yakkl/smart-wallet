@@ -8,12 +8,8 @@
   import { toBigInt } from '$lib/common';
 
   // Component props
-  export let type: 'sell' | 'buy' = 'sell';
   export let tokens: SwapToken[] = [];
   export let disabled = false;
-  export let readOnly = false;
-  export let insufficientBalance = false;
-  export let balance = '0';
   export let resetValues = false;
   export let swapPriceDataStore: Writable<SwapPriceData>;
   export let onTokenSelect: (token: SwapToken) => void;
@@ -27,32 +23,21 @@
   let userInput = ''; // Temporary user input
   let formattedAmount = ''; // Formatted display amount
 
+  // Reset handling
   $: {
     if (resetValues) {
       userInput = '';
       formattedAmount = '';
-      balance = '0';
-      insufficientBalance = false;
-      swapPriceData.amountIn = 0n;
-      swapPriceData.amountOut = 0n;
       resetValues = false;
     }
   }
-  // Reactive formatting based on store updates
+
+  // Amount formatting from store updates
   $: {
-    if (type === 'sell') {
-      if (toBigInt(swapPriceData.amountIn) > 0n) {
-        formattedAmount = formatAmount(
-          toBigInt(swapPriceData.amountIn) || 0n, 
-          swapPriceData.tokenIn.decimals
-        );
-      } else {
-        formattedAmount = '';
-      }
-    } else {
+    if (!userInput) {
       if (toBigInt(swapPriceData.amountOut) > 0n) {
         formattedAmount = formatAmount(
-          toBigInt(swapPriceData.amountOut) || 0n, 
+          toBigInt(swapPriceData.amountOut),
           swapPriceData.tokenOut.decimals
         );
       } else {
@@ -84,7 +69,7 @@
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
-   
+  
     // Sanitize input
     value = value.replace(/[^0-9.]/g, '');
     
@@ -101,18 +86,31 @@
 
     userInput = value;
     
-    // Trigger debounced change only for meaningful input
-    if (value !== '' && value !== '.') {
-      debouncedAmountChange(value);
+    // Clear if empty
+    if (value === '' || value === '.') {
+      userInput = '';
+      formattedAmount = '';
+      onAmountChange('');
+      return;
     }
+    
+    // Trigger change only for meaningful input
+    debouncedAmountChange(value);
   }
 
-  // Blur handler for final validation
-  function handleBlur(event: FocusEvent) {
-    const value = (event.target as HTMLInputElement).value;
-    
-    if (value !== '' && value !== '.') {
-      onAmountChange(value);
+  // Blur handler
+  function handleBlur() {
+    // Only clear if the input is actually empty
+    if (!userInput || userInput === '' || userInput === '.') {
+      userInput = '';
+      // Only clear formattedAmount if there's no valid stored amount
+      if (!formattedAmount || formattedAmount === '0') {
+        formattedAmount = '';
+      }
+    } else {
+      // If there was user input, store it as formatted amount
+      formattedAmount = userInput;
+      userInput = '';
     }
   }
 </script>
@@ -127,7 +125,6 @@
       on:input={handleAmountInput}
       on:blur={handleBlur}
       disabled={disabled}
-      readonly={readOnly}
       class="
         bg-transparent 
         text-3xl 
@@ -137,28 +134,18 @@
         focus:outline-none 
         focus:border-b-2 
         focus:border-blue-500
-        {insufficientBalance 
-          ? 'text-red-500 dark:text-red-400 ' 
-          : 'text-black dark:text-white '}
+        text-black dark:text-white
         {disabled ? 'cursor-not-allowed' : ''}
       "
     />
     <TokenDropdown 
       {tokens}
       disabled={disabled}
-      selectedToken={type === 'sell' ? swapPriceData.tokenIn : swapPriceData.tokenOut}
+      selectedToken={swapPriceData.tokenOut}
       onTokenSelect={onTokenSelect} 
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">
-    <SwapTokenPrice {swapPriceDataStore} {type} />
-    {#if type === 'sell'}
-        Balance: {balance}
-    {/if}
+    <SwapTokenPrice {swapPriceDataStore} type="buy" />
   </div>
-  {#if insufficientBalance}
-    <div class="text-red-500 dark:text-red-400 text-sm mt-1">
-      Insufficient balance for this swap
-    </div>
-  {/if}
 </div>

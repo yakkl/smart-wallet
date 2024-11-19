@@ -1,38 +1,39 @@
 <script lang="ts">
   import { get, type Writable } from 'svelte/store';
   import type { SwapPriceData } from '$lib/common/interfaces';
-	import { BigNumber } from '$lib/common/bignumber';
 	import { ethers } from 'ethers';
 	import { formatPrice } from '$lib/utilities/utilities';
+	import { toBigInt } from '$lib/common/math';
 
   export let swapPriceDataStore: Writable<SwapPriceData>;
 
-  let amountIn: bigint = 0n;
-  let amountOut: bigint = 0n;
   let exchangeRate: number = 0;
 
   // Declare reactive variables
-  $: amountIn = BigNumber.toBigInt(swapPriceData.amountIn) || 0n;
-  $: amountOut = BigNumber.toBigInt(swapPriceData.amountOut) || 0n;
   $: swapPriceData = $swapPriceDataStore;
   $: tokenOutPriceInUSD = swapPriceData.tokenOutPriceInUSD || '~N/A~';
   $: gasEstimateInUSD = swapPriceData.gasEstimateInUSD || '~N/A~';
-  $: feeBasisPointsToPercent = `${swapPriceData.feeBasisPoints / 100}%`;
+  $: feeBasisPointsToPercent = `${swapPriceData.feeBasisPoints / 1000}%`; // 250, 500, 875, 1000 (.25%, .5%, .875%, 1%)
 
   $: {
-    if (swapPriceData && swapPriceData.amountIn && swapPriceData.amountOut) {
+    if (swapPriceData && toBigInt(swapPriceData.amountIn) > 0n && toBigInt(swapPriceData.amountOut) > 0n) {
       const tokenIn = swapPriceData.tokenIn;
       const tokenOut = swapPriceData.tokenOut;
       
       // More precise exchange rate calculation
       const amountInFormatted = parseFloat(
-        ethers.formatUnits(BigNumber.toBigInt(swapPriceData.amountIn) || 0n, tokenIn.decimals)
+        ethers.formatUnits(toBigInt(swapPriceData.amountIn) || 0n, tokenIn.decimals)
       );
       const amountOutFormatted = parseFloat(
-        ethers.formatUnits(BigNumber.toBigInt(swapPriceData.amountOut) || 0n, tokenOut.decimals)
+        ethers.formatUnits(toBigInt(swapPriceData.amountOut) || 0n, tokenOut.decimals)
       );
-      
-      exchangeRate = amountOutFormatted / amountInFormatted;
+      if (amountInFormatted > 0 && amountOutFormatted > 0) {
+        exchangeRate = amountOutFormatted / amountInFormatted;
+      } else {
+        exchangeRate = 0;
+      }
+    } else {
+      exchangeRate = 0;
     }
   }
 
@@ -41,7 +42,7 @@
     || (swapPriceData.feeAmount && swapPriceData.marketPriceOut 
       ? formatPrice(
           parseFloat(
-            ethers.formatUnits(BigNumber.toBigInt(swapPriceData.feeAmount) || 0n, swapPriceData.tokenOut.decimals)
+            ethers.formatUnits(toBigInt(swapPriceData.feeAmount) || 0n, swapPriceData.tokenOut.decimals)
           ) * swapPriceData.marketPriceOut
         )
       : '~N/A~');
@@ -73,7 +74,7 @@
       <img 
         src="/images/gas.svg" 
         alt="Gas Estimate" 
-        class="w-4 h-4 text-gray-300"
+        class="w-3 h-3"
       />
       <span>Gas Fee ≈ {gasEstimateInUSD}</span>
     </div>

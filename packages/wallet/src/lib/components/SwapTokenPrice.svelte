@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { BigNumber } from '$lib/common/bignumber';
 	import { formatDate } from '$lib/common/datetime';
 	import { debug_log } from '$lib/common/debug';
   import type { SwapPriceData } from '$lib/common/interfaces';
+	import { toBigInt } from '$lib/common/math';
   import { formatPrice } from '$lib/utilities';
 	import { ethers } from 'ethers';
+	import { onMount } from 'svelte';
   import type { Writable } from 'svelte/store';
 
   export let swapPriceDataStore: Writable<SwapPriceData>;
@@ -12,23 +13,44 @@
   export let showLastUpdated: boolean = false;
   export let className: string = '';
 
-  $: swapPriceData = $swapPriceDataStore;
-
   // Display the price based on the type (sell/buy)
   let price = 0;
+  
+  $: swapPriceData = $swapPriceDataStore;
+
   $: {
+    if (swapPriceData) {
+      swapPriceDataUpdated();
+    }
+  }
+  
+  onMount(async () => {
+    swapPriceDataUpdated();
+  });
+
+  function swapPriceDataUpdated() {
     if (swapPriceData) {
       const tokenIn = swapPriceData.tokenIn;
       const tokenOut = swapPriceData.tokenOut;
-      const amountIn = BigNumber.toBigInt(swapPriceData.amountIn) || 0n;
-      const amountOut = BigNumber.toBigInt(swapPriceData.amountOut) || 0n;
+      const amountIn = toBigInt(swapPriceData.amountIn) || 0n;
+      const amountOut = toBigInt(swapPriceData.amountOut) || 0n;
       const marketPriceIn = swapPriceData.marketPriceIn;
       const marketPriceOut = swapPriceData.marketPriceOut;
 
-      if (type === 'sell' && amountIn && marketPriceIn) {
-        price = parseFloat(ethers.formatUnits(amountIn, tokenIn.decimals)) * marketPriceIn;
-      } else if (type === 'buy' && amountOut && marketPriceOut) {
-        price = parseFloat(ethers.formatUnits(amountOut, tokenOut.decimals)) * marketPriceOut;
+      price = 0;
+
+      if (type === 'sell') {
+        if (amountIn > 0n && marketPriceIn > 0) {
+          price = parseFloat(ethers.formatUnits(amountIn, tokenIn.decimals)) * marketPriceIn;
+        } else {
+          price = 0;
+        }
+      } else if (type === 'buy') {
+        if (amountOut > 0n && marketPriceOut > 0) {
+          price = parseFloat(ethers.formatUnits(amountOut, tokenOut.decimals)) * marketPriceOut;
+        } else {
+          price = 0;
+        }
       }
     }
   }
@@ -49,7 +71,7 @@
   </div>
 
   <div class="flex justify-between items-center w-full text-xs text-gray-500">
-    {#if showLastUpdated && (swapPriceData && swapPriceData.lastUpdated)}
+    {#if price > 0 && showLastUpdated && (swapPriceData && swapPriceData.lastUpdated)}
       <span>Last updated: {formatDate(swapPriceData.lastUpdated)}</span>
     {/if}
   </div>

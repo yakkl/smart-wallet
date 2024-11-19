@@ -8,6 +8,7 @@ import { PriceManager } from './PriceManager';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
 import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
+// import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
 
 
 export abstract class SwapManager {
@@ -22,9 +23,10 @@ export abstract class SwapManager {
     this.feeBasisPoints = initialFeeBasisPoints < 0 ? YAKKL_FEE_BASIS_POINTS : initialFeeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ? YAKKL_FEE_BASIS_POINTS_MAX : initialFeeBasisPoints;
 
     this.priceManager = new PriceManager( [
+      // { provider: new AlchemyPriceProvider(), weight: 7 },
       { provider: new CoinbasePriceProvider(), weight: 5 },
-      { provider: new CoingeckoPriceProvider(), weight: 3 },
-      { provider: new KrakenPriceProvider(), weight: 2 },
+      { provider: new KrakenPriceProvider(), weight: 3 },
+      { provider: new CoingeckoPriceProvider(), weight: 1 },
       // Add other providers with their weights...
     ] );
 
@@ -60,12 +62,15 @@ export abstract class SwapManager {
     }
   }
 
+  abstract checkIfPoolExists( tokenIn: Token, tokenOut: Token, fee: number ): Promise<boolean>;
+  
   abstract getName(): string;
 
   abstract getQuote(
     tokenIn: Token,
     tokenOut: Token,
     amount: BigNumberish,
+    fundingAddress: string,
     isExactIn: boolean,
     fee?: number
   ): Promise<SwapPriceData>;

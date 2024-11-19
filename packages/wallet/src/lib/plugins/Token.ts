@@ -10,7 +10,7 @@ export interface IToken {
   symbol: string;
   decimals: number;
   isNative: boolean;
-  iconUrl: string;
+  logoURI: string;
   description: string;
   chainId: number;
   blockchain: Blockchain;
@@ -26,7 +26,7 @@ export abstract class Token implements IToken {
   readonly name: string;
   readonly symbol: string;
   readonly decimals: number;
-  readonly iconUrl: string;
+  readonly logoURI: string;
   readonly description: string;
   readonly chainId: number;
   readonly isNative: boolean;
@@ -39,7 +39,7 @@ export abstract class Token implements IToken {
     name: string,
     symbol: string,
     decimals: number,
-    iconUrl: string,
+    logoURI: string,
     description: string,
     chainId: number,
     isNative: boolean,
@@ -51,7 +51,7 @@ export abstract class Token implements IToken {
     this.name = name;
     this.symbol = symbol;
     this.decimals = decimals;
-    this.iconUrl = iconUrl;
+    this.logoURI = logoURI;
     this.description = description;
     this.chainId = chainId;
     this.isNative = isNative;
@@ -70,7 +70,7 @@ export abstract class Token implements IToken {
       name: this.name,
       symbol: this.symbol,
       decimals: this.decimals,
-      iconUrl: this.iconUrl,
+      logoURI: this.logoURI,
       description: this.description,
       chainId: this.chainId,
       isNative: this.isNative
@@ -147,7 +147,7 @@ class ConcreteToken extends Token {
 //   readonly name: string;
 //   readonly symbol: string;
 //   readonly decimals: number;
-//   readonly iconUrl: string;
+//   readonly logoURI: string;
 //   readonly description: string;
 //   readonly chainId: number;
 //   readonly isNative: boolean;
@@ -157,7 +157,7 @@ class ConcreteToken extends Token {
 //     name: string,
 //     symbol: string,
 //     decimals: number,
-//     iconUrl: string,
+//     logoURI: string,
 //     description: string,
 //     chainId: number,
 //     isNative: boolean
@@ -166,7 +166,7 @@ class ConcreteToken extends Token {
 //     this.name = name;
 //     this.symbol = symbol;
 //     this.decimals = decimals;
-//     this.iconUrl = iconUrl;
+//     this.logoURI = logoURI;
 //     this.description = description;
 //     this.chainId = chainId;
 //     this.isNative = isNative;
@@ -182,7 +182,7 @@ class ConcreteToken extends Token {
 //       name: this.name,
 //       symbol: this.symbol,
 //       decimals: this.decimals,
-//       iconUrl: this.iconUrl,
+//       logoURI: this.logoURI,
 //       description: this.description,
 //       chainId: this.chainId
 //     };

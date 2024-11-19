@@ -3,6 +3,7 @@
 import type { SwapToken } from '$lib/common/interfaces';
 import type { Provider } from '../plugins/Provider';
 import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+import { debug_log } from '$lib/common';
 
 export async function getTokenBalance(
   token: SwapToken,
@@ -14,11 +15,15 @@ export async function getTokenBalance(
     if ( !token ) return 0n;
     if ( token.isNative ) {  // token.isNative needs to be implemented!
       if ( !provider ) return 0n;
-      return await provider.getBalance( address );
+      const retBal = await provider.getBalance( address );
+      debug_log( 'getTokenBalance - Native retBal', retBal );
+      return retBal
     }
 
     if ( !tokenService ) return 0n;
-    return await tokenService.getBalance( token.address, address ); // address is the user's address. This checks the contract to see if it has the given userAddress registered and if it has a balance
+    const retBal = await tokenService.getBalance( token.address, address ); // address is the user's address. This checks the contract to see if it has the given userAddress registered and if it has a balance
+    debug_log( 'getTokenBalance - Token retBal', retBal );
+    return retBal;
   } catch ( error ) {
     console.log( 'getTokenBalance - error', error );
     return 0n;

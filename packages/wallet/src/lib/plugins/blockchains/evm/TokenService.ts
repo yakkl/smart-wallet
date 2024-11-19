@@ -40,6 +40,7 @@ export class TokenService<T extends BaseTransaction> {
   async getBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
       if ( !tokenAddress || !userAddress ) return 0n; // Want a graceful way to handle this instead of throwing an error
+      // Could check tokenAddress to see if it 'ethers.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return 0n;
 

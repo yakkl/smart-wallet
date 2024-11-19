@@ -4,7 +4,7 @@
     "name": "YAKKL Token",
     "symbol": "YAKKL",
     "decimals": 18,
-    "iconUrl": "https://...",
+    "logoURI": "https://...",
     "description": "YAKKL is our native token...",
     "chainId": 1
   }
