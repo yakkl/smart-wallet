@@ -24,7 +24,7 @@ export class TokenManager {
         data.name,
         data.symbol,
         data.decimals,
-        data.iconUrl,
+        data.logoURI,
         data.description,
         data.chainId,
         data.isNative,

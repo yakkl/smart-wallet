@@ -18,6 +18,9 @@ import {
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 // import { getYakklPrimaryAccounts } from '$lib/common/stores';  // TODO: This generates an error from webpack due to not finding dataModels.ts?????????????????????????
 
+// export function toBigInt( value: BigNumberish, decimals: number = 18 ): bigint {
+//   return BigNumber.toBigInt( value, decimals ) ?? 0n;
+// }
 
 export async function getPrimaryAccountByAddress(address: string): Promise<YakklPrimaryAccount | null> {
   if (!address) return null;

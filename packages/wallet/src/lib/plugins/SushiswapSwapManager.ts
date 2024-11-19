@@ -35,6 +35,20 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     return 'SushiSwap';
   }
 
+  // TODO Implement later...
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async checkIfPoolExists(tokenIn: Token, tokenOut: Token, fee: number): Promise<boolean> {
+    if ( !tokenIn || !tokenOut ) {
+      throw new Error( 'Invalid tokens' );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const path = [ tokenIn.address, tokenOut.address ];
+    const pairAddress = await this.getPairAddress( tokenIn.address, tokenOut.address );
+
+    return pairAddress !== ethers.ZeroAddress;
+  }
+  
   getRouterAddress(): string | null {
     if ( !this.router ) return null;
     return this.router.address;
@@ -79,6 +93,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     tokenIn: Token,
     tokenOut: Token,
     amount: BigNumberish,
+    fundingAddress: string,
     isExactIn: boolean = true,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _fee?: number // SushiSwap doesn't use fee tiers like Uniswap
@@ -131,6 +146,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
         name: tokenOut.name,
       },
       quoteAmount: 0n,
+      fundingAddress,
       feeAmount: 0n,
       amountAfterFee: 0n,
       amountIn: amountInBigInt,
@@ -299,7 +315,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const [ actualTokenIn, actualTokenOut ] = await this.prepareTokensForSwap( tokenIn, tokenOut );
     const path = [ actualTokenIn.address, actualTokenOut.address ];
 
-    const quote = await this.getQuote( actualTokenIn, actualTokenOut, amount );
+    const quote = await this.getQuote( actualTokenIn, actualTokenOut, amount, params.recipient );
     const minAmountOut = EthereumBigNumber.from( quote.amountOut )
       .mul( 1000 - Math.floor( slippage * 10 ) )
       .div( 1000 );

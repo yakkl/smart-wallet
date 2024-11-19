@@ -116,6 +116,7 @@ export interface PriceData {
 }
 
 export interface PriceProvider {
+  getAPIKey(): string;
   getName(): string;
   getMarketPrice( pair: string ): Promise<MarketPriceData>; // Enchanced version of getPrice
 }
@@ -856,6 +857,7 @@ export interface BasePriceData {
   provider: string;
   lastUpdated: Date;
   chainId?: number;
+  currency?: string;
   status?: number;
   message?: string;
 }
@@ -865,6 +867,7 @@ export interface SwapPriceData extends BasePriceData {
   tokenIn: SwapToken;           // Sell token
   tokenOut: SwapToken;          // Buy token
   quoteAmount: BigNumberish;    // Amount of token out or in depending on the direction of the swap
+  fundingAddress: string;
   feeAmount: BigNumberish;      // Fee in the tokenOut or buy side token
   amountAfterFee: BigNumberish; // Amount of token out or in after fee depending on the direction of the swap
   amountIn: BigNumberish;       // Amount of sell token
@@ -889,6 +892,7 @@ export interface SwapPriceData extends BasePriceData {
   sqrtPriceX96After?: BigNumberish;  // Uniswap specific - sqrtPriceX96 after the swap
   initializedTicksCrossed?: number;  // Uniswap specific - initialized ticks crossed
   poolInfo?: PoolInfo;               // Uniswap specific - Pool information
+  multiHop?: boolean;                // Uniswap specific - Multi-hop swap
 
   error?: any;
   isLoading?: boolean;

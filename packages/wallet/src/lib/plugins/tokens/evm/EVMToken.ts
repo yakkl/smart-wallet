@@ -14,7 +14,7 @@ export class EVMToken extends Token {
     name: string,
     symbol: string,
     decimals: number,
-    iconUrl: string,
+    logoURI: string,
     description: string,
     chainId: number,
     isNative: boolean,
@@ -22,7 +22,7 @@ export class EVMToken extends Token {
     provider: Provider,
     privateKey?: string
   ) {
-    super(address, name, symbol, decimals, iconUrl, description, chainId, isNative, blockchain, provider, privateKey);
+    super(address, name, symbol, decimals, logoURI, description, chainId, isNative, blockchain, provider, privateKey);
   }
 
   async getContract(): Promise<AbstractContract | null> {

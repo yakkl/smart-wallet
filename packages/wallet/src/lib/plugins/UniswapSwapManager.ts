@@ -7,12 +7,13 @@ import { getToken, type TokenPair } from '$lib/common/tokens';
 import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
 import { Token } from './Token';
 import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
-import { type BigNumberish, type TransactionResponse, type PoolInfoData, type TransactionRequest, type SwapParams, type SwapPriceData, YAKKL_FEE_BASIS_POINTS, type SwapToken, type PriceData, YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS } from '$lib/common';
+import { type BigNumberish, type TransactionResponse, type PoolInfoData, type TransactionRequest, type SwapParams, type SwapPriceData, YAKKL_FEE_BASIS_POINTS, type SwapToken, type PriceData, YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS, toBigInt, YAKKL_GAS_ESTIMATE_MIN_USD, YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT } from '$lib/common';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { ADDRESSES } from './contracts/evm/constants-evm';
-import type { ExactInputSingleParams } from '$lib/common/ISwapRouter';
+import type { ExactInputSingleParams, ExactInputParams } from '$lib/common/ISwapRouter';
 import { EVMToken } from './tokens/evm/EVMToken';
 import { ethers } from 'ethers';
+import { ethers as ethersv5 } from 'ethers-v5';
 import type { Ethereum } from './blockchains/evm/ethereum/Ethereum';
 import type { Provider } from './Provider';
 import { formatPrice, safeConvertBigIntToNumber } from '../utilities/utilities';
@@ -21,7 +22,6 @@ import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interface
 import IQuoterV2ABI from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json';
 import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
 import JSBI from 'jsbi';
-import { BigNumber } from '../common/bignumber';
 import { EthersConverter } from './utilities/EthersConverter';
 
 
@@ -61,14 +61,325 @@ export class UniswapSwapManager extends SwapManager {
   // Get best price tier for a swap - future implementation
 
 
+  async checkIfPoolExists( tokenIn: Token, tokenOut: Token, fee: number ): Promise<boolean> {
+    if ( !this.factory ) throw new Error( 'Factory contract not initialized' );
+    try {
+      const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
+      return poolAddress !== ethers.ZeroAddress;
+    } catch ( error ) {
+      return false;
+    }
+  }
+
+
+  // async testGetQuotev5() {
+  //   // Step 1: Set up the provider using Alchemy
+  //   const alchemyApiKey = 'pBm4VA9q8Laz9x3bmXTNZ9m-ArxczEWk'; // Replace with your Alchemy API key
+  //   const provider = new ethersv5.providers.AlchemyProvider( 'mainnet', alchemyApiKey );
+
+  //   // Step 2: Define the QuoterV2 contract address and ABI
+  //   const quoterV2Address = ADDRESSES.UNISWAP_V3_QUOTER;  // Replace with the actual QuoterV2 contract address
+  //   const quoterV2ABI = [
+  //     {
+  //       "inputs": [
+  //         {
+  //           "internalType": "bytes",
+  //           "name": "path",
+  //           "type": "bytes"
+  //         },
+  //         {
+  //           "internalType": "uint256",
+  //           "name": "amountIn",
+  //           "type": "uint256"
+  //         }
+  //       ],
+  //       "name": "quoteExactInput",
+  //       "outputs": [
+  //         {
+  //           "internalType": "uint256",
+  //           "name": "amountOut",
+  //           "type": "uint256"
+  //         }
+  //       ],
+  //       "stateMutability": "view",
+  //       "type": "function"
+  //     }
+  //   ];
+
+  //   // Step 3: Create the contract instance
+  //   const quoterContract = new ethersv5.Contract( quoterV2Address, quoterV2ABI, provider );
+
+  //   // Step 4: Encode the path using solidityPack
+  //   const tokenInAddress = '0x6982508145454Ce325dDbE47a25d4ec3d2311933'; // PEPE address
+  //   const wethAddress = '0xC02aaa39b223FE8D0a0e5C4F27eAD9083c756Cc2';  // WETH address
+  //   const tokenOutAddress = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'; // AAVE address
+  //   const fee = 3000;  // Example fee tier (0.3%)
+
+  //   const encodedPath = ethersv5.utils.solidityPack(
+  //     [ 'address', 'uint24', 'address', 'uint24', 'address' ],
+  //     [
+  //       tokenInAddress,  // TokenIn address
+  //       fee,             // Fee for TokenIn -> WETH pool
+  //       wethAddress,     // WETH address
+  //       fee,             // Fee for WETH -> TokenOut pool
+  //       tokenOutAddress  // TokenOut address
+  //     ]
+  //   );
+
+  //   // Step 5: Call the contract method
+  //   const amountIn = ethersv5.BigNumber.from( '46391417000000000000000000' ); // Example input amount
+
+  //   try {
+  //     const quote = await quoterContract.quoteExactInput( encodedPath, amountIn );
+  //     console.log( `Quoted output amount: ${ quote.toString() }` );
+  //   } catch ( error ) {
+  //     console.error( 'Error fetching quote:', error );
+  //   }
+  // }
+
+  // async testGetQuotev6() {
+  //   // Step 1: Set up the provider using Alchemy (for ethers v6)
+  //   const alchemyApiKey = 'pBm4VA9q8Laz9x3bmXTNZ9m-ArxczEWk'; // Replace with your Alchemy API key
+  //   const provider = new ethers.AlchemyProvider( 'mainnet', alchemyApiKey );
+
+  //   // Step 2: Define the QuoterV2 contract address and ABI
+  //   const quoterV2Address = ADDRESSES.UNISWAP_V3_QUOTER;  // Replace with the actual QuoterV2 contract address
+  //   const quoterV2ABI = [
+  //     {
+  //       "inputs": [
+  //         {
+  //           "internalType": "bytes",
+  //           "name": "path",
+  //           "type": "bytes"
+  //         },
+  //         {
+  //           "internalType": "uint256",
+  //           "name": "amountIn",
+  //           "type": "uint256"
+  //         }
+  //       ],
+  //       "name": "quoteExactInput",
+  //       "outputs": [
+  //         {
+  //           "internalType": "uint256",
+  //           "name": "amountOut",
+  //           "type": "uint256"
+  //         }
+  //       ],
+  //       "stateMutability": "view",
+  //       "type": "function"
+  //     }
+  //   ];
+
+  //   // Step 3: Create the contract instance
+  //   const quoterContract = new ethers.Contract( quoterV2Address, quoterV2ABI, provider );
+
+  //   // Step 4: Encode the path using solidityPack
+  //   const tokenInAddress = '0x6982508145454Ce325dDbE47a25d4ec3d2311933'; // PEPE address
+  //   const wethAddress = ADDRESSES.WETH; //'0xC02aaa39b223FE8D0a0e5C4F27eAD9083c756Cc2';  // WETH address
+  //   const tokenOutAddress = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'; // AAVE address
+  //   const fee = 3000;  // Example fee tier (0.3%)
+
+  //   const encodedPath = ethers.AbiCoder.defaultAbiCoder().encode(
+  //     [ 'address', 'uint24', 'address', 'uint24', 'address' ],
+  //     [
+  //       tokenInAddress,  // TokenIn address
+  //       fee,             // Fee for TokenIn -> WETH pool
+  //       wethAddress,     // WETH address
+  //       fee,             // Fee for WETH -> TokenOut pool
+  //       tokenOutAddress  // TokenOut address
+  //     ]
+  //   );
+
+  //   // Step 5: Call the contract method
+  //   const amountIn = 46391417000000000000000000n; // Example input amount using bigint for ethers v6
+
+  //   try {
+  //     const quote = await quoterContract.quoteExactInput( encodedPath, amountIn );
+  //     console.log( `Quoted output amount: ${ quote.toString() }` );
+  //   } catch ( error ) {
+  //     console.error( 'Error fetching quote:', error );
+  //   }
+  // }
+
+  // Uses ethers v5.7.2 instead of v6.13.1+ due to encoding issues
+  async multiHopQuote(
+    tokenIn: Token,
+    tokenOut: Token,
+    amount: BigNumberish,
+    fundingAddress: string,
+    isExactIn: boolean = true,
+    fee: number = 3000
+  ): Promise<SwapPriceData> {
+    // Step 1: Set up the provider using Alchemy (ethers v5)
+    const provider = new ethersv5.providers.AlchemyProvider( 'mainnet', import.meta.env.VITE_ALCHEMY_API_KEY_PROD );
+
+    // Step 2: Define the QuoterV2 contract ABI
+    // const quoterV2ABI = [
+    //   {
+    //     "inputs": [
+    //       {
+    //         "internalType": "bytes",
+    //         "name": "path",
+    //         "type": "bytes"
+    //       },
+    //       {
+    //         "internalType": "uint256",
+    //         "name": "amountIn",
+    //         "type": "uint256"
+    //       }
+    //     ],
+    //     "name": "quoteExactInput",
+    //     "outputs": [
+    //       {
+    //         "internalType": "uint256",
+    //         "name": "amountOut",
+    //         "type": "uint256"
+    //       }
+    //     ],
+    //     "stateMutability": "view",
+    //     "type": "function"
+    //   }
+    // ];
+    const quoterV2ABI = [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountIn",
+            "type": "uint256"
+          }
+        ],
+        "name": "quoteExactInput",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes",
+            "name": "path",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "name": "quoteExactOutput",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountIn",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    // Step 3: Create the contract instance
+    const quoterContract = new ethersv5.Contract( ADDRESSES.UNISWAP_V3_QUOTER, quoterV2ABI, provider );
+
+    // Step 4: Encode the path using solidityPack (ethers v5)
+    const tokenInAddress = tokenIn.address;
+    const tokenOutAddress = tokenOut.address;
+
+    const encodedPath = isExactIn ? ethersv5.utils.solidityPack(
+      [ 'address', 'uint24', 'address', 'uint24', 'address' ],
+      [
+        tokenInAddress,  // TokenIn address
+        fee,             // Fee for TokenIn -> WETH pool
+        ADDRESSES.WETH,     // WETH address
+        fee,             // Fee for WETH -> TokenOut pool
+        tokenOutAddress  // TokenOut address
+      ]
+    ) : ethersv5.utils.solidityPack(
+      [ 'address', 'uint24', 'address', 'uint24', 'address' ],
+      [
+        tokenOutAddress,  // TokenOut address
+        fee,             // Fee for TokenOut -> WETH pool
+        ADDRESSES.WETH,     // WETH address
+        fee,             // Fee for WETH -> TokenIn pool
+        tokenInAddress  // TokenIn address
+      ]
+    );
+
+    // Step 5: Call the contract method
+    const amountInOrOut = ethersv5.BigNumber.from( toBigInt( amount ) );
+
+    const multiHopParams = {
+      path: encodedPath,
+      ...( isExactIn ? { amountIn: amountInOrOut } : { amountOut: amountInOrOut } )
+    };
+
+    try {
+      let quoteAmount: ethersv5.BigNumber;
+
+      // Returns a single value for the quote instead of a tuple of values
+      if ( isExactIn ) {
+        quoteAmount = await quoterContract.callStatic.quoteExactInput( multiHopParams.path, amountInOrOut );
+      } else {
+        quoteAmount = await quoterContract.callStatic.quoteExactOutput( multiHopParams.path, amountInOrOut );
+      }
+
+      const gasEstimate = await this.getGasEstimateForSwap( tokenInAddress, tokenOutAddress, amountInOrOut.toBigInt(), fundingAddress, fee );
+
+      if ( quoteAmount.gt( 0 ) ) {
+        return await this.constructQuoteData(
+          tokenIn,
+          tokenOut,
+          fundingAddress,
+          amount,
+          quoteAmount.toBigInt(),
+          fee,
+          gasEstimate,
+          true, // multiHop
+          0n, //sqrtPriceX96After.toBigInt(),
+          0, //initializedTicksCrossed,
+          isExactIn
+        );
+      }
+    } catch ( error ) {
+      console.log( 'Error fetching multi-hop quote:', error );
+      throw new Error( 'Failed to get multi-hop quote' );
+    }
+
+    throw new Error( 'No valid route exists for the provided tokens and amount' );
+  }
+
   async getQuote(
     tokenIn: Token,
     tokenOut: Token,
     amount: BigNumberish,
+    fundingAddress: string,
     isExactIn: boolean = true,
     fee: number = 3000
   ): Promise<SwapPriceData> {
-    if ( !tokenIn?.address || !tokenOut?.address || !amount ) {
+    // Determine actual tokens for routing
+    const actualTokenIn = tokenIn.isNative
+      ? await this.getWETHToken()
+      : tokenIn;
+
+    const actualTokenOut = tokenOut.isNative
+      ? await this.getWETHToken()
+      : tokenOut;
+
+    if ( !actualTokenIn?.address || !actualTokenOut?.address || !amount ) {
       // Default empty quote return if params are not sufficient
       return {
         provider: this.getName(),
@@ -76,6 +387,7 @@ export class UniswapSwapManager extends SwapManager {
         chainId: this.provider ? this.provider.getChainId() : 1,
         tokenIn,
         tokenOut,
+        fundingAddress,
         quoteAmount: 0n,
         feeAmount: 0n,
         amountAfterFee: 0n,
@@ -85,7 +397,10 @@ export class UniswapSwapManager extends SwapManager {
         marketPriceIn: 0,
         marketPriceOut: 0,
         priceImpactRatio: 0,
-        path: [ tokenIn.address, tokenOut.address ],
+        path: [
+          tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address,
+          tokenOut.isNative ? ethers.ZeroAddress : tokenOut.address
+        ],
         fee,
         feeBasisPoints: this.feeBasisPoints,
         feeAmountPrice: 0,
@@ -95,7 +410,8 @@ export class UniswapSwapManager extends SwapManager {
         tokenOutPriceInUSD: '',
         sqrtPriceX96After: 0n,
         initializedTicksCrossed: 0,
-        error: null,
+        multiHop: false,
+        error: 'Insufficient parameters for quote',
         isLoading: false,
       };
     }
@@ -103,7 +419,6 @@ export class UniswapSwapManager extends SwapManager {
     if ( !this.providerEthers ) throw new Error( 'Provider(s) not set' );
 
     try {
-      // Create ethers contract instance for the quoter
       const quoterContract = new ethers.Contract(
         ADDRESSES.UNISWAP_V3_QUOTER,
         IQuoterV2ABI.abi,
@@ -115,113 +430,258 @@ export class UniswapSwapManager extends SwapManager {
       let sqrtPriceX96After: bigint = 0n;
       let initializedTicksCrossed: number = 0;
       let gasEstimate: bigint = 0n;
+      let multiHop = false;
 
-      const params = {
-        tokenIn: tokenIn.address,
-        tokenOut: tokenOut.address,
-        fee,
-        sqrtPriceLimitX96: 0n,
-        ...( isExactIn
-          ? { amountIn: amount }
-          : { amount } )
-      };
+      // Step 1: Try Direct Pool Quote
+      const poolExists = await this.checkIfPoolExists( actualTokenIn, actualTokenOut, fee );
 
-      if ( isExactIn ) {
-        [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
-          await quoterContract.quoteExactInputSingle.staticCall( params );
-      } else {
-        [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
-          await quoterContract.quoteExactOutputSingle.staticCall( params );
+      if ( poolExists ) {
+        try {
+          const params = {
+            tokenIn: actualTokenIn.address,
+            tokenOut: actualTokenOut.address,
+            fee,
+            sqrtPriceLimitX96: 0n,
+            ...( isExactIn ? { amountIn: amount } : { amount } )
+          };
+
+          if ( isExactIn ) {
+            [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
+              await quoterContract.quoteExactInputSingle.staticCall( params );
+          } else {
+            [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
+              await quoterContract.quoteExactOutputSingle.staticCall( params );
+          }
+
+          if ( quoteAmount > 0n ) {
+            return await this.constructQuoteData(
+              tokenIn,
+              tokenOut,
+              fundingAddress,
+              amount,
+              quoteAmount,
+              fee,
+              gasEstimate,
+              multiHop,
+              sqrtPriceX96After,
+              initializedTicksCrossed,
+              isExactIn
+            );
+          }
+        } catch ( error ) {
+          console.log( 'Direct pool quote failed, trying multi-hop:', error );
+        }
       }
 
-      if ( quoteAmount <= 0n ) throw new Error( 'Invalid amount (quoteAmount) returned' );
-
-      const feeAmount = this.calculateFee( quoteAmount );
-      // Adjust amount after fee based on direction
-      const amountAfterFee = isExactIn
-        ? quoteAmount - feeAmount
-        : quoteAmount + feeAmount;
-      
-      // Calculate exchange rate more precisely
-      const formattedAmountIn = Number( ethers.formatUnits( BigNumber.toBigInt(amount) || 0n, tokenIn.decimals ) );
-      const formattedAmountOut = Number( ethers.formatUnits( amountAfterFee, tokenOut.decimals ) );
-      const exchangeRate = formattedAmountOut / formattedAmountIn;
-
-      // Fetch USD prices (assume these come back as `number`)
-      const priceIn = await this.getMarketPrice( `${ tokenIn.symbol }-USD` );
-      const priceOut = await this.getMarketPrice( `${ tokenOut.symbol }-USD` );
-
-      if ( !priceIn || !priceOut ) {
-        throw new Error( 'Failed to get price from provider' );
+      // Step 2: Multi-Hop Quote Attempt
+      try {
+        multiHop = true;
+        // Uses ethers v5.7.2 instead of v6.13.1+ due to encoding issues
+        return this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, fee );
+      } catch ( error ) {
+        console.log( 'Multi-hop quote failed:', error );
+        // Log the full error details for debugging
+        console.log( 'Multi-hop quote error details:', {
+          tokenIn: actualTokenIn.address,
+          tokenOut: actualTokenOut.address,
+          amount: amount.toString(),
+          isExactIn,
+          error: error instanceof Error ? error.message : error
+        } );
       }
 
-      // Calculate fee amount in USD
-      const feeAmountInTokenOut = isExactIn
-        ? Number( ethers.formatUnits( feeAmount, tokenOut.decimals ) )
-        : Number( ethers.formatUnits( feeAmount, tokenIn.decimals ) );
-
-      const feeAmountInUSD = feeAmountInTokenOut * ( isExactIn ? priceOut.price : priceIn.price );
-      const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
-
-      let gasEstimateInUSD = '';
-      let adjustedGasEstimate = 0n;
-
-      if ( gasEstimate > 0n ) {
-        // Adjust gas estimate based on multiplier - we will estimate higher to account for potential network congestion
-        adjustedGasEstimate = ( gasEstimate * ( 10000n + BigInt( YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS ) ) ) / 10000n;
-
-        // Step 1: Convert gasEstimate from Gwei to Ether
-        const gasEstimateInEther = adjustedGasEstimate * 10n ** 9n;
-        const gasEstimateInEtherNumber = Number( gasEstimateInEther ) / 10 ** 18;
-
-        // Step 2: Calculate gas cost in USD using the price of Ether
-        const ethPriceInUSD = priceIn.price; // Assuming this is a number (USD price of 1 ETH)
-
-        // Multiply gas in Ether with Ether's price to get the cost in USD
-        const gasCostInUSD = gasEstimateInEtherNumber * ethPriceInUSD;
-
-        gasEstimateInUSD = gasCostInUSD > 0 ? formatPrice( gasCostInUSD ) : '~N/A~';
-      }
-
-      return {
-        provider: this.getName(),
-        lastUpdated: new Date(),
-        chainId: this.getChainId(),
-        tokenIn,
-        tokenOut,
-        quoteAmount,
-        feeAmount,
-        amountAfterFee,
-        amountIn: isExactIn ? amount : quoteAmount,
-        amountOut: isExactIn ? amountAfterFee : amount,
-        exchangeRate,
-        marketPriceIn: priceIn.price,
-        marketPriceOut: priceOut.price,
-        priceImpactRatio: 0, // Placeholder as per your original code
-        path: [ tokenIn.address, tokenOut.address ],
-        fee,
-        feeBasisPoints: this.feeBasisPoints,
-        feeAmountPrice: feeAmountInUSD / formattedAmountOut,
-        feeAmountInUSD: `$${ feeAmountInUSD.toFixed( 2 ) }`,
-        gasEstimate: adjustedGasEstimate,
-        gasEstimateInUSD,
-        tokenOutPriceInUSD: formatPrice( Number( priceOutBigInt ) / 10 ** tokenOut.decimals ),
-        sqrtPriceX96After,
-        initializedTicksCrossed,
-        error: null,
-        isLoading: false,
-      };
+      throw new Error( 'No valid route exists for the provided tokens and amount' );
     } catch ( error ) {
-      console.error( 'Error in getQuote:', error, {
-        tokenIn: tokenIn.address,
-        tokenOut: tokenOut.address,
+      console.log( 'Error in getQuote:', error, {
+        originalTokenIn: tokenIn.address,
+        originalTokenOut: tokenOut.address,
+        actualTokenIn: actualTokenIn.address,
+        actualTokenOut: actualTokenOut.address,
         amount: amount.toString(),
       } );
       throw error;
     }
   }
 
-    
+  private async constructQuoteData(
+    tokenIn: Token,
+    tokenOut: Token,
+    fundingAddress: string,
+    amount: BigNumberish,
+    quoteAmount: bigint,
+    fee: number,
+    gasEstimate: bigint,
+    multiHop: boolean,
+    sqrtPriceX96After: bigint,
+    initializedTicksCrossed: number,
+    isExactIn: boolean
+  ): Promise<SwapPriceData> {
+    const feeAmount = this.calculateFee( isExactIn ? quoteAmount : toBigInt( amount ) ); //quoteAmount );
+    const amountAfterFee = isExactIn ? quoteAmount - feeAmount : quoteAmount; //quoteAmount - feeAmount;
+
+    const formattedAmountIn = Number( ethers.formatUnits( isExactIn ? toBigInt( amount ) : quoteAmount, tokenIn.decimals ) );
+    const formattedAmountOut = Number( ethers.formatUnits( isExactIn ? amountAfterFee : toBigInt( amount ), tokenOut.decimals ) );
+    const exchangeRate = formattedAmountOut / formattedAmountIn;
+
+    // Fetch USD prices (these should come back as `number`)
+    const priceIn = await this.getMarketPrice( `${ tokenIn.symbol }-USD` );
+    const priceOut = await this.getMarketPrice( `${ tokenOut.symbol }-USD` );
+
+    if ( !priceIn || !priceOut ) {
+      throw new Error( 'Failed to get price from provider' );
+    }
+
+    const feeAmountInTokenOut = isExactIn
+      ? Number( ethers.formatUnits( feeAmount, tokenOut.decimals ) )
+      : Number( ethers.formatUnits( feeAmount, tokenIn.decimals ) );
+
+    const feeAmountInUSD = feeAmountInTokenOut * ( isExactIn ? priceOut.price : priceIn.price );
+    const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
+
+    let gasEstimateInUSD = '';
+    let adjustedGasEstimate = 0n;
+
+    if ( gasEstimate > 0n ) {
+      adjustedGasEstimate = ( gasEstimate * ( 10000n + BigInt( YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS ) ) ) / 10000n;
+
+      // Convert gas estimate from Gwei to Ether
+      const gasEstimateInEther = adjustedGasEstimate * 10n ** 9n;
+      const gasEstimateInEtherNumber = Number( gasEstimateInEther ) / 10 ** 18;
+
+      // Calculate gas cost in USD using the price of Ether
+      const gasPrice = await this.getMarketPrice( `ETH-USD` );
+      const ethPriceInUSD = gasPrice.price;
+
+      // Multiply gas in Ether with Ether's price to get the cost in USD
+      const gasCostInUSD = gasEstimateInEtherNumber * ethPriceInUSD;
+
+      gasEstimateInUSD = gasCostInUSD > YAKKL_GAS_ESTIMATE_MIN_USD ? formatPrice( gasCostInUSD ) : formatPrice( YAKKL_GAS_ESTIMATE_MIN_USD ); // This is only a conservative minimum estimate and not actual
+    }
+
+    return {
+      provider: this.getName(),
+      lastUpdated: new Date(),
+      chainId: this.getChainId(),
+      tokenIn,
+      tokenOut,
+      fundingAddress,
+      quoteAmount,
+      feeAmount,
+      amountAfterFee,
+      amountIn: isExactIn ? amount : quoteAmount,
+      amountOut: isExactIn ? amountAfterFee : amount,
+      exchangeRate,
+      marketPriceIn: priceIn.price,
+      marketPriceOut: priceOut.price,
+      priceImpactRatio: 0,
+      path: [ tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address, tokenOut.isNative ? ethers.ZeroAddress : tokenOut.address ],
+      fee,
+      feeBasisPoints: this.feeBasisPoints,
+      feeAmountPrice: feeAmountInUSD / formattedAmountOut,
+      feeAmountInUSD: `$${ feeAmountInUSD.toFixed( 2 ) }`,
+      gasEstimate: adjustedGasEstimate,
+      gasEstimateInUSD,
+      tokenOutPriceInUSD: formatPrice( Number( priceOutBigInt ) / 10 ** tokenOut.decimals ),
+      sqrtPriceX96After,
+      initializedTicksCrossed,
+      multiHop,
+      error: null,
+      isLoading: false,
+    };
+  }
+
+  async getGasEstimateForSwap(
+    tokenIn: string,
+    tokenOut: string,
+    amountIn: bigint,
+    fundingAddress: string,
+    fee: number,
+  ): Promise<bigint> {
+    // Ensure provider is not null
+    if ( !this.providerEthers ) {
+      throw new Error( 'Ethereum provider not initialized' );
+    }
+
+    // Step 1: Set up the SwapRouter contract (Uniswap V3)
+    const swapRouterABI = [
+      "function exactInput((bytes path,uint256 amountIn,uint256 amountOutMinimum,address recipient,uint256 deadline)) external payable returns (uint256 amountOut)"
+    ];
+
+    // Create a provider from the existing provider
+    const provider = new ethersv5.providers.JsonRpcProvider(
+      await this.provider.getProviderURL()
+    );
+
+    const swapRouter = new ethersv5.Contract(
+      ADDRESSES.UNISWAP_V3_ROUTER,
+      swapRouterABI,
+      provider
+    );
+
+    // Step 2: Encode the multi-hop path using ethers v5 utils
+    const encodedPath = ethersv5.utils.solidityPack(
+      [ 'address', 'uint24', 'address', 'uint24', 'address' ],
+      [
+        tokenIn,  // TokenIn address
+        fee,      // Fee for TokenIn -> WETH pool
+        ADDRESSES.WETH, // WETH address
+        fee,      // Fee for WETH -> TokenOut pool
+        tokenOut  // TokenOut address
+      ]
+    );
+
+    // Step 3: Prepare swap parameters
+    const recipient: string = fundingAddress;
+
+    const deadline = Math.floor( Date.now() / 1000 ) + 60 * 20; // 20 minutes from the current Unix time
+    const amountOutMinimum = 0; // You can adjust slippage tolerance here
+
+    // Parameters for the swap
+    const swapParams = {
+      path: encodedPath,
+      amountIn: amountIn.toString(), // Convert to string for ethers v5
+      amountOutMinimum: amountOutMinimum,
+      recipient: recipient,
+      deadline: deadline
+    };
+
+    // Step 4: Estimate gas for the transaction
+    try {
+      // Populate the transaction using the contract method directly
+      const tx = await swapRouter.populateTransaction[ 'exactInput' ]( swapParams );
+
+      // Ensure from address is set
+      tx.from = recipient;
+
+      // Add value for native token input
+      // If tokenIn is native, add the amountIn as value
+      const isNativeInput = tokenIn.toLowerCase() === ethers.ZeroAddress.toLowerCase();
+      if ( isNativeInput ) {
+        tx.value = ethersv5.BigNumber.from( amountIn.toString() );
+      }
+
+      // Try to estimate gas with a fallback mechanism
+      let gasEstimate;
+      try {
+        gasEstimate = await provider.estimateGas( {
+          ...tx,
+          from: recipient
+        } );
+      } catch ( estimateError ) {
+        // Fallback: Use a fixed gas limit or a percentage increase
+        const baseGasLimit = YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT; // Adjust based on typical multi-hop swap gas usage
+        gasEstimate = ethersv5.BigNumber.from( baseGasLimit );
+      }
+
+      // Convert to bigint
+      return BigInt( gasEstimate.toString() );
+    } catch ( error ) {
+      // Fallback to a default gas estimate
+      const fallbackGasLimit = BigInt( YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT ); // Adjust based on typical multi-hop swap gas usage
+      return fallbackGasLimit;
+    }
+  }
+
   async getPoolInfo( tokenIn: SwapToken, tokenOut: SwapToken, fee: number = 3000 ): Promise<PoolInfoData> {
     // await this.ensureInitialized();
 
@@ -273,7 +733,7 @@ export class UniswapSwapManager extends SwapManager {
 
       debug_log( 'Token0:', token0 );
       debug_log( 'Token1:', token1 );
-      
+
       // Ensure tick is within valid range
       const minTick = BigInt( TickMath.MIN_TICK );
       const maxTick = BigInt( TickMath.MAX_TICK );
@@ -320,8 +780,8 @@ export class UniswapSwapManager extends SwapManager {
       debug_log( 'Pool created successfully', pool );
 
       // Calculate amounts from liquidity
-      const tickLow = Math.floor( validTick / Number(tickSpacing) ) * Number(tickSpacing);
-      const tickHigh = tickLow + Number(tickSpacing);
+      const tickLow = Math.floor( validTick / Number( tickSpacing ) ) * Number( tickSpacing );
+      const tickHigh = tickLow + Number( tickSpacing );
       const sqrtPriceLow = TickMath.getSqrtRatioAtTick( tickLow );
       const sqrtPriceHigh = TickMath.getSqrtRatioAtTick( tickHigh );
 
@@ -330,7 +790,7 @@ export class UniswapSwapManager extends SwapManager {
       debug_log( 'Sqrt price low:', sqrtPriceLow.toString() );
       debug_log( 'Sqrt price high:', sqrtPriceHigh.toString() );
 
-      const price2 = sqrtPriceX96ToPrice( BigInt(sqrtPriceLow.toString()), token0.decimals, token1.decimals );
+      const price2 = sqrtPriceX96ToPrice( BigInt( sqrtPriceLow.toString() ), token0.decimals, token1.decimals );
       debug_log( 'Price at low tick:', price2 );
       const price3 = sqrtPriceX96ToPrice( BigInt( sqrtPriceHigh.toString() ), token0.decimals, token1.decimals );
       debug_log( 'Price at high tick:', price3 );
@@ -350,7 +810,7 @@ export class UniswapSwapManager extends SwapManager {
       debug_log( 'Token1 amount:', token1Amt );
 
 
-      
+
       // Calculate reserves
       const token0Reserve = parseFloat(
         ethers.formatUnits( liquidity.toString(), token0.decimals )
@@ -452,7 +912,7 @@ export class UniswapSwapManager extends SwapManager {
       debug_log( 'TVL:', tvl );
 
       debug_log( '\n\nUniswapPriceProvider - getPoolInfo: >>>>>>>>>>>>>>>>>>>>>>>>>>>> POOL END <<<<<<<<<<<<<<<<<<<<<<<<\n\n' );
-      
+
       return {
         provider: this.getName(),
         lastUpdated: new Date(),
@@ -531,7 +991,7 @@ export class UniswapSwapManager extends SwapManager {
 
     try {
       const tx = await tokenContract.transfer( feeRecipient, feeAmount );
-      return await EthersConverter.ethersTransactionResponseToTransactionResponse(tx.wait());
+      return await EthersConverter.ethersTransactionResponseToTransactionResponse( tx.wait() );
     } catch ( error ) {
       console.error( 'Fee distribution failed:', error );
       throw error;
@@ -551,7 +1011,7 @@ export class UniswapSwapManager extends SwapManager {
     // This would involve calling a specific method on your fee distribution contract
     throw new Error( 'Not implemented' );
   }
-  
+
   private async getTokenReserve( token: Token, poolAddress: string ): Promise<string> {
     const balance = await token.getBalance( poolAddress );
     return balance ? balance.toString() : '0';
@@ -591,6 +1051,42 @@ export class UniswapSwapManager extends SwapManager {
   getRouterAddress(): string {
     return this.routerContract!.target as string;
   }
+
+  async getWETHToken(): Promise<Token> {
+    const chainId = this.getChainId();
+    const wethAddress = chainId === 1 ? ADDRESSES.WETH : ADDRESSES.WETH_SEPOLIA;
+
+    return new EVMToken(
+      wethAddress,
+      'Wrapped Ether',
+      'WETH',
+      18,
+      '/images/ethereum.svg',
+      'Wrapped version of Ether',
+      chainId,
+      false, // Not native since it's wrapped
+      this.blockchain,
+      this.provider
+    );
+  }
+
+  // async prepareTokensForSwap(
+  //   tokenIn: Token,
+  //   tokenOut: Token
+  // ): Promise<[ Token, Token ]> {
+  //   let actualTokenIn = tokenIn;
+  //   let actualTokenOut = tokenOut;
+
+  //   // Handle ETH -> WETH conversion
+  //   if ( tokenIn.isNative ) {
+  //     actualTokenIn = await this.getWETHToken();
+  //   }
+  //   if ( tokenOut.isNative ) {
+  //     actualTokenOut = await this.getWETHToken();
+  //   }
+
+  //   return [ actualTokenIn, actualTokenOut ];
+  // }
 
   async populateSwapTransaction(
     tokenIn: Token,
@@ -639,41 +1135,32 @@ export class UniswapSwapManager extends SwapManager {
     };
   }
 
-  private async getWETHToken(): Promise<Token> {
-    const chainId = this.getChainId();
-    const wethAddress = chainId === 1 ? ADDRESSES.WETH : ADDRESSES.WETH_SEPOLIA;
+  async populateMultiHopSwapTransaction(
+    tokenIn: Token,
+    tokenOut: Token,
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    recipient: string,
+    deadline: number
+  ): Promise<TransactionRequest> {
+    const params: ExactInputParams = {
+      path: [ tokenIn.address, ADDRESSES.WETH, tokenOut.address ],
+      recipient,
+      deadline,
+      amountIn: EthereumBigNumber.from( amountIn ).toBigInt() ?? 0n,
+      amountOutMinimum: EthereumBigNumber.from( amountOutMin ).toBigInt() ?? 0n
+    };
 
-    return new EVMToken(
-      wethAddress,
-      'Wrapped Ether',
-      'WETH',
-      18,
-      '/images/weth.png',
-      'Wrapped version of Ether',
-      chainId,
-      false, // Not native since it's wrapped
-      this.blockchain,
-      this.provider
-    );
+    const populatedTx = await this.routerContract!.exactInput.populateTransaction( params );
+
+    return {
+      to: this.routerContract!.target as string,
+      data: populatedTx.data,
+      value: tokenIn.isNative ? amountIn : 0,
+      from: await this.provider.getSigner()?.getAddress() as string,
+      chainId: this.getChainId()
+    };
   }
-
-  // async prepareTokensForSwap(
-  //   tokenIn: Token,
-  //   tokenOut: Token
-  // ): Promise<[ Token, Token ]> {
-  //   let actualTokenIn = tokenIn;
-  //   let actualTokenOut = tokenOut;
-
-  //   // Handle ETH -> WETH conversion
-  //   if ( tokenIn.isNative ) {
-  //     actualTokenIn = await this.getWETHToken();
-  //   }
-  //   if ( tokenOut.isNative ) {
-  //     actualTokenOut = await this.getWETHToken();
-  //   }
-
-  //   return [ actualTokenIn, actualTokenOut ];
-  // }
 
   async executeSwap( params: SwapParams ): Promise<TransactionResponse> {
     const {
@@ -685,19 +1172,31 @@ export class UniswapSwapManager extends SwapManager {
       recipient
     } = params;
 
-    const quote = await this.getQuote( tokenIn, tokenOut, amount );
+    const quote = await this.getQuote( tokenIn, tokenOut, amount, recipient );
     const minOut = EthereumBigNumber.from( quote.amountOut )
       .mul( 1000 - Math.floor( slippage * 10 ) )
       .div( 1000 );
 
-    const tx = await this.populateSwapTransaction(
-      tokenIn,
-      tokenOut,
-      amount,
-      minOut,
-      recipient,
-      Math.floor( Date.now() / 1000 ) + ( deadline * 60 )
-    );
+    let tx;
+    if ( quote.multiHop ) {
+      tx = await this.populateMultiHopSwapTransaction(
+        tokenIn,
+        tokenOut,
+        amount,
+        minOut,
+        recipient,
+        Math.floor( Date.now() / 1000 ) + ( deadline * 60 )
+      );
+    } else {
+      tx = await this.populateSwapTransaction(
+        tokenIn,
+        tokenOut,
+        amount,
+        minOut,
+        recipient,
+        Math.floor( Date.now() / 1000 ) + ( deadline * 60 )
+      );
+    }
 
     if ( typeof tx === 'bigint' ) {
       throw new Error( 'Received gas estimate instead of transaction request' );
@@ -706,11 +1205,11 @@ export class UniswapSwapManager extends SwapManager {
     return await this.provider.sendTransaction( tx );
   }
 
-    private getStandardizedToken( symbol: string ): SwapToken | null {
-      let standardizedSymbol = symbol;
-      if ( symbol === 'USD' ) standardizedSymbol = 'USDC';
-      if ( symbol === 'ETH' ) standardizedSymbol = 'WETH';
-      return getToken( standardizedSymbol, this.getChainId() );
-    }
+  private getStandardizedToken( symbol: string ): SwapToken | null {
+    let standardizedSymbol = symbol;
+    if ( symbol === 'USD' ) standardizedSymbol = 'USDC';
+    if ( symbol === 'ETH' ) standardizedSymbol = 'WETH';
+    return getToken( standardizedSymbol, this.getChainId() );
+  }
 
 }

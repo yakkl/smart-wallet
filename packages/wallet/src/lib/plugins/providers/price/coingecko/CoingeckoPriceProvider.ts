@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
 import { splitWords } from '$lib/utilities';
@@ -5,6 +6,10 @@ import { splitWords } from '$lib/utilities';
 // Coingecko public API pulls from a number of exchanges.
 // Coingecko does not update their prices as frequently as other providers so it may appear that prices look like an arbitrage opportunity but it may not be.
 export class CoingeckoPriceProvider implements PriceProvider {
+  getAPIKey(): string {
+    return import.meta.env.VITE_COINGECKO_API_KEY_PROD;
+  }
+
   getName() {
     return 'Coingecko';
   }
@@ -73,13 +78,30 @@ export class CoingeckoPriceProvider implements PriceProvider {
         provider: this.getName(),
         price: parseFloat( priceData[ currencySymbol.toLowerCase() ] ),
         lastUpdated: new Date( priceData.last_updated_at * 1000 ),
+        currency: currencySymbol,
         status: 0,
         message: ''
       };
     }
-    catch ( e ) {
+    catch ( e: any ) {
       console.log( 'CoingeckoPriceProvider - getPrice - error', e );
-      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+
+      let status = 404;  // Default status
+      let message = `Error - ${ e }`;
+
+      if ( e.response && e.response.status === 429 ) {
+        // Handle 429 Too Many Requests error
+        status = 429;
+        message = 'Too Many Requests - Rate limit exceeded';
+      }
+
+      return {
+        provider: this.getName(),
+        price: 0,
+        lastUpdated: new Date(),
+        status,
+        message,
+      };
     }
   }
 }

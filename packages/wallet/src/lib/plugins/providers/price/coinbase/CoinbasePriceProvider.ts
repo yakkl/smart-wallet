@@ -1,8 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
 
 
 export class CoinbasePriceProvider implements PriceProvider {
+  getAPIKey(): string {
+    return import.meta.env.VITE_COINBASE_API_KEY;
+  }
+
   getName() {
     return 'Coinbase';
   }
@@ -35,13 +40,30 @@ export class CoinbasePriceProvider implements PriceProvider {
         provider: this.getName(),
         price: parseFloat( json.products[ 0 ].price ),
         lastUpdated: new Date(),
+        currency: tokenOut,
         status: 0,
         message: ''
       };
     }
-    catch ( e ) {
+    catch ( e: any ) {
       console.log( 'CoinbasePriceProvider - getPrice - error', e );
-      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+
+      let status = 404;  // Default status
+      let message = `Error - ${ e }`;
+
+      if ( e.response && e.response.status === 429 ) {
+        // Handle 429 Too Many Requests error
+        status = 429;
+        message = 'Too Many Requests - Rate limit exceeded';
+      }
+
+      return {
+        provider: this.getName(),
+        price: 0,
+        lastUpdated: new Date(),
+        status,
+        message,
+      };
     }
   }
 }

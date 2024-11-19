@@ -2,9 +2,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwapToken as Token } from '$lib/common/interfaces';
+	import { debug_log } from '$lib/common/debug';
 
   export let tokens: Token[];
   export let selectedToken: Token;
+  export let disabled: boolean = false;
   export let onTokenSelect: (token: Token) => void;
 
   let isOpen = false;
@@ -12,6 +14,9 @@
   let filteredTokens: Token[] = [];
 
   function toggleDropdown() {
+    // Prevent opening if disabled
+    if (disabled) return;
+
     isOpen = !isOpen;
     if (isOpen) {
       searchQuery = '';
@@ -20,17 +25,20 @@
   }
 
   function selectToken(token: Token) {
+    // Prevent selection if disabled
+    if (disabled) return;
+    
     selectedToken = token;
     onTokenSelect(token);
     isOpen = false;
     searchQuery = '';
   }
 
-  function getLogoURL(logoURI: string | null | undefined): string {
+  function getLogoURL(logoURI: string | null | undefined): string {    
     if (!logoURI || logoURI.startsWith('http://') || logoURI.startsWith('ipfs://')) {
       return '/images/logoBullFav32x32.png';
     }
-    return logoURI;
+    return logoURI!;
   }
 
   function handleSearch(event: Event) {
@@ -52,7 +60,11 @@
 </script>
 
 <div class="relative w-full max-w-sm mx-auto">
-  <button class="w-full flex items-center px-4 py-3 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500" on:click={toggleDropdown}>
+  <button class="w-full flex items-center px-4 py-3
+   {disabled 
+      ? 'bg-gray-500 text-gray-200 cursor-not-allowed ' 
+      : 'bg-purple-600 text-white hover:bg-purple-700 '} 
+      font-bold rounded-full transition duration-300 ease-in-out focus:outline-none" on:click={toggleDropdown} disabled={disabled}>
     {#if selectedToken && selectedToken.symbol && selectedToken.name}
       <img src={getLogoURL(selectedToken.logoURI)} alt={selectedToken.name} class="w-8 h-8 rounded-full" />
       <div class="flex-1 flex flex-col ml-3">
@@ -67,8 +79,8 @@
     </svg>
   </button>
   
-  {#if isOpen}
-    <div class="absolute z-10 w-full bg-white rounded-md shadow-lg mt-2 p-2 border border-gray-200">
+  {#if isOpen && !disabled}
+    <div class="absolute z-10 w-full bg-white dark:text-gray-600 rounded-md shadow-lg mt-2 p-2 border border-gray-200">
       <input
         type="text"
         placeholder="Search..."

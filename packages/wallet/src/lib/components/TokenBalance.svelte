@@ -15,18 +15,20 @@
 
   let balance: bigint = 0n;
 
+  $: if (token) getBalance();
+
   onMount(async () => {
+    await getBalance();
+  });
+
+  async function getBalance() {
     if (!address || !token) {
-      balanceText = 'Balance 0 due to missing address or token: ';
       balance = 0n;
     } else {
-      if (token.isNative) {
-        balance = provider ? await provider.getBalance(address) : 0n;
-      } else {
-        balance = await getTokenBalance(token, address, provider, tokenService);
-      }
+      balance = await getTokenBalance(token, address, provider, tokenService);
+      if (balance <= 0n) className += 'text-red-500';
     }
-  });
+  }
 </script>
 
 <span class="{className}">

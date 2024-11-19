@@ -6,6 +6,7 @@ import type { ErrorBody, ParsedError } from '$lib/common';
 import { AccountTypeCategory } from '$lib/common/types';
 import type { YakklAccount } from '$lib/common/interfaces';
 import { getYakklAccounts } from '$lib/common/stores';
+import { ethers } from 'ethers';
 
 export async function checkAccountRegistration(): Promise<boolean> {
   try {
@@ -25,6 +26,92 @@ export async function checkAccountRegistration(): Promise<boolean> {
     console.error('Error checking registration:', error);
     return false;
   }
+}
+
+export function parseAmount( amount: string, decimals: number ): bigint {
+  // Normalize input
+  const normalizedAmount = amount.startsWith( '.' ) ? `0${ amount }` : amount;
+
+  try {
+    // Use a more robust parsing method
+    const [ integerPart, fractionalPart = '' ] = normalizedAmount.split( '.' );
+
+    // Truncate or pad fractional part
+    const truncatedFractional = fractionalPart.slice( 0, decimals ).padEnd( decimals, '0' );
+
+    // Combine parts
+    const fullAmount = `${ integerPart }${ truncatedFractional }`;
+
+    return BigInt( fullAmount );
+  } catch ( error ) {
+    console.error( 'Failed to parse amount:', error );
+    return 0n;
+  }
+}
+
+// export function parseAmount( amount: string, decimals: number ): bigint {
+//   // Handle empty or invalid inputs
+//   if ( !amount || amount === '.' || amount.trim() === '' ) {
+//     return 0n;
+//   }
+
+//   // Sanitize input
+//   const sanitizedAmount = amount.replace( /[^0-9.]/g, '' );
+
+//   // Ensure only one decimal point
+//   const parts = sanitizedAmount.split( '.' );
+//   if ( parts.length > 2 ) {
+//     throw new Error( 'Invalid number format' );
+//   }
+
+//   // Split into integer and decimal parts
+//   const [ integerPart = '0', decimalPart = '' ] = parts;
+
+//   // Pad or truncate decimal part
+//   const paddedDecimal = ( decimalPart + '0'.repeat( decimals ) ).slice( 0, decimals );
+
+//   // Combine parts, ensuring non-empty integer part
+//   const fullAmountString = `${ integerPart || '0' }${ paddedDecimal ? '.' + paddedDecimal : '' }`;
+
+//   // Validate the parsed amount
+//   try {
+//     // Use parseUnits directly
+//     return ethers.parseUnits( fullAmountString, decimals );
+//   } catch ( error ) {
+//     console.error( 'Error parsing amount:', error, 'Input:', fullAmountString );
+//     return 0n;
+//   }
+// }
+
+// Alternative approach using Number and BigInt conversion
+export function parseAmountAlternative( amount: string, decimals: number ): bigint {
+  // Handle empty or invalid inputs
+  if ( !amount || amount === '.' || amount.trim() === '' ) {
+    return 0n;
+  }
+
+  try {
+    // Convert to number first to handle scientific notation and precision
+    const numericValue = Number( amount );
+
+    // Multiply by 10^decimals and convert to bigint
+    return BigInt( Math.round( numericValue * ( 10 ** decimals ) ) );
+  } catch ( error ) {
+    console.error( 'Error parsing amount:', error );
+    return 0n;
+  }
+}
+
+// Optional: Format amount back to a string with proper decimal handling
+export function formatAmount( amount: bigint, decimals: number ): string {
+  const formattedAmount = ethers.formatUnits( amount, decimals );
+
+  // Remove trailing zeros after decimal point
+  const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
+  if ( !decimalPart ) return integerPart;
+
+  const trimmedDecimal = decimalPart.replace( /0+$/, '' );
+  return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
 }
 
 /**

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { PriceData, PriceProvider } from '$lib/common/interfaces';
 
@@ -18,6 +19,10 @@ import type { PriceData, PriceProvider } from '$lib/common/interfaces';
 // Last trade price: 60134 or [6]
 
 export class BitfinexPriceProvider implements PriceProvider {
+  getAPIKey(): string {
+    return '';  //import.meta.env.VITE_BITFINEX_API_KEY_PROD;    
+  }
+
   getName() {
     return 'Bitfinex';
   }
@@ -50,9 +55,25 @@ export class BitfinexPriceProvider implements PriceProvider {
         message: '',
       };
     }
-    catch ( e ) {
-      console.log('BitfinexPriceProvider - getPrice - error', e );
-      return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
+    catch ( e: any ) {
+      console.log( 'BitfinexPriceProvider - getPrice - error', e );
+      
+      let status = 404;  // Default status
+      let message = `Error - ${ e }`;
+
+      if ( e.response && e.response.status === 429 ) {
+        // Handle 429 Too Many Requests error
+        status = 429;
+        message = 'Too Many Requests - Rate limit exceeded';
+      }
+
+      return {
+        provider: this.getName(),
+        price: 0,
+        lastUpdated: new Date(),
+        status,
+        message,
+      };
     }
   }
 }

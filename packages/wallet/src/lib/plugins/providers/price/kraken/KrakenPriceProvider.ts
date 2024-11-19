@@ -2,6 +2,10 @@ import { fetchJson } from "@ethersproject/web";
 import type { PriceData, PriceProvider } from '$lib/common/interfaces';
 
 export class KrakenPriceProvider implements PriceProvider {
+  getAPIKey(): string {
+    return '';  //import.meta.env.VITE_KRAKEN_API_KEY_PROD
+  }
+  
   getName() {
     return 'Kraken';
   }
