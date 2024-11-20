@@ -4,6 +4,9 @@ import type { BlockTag, BigNumberish, TransactionResponse, TransactionRequest, D
 import { AbstractProvider, type Provider } from '$plugins/Provider';
 
 export class Infura extends AbstractProvider {
+  getProviderURL(): Promise<string> {
+    throw new Error( 'Method not implemented.' );
+  }
   getBlockNumber(): Promise<number> {
     throw new Error( 'Method not implemented.' );
   }

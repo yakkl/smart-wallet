@@ -26,14 +26,25 @@ export class BaseFeeManager implements FeeManager {
     this.providers.delete(providerName);
   }
 
+  getProviders(): string[] {
+    return Array.from( this.providers.keys() );
+  }
+
   async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
     if (this.providers.size === 0) {
       throw new Error('No gas providers available');
     }
 
     const estimates = await Promise.all(
-      Array.from(this.providers.values()).map(provider => provider.getGasEstimate(transaction))
-    );
+      Array.from( this.providers.values() ).map( provider => {
+        return provider.getGasEstimate( transaction ).catch( error => {
+          console.error( `Failed to get gas estimate from ${ provider.getName() }:`, error );
+          return null;
+        } );
+      } )
+    ).then( estimates => estimates.filter( estimate => estimate !== null ) );
+
+    // console.log('Gas estimates:', estimates);
 
     const gasLimits = estimates.map(e => BigNumber.from(e.gasLimit)).sort((a, b) => a.compare(b));
     const baseFees = estimates.map(e => BigNumber.from(e.feeEstimate.baseFee)).sort((a, b) => a.compare(b));
@@ -48,6 +59,8 @@ export class BaseFeeManager implements FeeManager {
       priorityFee: medianPriorityFee.toString(),
       totalFee: medianBaseFee.add(medianPriorityFee).toString()
     };
+
+    // console.log('Gas estimate:', { gasLimit: medianGasLimit.toString(), feeEstimate });
 
     return {
       gasLimit: medianGasLimit.toString(),
@@ -112,4 +125,24 @@ export class BaseFeeManager implements FeeManager {
       estimatedPriorityFee: BigNumber.from(prediction.estimatedPriorityFee).div(BigNumber.from(prediction.count)).toString()
     }));
   }
+
+  setPriorityOrder( providerNames: string[] ): void {
+    const orderedProviders = new Map<string, GasProvider>();
+    providerNames.forEach( name => {
+      if ( this.providers.has( name ) ) {
+        orderedProviders.set( name, this.providers.get( name )! );
+      }
+    } );
+    this.providers = orderedProviders;
+  }
+
+  setDefaultProvider( providerName: string ): void {
+    if ( this.providers.has( providerName ) ) {
+      const defaultProvider = this.providers.get( providerName )!;
+      this.providers.delete( providerName );
+      this.providers = new Map( [ [ providerName, defaultProvider ], ...this.providers ] );
+    }
+  }
+
+  
 }

@@ -1,7 +1,7 @@
 // IMPORTANT NOTE: Edit 'constants.mustache' since it is the template for 'constants.ts'
 
 // Global shared constants. Network specifics are in the network/<whatever>/contants.js file
-export const VERSION = "1.0.1";
+export const VERSION = "1.1.5";
 
 export const YEAR = "2024"; // Instead of computing year since user can change date on system - use a constant
 
@@ -18,8 +18,16 @@ export const DEV_BASE_DELAY = 1000; //milliseconds
 
 export const ETH_BASE_EOA_GAS_UNITS = 21000; // Base amount of gas units it takes for a EOA transaction
 export const ETH_BASE_SCA_GAS_UNITS = 45000; // Base amount of gas units it takes for a Smart Contract transaction
+export const ETH_BASE_UNISWAP_GAS_UNITS = 500000; // Base amount of gas units it takes for a Uniswap transaction
 export const ETH_BASE_FORCANCEL_GAS_UNITS = ETH_BASE_EOA_GAS_UNITS * 3;
 
+export const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address on Ethereum mainnet
+
+export const YAKKL_GAS_ESTIMATE_MIN_USD = 2.00;
+export const YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT = 3750000;
+export const YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS = 15000; // 150%
+export const YAKKL_FEE_BASIS_POINTS = 500; //4375; //0.4375% //875; // 0.875%
+export const YAKKL_FEE_BASIS_POINTS_MAX = 1000; // 10%
 export const YAKKL_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const YAKKL_ZERO_ACCOUNT_NAME = "YAKKL - Zero Account - YAKKL";
 export const YAKKL_ZERO_ACCOUNT_TYPE = "NA"; // Not applicable - default value
@@ -101,6 +109,7 @@ export const PATH_SECURITY_RESET = "/security/reset";
 export const PATH_SETTINGS = "/settings";
 export const PATH_SETTINGS_PREFERENCES = "/settings/preferences";
 export const PATH_SETTINGS_SETTINGS = "/settings/settings";
+export const PATH_TOKENS = "/tokens";
 export const PATH_WEB3 = "/web3";
 export const PATH_DAPP_TRANSACTIONS = "/dapp/popups/transactions";
 export const PATH_DAPP_ACCOUNTS = "/dapp/popups/accounts";

@@ -1,73 +1,98 @@
 import type { PriceData, PriceProvider, WeightedProvider } from '$lib/common/interfaces';
-
+import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
+import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
+import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
+// import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
 
 export class PriceManager {
   private weightedProviders: WeightedProvider[];
   private totalWeight: number;
   private readonly DEFAULT_WEIGHT = 1;
 
-  constructor(weightedProviders: WeightedProvider[]) {
-    if (weightedProviders.length === 0) {
-      throw new Error("At least one provider must be specified");
+  constructor ( weightedProviders: WeightedProvider[] = PriceManager.getDefaultProviders() ) {
+    if ( !weightedProviders || weightedProviders.length === 0 ) {
+      throw new Error( "At least one provider must be specified" );
     }
 
-    this.weightedProviders = this.normalizeWeights(weightedProviders);
+    this.weightedProviders = this.normalizeWeights( weightedProviders );
     this.totalWeight = this.calculateTotalWeight();
   }
 
-  private normalizeWeights(providers: WeightedProvider[]): WeightedProvider[] {
-    const allZeroWeights = providers.every(wp => wp.weight === 0);
-    const allEqualWeights = providers.every(wp => wp.weight === providers[0].weight);
+  static getDefaultProviders(): WeightedProvider[] {
+    return [
+      { provider: new CoingeckoPriceProvider(), weight: 7 },
+      { provider: new CoinbasePriceProvider(), weight: 5 },
+      { provider: new AlchemyPriceProvider(), weight: 3 },
+      // { provider: new KrakenPriceProvider(), weight: 1 },
+      // Add other providers with their weights...
+    ];
+  }
 
-    if (allZeroWeights || allEqualWeights) {
+  private normalizeWeights( providers: WeightedProvider[] ): WeightedProvider[] {
+    const allZeroWeights = providers.every( wp => wp.weight === 0 );
+    const allEqualWeights = providers.every( wp => wp.weight === providers[ 0 ].weight );
+
+    if ( allZeroWeights || allEqualWeights ) {
       // If all weights are zero or equal, assign default weight to all
-      return providers.map(wp => ({ ...wp, weight: this.DEFAULT_WEIGHT }));
+      return providers.map( wp => ( { ...wp, weight: this.DEFAULT_WEIGHT } ) );
     }
 
     // Replace any zero weights with the smallest non-zero weight
-    const smallestNonZeroWeight = Math.min(...providers.filter(wp => wp.weight > 0).map(wp => wp.weight));
-    return providers.map(wp => ({
+    const smallestNonZeroWeight = Math.min( ...providers.filter( wp => wp.weight > 0 ).map( wp => wp.weight ) );
+    return providers.map( wp => ( {
       ...wp,
       weight: wp.weight === 0 ? smallestNonZeroWeight : wp.weight
-    }));
+    } ) );
   }
 
   private calculateTotalWeight(): number {
-    return this.weightedProviders.reduce((sum, wp) => sum + wp.weight, 0);
+    return this.weightedProviders.reduce( ( sum, wp ) => sum + wp.weight, 0 );
   }
 
-  // May want to add a second param that supplied the provider to use instead of picking a random one. If null or undefined, pick a random one.
-  async getPrice(pair: string): Promise<PriceData> {
-    const provider = this.getWeightedRandomProvider();
+  public getAvailableProviders(): PriceProvider[] {
+    return this.weightedProviders.map( wp => wp.provider );
+  }
+
+  async getMarketPrice( pair: string, availableProviders?: PriceProvider[] ): Promise<PriceData> {
+    const providersToUse = availableProviders || this.getAvailableProviders();
+
+    if ( providersToUse.length === 0 ) {
+      throw new Error( "No providers available to fetch market price" );
+    }
+
+    const provider = this.getWeightedRandomProvider( providersToUse );
     try {
-      return await provider.getPrice(pair);
-    } catch (error) {
-      console.error(`Error fetching price from ${provider.getName()}:`, error);
+      return await provider.getMarketPrice( pair );
+    } catch ( error ) {
+      console.error( `Error fetching price from ${ provider.getName() }:`, error );
       // Retry with a different provider
-      return this.getPrice(pair);
+      return this.getMarketPrice( pair, providersToUse.filter( p => p !== provider ) ); // Avoid circular error by excluding failed provider
     }
   }
 
-  private getWeightedRandomProvider(): PriceProvider {
-    if (this.weightedProviders.length === 1) {
-      return this.weightedProviders[0].provider;
+  private getWeightedRandomProvider( providers: PriceProvider[] ): PriceProvider {
+    if ( providers.length === 1 ) {
+      return providers[ 0 ];
     }
 
-    if (this.weightedProviders.every(wp => wp.weight === this.weightedProviders[0].weight)) {
+    const weightedProviders = this.weightedProviders.filter( wp => providers.includes( wp.provider ) );
+    const totalWeight = weightedProviders.reduce( ( sum, wp ) => sum + wp.weight, 0 );
+
+    if ( weightedProviders.every( wp => wp.weight === weightedProviders[ 0 ].weight ) ) {
       // If all weights are equal, choose randomly
-      return this.weightedProviders[Math.floor(Math.random() * this.weightedProviders.length)].provider;
+      return weightedProviders[ Math.floor( Math.random() * weightedProviders.length ) ].provider;
     }
 
-    let random = Math.random() * this.totalWeight;
-    
-    for (const wp of this.weightedProviders) {
-      if (random < wp.weight) {
+    let random = Math.random() * totalWeight;
+
+    for ( const wp of weightedProviders ) {
+      if ( random < wp.weight ) {
         return wp.provider;
       }
       random -= wp.weight;
     }
 
     // This should never happen if weights are set correctly
-    return this.weightedProviders[0].provider;
+    return weightedProviders[ 0 ].provider;
   }
 }

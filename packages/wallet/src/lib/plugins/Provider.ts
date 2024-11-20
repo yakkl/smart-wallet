@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BigNumber, resolveProperties, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type EventType, type FeeData, type Filter, type Listener, type Log, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type TypedDataDomain, type TypedDataField } from '$lib/common';
+import { type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type EventType, type FeeData, type Filter, type Listener, type Log, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type TypedDataDomain, type TypedDataField } from '$lib/common';
 import { Signer } from '$plugins/Signer';
+import eventManager from './EventManager';
+import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 
 // async function resolveProperties<T>(props: T): Promise<T> {
 //   const resolved: any = {};
@@ -47,6 +49,8 @@ export interface Provider {
    * @param chainId - The chain ID to connect to.
    */
   connect(blockchain: string, chainId: number): Promise<void>;
+
+  getProviderURL(): Promise<string>; // Returns the native provider such as ethers.js provider or web3.js provider
 
   /**
    * Gets the current block number.
@@ -100,7 +104,7 @@ export interface Provider {
    */
   getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
 
-  getSigner(): Signer;
+  getSigner(): Signer | null;
 
   setSigner(signer: Signer): void; // This one sets the signer for the provider after it has been created by the wallet and/or Signer 
 
@@ -347,9 +351,9 @@ export abstract class AbstractProvider implements Provider {
    */
   abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
 
-  getSigner(): Signer {
+  getSigner(): Signer | null {
     if (!this.signer) {
-      throw new Error('Signer not initialized');
+      return null;
     }
     return this.signer;
   }
@@ -473,6 +477,8 @@ export abstract class AbstractProvider implements Provider {
    */
   abstract getLogs(filter: Filter): Promise<Array<Log>>;
 
+  abstract getProviderURL(): Promise<string>; // Returns the native provider such as ethers.js provider or web3.js provider
+
   /**
    * Resolves an ENS name to an address.
    * @param name - The ENS name to resolve.
@@ -487,58 +493,38 @@ export abstract class AbstractProvider implements Provider {
    */
   abstract lookupAddress(address: string | Promise<string>): Promise<null | string>;
 
-  /**
-   * Adds a listener for an event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  abstract on(eventName: EventType, listener: Listener): Provider;
+  // EventManager methods
+  on(eventName: EventType, listener: Listener): Provider {
+    eventManager.on(eventName, listener);
+    return this;
+  }
 
-  /**
-   * Adds a one-time listener for an event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  abstract once(eventName: EventType, listener: Listener): Provider;
+  once(eventName: EventType, listener: Listener): Provider {
+    eventManager.once(eventName, listener);
+    return this;
+  }
 
-  /**
-   * Emits an event.
-   * @param eventName - The name of the event.
-   * @param args - The arguments to pass to the event listeners.
-   * @returns Whether the event had listeners.
-   */
-  abstract emit(eventName: EventType, ...args: Array<any>): boolean;
+  emit(eventName: EventType, ...args: any[]): boolean {
+    return eventManager.emit(eventName, ...args);
+  }
 
-  /**
-   * Gets the listener count for an event.
-   * @param eventName - The name of the event.
-   * @returns The listener count.
-   */
-  abstract listenerCount(eventName?: EventType): number;
+  listenerCount(eventName?: EventType): number {
+    return eventManager.listenerCount(eventName);
+  }
 
-  /**
-   * Gets the listeners for an event.
-   * @param eventName - The name of the event.
-   * @returns The listeners.
-   */
-  abstract listeners(eventName?: EventType): Array<Listener>;
+  listeners(eventName?: EventType): Listener[] {
+    return eventManager.listeners(eventName);
+  }
 
-  /**
-   * Removes a listener for an event.
-   * @param eventName - The name of the event.
-   * @param listener - The listener function.
-   * @returns The provider instance.
-   */
-  abstract off(eventName: EventType, listener?: Listener): Provider;
+  off(eventName: EventType, listener?: Listener): Provider {
+    eventManager.off(eventName, listener);
+    return this;
+  }
 
-  /**
-   * Removes all listeners for an event.
-   * @param eventName - The name of the event.
-   * @returns The provider instance.
-   */
-  abstract removeAllListeners(eventName?: EventType): Provider;
+  removeAllListeners(eventName?: EventType): Provider {
+    eventManager.removeAllListeners(eventName);
+    return this;
+  }
 
   /**
    * Connects the provider to a specified blockchain and chain ID.
@@ -559,55 +545,43 @@ export abstract class AbstractProvider implements Provider {
    * Gets the fee data.
    * @returns The fee data.
    */
-  // async getFeeData(): Promise<FeeData> {
-  //   const { block, gasPrice } = await resolveProperties({
-  //     block: this.getBlock("latest"),
-  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //     gasPrice: this.getGasPrice().catch((error) => {
-  //       // @TODO: Why is this now failing on Calaveras?
-  //       //console.log(error);
-  //       return null;
-  //     })
-  //   });
-
-  //   let lastBaseFeePerGas: bigint = 0n, maxFeePerGas: bigint = 0n, maxPriorityFeePerGas: bigint = 0n;
-
-  //   if (block && block.baseFeePerGas) {
-  //     // We may want to compute this more accurately in the future,
-  //     // using the formula "check if the base fee is correct".
-  //     // See: https://eips.ethereum.org/EIPS/eip-1559
-  //     lastBaseFeePerGas = getBigInt(block.baseFeePerGas);
-  //     maxPriorityFeePerGas = BigInt("1500000000");
-  //     maxFeePerGas = block.baseFeePerGas.toBigInt() * 2n + maxPriorityFeePerGas;
-
-      
-  //   }
-
-  //   return { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice };
-  // }
 
   async getFeeData(): Promise<FeeData> {
-    const { block, gasprice } = await resolveProperties({
-      block: this.getBlock("latest"),
-      gasprice: this.getGasPrice().catch((error) => {
-        return null;
-      })
-    });
-  
-    let lastBaseFeePerGas: bigint = 0n;
-    let maxFeePerGas: bigint = 0n;
-    let maxPriorityFeePerGas: bigint = 0n;
-    const gasPrice: BigNumber = BigNumber.from(gasprice!);
-  
-    if (block && block.baseFeePerGas) {
-      // Convert baseFeePerGas from BigNumber to bigint
-      lastBaseFeePerGas = BigNumber.from(block.baseFeePerGas).toBigInt() as bigint;
-      maxPriorityFeePerGas = 1500000000n; // Example value
-      maxFeePerGas = lastBaseFeePerGas * 2n + maxPriorityFeePerGas;
+    const [ block, gasPrice ] = await Promise.all( [
+      this.getBlock( "latest" ),
+      this.getGasPrice()
+    ] );
+
+    let lastBaseFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+    let maxFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+    let maxPriorityFeePerGas: EthereumBigNumber = new EthereumBigNumber( 0 );
+
+    if ( block && block.baseFeePerGas ) {
+      lastBaseFeePerGas = EthereumBigNumber.from( block.baseFeePerGas );
+      maxPriorityFeePerGas = EthereumBigNumber.fromGwei( 1.5 ); // 1.5 Gwei as an example
+      maxFeePerGas = EthereumBigNumber.from(lastBaseFeePerGas.mul( 2 ).add( maxPriorityFeePerGas ));
     }
-  
-    return { lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice };
+
+    // Convert gasPrice from Wei to Gwei
+    const gasPriceGwei = EthereumBigNumber.from( gasPrice ).div( 1000000000 );
+
+    console.log( 'gasPrice in wei:', gasPrice );
+
+    console.log( "getFeeData lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice (in Gwei)",
+      lastBaseFeePerGas.toGwei().toString(),
+      maxFeePerGas.toGwei().toString(),
+      maxPriorityFeePerGas.toString(),
+      gasPriceGwei.toString()
+    );
+
+    return {
+      lastBaseFeePerGas: lastBaseFeePerGas.toBigInt() ?? BigInt( 0 ),
+      maxFeePerGas: maxFeePerGas.toBigInt() ?? BigInt( 0 ),
+      maxPriorityFeePerGas: maxPriorityFeePerGas.toBigInt() ?? BigInt( 0 ),
+      gasPrice: gasPriceGwei
+    };
   }
+
   /**
    * Alias for `on` method.
    * @param eventName - The name of the event.

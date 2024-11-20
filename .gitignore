@@ -19,7 +19,8 @@ packages/contracts/code/deployed_*_contracts.json
 packages/contracts/code/deployed_contracts.json
 packages/contracts/code/anvil-config.json
 packages/contracts/code/helper/
-**/blockflow.bot/
+**/4337/
+**/forge-tests.txt
 
 # General patterns
 packages/wallet/*.tmp

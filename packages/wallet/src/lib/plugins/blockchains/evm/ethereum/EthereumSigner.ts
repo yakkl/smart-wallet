@@ -32,9 +32,7 @@ export class EthereumSigner extends Signer {
       throw new Error(`Invalid private key length. Instead it is ${privateKey.length}`);
     }
     this.provider = provider;
-    this.wallet = new ethers.Wallet(privateKey, provider as any);  // TODO: Check this!
-
-    console.log('ethers - Wallet created:', this.wallet);
+    this.wallet = new ethers.Wallet(privateKey, provider as any);  
   }
 
   /**
@@ -63,13 +61,7 @@ export class EthereumSigner extends Signer {
    * @returns The signed transaction as a string.
    */
   async signTransaction(transaction: EVMTransactionRequest): Promise<string> {
-
-    console.log('Transaction to sign:', transaction);
-
     const tx = this.transactionToEthersTransaction(transaction);
-    
-    console.log('Signing transaction:', tx);
-
     return await this.wallet.signTransaction(tx);
   }
 

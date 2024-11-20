@@ -15,47 +15,47 @@ contract SwapRouterTest is Test {
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public feeRecipient = address(0x123);
-    uint256 public feeBasisPoints = 875; // 0.00875%
+    uint256 public feeBasisPoints = 875; // 0.875% - .00875 decimal format
 
     function setUp() public {
-    vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
-    feeManager = new FeeManager(feeRecipient);
-    swapRouter = new SwapRouter(
-        UNISWAP_ROUTER,
-        WETH9,
-        address(feeManager),
-        address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6), // Quoter address - mainnet or forked mainnet
-        address(0x1F98431c8aD98523631AE4a59f267346ea31F984)  // Factory address - mainnet or forked mainnet 
-    );
+        feeManager = new FeeManager(feeRecipient);
+        swapRouter = new SwapRouter(
+            UNISWAP_ROUTER,
+            WETH9,
+            address(feeManager),
+            address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6), // Quoter address - mainnet or forked mainnet
+            address(0x1F98431c8aD98523631AE4a59f267346ea31F984)  // Factory address - mainnet or forked mainnet 
+        );
 
-    // Reset balances before each test
-    vm.deal(address(this), 0);
-    vm.deal(address(swapRouter), 0);
-    deal(DAI, address(this), 0);
-    deal(DAI, address(swapRouter), 0);
-    deal(USDC, address(this), 0);
-    deal(USDC, address(swapRouter), 0);
+        // Reset balances before each test
+        vm.deal(address(this), 0);
+        vm.deal(address(swapRouter), 0);
+        deal(DAI, address(this), 0);
+        deal(DAI, address(swapRouter), 0);
+        deal(USDC, address(this), 0);
+        deal(USDC, address(swapRouter), 0);
 
-    // Now set up the initial balances
-    vm.deal(address(this), 1000 ether);
-    vm.deal(address(swapRouter), 1000 ether);
-    deal(DAI, address(this), 1000000 * 1e18);
-    deal(DAI, address(swapRouter), 1000000 * 1e18);
-    deal(USDC, address(this), 1000000 * 1e6);
-    deal(USDC, address(swapRouter), 1000000 * 1e6);
+        // Now set up the initial balances
+        vm.deal(address(this), 1000 ether);
+        vm.deal(address(swapRouter), 1000 ether);
+        deal(DAI, address(this), 1000000 * 1e18);
+        deal(DAI, address(swapRouter), 1000000 * 1e18);
+        deal(USDC, address(this), 1000000 * 1e6);
+        deal(USDC, address(swapRouter), 1000000 * 1e6);
 
-    // Approve SwapRouter to spend tokens
-    IERC20(DAI).approve(address(swapRouter), type(uint256).max);
-    IERC20(USDC).approve(address(swapRouter), type(uint256).max);
+        // Approve SwapRouter to spend tokens
+        IERC20(DAI).approve(address(swapRouter), type(uint256).max);
+        IERC20(USDC).approve(address(swapRouter), type(uint256).max);
 
-    // Mock Uniswap router responses
-    vm.mockCall(
-        UNISWAP_ROUTER,
-        abi.encodeWithSelector(ISwapRouter.exactInputSingle.selector),
-        abi.encode(100000) // Mock return value for amountOut
-    );
-}
+        // Mock Uniswap router responses
+        vm.mockCall(
+            UNISWAP_ROUTER,
+            abi.encodeWithSelector(ISwapRouter.exactInputSingle.selector),
+            abi.encode(100000) // Mock return value for amountOut
+        );
+    }
 
     function testInitialState() public view {
         assertEq(address(swapRouter.uniswapRouter()), UNISWAP_ROUTER);

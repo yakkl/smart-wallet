@@ -2,16 +2,15 @@
   // For Derived Accounts
   import { browser as browserSvelte } from '$app/environment';
   import { Button, Modal, Spinner } from 'flowbite-svelte';
-  import { getProfile, getYakklAccounts, getYakklCurrentlySelected, getSettings, getMiscStore } from '$lib/common/stores';
+  import { getProfile, getYakklCurrentlySelected, getSettings, getMiscStore } from '$lib/common/stores';
   import { decryptData, type Profile, isEncryptedData, type ProfileData, type YakklRegisteredData, type CurrentlySelectedData, type AccountData, type PrimaryAccountData, type YakklPrimaryAccount, type YakklAccount, type EmergencyKitAccountData, type YakklCurrentlySelected, type Settings } from '$lib/common';
-  import { DEFAULT_DERIVED_PATH_ETH, PATH_ACCOUNTS, PATH_WELCOME, DEFAULT_TITLE, VERSION } from '$lib/common';
+  import { DEFAULT_DERIVED_PATH_ETH, PATH_WELCOME, DEFAULT_TITLE, VERSION } from '$lib/common';
   import { goto } from '$app/navigation';
   import { deepCopy } from '$lib/utilities/utilities';
   import { createSubportfolioAccount } from '$lib/plugins/networks/ethereum/createSubportfolioAccount';
-	import { EmergencyKitManager } from '$lib/common/emergencykit';
+	import { EmergencyKitManager } from '$plugins/EmergencyKitManager';
 	import { onMount } from 'svelte';
 	import { dateString } from '$lib/common/datetime';
-	import { trace } from 'console';
   // import { jsPDF } from "jspdf";
 
   let currentlySelected: YakklCurrentlySelected;
@@ -82,7 +81,7 @@
     } catch (e) {
       error = true;
       errorValue = `Your subportfolio account was not created for the following reason ==> ${e}`;
-      console.log(errorValue, trace(e));
+      console.log(errorValue);
     }
   });
 
@@ -115,53 +114,49 @@
       }
 
       await createSubportfolioAccount(yakklMiscStore, currentlySelected, profile).then(async (result) => {
-        // if (result) {
-          try {
-            currentlySelected = deepCopy(result); 
-            if (isEncryptedData(currentlySelected.data)) {
-              await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
-                currentlySelected.data = result as CurrentlySelectedData;
-              });
-            }
-
-            accountName = currentlySelected.shortcuts.accountName;
-
-            id = currentlySelected.id;
-            // Repurpose asset variable
-            blockchain = currentlySelected.shortcuts.network.blockchain;
-            addressDerived = currentlySelected.shortcuts.address;
-            createDate = dateString();
-            updateDate = createDate;
-
-            let yakklAccount: YakklAccount = (currentlySelected.data as CurrentlySelectedData).account as YakklAccount;
-            if (isEncryptedData(yakklAccount.data)) {
-              await decryptData(yakklAccount.data, yakklMiscStore).then(result => {
-                yakklAccount!.data = result as AccountData;
-              });
-            }
-            privateKey = (yakklAccount.data as AccountData).privateKey;
-
-            let yakklPrimaryAccount: YakklPrimaryAccount = (currentlySelected.data as CurrentlySelectedData).primaryAccount as YakklPrimaryAccount;
-            if (isEncryptedData(yakklPrimaryAccount.data)) {
-              await decryptData(yakklPrimaryAccount.data, yakklMiscStore).then(result => {
-                yakklPrimaryAccount!.data = result as PrimaryAccountData;
-              });
-            }
-
-            primaryAccountName = yakklPrimaryAccount.name;
-            address = yakklPrimaryAccount.address;
-            wordCount = (yakklPrimaryAccount.data as PrimaryAccountData).wordCount as number;
-            mnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
-            
-            derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${yakklPrimaryAccount.index}'/0/${yakklPrimaryAccount.subIndex}`;
-            displayDate = new Date(createDate);
-
-            successDialog = true;
-          } catch (e) {
-            console.log(`Account Derived: Error inside: ${e}`);
-            throw `${e}`;
+        try {
+          currentlySelected = deepCopy(result); 
+          if (isEncryptedData(currentlySelected.data)) {
+            await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
+              currentlySelected.data = result as CurrentlySelectedData;
+            });
           }
-        // }
+
+          accountName = currentlySelected.shortcuts.accountName;
+          id = currentlySelected.id;
+          blockchain = currentlySelected.shortcuts.network.blockchain;
+          addressDerived = currentlySelected.shortcuts.address;
+          createDate = dateString();
+          updateDate = createDate;
+
+          let yakklAccount: YakklAccount = (currentlySelected.data as CurrentlySelectedData).account as YakklAccount;
+          if (isEncryptedData(yakklAccount.data)) {
+            await decryptData(yakklAccount.data, yakklMiscStore).then(result => {
+              yakklAccount!.data = result as AccountData;
+            });
+          }
+          privateKey = (yakklAccount.data as AccountData).privateKey;
+
+          let yakklPrimaryAccount: YakklPrimaryAccount = (currentlySelected.data as CurrentlySelectedData).primaryAccount as YakklPrimaryAccount;
+          if (isEncryptedData(yakklPrimaryAccount.data)) {
+            await decryptData(yakklPrimaryAccount.data, yakklMiscStore).then(result => {
+              yakklPrimaryAccount!.data = result as PrimaryAccountData;
+            });
+          }
+
+          primaryAccountName = yakklPrimaryAccount.name;
+          address = yakklPrimaryAccount.address;
+          wordCount = (yakklPrimaryAccount.data as PrimaryAccountData).wordCount as number;
+          mnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
+          
+          derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${yakklPrimaryAccount.index}'/0/${yakklPrimaryAccount.subIndex}`;
+          displayDate = new Date(createDate);
+
+          successDialog = true;
+        } catch (e) {
+          console.log(`Account Derived: Error inside: ${e}`);
+          throw `${e}`;
+        }
       }).catch(e => {
         console.log(`Account Derived: Error outside: ${e}`);
         throw `${e}`;
@@ -172,7 +167,6 @@
       console.log(errorValue);
     }
   }
-
 
   function handlePrinting() {
     printKit();
@@ -190,29 +184,28 @@
   }
 
   
-async function handleDownload() {
+  async function handleDownload() {
+    let ekAccountData: EmergencyKitAccountData = {
+      id: id,
+      registered: registered,
+      email: email,
+      userName: userName,
+      blockchain: blockchain,
+      portfolioAddress: address,
+      portfolioName: primaryAccountName,
+      subPortfolioAddress: addressDerived,
+      subPortfolioName: accountName,
+      privateKey: privateKey,
+      mnemonic: mnemonic,
+      createDate: createDate,
+      updateDate: updateDate,
+      version: VERSION,
+      hash: '',
+    };
 
-  let ekAccountData: EmergencyKitAccountData = {
-    id: id,
-    registered: registered,
-    email: email,
-    userName: userName,
-    blockchain: blockchain,
-    portfolioAddress: address,
-    portfolioName: primaryAccountName,
-    subPortfolioAddress: addressDerived,
-    subPortfolioName: accountName,
-    privateKey: privateKey,
-    mnemonic: mnemonic,
-    createDate: createDate,
-    updateDate: updateDate,
-    version: VERSION,
-    hash: '',
-  };
-
-  const emergencyKit = await EmergencyKitManager.createEmergencyKit([ekAccountData], true, yakklMiscStore);
-  await EmergencyKitManager.downloadEmergencyKit(emergencyKit);
-}
+    const emergencyKit = await EmergencyKitManager.createEmergencyKit([ekAccountData], true, yakklMiscStore);
+    await EmergencyKitManager.downloadEmergencyKit(emergencyKit);
+  }
 
 </script>
 
@@ -228,7 +221,7 @@ async function handleDownload() {
     <h3 class="text-lg font-bold">ERROR!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {error=false; goto(PATH_ACCOUNTS)}}>Close</button>
+      <button class="btn" on:click={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>

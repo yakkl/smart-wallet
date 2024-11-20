@@ -4,6 +4,7 @@
 import type { AccessList, Log, Transaction } from '$lib/common/evm';
 import type { AccountTypeCategory, BytesLike, NetworkType, RegistrationType, SystemTheme, URL } from '$lib/common/types';
 import type { BigNumberish } from '$lib/common/bignumber';
+import type { Token } from '$lib/plugins/Token';
 
 // Ethereum JSON-RPC request arguments
 export interface RequestArguments {
@@ -15,6 +16,16 @@ export interface EncryptedData {
   data: string;
   iv: string;
   salt?: string;
+}
+
+// src/lib/security/types.ts
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  authProvider: 'password' | 'google' | 'apple' | 'passkey';
 }
 
 // EmergencyKit data for each address. SubPortfolio will be empty if it's a primary account. Every SubPortfolio will have a Portfolio address and name.
@@ -48,6 +59,8 @@ export interface EmergencyKitMetaData {
   subPortfolioName?: string;
   subPortfolioAddress?: string;
   hash?: string;
+  files?: string[];
+  // May want to add addresses for the portfolio and subportfolio at somepoint in the future
 }
 
 export interface EmergencyKitData {
@@ -75,17 +88,44 @@ export interface MetaDataParams {
   transaction?: unknown;
 }
 
+export interface PoolInfo {
+  fee: number;
+  liquidity: string;
+  // quoteAmount: number;
+  price: number;
+  tokenInAmount?: string;  // Converted from bigint to string
+  tokenOutAmount: string; // Converted from bigint to string
+  tokenInReserve: string;
+  tokenOutReserve: string;
+  tokenInPrice: number;
+  tokenOutPrice: number;
+  tvl: number;
+}
 
 export interface PriceData {
   provider: string;
   price: number;
   lastUpdated: Date;
+  contractFeePool?: number; // May be phased out. This is the fee pool for the contract found in PoolInfo as 'fee'
+  isNative?: boolean;
+  status?: number;
+  message?: string;
+  chainId?: number; // This is the chainId of the provider and it's used to determine the network. It's optional only because of a few return type areas but it gets completed later in the call stack.
+  poolInfo?: PoolInfo;
   // Add any other common fields
 }
 
 export interface PriceProvider {
+  getAPIKey(): string;
+  getMarketPrice( pair: string ): Promise<MarketPriceData>; // Enchanced version of getPrice
   getName(): string;
-  getPrice(pair: string): Promise<PriceData>;
+  getProviderPairFormat( pair: string ): Promise<string> | Promise<[ string, string ]>;
+}
+
+export interface SwapPriceProvider extends PriceProvider {
+  getSwapPriceIn( tokenIn: SwapToken, tokenOut: SwapToken, amountOut: BigNumberish, fee: number ): Promise<SwapPriceData>
+  getSwapPriceOut( tokenIn: SwapToken, tokenOut: SwapToken, amountIn: BigNumberish, fee: number ): Promise<SwapPriceData>
+  getPoolInfo( tokenA: SwapToken, tokenB: SwapToken, fee: number ): Promise<PoolInfoData>;
 }
 
 export interface WeightedProvider {
@@ -311,20 +351,45 @@ export interface Transactions {
 }
 // End - Evaluate the need for these interfaces
 
-// export interface Token {
-//   address: string;
+export interface SwapToken {
+  chainId: number;
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  balance?: BigNumberish;
+  logoURI?: string;
+  extensions?: any;
+  isNative?: boolean;
+  isStablecoin?: boolean;
+  description?: string;
+  tags?: string[]; // key
+  version?: string; // Symantic versioning
+};
+
+export interface TokenData extends SwapToken {
+  priceData: PriceData[];
+  volume: number;
+  currentPrice: number;
+  timeline: string; // Can be '24h', '7d', '30d', etc.
+}
+
+
+// export interface SwapTokenListTag {
+//   [key: string]: {
+//     name: string;
+//     description: string;
+//   };
+// };
+
+// export interface SwapTokenList {
 //   name: string;
-//   symbol: string;
-//   decimals: number;
-//   isNative: boolean;
-//   iconUrl: string;
-//   description: string;
-//   chainId: number;
-//   blockchain: Blockchain;
-//   provider: Provider;
-//   privateKey?: string;
-//   getContract(provider: Provider): Promise<AbstractContract>;  
-// }
+//   logoURI: string;
+//   timestamp: string;
+//   tags: SwapTokenListTag[]
+//   tokens: SwapToken[];
+// };
+
 
 export interface Extension {
   id: string;
@@ -790,3 +855,133 @@ export interface YakklNFT {
   meta?: MetaData;
 }
 
+// DEX - Decentralized Exchange specific interfaces
+export interface BasePriceData {
+  provider: string;
+  lastUpdated: Date;
+  chainId?: number;
+  currency?: string;
+  status?: number;
+  message?: string;
+}
+
+// Amounts reference quantity of tokens and Price reference the price of a given token
+export interface SwapPriceData extends BasePriceData {
+  tokenIn: SwapToken;           // Sell token
+  tokenOut: SwapToken;          // Buy token
+  quoteAmount: BigNumberish;    // Amount of token out or in depending on the direction of the swap
+  fundingAddress: string;
+  feeAmount: BigNumberish;      // Fee in the tokenOut or buy side token
+  amountAfterFee: BigNumberish; // Amount of token out or in after fee depending on the direction of the swap
+  amountIn: BigNumberish;       // Amount of sell token
+  amountOut: BigNumberish;      // Amount of buy token
+  exchangeRate: BigNumberish;   // Amount of buy token per sell token
+
+  // MarketPrice
+  marketPriceIn: number;        // Fiat price of tokenIn which updates in interval. It is here so that we can show the price of the tokenIn in the UI
+  marketPriceOut: number;       // Fiat price of tokenOut which updates in interval. It is here so that we can show the price of the tokenOut in the UI. This is only used if priceIn is not available
+  marketPriceGas: number;       // Gas market price
+
+  priceImpactRatio: number;     // Price impact ratio percentage 
+  path: string[];               // Path of tokens for the swap
+  fee?: number;                 // Pool fee if used by the provider
+  feeBasisPoints: number;       // Fee in basis points - constant - YAKKL_FEE_BASIS_POINTS
+  feeAmountPrice: number;       // Fee in price 
+  feeAmountInUSD?: string;      // Fee in USD formatted
+  gasEstimate: BigNumberish;    // Gas estimate for the swap
+  gasEstimateInUSD?: string;    // Gas estimate in USD formatted
+  tokenOutPriceInUSD?: string;  // Token out price in USD formatted
+
+  slippageTolerance?: number;        // Slippage percentage
+  deadline?: number;                 // Deadline for the swap
+  
+  sqrtPriceX96After?: BigNumberish;  // Uniswap specific - sqrtPriceX96 after the swap
+  initializedTicksCrossed?: number;  // Uniswap specific - initialized ticks crossed
+  poolInfo?: PoolInfo;               // Uniswap specific - Pool information
+  multiHop?: boolean;                // Uniswap specific - Multi-hop swap
+
+  error?: any;
+  isLoading?: boolean;
+}
+
+// export interface UniswapSwapPriceData extends SwapPriceData {
+//   poolInfo: PoolInfo;
+//   sqrtPriceX96After: BigNumberish;
+//   initializedTicksCrossed: number;
+// }
+
+export interface MarketPriceData extends BasePriceData {
+  price: number;
+  pair?: string;
+  isNative?: boolean;
+}
+
+export interface PoolInfoData extends BasePriceData {
+  fee?: number;
+  liquidity: string;
+  sqrtPriceX96: string;
+  tick: number;
+  tokenInReserve: string;
+  tokenOutReserve: string;
+  tokenInUSDPrice: string;
+  tokenOutUSDPrice: string;
+  tvl: number;
+}
+
+export interface GraphTick {
+  tickIdx: string;
+  liquidityGross: string;
+  liquidityNet: string;
+}
+
+// interfaces.ts (add these)
+export interface SwapCalculation {
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  yakklFee: BigNumberish;
+  poolFee: BigNumberish;
+  gasEstimate: BigNumberish;
+  priceImpact: number;
+  exchangeRate?: BigNumberish;
+}
+
+export interface PoolPriceData {
+  price: number;
+  token0Price: number;
+  token1Price: number;
+  token0Reserve: string;
+  token1Reserve: string;
+  liquidityUSD: number;
+  priceImpact: number;
+}
+
+// interfaces.ts (add this)
+export interface SwapQuote {
+  amountIn: BigNumberish;
+  amountOut: BigNumberish;
+  priceImpact: number;
+  path: string[];
+  fee: number;
+  feeBasisPoints?: BigNumberish;
+  gasEstimate: BigNumberish;
+}
+
+export interface SwapParams {
+  tokenIn: Token;
+  tokenOut: Token;
+  amount: BigNumberish;
+  slippage: number;
+  deadline: number;
+  recipient: string;
+}
+
+export interface ExactInputSingleParams {
+  tokenIn: string;
+  tokenOut: string;
+  fee: number;
+  recipient: string;
+  deadline: number;
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  sqrtPriceLimitX96: number;
+}

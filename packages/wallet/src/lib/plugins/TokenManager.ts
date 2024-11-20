@@ -24,10 +24,11 @@ export class TokenManager {
         data.name,
         data.symbol,
         data.decimals,
-        data.iconUrl,
+        data.logoURI,
         data.description,
         data.chainId,
         data.isNative,
+        data.isStablecoin,
         this.blockchain,
         this.provider,
         data.privateKey

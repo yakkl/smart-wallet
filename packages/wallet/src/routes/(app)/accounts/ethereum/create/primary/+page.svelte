@@ -3,13 +3,13 @@
   import { Button, Modal, Spinner } from 'flowbite-svelte';
   import { getProfile, getMiscStore, getSettings } from '$lib/common/stores';
   import { yakklRegisteredData } from '$lib/models/dataModels';
-  import { decryptData, type Profile, type EncryptedData, type ProfileData, type PrimaryAccountData, type YakklPrimaryAccount, isEncryptedData, type PrimaryAccountReturnValues, type Settings, type EmergencyKitAccountData } from '$lib/common';
-  import { DEFAULT_DERIVED_PATH_ETH, VERSION, PATH_WELCOME, DEFAULT_TITLE, PATH_ACCOUNTS } from '$lib/common';
+  import { decryptData, type Profile, type ProfileData, type PrimaryAccountData, type YakklPrimaryAccount, isEncryptedData, type PrimaryAccountReturnValues, type Settings, type EmergencyKitAccountData } from '$lib/common';
+  import { DEFAULT_DERIVED_PATH_ETH, VERSION, PATH_WELCOME, DEFAULT_TITLE } from '$lib/common';
   import { goto } from '$app/navigation';
-  import { dateString } from '$lib/common/datetime';
+  // import { dateString } from '$lib/common/datetime';
   import { createPortfolioAccount } from '$lib/plugins/networks/ethereum/createPortfolioAccount';
 	import { onMount } from 'svelte';
-	import { EmergencyKitManager } from '$lib/common/emergencykit';
+	import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
   // import ErrorModal from '$lib/components/ErrorModal.svelte';
   // import { jsPDF } from "jspdf";
 

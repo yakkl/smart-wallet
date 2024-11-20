@@ -18,6 +18,30 @@ import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser; 
 if (browserSvelte) browser_ext = getBrowserExt();
 
+
+export function formatPrice( price: number ): string {
+  try {
+    const formattedPrice = new Intl.NumberFormat( 'en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    } ).format( price );
+
+    return formattedPrice;
+  } catch ( error ) {
+    console.log( 'formatPrice - SwapTokenPrice and price to format:', error, price );
+    return price.toString();
+  }
+}
+
+export function formatBasisPointsToPercentage( basisPoints: number ): string {
+  // Convert basis points to percentage by dividing by 1000
+  const percentage = basisPoints / 1000;
+  // Format to three decimal places and trim any trailing zeros
+  return `${ percentage.toFixed( 3 ).replace( /\.?0+$/, '' ) }%`;
+}
+
 // gets or sets a default value safely
 export function getOrDefault<T>(value: T | undefined, defaultValue: T): T {
   return value === undefined ? defaultValue : value;
@@ -33,6 +57,18 @@ function updateProfile(p: Profile) {
 }
 **/
 
+export function safeConvertBigIntToNumber( bigIntValue: bigint ): number {
+  if ( bigIntValue < BigInt( Number.MIN_SAFE_INTEGER ) || bigIntValue > BigInt( Number.MAX_SAFE_INTEGER ) ) {
+    throw new Error( 'BigInt value is outside the safe integer range' );
+  }
+  return Number( bigIntValue );
+}
+
+// Function to get the currency code for the user's locale
+export function getCurrencyCodeForUserLocale(): string | undefined {
+  const options = new Intl.NumberFormat( navigator.language, { style: 'currency', currency: 'USD' } ).resolvedOptions();
+  return options.currency;
+}
 
 // Increments a property on an object safely. If maxValue is provided, the property will not be incremented beyond that value.
 export function incrementProperty<T extends object, K extends keyof T>(obj: T, property: K, incrementValue: number = 1, maxValue: number = -1): void {
@@ -205,6 +241,11 @@ export function getNetworkInfo(chainId: number) {
     //   explorer = 'https://goerli.etherscan.io';
     //   break;
     // case "0xaa36a7":
+    case 1301:
+      blockchain = 'Unichain';
+      type = 'Testnet';
+      explorer = 'https://sepolia.uniscan.xyz/';
+      break;
     case 11155111:
       blockchain = 'Ethereum';
       type = 'Sepolia';
@@ -288,6 +329,8 @@ export async function createHash(val: string) {
 
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
+// Do not use this for objects that have functions or circular references.
+// Do not use this on boolean - it will return null.
 export function deepCopy<T>(obj: T) {
   if (!obj) return null;
   return JSON.parse(encodeJSON(obj));

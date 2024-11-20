@@ -17,7 +17,7 @@ import {
 	yakklPreferences,
 	yakklChats,
 	yakklBlockedList
-} from '$lib/models/dataModels.js';
+} from '$lib/models/dataModels';
 import {
 	STORAGE_YAKKL_REGISTERED_DATA,
 	STORAGE_YAKKL_ACCOUNTS,
@@ -55,7 +55,8 @@ import type {
 	YakklConnectedDomain,
 	YakklChat,
 	GasTransStore,
-	ContractData
+	ContractData,
+	// PriceData
 } from '$lib/common/interfaces';
 
 
@@ -147,7 +148,9 @@ export const yakklGasTransStore = writable<GasTransStore | undefined>(undefined)
 export const yakklContactStore = writable<YakklContact | null>(undefined); // The single selcted contact from the yakklContactsStore list
 export const yakklAccountStore = writable<YakklAccount>(undefined); // The single selcted account from the yakklAccountsStore list
 export const yakklWalletProvidersStore = writable<string[]>([]);
-export const yakklWalletBlockchainsStore = writable<string[]>([]);
+export const yakklWalletBlockchainsStore = writable<string[]>( [] );
+// export const yakklPriceStore = writable<PriceData | null>( null );
+
 
 // yakklGPTRunningStore and yakklGPTKeyStore are used for the GPT API
 export const yakklGPTRunningStore = writable(false); // Single indicator for GPT running or not
@@ -170,46 +173,45 @@ export function onError(e: any) {
 }
 
 // Anytime any local storage changes then we set the Svelte memory stores to keep things in sync
-// export function storageChange(changes: any) {
-	// console.log('Storage change:', changes);
-	// try {
-	// 	if (changes.yakklPreferences) {
-	// 		setPreferencesStore(changes.yakklPreferences.newValue);
-	// 	}
-	// 	if (changes.yakklSettings) {
-	// 		setSettingsStore(changes.yakklSettings.newValue);
-	// 	}
-	// 	if (changes.profile) {
-	// 		setProfileStore(changes.profile.newValue);
-	// 	}
-	// 	if (changes.yakklCurrentlySelected) {
-	// 		setYakklCurrentlySelectedStore(changes.yakklCurrentlySelected.newValue);
-	// 	}
-	// 	if (changes.yakklWatchList) {
-	// 		setYakklWatchListStore(changes.yakklWatchList.newValue);
-	// 	}
-	// 	if (changes.yakklAccounts) {
-	// 		setYakklAccountsStore(changes.yakklAccounts.newValue);
-	// 	}
-	// 	if (changes.yakklPrimaryAccounts) {
-	// 		setYakklPrimaryAccountsStore(changes.yakklPrimaryAccounts.newValue);
-	// 	}
-	// 	if (changes.yakklContacts) {
-	// 		setYakklContactsStore(changes.yakklContacts.newValue);
-	// 	}
-	// 	if (changes.yakklChats) {
-	// 		setYakklChatsStore(changes.yakklChats.newValue);
-	// 	}
-	// 	if (changes.yakklConnectedDomains) {
-	// 		setYakklConnectedDomainsStore(changes.yakklConnectedDomains.newValue);
-	// 	}
-	// 	if (changes.yakklBlockedList) {
-	// 		setYakklBlockedListStore(changes.yakklBlockedList.newValue);
-	// 	}
-	// } catch (error) {
-	// 	console.log(error);
-	// }
-// }
+export function storageChange(changes: any) {
+	try {
+		if (changes.yakklPreferences) {
+			setPreferencesStore(changes.yakklPreferences.newValue);
+		}
+		if (changes.yakklSettings) {
+			setSettingsStore(changes.yakklSettings.newValue);
+		}
+		if (changes.profile) {
+			setProfileStore(changes.profile.newValue);
+		}
+		if (changes.yakklCurrentlySelected) {
+			setYakklCurrentlySelectedStore(changes.yakklCurrentlySelected.newValue);
+		}
+		if (changes.yakklWatchList) {
+			setYakklWatchListStore(changes.yakklWatchList.newValue);
+		}
+		if (changes.yakklAccounts) {
+			setYakklAccountsStore(changes.yakklAccounts.newValue);
+		}
+		if (changes.yakklPrimaryAccounts) {
+			setYakklPrimaryAccountsStore(changes.yakklPrimaryAccounts.newValue);
+		}
+		if (changes.yakklContacts) {
+			setYakklContactsStore(changes.yakklContacts.newValue);
+		}
+		if (changes.yakklChats) {
+			setYakklChatsStore(changes.yakklChats.newValue);
+		}
+		if (changes.yakklConnectedDomains) {
+			setYakklConnectedDomainsStore(changes.yakklConnectedDomains.newValue);
+		}
+		if (changes.yakklBlockedList) {
+			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
+		}
+	} catch (error) {
+		console.log(error);
+	}
+}
 
 export async function syncStoresToStorage() {
 	try {
@@ -353,6 +355,11 @@ export function getYakklConnectionStore() {
 	const store = get(yakklConnectionStore);
 	return store;
 }
+
+// export function getYakklPriceStore() {
+// 	const store = get(yakklPriceStore);
+// 	return store;
+// }
 
 // --------------------------------
 // Call these for setting memory data store only
@@ -519,9 +526,17 @@ export function setYakklConnectionStore(values: boolean) {
 	return store;
 }
 
-export function setYakklContractStore(values: ContractData) {
-  yakklContractStore.set(values);
+export function setYakklContractStore( values: ContractData ) {
+	const store = get(yakklContractStore);
+	yakklContractStore.set( values );
+	return store;
 }
+
+// export function setYakklPriceStore(values: PriceData | null) {
+// 	const store = get(yakklPriceStore);
+// 	yakklPriceStore.set(values);
+// 	return store;
+// }
 
 // --------------------------------
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Provider } from '$plugins/Provider';
 import type { Blockchain } from '$plugins/Blockchain';
@@ -20,6 +21,7 @@ import { Ethereum, EthereumSigner } from '$plugins/blockchains';
 import { writable } from 'svelte/store';
 import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
 import type { Token } from '$plugins/Token';
+import { TokenService } from './blockchains/evm/TokenService';
 
 export const walletStore = writable<Wallet | null>(null);
 
@@ -37,6 +39,7 @@ export class Wallet {
   private apiKey: string | null = null;
   private chainId: number;
   private privateKey: string | null = null; // This is the user's private key
+  private tokenService: TokenService<any> | null = null;
 
   /**
    * Creates an instance of Wallet.
@@ -44,12 +47,40 @@ export class Wallet {
    * @param blockchainNames - List of blockchain names.
    * @param privateKey - Optional private key for the wallet.
    */
-  constructor(private providerNames: string[] = ['Alchemy'], private blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null) {
+  constructor(private providerNames: string[] = ['Alchemy'], private blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null, privateKey: string | null = null) {
     this.apiKey = apiKey;  // Set the private key if provided else use setPrivateKey method before attempting to send transactions - This is the provider API Key and not the user's private key
     this.chainId = chainId; // Have to do this before initializing the wallet
     this.setChainId(chainId);
+    this.privateKey = privateKey; // This is the user's private key
     this.initialize();
     Wallet.setInstance(this); // Any change to the wallet instance should update the store
+  }
+
+  /**
+ * Initializes the wallet by setting up providers and blockchains.
+ */
+  private initialize(): void {
+    if ( this.providerNames.length > 0 ) {
+      // Initialize all providers
+      const providers = this.providerNames.map( name => ProviderFactory.createProvider( { name, apiKey: this.apiKey, chainId: this.chainId } ) );
+      // Set the first provider as the primary provider
+      this.provider = providers[ 0 ];
+      // Initialize the blockchain with all providers
+      const blockchainName = this.getBlockchainFromChainId( this.chainId );
+      this.blockchain = BlockchainFactory.createBlockchain( blockchainName, providers );
+      this.tokenService = new TokenService<any>( this.blockchain as Ethereum);
+    }
+
+    this.setupEventListeners();
+    if ( this.privateKey ) {
+      this.setSigner( this.privateKey );
+    }
+    Wallet.setInstance( this );
+  }
+
+
+  private static setInstance( instance: Wallet ): void {
+    walletStore.set( instance );
   }
 
   /**
@@ -140,6 +171,10 @@ export class Wallet {
     }
   }
 
+  public getTokenService(): TokenService<any> | null {
+    return this.tokenService;
+  }
+    
   public getChainId(): number {
     return this.chainId;
   }
@@ -181,34 +216,11 @@ export class Wallet {
   }
 
   /**
-   * Initializes the wallet by setting up providers and blockchains.
-   */
-  private initialize(): void {
-    if (this.providerNames.length > 0) {
-      // Initialize all providers
-      const providers = this.providerNames.map(name => ProviderFactory.createProvider({ name, apiKey: this.apiKey, chainId: this.chainId }));
-      // Set the first provider as the primary provider
-      this.provider = providers[0];  
-      // Initialize the blockchain with all providers
-      const blockchainName = this.getBlockchainFromChainId(this.chainId);
-      this.blockchain = BlockchainFactory.createBlockchain(blockchainName, providers);
-    }
-  
-    this.setupEventListeners();
-    Wallet.setInstance(this);
-  }
-
-  
-  private static setInstance(instance: Wallet): void {
-    walletStore.set(instance);
-  }
-
-  /**
    * Handles provider connected event.
    * @param data - Data containing provider, blockchain, and chainId.
    */
   private onProviderConnected(data: { provider: string, blockchain: string, chainId: number }): void {
-    console.log(`onConnected to ${data.provider} on ${data.blockchain} with chainId ${data.chainId}`);
+    // console.log(`onConnected to ${data.provider} on ${data.blockchain} with chainId ${data.chainId}`);
     Wallet.setInstance(this);
   }
 
@@ -217,7 +229,7 @@ export class Wallet {
    * @param data - Data containing address and balance.
    */
   private onBalanceFetched(data: { address: string, balance: bigint }): void {
-    console.log(`onBalance event for fetched ${data.address}: XXXXXXXX`, this.chainId);
+    // console.log(`onBalance event for fetched ${data.address}: XXXXXXXX`, this.chainId);
     Wallet.setInstance(this);
   }
 
@@ -226,7 +238,7 @@ export class Wallet {
    * @param data - Data containing old provider and new provider.
    */
   private onProviderSwitched(data: { oldProvider: string, newProvider: string }): void {
-    console.log(`onProvider switched from ${data.oldProvider} to ${data.newProvider}`);
+    // console.log(`onProvider switched from ${data.oldProvider} to ${data.newProvider}`);
     Wallet.setInstance(this);
   }
 
@@ -235,7 +247,7 @@ export class Wallet {
    * @param data - Data containing provider, method, and error.
    */
   private onError(data: { provider: string, method: string, error: any }): void {
-    console.log(`onError in provider ${data.provider}, method ${data.method}:`, data.error);
+    // console.log(`onError in provider ${data.provider}, method ${data.method}:`, data.error);
     Wallet.setInstance(this);
   }
 
@@ -244,7 +256,7 @@ export class Wallet {
    * @param data - Data containing provider, method, params, and result.
    */
   private onRequestMade(data: { provider: string, method: string, params: any[], result: any }): void {
-    console.log(`onRequest made to ${data.provider} with method ${data.method}:`, data.result);
+    // console.log(`onRequest made to ${data.provider} with method ${data.method}:`, data.result);
     Wallet.setInstance(this);
   }
 
@@ -294,19 +306,17 @@ export class Wallet {
   /**
    * Sets the signer for the wallet based on the current token and private key.
    */
-  public setSigner(privateKey: string | null): Promise<Signer> {
-    // if (!this.currentToken) {
-    //   throw new Error('Current token is not set');
-    // }
+  public setSigner(privateKey: string | null): Promise<Signer> | null {
     try {
       if (!this.blockchain) {
-        throw new Error('Blockchain is not initialized');
+        console.log( 'Blockchain is not initialized yet' );
+        return null;
       }
-
-      if (!privateKey) {
-        throw new Error('Private key is not set. You MUST provide a valid user private key before sending transactions.');
+      // privateKey can be null if the system is initializing so we simply log and return
+      if (!privateKey && !this.privateKey) {
+        console.log('No private key provided yet');
+        return null;
       }
-
       switch ( this.blockchain.name ) { //this.currentToken.blockchain.name) {
         case 'Ethereum':
           this.signer = new EthereumSigner(privateKey, this.provider);
@@ -341,7 +351,6 @@ export class Wallet {
         default:
           throw new Error(`Unsupported blockchain: ${this.blockchain.name}`);  //${this.currentToken.blockchain.name}`);
       }
-
       if (this.signer) {
         this.privateKey = privateKey; // Set the private key for the user for signing transactions of the current token.
         Wallet.setInstance(this);
@@ -351,9 +360,12 @@ export class Wallet {
         throw new Error('Signer could not be created');
       }
     } catch (error) {
-      console.log('Error setting signer:', error);
       return Promise.reject(error);
     }
+  }
+
+  public getSigner(): Signer | null {
+    return this.signer;
   }
 
   // SwitchNetwork is implemented with setChainId since the provider and blockchain remain the same.
@@ -436,26 +448,26 @@ export class Wallet {
       if (!this.privateKey) {
         throw new Error('Private key not set');
       } else {
+        console.log('Setting signer with private key - again!! :', this.privateKey);
+
         await this.setSigner(this.privateKey);
       }
     }
+
     if (!this.blockchain || !this.provider || !this.signer) {
       console.log('Blockchain, Provider, Signer:', this.blockchain, this.provider, this.signer);
       throw new Error('Blockchain or Provider or Signer not initialized');
     }
 
-    const gasEstimate = await this.blockchain.getGasEstimate(transaction);
+    // Implement gas estimation - Found an issue the FeeProvider model (not complete). 
+    // const gasEstimate = await this.blockchain.getGasEstimate(transaction);
 
     // Apply the gas estimate to the transaction
-    transaction.gasLimit = gasEstimate.gasLimit;
-    transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
-    transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
+    // transaction.gasLimit = gasEstimate.gasLimit;
+    // transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
+    // transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
 
     console.log('Sending transaction to provider:', transaction);
-    // const response = await this.provider.sendTransaction(transaction);
-
-    // Wallet.setInstance(this);
-    // return response;
     return await this.blockchain.sendTransaction(transaction);
   }
 

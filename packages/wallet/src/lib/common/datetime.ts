@@ -14,6 +14,9 @@ export function dateString() {
 
 export function getTime(): number { return (new Date()).getTime(); }
 
+export function formatDate( date: Date ): string {
+  return date.toLocaleString();
+}
 
 export function formatTimestamp(
   timestamp: Timestamp,

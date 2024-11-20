@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
@@ -43,13 +43,14 @@ contract SwapRouter is ReentrancyGuard, Ownable, Pausable {
     event LogError(string message, string reason);
     event LogBytes(string message, bytes data);
 
+
     constructor(
         address _uniswapRouter,
         address _WETH9,
         address _feeManager,
         address _quoter,
         address _factory
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         require(_uniswapRouter != address(0), "Invalid Uniswap router");
         require(_WETH9 != address(0), "Invalid WETH9 address");
         require(_feeManager != address(0), "Invalid FeeManager address");

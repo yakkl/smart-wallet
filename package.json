@@ -26,13 +26,30 @@
     "build:contracts": "npm run build -w contracts",
     "test:contracts": "npm run test -w contracts"
   },
-  "version": "1.0.1",
+  "version": "1.1.5",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
-  "keywords": ["crypto", "ethereum", "wallet", "browser-extension"],
+  "keywords": [
+    "crypto",
+    "ethereum",
+    "wallet",
+    "browser-extension"
+  ],
   "author": "YAKKL",
   "devDependencies": {
     "install": "^0.13.0",
-    "npm": "^10.8.2"
+    "jsbi": "^4.3.0",
+    "npm": "^10.8.2",
+    "svelte-feather-icons": "^4.1.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@uniswap/v3-periphery": "^1.4.4",
+    "chart.js": "^4.4.4",
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "svelte-chartjs": "^3.1.5"
   }
 }

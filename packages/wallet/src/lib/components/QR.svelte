@@ -22,7 +22,6 @@
   });
 </script>
 
-<!-- class="flex mx-auto justify-center w-full h-full" -->
 <div class="flex mx-auto justify-center w-full h-full" bind:this={node}></div>
 
 <style>

@@ -17,7 +17,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { truncate, handleOpenInTab, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices, getPricesCoinbase } from '$lib/tokens/prices';
+  import { startCheckPrices, stopCheckPrices, getPricesCoinbase, checkPricesCB } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import { AccountTypeCategory, NetworkType, RegistrationType, isEncryptedData, 
     type CurrentlySelectedData, type Network, type Profile, type ProfileData, 
@@ -29,6 +29,10 @@
   import WalletManager from '$lib/plugins/WalletManager';
   import { Wallet } from '$lib/plugins/Wallet';
   import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+	import Accounts from './Accounts.svelte';
+	import Contacts from './Contacts.svelte';
+	import Receive from './Receive.svelte';
+	import ImportPrivateKey from './ImportPrivateKey.svelte';
 
   export let id = "card";
   
@@ -62,6 +66,7 @@
   let nameShow: string;
   let valueFiat = '0.00';
   let showAccountsModal = false;
+  let showAccountImportModal = false;
   let showContacts = false;
   let showRecv = false;
   let userName = $yakklUserNameStore;
@@ -162,14 +167,7 @@
 
   async function startPricingChecks() {
     // Keep checking the prices
-    startCheckPrices(checkPricesProvider, checkPricesInterval);
-    // If the value === 0 then stop the checks
-    // const numValue = shortcutsValue.toNumber();
-    // if (numValue !== null && numValue > 0) {
-    //   startCheckPrices(checkPricesProvider, checkPricesInterval);
-    // } else {
-    //   stopCheckPrices();
-    // }
+    await startCheckPrices(checkPricesProvider, checkPricesInterval);
   }
 
   onDestroy(async () => {
@@ -228,7 +226,7 @@
 
           // Set the modified copy back to the store
           yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);    
+          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
         }
         return;
       }
@@ -236,11 +234,14 @@
       currentlySelected = $yakklCurrentlySelectedStore;
 
       if (currentlySelected.shortcuts.address) {
-        startPricingChecks();
+        startPricingChecks(); // Start the price checks if not already started else it will just return
         if (!$yakklPricingStore?.price) {
-          getPricesCoinbase('eth-usd').then(results => {
-            yakklPricingStore.set({ provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price });
-          });
+
+          checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
+          // getPricesCoinbase('eth-usd').then(results => {
+          //   console.log('Price results:>>>>>>>>>>>>>>>>>>>>>', results);
+          //   $yakklPricingStore = { provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price };
+          // });
         }
 
         // Convert the value to EthereumBigNumber
@@ -422,6 +423,24 @@
     showAccountsModal = false;
   }
 
+  async function handleContact() {
+    try {
+      showAccountImportModal = false;
+      updateValuePriceFiat();
+      goto(PATH_WELCOME);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async function handleImport() {
+    try {
+      console.log('handleImport - selected');
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async function handleNetworkTypeChange(net: Network) {
     try {
       if ($yakklCurrentlySelectedStore) {
@@ -565,142 +584,13 @@
 <p>o_o</p>
 {:then _}
 {#if $yakklAccountsStore != undefined}
-<Modal title="Account List" bind:open={showAccountsModal} size="xs" class="p-4" autoclose> 
-  <p class="text-sm font-normal text-gray-500 dark:text-gray-400">Select the account you wish to make current</p>
-  <ul class="my-4 space-y-3">
-    {#each $yakklAccountsStore as account, i}
-    {#if account.accountType === AccountTypeCategory.PRIMARY}
-    <li class="my-2">
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-primary rounded-lg hover:bg-primary-focus group hover:shadow">
-        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
-          <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
-          <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
-          <path fill="#454A75" d="M539.7 650.3v564.4l539.8-319.1z"/>
-          <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
-          <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
-        </svg>
-        <div class="flex flex-1 flex-col ml-2 text-base-content">
-          <span class="text-sm font-bold">PORTFOLIO</span>
-          <div class="flex flex-row">
-            <span id='p{i}' class="text-sm font-bold text-left">{account.name}</span>
-            <input id="ename{i}"
-              class="w-full text-gray-700 bg-gray-100 border border-solid border-gray-300 transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-              autocomplete="off" 
-              value="{$form.email}" hidden/>
-          </div>
-          <span class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
-        </div>
-      </a>
-    </li>
-    {:else if account.accountType === AccountTypeCategory.SUB}
-    <li class="my-2 ml-3">
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-secondary rounded-lg hover:bg-secondary-focus group hover:shadow">
-        <div class="flex flex-1 flex-col text-base-content">
-          <span class="text-sm font-bold">SUB-PORTFOLIO</span>
-          <span class="text-sm font-bold">{account.name}</span>
-          <span id='s{i}' class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
-        </div>
-      </a>
-    </li>
-    {:else}
-    <li class="my-2">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a role="button" on:click|preventDefault={() => handleAccounts(account)} class="flex items-center p-2 text-base-content bg-accent rounded-lg hover:bg-accent-focus group hover:shadow">
-        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
-          <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
-          <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
-          <path fill="#454A75" d="M539.7 650.3v564.4l539.8-319.1z"/>
-          <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
-          <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
-        </svg>
-        <div class="flex flex-1 flex-col ml-2 text-base-content">
-          <span class="text-sm font-bold">IMPORTED</span>
-          <span class="text-sm font-bold">{account.name}</span>
-          <span id='i{i}' class="text-xs font-bold">{account.address}</span>
-          <!-- <span class="text-xs font-bold">{formatEther(account.value)} {symbolLabel}</span> -->
-        </div>
-      </a>
-    </li>
-    {/if}
-    {/each}
-    {#if $yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.address === YAKKL_ZERO_ADDRESS}
-    <p class="text-lg font-bold">There are no Portfolio Accounts to display! Create at least one Portfolio account!</p>
-    {/if}
-  </ul>
-  <svelte:fragment slot='footer'>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">Whatever account you select will become your <span class="border-b-2 underline underline-offset-8">active</span> account!</p>
-  </svelte:fragment>
-</Modal>
+<Accounts bind:show={showAccountsModal} onAccountSelect={handleAccounts} className="text-gray-600"/>
 
-<Modal title="Contact List" bind:open={showContacts} size="xs" class="p-4">
-  <p class="text-sm font-normal text-gray-700 dark:text-gray-400">List of contacts</p>
-  {#if $yakklContactsStore}
-  <ul class="my-4 space-y-3">
-    {#each $yakklContactsStore as contact}
-    <li class="my-2">
-      <div class="flex items-center p-2 text-base text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 group hover:shadow dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="w-6 h-6" fill="none" viewBox="-161.97 -439.65 1403.74 2637.9">
-          <path fill="#8A92B2" d="M539.7 650.3V0L0 895.6z"/>
-          <path fill="#62688F" d="M539.7 1214.7V650.3L0 895.6zm0-564.4l539.8 245.3L539.7 0z"/>
-          <path fill="#454A75" d="M539.7 650.3v564.4l539.8-319.1z"/>
-          <path fill="#8A92B2" d="M539.7 1316.9L0 998l539.7 760.6z"/>
-          <path fill="#62688F" d="M1079.8 998l-540.1 318.9v441.7z"/>
-        </svg>
-        <div class="flex flex-1 flex-col ml-2">
-          <span class="text-sm font-bold">{contact.name}</span>
-          <span class="text-xs font-mono">{contact.address}</span>
-          <span class="text-xs font-mono">{contact.alias}</span>
-          <span class="text-xs font-mono">{contact.note}</span>
-        </div>
-      </div>
-    </li>
-    {/each}
-  </ul>
-  {:else}
-  <div class="text-center text-md text-gray-700 dark:text-gray-400">
-    There are currently no contacts! You can add contacts in the 'Accounts' area.
-  </div>
-  {/if}
-</Modal>
+<Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
-<Modal title="Receive" bind:open={showRecv} size="xs" class="xs" color="default"> 
-  <div class="text-center prose">
-    <div class="mb-4">
-      {#if $yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.address !== YAKKL_ZERO_ADDRESS}
-      <QR qrText={address}/>
-      {:else}
-      <p class="text-lg font-bold">There are no Portfolio Accounts to display! Create at least one Portfolio account!</p>      
-      {/if}
-    </div>
+<Receive bind:show={showRecv} address={address} />
 
-    {#if $yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.address !== YAKKL_ZERO_ADDRESS}
-    <div class="border border-base-300 rounded-lg w-full mb-2 p-2 ">
-      <p class="text-xs font-semibold text-gray-800 dark:text-white" data-bs-toggle="tooltip" data-bs-placement="top" title={address}>{address}
-        <button class="clip w-4 h-4 ml-1 mt-0.5" data-clipboard-action="copy" data-clipboard-target="#pkey1" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy Address!">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stroke-base-300 hover:stroke-base-100 dark:stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-          </svg>
-        </button>
-        <input id="pkey1" value=":yakkl:{address}" type="hidden">
-      </p>
-    </div>
-    {/if}
-    <Button on:click={() => {showRecv=false}}>Close</Button>
-  </div>
-  <svelte:fragment slot='footer'>
-    <p class="text-sm font-normal">Scan the barcode for your mobile device or click the copy button so you can paste it.</p>
-  </svelte:fragment>
-</Modal>
+<ImportPrivateKey bind:show={showAccountImportModal} onComplete={handleImport} className="text-gray-600 z-[999]"/>
 
 <Modal title="Upgrade to Premier" bind:open={upgrade} size="xs" class="xs" color="purple"> 
   <div class="text-center m-2">
@@ -764,8 +654,6 @@
 {/if}
 {/await}
 
-
-
 <Toast color="green" transition={slide} bind:toastStatus>
   <svelte:fragment slot="icon">
     {#if toastType === 'success'}
@@ -777,8 +665,6 @@
   {toastMessage}
 </Toast>
 
-
-
 <div class="visible print:hidden relative top-0 mx-2">
   <div style="z-index: 4; background-image: url('/images/{card}'); " class="visible print:hidden relative m-2 ml-0 mr-0 h-[261px] rounded-xl">
     <div class="grid grid-rows-5 gap-1 h-full">
@@ -789,33 +675,38 @@
 
       <SpeedDial defaultClass="absolute right-1 bottom-1 z-10 bg-primary rounded-full" pill={false} tooltip="none" placement='bottom'>
         <svg slot="icon" aria-hidden="true" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)}>
-          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
-            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
-            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
-          </svg>            
-        </SpeedDialButton> 
-        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)}>
-          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
-            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h10.5A2.25 2.25 0 0118 4.25v10.5A2.25 2.25 0 0115.75 18h-10.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
-            <path fill-rule="evenodd" d="M8.704 10.943l1.048.943H3.75a.75.75 0 000 1.5h6.002l-1.048.943a.75.75 0 101.004 1.114l2.5-2.25a.75.75 0 000-1.114l-2.5-2.25a.75.75 0 10-1.004 1.114z" clip-rule="evenodd" />
+        <SpeedDialButton name="Accounts" on:click={() => {showAccountsModal = true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
           </svg>
-        </SpeedDialButton> 
-        <SpeedDialButton name="Receive" on:click={() => {showRecv=true}}>
+        </SpeedDialButton>
+        <SpeedDialButton name="Contacts" on:click={() => {showContacts = true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+          </svg>
+        </SpeedDialButton>
+        <SpeedDialButton name="Receive" on:click={() => {showRecv=true}} btnDefaultClass="w-16">
           <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 9.375v-4.5zM4.875 4.5a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875.375c0-1.036.84-1.875 1.875-1.875h4.5C20.16 3 21 3.84 21 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 01-1.875-1.875v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zM6 6.75A.75.75 0 016.75 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75A.75.75 0 016 7.5v-.75zm9.75 0A.75.75 0 0116.5 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM3 14.625c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.035-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 19.125v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875-.75a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM6 16.5a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm9.75 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm-3 3a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75z" clip-rule="evenodd" />          
           </svg>
         </SpeedDialButton>
-        <SpeedDialButton name="Contact" on:click={() => {showContacts = true}}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+        <SpeedDialButton name="Import Account" on:click={() => {showAccountImportModal = true}} btnDefaultClass="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
         </SpeedDialButton>
-        <SpeedDialButton name="Account" on:click={() => {showAccountsModal = true}}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
-            <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)} btnDefaultClass="w-16">
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
+            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h10.5A2.25 2.25 0 0118 4.25v10.5A2.25 2.25 0 0115.75 18h-10.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M8.704 10.943l1.048.943H3.75a.75.75 0 000 1.5h6.002l-1.048.943a.75.75 0 101.004 1.114l2.5-2.25a.75.75 0 000-1.114l-2.5-2.25a.75.75 0 10-1.004 1.114z" clip-rule="evenodd" />
           </svg>
-        </SpeedDialButton>
+        </SpeedDialButton> 
+        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)} btnDefaultClass="w-16">
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
+            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
+          </svg>            
+        </SpeedDialButton> 
       </SpeedDial>
 
       <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
