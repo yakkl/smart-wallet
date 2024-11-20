@@ -17,22 +17,35 @@ export class CoinbasePriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
+
+      pair = await this.getProviderPairFormat( pair );
+      
       const [ tokenIn, tokenOut ] = pair.split( '-' );
       if ( !tokenIn || !tokenOut ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
+
+      if ( tokenIn === 'USDC' ) {
+        // Coinbase has declared USD:USDC as an alias to each other and always $1 in value
+        return {
+          provider: this.getName(),
+          price: parseFloat( "1.00" ),
+          lastUpdated: new Date(),
+          currency: tokenOut,
+          status: 0,
+          message: ''
+        };
+      }
+
       if ( tokenIn === 'WETH' ) {
         pair = `ETH-${ tokenOut }`;
       }
       if ( tokenIn === 'WBTC' ) {
         pair = `BTC-${ tokenOut }`;
       }
-      // console.log( 'CoinbasePriceProvider - getPrice - pair', pair );
     
       const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
     
-      // console.log( 'CoinbasePriceProvider - getPrice - json', json );
-
       if ( json.num_products <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
       }
@@ -65,5 +78,9 @@ export class CoinbasePriceProvider implements PriceProvider {
         message,
       };
     }
+  }
+
+  async getProviderPairFormat( pair: string ) {
+    return pair;
   }
 }

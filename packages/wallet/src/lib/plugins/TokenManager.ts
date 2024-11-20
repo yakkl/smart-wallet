@@ -28,6 +28,7 @@ export class TokenManager {
         data.description,
         data.chainId,
         data.isNative,
+        data.isStablecoin,
         this.blockchain,
         this.provider,
         data.privateKey

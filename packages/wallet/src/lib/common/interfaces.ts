@@ -117,8 +117,9 @@ export interface PriceData {
 
 export interface PriceProvider {
   getAPIKey(): string;
-  getName(): string;
   getMarketPrice( pair: string ): Promise<MarketPriceData>; // Enchanced version of getPrice
+  getName(): string;
+  getProviderPairFormat( pair: string ): Promise<string> | Promise<[ string, string ]>;
 }
 
 export interface SwapPriceProvider extends PriceProvider {
@@ -356,9 +357,11 @@ export interface SwapToken {
   name: string;
   symbol: string;
   decimals: number;
+  balance?: BigNumberish;
   logoURI?: string;
   extensions?: any;
   isNative?: boolean;
+  isStablecoin?: boolean;
   description?: string;
   tags?: string[]; // key
   version?: string; // Symantic versioning
@@ -877,7 +880,7 @@ export interface SwapPriceData extends BasePriceData {
   // MarketPrice
   marketPriceIn: number;        // Fiat price of tokenIn which updates in interval. It is here so that we can show the price of the tokenIn in the UI
   marketPriceOut: number;       // Fiat price of tokenOut which updates in interval. It is here so that we can show the price of the tokenOut in the UI. This is only used if priceIn is not available
-  // price: number; //???
+  marketPriceGas: number;       // Gas market price
 
   priceImpactRatio: number;     // Price impact ratio percentage 
   path: string[];               // Path of tokens for the swap
@@ -889,6 +892,9 @@ export interface SwapPriceData extends BasePriceData {
   gasEstimateInUSD?: string;    // Gas estimate in USD formatted
   tokenOutPriceInUSD?: string;  // Token out price in USD formatted
 
+  slippageTolerance?: number;        // Slippage percentage
+  deadline?: number;                 // Deadline for the swap
+  
   sqrtPriceX96After?: BigNumberish;  // Uniswap specific - sqrtPriceX96 after the swap
   initializedTicksCrossed?: number;  // Uniswap specific - initialized ticks crossed
   poolInfo?: PoolInfo;               // Uniswap specific - Pool information

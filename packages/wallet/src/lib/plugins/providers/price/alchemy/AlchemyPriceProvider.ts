@@ -19,20 +19,8 @@ export class AlchemyPriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
-      // Check if '-' exists in the pair
-      const dashIndex = pair.indexOf( '-' );
 
-      // If '-' exists, update the pair to include only the part before '-'
-      if ( dashIndex !== -1 ) {
-        pair = pair.substring( 0, dashIndex );
-      }
-
-      if ( pair === 'WETH' ) {
-        pair = `ETH`;
-      }
-      if ( pair === 'WBTC' ) {
-        pair = `BTC`;
-      }
+      pair = await this.getProviderPairFormat( pair );
 
       const json = await fetchJson( {
         url: `https://api.g.alchemy.com/prices/v1/tokens/by-symbol?symbols=${ pair }`,
@@ -41,15 +29,15 @@ export class AlchemyPriceProvider implements PriceProvider {
           'Authorization': `Bearer ${ this.getAPIKey() }`
         }
       } ); 
-
-      if ( json.data.length <= 0 ) {
+      
+      if ( !json.data || json.data.length <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
       }
       return {
         provider: this.getName(),
-        price: parseFloat( json.data.prices[ 0 ].value ),
-        lastUpdated: json.data.prices[ 0 ].lastUpdatedAt,
-        currency: json.data.prices[ 0 ].currency,
+        price: json.data.prices ? parseFloat( json.data.prices[ 0 ].value ) : 0,
+        lastUpdated: json.data.prices ? json.data.prices[ 0 ].lastUpdatedAt : new Date(),
+        currency: json.data.prices ? json.data.prices[ 0 ].currency : 'USD',
         status: 0,
         message: ''
       };
@@ -74,5 +62,24 @@ export class AlchemyPriceProvider implements PriceProvider {
         message,
       };
     }
+  }
+
+  async getProviderPairFormat( pair: string ) {
+    // Check if '-' exists in the pair
+    const dashIndex = pair.indexOf( '-' );
+
+    // If '-' exists, update the pair to include only the part before '-'
+    if ( dashIndex !== -1 ) {
+      pair = pair.substring( 0, dashIndex );
+    }
+
+    if ( pair === 'WETH' ) {
+      pair = `ETH`;
+    }
+    if ( pair === 'WBTC' ) {
+      pair = `BTC`;
+    }
+
+    return pair;
   }
 }

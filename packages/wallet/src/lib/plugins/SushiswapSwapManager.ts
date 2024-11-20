@@ -2,7 +2,7 @@
 import type { AbstractBlockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
 import { SwapManager } from './SwapManager';
-import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest } from '$lib/common/interfaces';
+import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest, SwapToken } from '$lib/common/interfaces';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
 import type { AbstractContract } from '$plugins/Contract';
@@ -29,6 +29,15 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
     this.router = blockchain.createContract( routerAddress, SUSHISWAP_ROUTER_ABI );
+  }
+
+  async fetchTokenList(): Promise<SwapToken[]> {
+    return [];
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getPreferredTokens(tokens: SwapToken[]): SwapToken[] {
+    return [];
   }
 
   getName(): string {
@@ -66,6 +75,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       '/images/weth.png',
       'Wrapped version of Ether',
       chainId,
+      false,
       false,
       this.blockchain,
       this.provider
@@ -155,6 +165,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
       // price,
       marketPriceIn: 0,
       marketPriceOut: 0,
+      marketPriceGas: 0,
       priceImpactRatio,
       path,
       feeBasisPoints: this.feeBasisPoints,

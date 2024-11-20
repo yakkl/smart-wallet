@@ -19,17 +19,10 @@ export class BitstampPriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
-      const [ token, symbol ] = pair.split( '-' );
-      if ( !token || !symbol ) {
-        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
-      }
-      if ( token === 'WETH' ) {
-        pair = `ETH-${ symbol }`;
-      }
-      if ( token === 'WBTC' ) {
-        pair = `BTC-${ symbol }`;
-      }
-      const json = await fetchJson( `https://www.bitstamp.net/api/v2/ticker/${ pair.toLowerCase().replace( '-', '' ) }` );
+      
+      pair = await this.getProviderPairFormat( pair );
+
+      const json = await fetchJson( `https://www.bitstamp.net/api/v2/ticker/${ pair }` );
       if ( !json[ 'last' ] || !json[ 'timestamp' ] ) {
         throw new Error( 'Invalid JSON structure or missing data from Bitstamp' );
       }
@@ -61,5 +54,19 @@ export class BitstampPriceProvider implements PriceProvider {
         message,
       };
     }
+  }
+
+  async getProviderPairFormat( pair: string ) {
+    const [ token, symbol ] = pair.split( '-' );
+    if ( !token || !symbol ) {
+      throw new Error( `Invalid pair - ${ pair }` );
+    }
+    if ( token === 'WETH' ) {
+      pair = `ETH-${ symbol }`;
+    }
+    if ( token === 'WBTC' ) {
+      pair = `BTC-${ symbol }`;
+    }
+    return pair.replace( '-', '' );
   }
 }

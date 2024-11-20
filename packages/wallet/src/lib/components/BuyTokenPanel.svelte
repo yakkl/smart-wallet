@@ -17,7 +17,9 @@
 
   // Reactive store value
   let swapPriceData: SwapPriceData;
-  $: swapPriceData = $swapPriceDataStore;
+  $: { 
+    swapPriceData = $swapPriceDataStore;
+  }
 
   // Input state management
   let userInput = ''; // Temporary user input
@@ -34,15 +36,13 @@
 
   // Amount formatting from store updates
   $: {
-    if (!userInput) {
-      if (toBigInt(swapPriceData.amountOut) > 0n) {
-        formattedAmount = formatAmount(
-          toBigInt(swapPriceData.amountOut),
-          swapPriceData.tokenOut.decimals
-        );
-      } else {
-        formattedAmount = '';
-      }
+    if (!userInput && toBigInt(swapPriceData.amountOut) > 0n) {
+      formattedAmount = formatAmount(
+        toBigInt(swapPriceData.amountOut),
+        swapPriceData.tokenOut.decimals
+      );
+    } else {
+      formattedAmount = userInput;
     }
   }
 
@@ -94,6 +94,9 @@
       return;
     }
     
+    userInput = value;
+    formattedAmount = value; 
+
     // Trigger change only for meaningful input
     debouncedAmountChange(value);
   }
