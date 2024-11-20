@@ -24,6 +24,7 @@ import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap'
 import JSBI from 'jsbi';
 import { EthersConverter } from './utilities/EthersConverter';
 
+const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 
 export class UniswapSwapManager extends SwapManager {
   private routerContract: ethers.Contract | null = null;
@@ -52,6 +53,13 @@ export class UniswapSwapManager extends SwapManager {
       ISwapRouterABI,
       this.providerEthers
     );
+
+    this.tokens = await this.fetchTokenList();
+    this.preferredTokens = this.getPreferredTokens( this.tokens );
+    this.tokens = this.tokens
+      .filter( token => !this.preferredTokens.includes( token ) )
+      .sort( ( a, b ) => a.symbol.localeCompare( b.symbol ) );
+    this.stablecoinTokens = this.tokens.filter( token => token.isStablecoin );
   }
 
   getName(): string {
@@ -69,6 +77,46 @@ export class UniswapSwapManager extends SwapManager {
     } catch ( error ) {
       return false;
     }
+  }
+
+  // For getting the tokens specific to Uniswap V3
+  async fetchTokenList(): Promise<SwapToken[]> {
+    try {
+      const response = await fetch( 'https://tokens.uniswap.org' );
+      const data = await response.json();
+      data.tokens
+        .filter( ( token: SwapToken ) => token.chainId === this.blockchain?.getChainId() )
+        .map( ( token: SwapToken ) => {
+          if ( SUPPORTED_STABLECOINS.includes( token.symbol ) ) {
+            token.isStablecoin = true;
+          }
+          return token;
+        } );
+      
+      const eth: SwapToken = {
+        chainId: 1,
+        address: ADDRESSES.WETH,
+        name: 'Ethereum',
+        symbol: 'ETH',
+        decimals: 18,
+        isNative: true,
+        isStablecoin: false,
+        logoURI: '/images/ethereum.svg',
+      };
+
+      data.tokens.unshift( eth );
+      return data.tokens;
+    } catch ( error ) {
+      console.error( 'Error fetching token list:', error );
+      return [];
+    }
+  }
+
+  getPreferredTokens( tokens: SwapToken[] ): SwapToken[] {
+    const preferredTokenSymbols = [ "ETH", "WETH", "WBTC", "USDC", "USDT", "DAI" ];
+    return preferredTokenSymbols
+      .map( symbol => tokens.find( token => token.symbol === symbol ) )
+      .filter( ( token ): token is SwapToken => token !== undefined );
   }
 
 
@@ -213,34 +261,7 @@ export class UniswapSwapManager extends SwapManager {
   ): Promise<SwapPriceData> {
     // Step 1: Set up the provider using Alchemy (ethers v5)
     const provider = new ethersv5.providers.AlchemyProvider( 'mainnet', import.meta.env.VITE_ALCHEMY_API_KEY_PROD );
-
-    // Step 2: Define the QuoterV2 contract ABI
-    // const quoterV2ABI = [
-    //   {
-    //     "inputs": [
-    //       {
-    //         "internalType": "bytes",
-    //         "name": "path",
-    //         "type": "bytes"
-    //       },
-    //       {
-    //         "internalType": "uint256",
-    //         "name": "amountIn",
-    //         "type": "uint256"
-    //       }
-    //     ],
-    //     "name": "quoteExactInput",
-    //     "outputs": [
-    //       {
-    //         "internalType": "uint256",
-    //         "name": "amountOut",
-    //         "type": "uint256"
-    //       }
-    //     ],
-    //     "stateMutability": "view",
-    //     "type": "function"
-    //   }
-    // ];
+    // Step 2: Define the QuoterV2 contract address and ABI
     const quoterV2ABI = [
       {
         "inputs": [
@@ -379,6 +400,17 @@ export class UniswapSwapManager extends SwapManager {
       ? await this.getWETHToken()
       : tokenOut;
 
+    // Ensure fee is valid
+    switch (fee) {
+      case 500:
+      case 3000:
+      case 10000:
+        break;
+      default:
+        fee = 3000;
+        break;
+    }
+
     if ( !actualTokenIn?.address || !actualTokenOut?.address || !amount ) {
       // Default empty quote return if params are not sufficient
       return {
@@ -396,6 +428,7 @@ export class UniswapSwapManager extends SwapManager {
         exchangeRate: 0,
         marketPriceIn: 0,
         marketPriceOut: 0,
+        marketPriceGas: 0,
         priceImpactRatio: 0,
         path: [
           tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address,
@@ -408,6 +441,8 @@ export class UniswapSwapManager extends SwapManager {
         gasEstimate: 0n,
         gasEstimateInUSD: '',
         tokenOutPriceInUSD: '',
+        slippageTolerance: 0.5,
+        deadline: 10,
         sqrtPriceX96After: 0n,
         initializedTicksCrossed: 0,
         multiHop: false,
@@ -446,9 +481,11 @@ export class UniswapSwapManager extends SwapManager {
           };
 
           if ( isExactIn ) {
+            // Comes from fromAmount
             [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
               await quoterContract.quoteExactInputSingle.staticCall( params );
           } else {
+            // Comes from toAmount
             [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] =
               await quoterContract.quoteExactOutputSingle.staticCall( params );
           }
@@ -473,7 +510,7 @@ export class UniswapSwapManager extends SwapManager {
         }
       }
 
-      // Step 2: Multi-Hop Quote Attempt
+      // Step 2: If pool did not exist - Multi-Hop Quote Attempt
       try {
         multiHop = true;
         // Uses ethers v5.7.2 instead of v6.13.1+ due to encoding issues
@@ -486,6 +523,7 @@ export class UniswapSwapManager extends SwapManager {
           tokenOut: actualTokenOut.address,
           amount: amount.toString(),
           isExactIn,
+          fee,
           error: error instanceof Error ? error.message : error
         } );
       }
@@ -498,11 +536,13 @@ export class UniswapSwapManager extends SwapManager {
         actualTokenIn: actualTokenIn.address,
         actualTokenOut: actualTokenOut.address,
         amount: amount.toString(),
+        fee: fee,
       } );
       throw error;
     }
   }
 
+  // Where fees are calculated...
   private async constructQuoteData(
     tokenIn: Token,
     tokenOut: Token,
@@ -516,30 +556,41 @@ export class UniswapSwapManager extends SwapManager {
     initializedTicksCrossed: number,
     isExactIn: boolean
   ): Promise<SwapPriceData> {
-    const feeAmount = this.calculateFee( isExactIn ? quoteAmount : toBigInt( amount ) ); //quoteAmount );
-    const amountAfterFee = isExactIn ? quoteAmount - feeAmount : quoteAmount; //quoteAmount - feeAmount;
+    // Fee should always be calculated based on the 'buy' side
+    const feeAmount = this.calculateFee( isExactIn ? quoteAmount : toBigInt( amount ) );
+    const amountAfterFee = isExactIn ? quoteAmount - feeAmount : quoteAmount + feeAmount; // Adjusted amount after fee
 
-    const formattedAmountIn = Number( ethers.formatUnits( isExactIn ? toBigInt( amount ) : quoteAmount, tokenIn.decimals ) );
+    debug_log( 'constructQuoteData 1', { isExactIn, quoteAmount, amount, feeAmount, amountAfterFee } );
+
+    const formattedAmountIn = Number( ethers.formatUnits( isExactIn ? toBigInt( amount ) : amountAfterFee, tokenIn.decimals ) );
     const formattedAmountOut = Number( ethers.formatUnits( isExactIn ? amountAfterFee : toBigInt( amount ), tokenOut.decimals ) );
     const exchangeRate = formattedAmountOut / formattedAmountIn;
 
+    debug_log( 'constructQuoteData 2', { formattedAmountIn, formattedAmountOut, exchangeRate } );
+
     // Fetch USD prices (these should come back as `number`)
+    // These should cycle through the providers to get the first price
     const priceIn = await this.getMarketPrice( `${ tokenIn.symbol }-USD` );
     const priceOut = await this.getMarketPrice( `${ tokenOut.symbol }-USD` );
 
+    debug_log( 'constructQuoteData 2.5', { priceIn, priceOut } );
+
+    // This is not checking specific prices but the object itself
     if ( !priceIn || !priceOut ) {
       throw new Error( 'Failed to get price from provider' );
     }
 
-    const feeAmountInTokenOut = isExactIn
-      ? Number( ethers.formatUnits( feeAmount, tokenOut.decimals ) )
-      : Number( ethers.formatUnits( feeAmount, tokenIn.decimals ) );
+    const feeAmountInTokenOut = Number( ethers.formatUnits( feeAmount, tokenOut.decimals ) ); // Fee amount in tokenOut
 
-    const feeAmountInUSD = feeAmountInTokenOut * ( isExactIn ? priceOut.price : priceIn.price );
+    const feeAmountInUSD = feeAmountInTokenOut * priceOut.price; // Always in tokenOut (buy side)
     const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
+
+    debug_log( 'constructQuoteData 3', { feeAmountInTokenOut, feeAmountInUSD, priceOutBigInt } );
 
     let gasEstimateInUSD = '';
     let adjustedGasEstimate = 0n;
+
+    const gasPrice = await this.getMarketPrice( `ETH-USD` );
 
     if ( gasEstimate > 0n ) {
       adjustedGasEstimate = ( gasEstimate * ( 10000n + BigInt( YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS ) ) ) / 10000n;
@@ -549,13 +600,14 @@ export class UniswapSwapManager extends SwapManager {
       const gasEstimateInEtherNumber = Number( gasEstimateInEther ) / 10 ** 18;
 
       // Calculate gas cost in USD using the price of Ether
-      const gasPrice = await this.getMarketPrice( `ETH-USD` );
       const ethPriceInUSD = gasPrice.price;
 
       // Multiply gas in Ether with Ether's price to get the cost in USD
       const gasCostInUSD = gasEstimateInEtherNumber * ethPriceInUSD;
 
       gasEstimateInUSD = gasCostInUSD > YAKKL_GAS_ESTIMATE_MIN_USD ? formatPrice( gasCostInUSD ) : formatPrice( YAKKL_GAS_ESTIMATE_MIN_USD ); // This is only a conservative minimum estimate and not actual
+
+      debug_log( 'constructQuoteData 4', { adjustedGasEstimate, gasEstimateInEther, gasEstimateInEtherNumber, gasPrice, ethPriceInUSD, gasCostInUSD, gasEstimateInUSD } );
     }
 
     return {
@@ -573,6 +625,7 @@ export class UniswapSwapManager extends SwapManager {
       exchangeRate,
       marketPriceIn: priceIn.price,
       marketPriceOut: priceOut.price,
+      marketPriceGas: gasPrice.price, // Defaults to ETH
       priceImpactRatio: 0,
       path: [ tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address, tokenOut.isNative ? ethers.ZeroAddress : tokenOut.address ],
       fee,
@@ -582,6 +635,11 @@ export class UniswapSwapManager extends SwapManager {
       gasEstimate: adjustedGasEstimate,
       gasEstimateInUSD,
       tokenOutPriceInUSD: formatPrice( Number( priceOutBigInt ) / 10 ** tokenOut.decimals ),
+
+      // Default values and have no meaning here but are required for the interface and will be corrected further up the chain
+      slippageTolerance: 0.5,
+      deadline: 10,
+      
       sqrtPriceX96After,
       initializedTicksCrossed,
       multiHop,
@@ -673,8 +731,14 @@ export class UniswapSwapManager extends SwapManager {
         gasEstimate = ethersv5.BigNumber.from( baseGasLimit );
       }
 
+      // Add a buffer to the gas estimate
       // Convert to bigint
-      return BigInt( gasEstimate.toString() );
+      const gasEstimateBigInt = gasEstimate.toBigInt(); // Convert BigNumber to BigInt
+      const adjustedGasEstimate = ( gasEstimateBigInt * ( 10000n + BigInt( YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS ) ) ) / 10000n;
+
+      debug_log( 'getGasEstimateForSwap:', { gasEstimate, gasEstimateBigInt, adjustedGasEstimate } );
+      
+      return adjustedGasEstimate;
     } catch ( error ) {
       // Fallback to a default gas estimate
       const fallbackGasLimit = BigInt( YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT ); // Adjust based on typical multi-hop swap gas usage
@@ -1064,7 +1128,8 @@ export class UniswapSwapManager extends SwapManager {
       '/images/ethereum.svg',
       'Wrapped version of Ether',
       chainId,
-      false, // Not native since it's wrapped
+      false, // Not native since it's wrapped,
+      false,
       this.blockchain,
       this.provider
     );

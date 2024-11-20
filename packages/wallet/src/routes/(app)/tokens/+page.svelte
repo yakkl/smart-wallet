@@ -88,6 +88,9 @@
             url = await provider.getProviderURL();
 
             swapManager = new UniswapSwapManager(blockchain as Ethereum, provider!);
+            // if (swapManager) {
+            //   swapManager.initialize();
+            // }
             tokenService = new TokenService(blockchain as Ethereum);
             gasProvider = new EthereumGasProvider(provider!, blockchain!, new CoinbasePriceProvider());
 

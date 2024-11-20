@@ -1,30 +1,68 @@
 <script lang="ts">
-	
-  export let slippageTolerance: number = 0.5;
+	import { debug_log, type SwapPriceData } from '$lib/common';
+	import type { Writable } from 'svelte/store';
+
+  export let swapPriceDataStore: Writable<SwapPriceData>;
   export let onSlippageChange: (value: number) => void;
-
-  export let deadline: number = 20;
   export let onDeadlineChange: (value: number) => void;
-
-  export let poolFee: number = 3000;
   export let onPoolFeeChange: (value: number) => void;
-
   export let className: string = 'text-gray-700';
 
   const slippageOptions = [0.1, 0.5, 1, 3];
   const deadlineOptions = [10, 20, 30, 60];
   const poolFeeOptions = [500, 3000, 10000]; // Example fee tiers in basis points
 
-  function handleSlippageChange(event: any) {
-    onSlippageChange(Number(event.target.value));
+  let slippageTolerance = 0.5;
+  let deadline = 10;
+  let poolFee = 3000;
+
+  // Reactive store value
+  let swapPriceData: SwapPriceData;
+  $: { 
+    swapPriceData = $swapPriceDataStore;
+    slippageTolerance = swapPriceData.slippageTolerance || 0.5;
+    deadline = swapPriceData.deadline || 10;
+    poolFee = swapPriceData.fee || 3000;
+
+    debug_log('SwapSettings 1:', {swapPriceData, $swapPriceDataStore, slippageTolerance, deadline, poolFee});
   }
 
-  function handleDeadlineChange(event: any) {
-    onDeadlineChange(Number(event.target.value));
+
+  // Reactive variable to track pool fee
+  $: {
+    // Ensure the selected pool fee is one of the valid options
+    if (!poolFeeOptions.includes(poolFee)) {
+      // If not, default to the closest match or the default
+      poolFee = findClosestPoolFee(poolFee);
+    }
+    debug_log('SwapSettings poolFee', {slippageTolerance, deadline, poolFee});
   }
 
-  function handlePoolFeeChange(event: any) {
-    onPoolFeeChange(Number(event.target.value));
+  // Helper function to find the closest pool fee
+  function findClosestPoolFee(fee: number): number {
+    return poolFeeOptions.reduce((prev, curr) => 
+      Math.abs(curr - fee) < Math.abs(prev - fee) ? curr : prev
+    );
+  }
+
+  function handleSlippageChange(event: Event) {
+    const value = Number((event.target as HTMLSelectElement).value);
+    slippageTolerance = value;
+    onSlippageChange(value);
+  }
+
+  function handleDeadlineChange(event: Event) {
+    const value = Number((event.target as HTMLSelectElement).value);
+    deadline = value;
+    onDeadlineChange(value);
+  }
+
+  function handlePoolFeeChange(event: Event) {
+    const value = Number((event.target as HTMLSelectElement).value);
+    poolFee = value;
+
+    debug_log('SwapSettings handlePoolFeeChange', {value, poolFee});
+    onPoolFeeChange(value);
   }
 </script>
 
@@ -35,7 +73,7 @@
     </label>
     <select
       id="slippage"
-      bind:value={slippageTolerance}
+      value={slippageTolerance}
       on:change={handleSlippageChange}
       class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
     >
@@ -51,7 +89,7 @@
     </label>
     <select
       id="deadline"
-      bind:value={deadline}
+      value={deadline}
       on:change={handleDeadlineChange}
       class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
     >
@@ -67,7 +105,7 @@
     </label>
     <select
       id="poolFee"
-      bind:value={poolFee}
+      value={poolFee}
       on:change={handlePoolFeeChange}
       class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
     >

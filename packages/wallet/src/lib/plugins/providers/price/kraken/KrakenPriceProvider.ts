@@ -15,21 +15,10 @@ export class KrakenPriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
-      // eslint-disable-next-line prefer-const
-      let [ token, symbol ] = pair.split( '-' );
-      if ( !token || !symbol ) {
-        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
-      }
-      if ( token === 'WETH' ) {
-        token = 'ETH';
-        pair = `${ token }-${ symbol }`;
-      }
-      if ( token === 'WBTC' ) {
-        token = 'BTC';
-        pair = `${ token }-${ symbol }`;
-      }
-      const newPair = pair.replace( '-', '' );
-      const json = await fetchJson( `https://api.kraken.com/0/public/Ticker?pair=${ newPair }` );
+
+      pair = await this.getProviderPairFormat( pair );
+
+      const json = await fetchJson( `https://api.kraken.com/0/public/Ticker?pair=${ pair }` );
       const result = json.result[ Object.keys( json.result )[ 0 ] ];
       if ( !result || !result.c || !result.c[ 0 ] ) {
         throw new Error( 'Invalid JSON structure or missing data from Kraken' );
@@ -46,5 +35,22 @@ export class KrakenPriceProvider implements PriceProvider {
       console.log( 'KrakenPriceProvider - getPrice - error', e );
       return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
     }
+  }
+
+  async getProviderPairFormat( pair: string ): Promise<string> {
+    // eslint-disable-next-line prefer-const
+    let [ token, symbol ] = pair.split( '-' );
+    if ( !token || !symbol ) {
+      throw new Error( `Invalid pair - ${ pair }` );
+    }
+    if ( token === 'WETH' ) {
+      token = 'ETH';
+      pair = `${ token }-${ symbol }`;
+    }
+    if ( token === 'WBTC' ) {
+      token = 'BTC';
+      pair = `${ token }-${ symbol }`;
+    }
+    return pair.replace( '-', '' );
   }
 }

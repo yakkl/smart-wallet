@@ -32,18 +32,10 @@ export class BitfinexPriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
-      const [ token, symbol ] = pair.split( '-' );
-      if ( !token || !symbol ) {
-        return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
-      }
-      if ( token === 'WETH' ) {
-        pair = `ETH-${ symbol }`;
-      }
-      if ( token === 'WBTC' ) {
-        pair = `BTC-${ symbol }`;
-      }
+      pair = await this.getProviderPairFormat( pair );
+
       // const json = await fetchJson(`https://api-pub.bitfinex.com/v2/tickers?symbols=t${pair.toUpperCase().replace('-', '')}`); // Can use this to pull multiple pairs
-      const json = await fetchJson( `https://api-pub.bitfinex.com/v2/ticker/t${ pair.toUpperCase().replace( '-', '' ) }` );
+      const json = await fetchJson( `https://api-pub.bitfinex.com/v2/ticker/t${ pair }` );
       if ( !json[ 6 ] ) {
         throw new Error( 'Invalid JSON structure or missing data from Bitfinex' );
       }
@@ -75,5 +67,19 @@ export class BitfinexPriceProvider implements PriceProvider {
         message,
       };
     }
+  }
+
+  async getProviderPairFormat( pair: string ) {
+    const [ token, symbol ] = pair.split( '-' );
+    if ( !token || !symbol ) {
+      throw new Error( `Invalid pair - ${ pair }` );
+    }
+    if ( token === 'WETH' ) {
+      pair = `ETH-${ symbol }`;
+    }
+    if ( token === 'WBTC' ) {
+      pair = `BTC-${ symbol }`;
+    }
+    return pair.replace( '-', '' );
   }
 }

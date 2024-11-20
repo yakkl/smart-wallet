@@ -6,6 +6,8 @@
   import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
   import { Line } from 'svelte-chartjs';
 
+  // TODO: Implement the GasFeeManager component to pick from ranges of gas fees
+  
   let gasEstimate: GasEstimate;
   let historicalData: HistoricalGasData[];
   let predictions: GasPrediction[];

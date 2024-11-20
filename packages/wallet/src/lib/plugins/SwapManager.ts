@@ -3,12 +3,8 @@ import type { Blockchain } from './Blockchain';
 import type { Provider } from './Provider';
 import type { Token } from './Token';
 import { YAKKL_FEE_BASIS_POINTS, YAKKL_FEE_BASIS_POINTS_MAX, type BigNumberish, type TransactionResponse } from '$lib/common';
-import type { PoolInfoData, SwapParams, SwapPriceData, TransactionRequest } from '$lib/common/interfaces';
+import type { PoolInfoData, SwapParams, SwapPriceData, SwapToken, TransactionRequest } from '$lib/common/interfaces';
 import { PriceManager } from './PriceManager';
-import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
-import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
-import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
-// import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
 
 
 export abstract class SwapManager {
@@ -16,20 +12,16 @@ export abstract class SwapManager {
   protected provider: Provider;
   protected feeBasisPoints: number = YAKKL_FEE_BASIS_POINTS;
   protected priceManager: PriceManager;
+  public tokens: SwapToken[] = [];
+  public preferredTokens: SwapToken[] = [];
+  public stablecoinTokens: SwapToken[] = [];
 
   constructor ( blockchain: Blockchain, provider: Provider, initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS ) {
     this.blockchain = blockchain;
     this.provider = provider;
     this.feeBasisPoints = initialFeeBasisPoints < 0 ? YAKKL_FEE_BASIS_POINTS : initialFeeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ? YAKKL_FEE_BASIS_POINTS_MAX : initialFeeBasisPoints;
 
-    this.priceManager = new PriceManager( [
-      // { provider: new AlchemyPriceProvider(), weight: 7 },
-      { provider: new CoinbasePriceProvider(), weight: 5 },
-      { provider: new KrakenPriceProvider(), weight: 3 },
-      { provider: new CoingeckoPriceProvider(), weight: 1 },
-      // Add other providers with their weights...
-    ] );
-
+    this.priceManager = new PriceManager();
   }
 
   getChainId(): number {
@@ -37,7 +29,7 @@ export abstract class SwapManager {
   }
 
   getMarketPrice( pair: string ) {
-    return this.priceManager.getMarketPrice( pair );
+    return this.priceManager.getMarketPrice( pair ); //By default, this will cycle through all specified providers and return the first successful response unless 
   }
 
   getFeeBasisPoints(): number {
@@ -63,7 +55,8 @@ export abstract class SwapManager {
   }
 
   abstract checkIfPoolExists( tokenIn: Token, tokenOut: Token, fee: number ): Promise<boolean>;
-  
+  abstract fetchTokenList(): Promise<SwapToken[]>;
+  abstract getPreferredTokens( tokens: SwapToken[] ): SwapToken[];
   abstract getName(): string;
 
   abstract getQuote(

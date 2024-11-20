@@ -10,11 +10,13 @@ export interface IToken {
   symbol: string;
   decimals: number;
   isNative: boolean;
+  isStablecoin: boolean;
   logoURI: string;
   description: string;
   chainId: number;
   blockchain: Blockchain;
   provider: Provider;
+  balance?: BigNumberish;
   privateKey?: string;
   getContract(): Promise<AbstractContract | null>;
   getBalance(userAddress: string): Promise<BigNumberish>;
@@ -30,9 +32,11 @@ export abstract class Token implements IToken {
   readonly description: string;
   readonly chainId: number;
   readonly isNative: boolean;
+  readonly isStablecoin: boolean;
   readonly blockchain: Blockchain;
   readonly provider: Provider;
   readonly privateKey?: string;
+  balance: BigNumberish = 0n;
 
   constructor(
     address: string,
@@ -43,8 +47,10 @@ export abstract class Token implements IToken {
     description: string,
     chainId: number,
     isNative: boolean,
+    isStablecoin: boolean,
     blockchain: Blockchain,
     provider: Provider,
+    balance: BigNumberish = 0n,
     privateKey?: string
   ) {
     this.address = address;
@@ -55,8 +61,10 @@ export abstract class Token implements IToken {
     this.description = description;
     this.chainId = chainId;
     this.isNative = isNative;
+    this.isStablecoin = isStablecoin;
     this.blockchain = blockchain;
     this.provider = provider;
+    this.balance = balance;
     this.privateKey = privateKey;
   }
 
@@ -70,10 +78,12 @@ export abstract class Token implements IToken {
       name: this.name,
       symbol: this.symbol,
       decimals: this.decimals,
+      balance: this.balance?.toString(),
       logoURI: this.logoURI,
       description: this.description,
       chainId: this.chainId,
-      isNative: this.isNative
+      isNative: this.isNative,
+      isStablecoin: this.isStablecoin
     };
   }
 
@@ -95,14 +105,15 @@ export abstract class Token implements IToken {
       swapToken.description || `${ swapToken.name } token`, // Use an empty string if description is undefined
       swapToken.chainId,
       swapToken.isNative || false, // Use false if isNative is undefined
+      swapToken.isStablecoin || false, // Use false if isStablecoin is undefined
       blockchain,
       provider,
+      swapToken.balance || 0n, // Use 0 if balance is undefined
       privateKey
     );
   }
   
 }
-
 
 // Concrete implementation of Token
 class ConcreteToken extends Token {
@@ -118,73 +129,13 @@ class ConcreteToken extends Token {
   async getBalance(userAddress: string): Promise<BigNumberish> {
     const contract = await this.getContract();
     if (!contract) return 0n; // Return 0 if contract is null
-    return contract.call('balanceOf', userAddress);
+    this.balance = await contract.call( 'balanceOf', userAddress );
+    return this.balance;
   }
 
   async transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse> {
     const contract = await this.getContract();
     if (!contract) throw new Error('Invalid contract');
-    return contract.sendTransaction('transfer', toAddress, amount);
+    return await contract.sendTransaction('transfer', toAddress, amount);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-// // Token.ts
-// import type { BigNumberish, TransactionResponse } from '$lib/common';
-// import type { AbstractContract } from '$plugins/Contract';
-
-// export abstract class Token {
-//   readonly address: string;
-//   readonly name: string;
-//   readonly symbol: string;
-//   readonly decimals: number;
-//   readonly logoURI: string;
-//   readonly description: string;
-//   readonly chainId: number;
-//   readonly isNative: boolean;
-
-//   constructor(
-//     address: string,
-//     name: string,
-//     symbol: string,
-//     decimals: number,
-//     logoURI: string,
-//     description: string,
-//     chainId: number,
-//     isNative: boolean
-//   ) {
-//     this.address = address;
-//     this.name = name;
-//     this.symbol = symbol;
-//     this.decimals = decimals;
-//     this.logoURI = logoURI;
-//     this.description = description;
-//     this.chainId = chainId;
-//     this.isNative = isNative;
-//   }
-
-//   abstract getContract(): AbstractContract;
-//   abstract getBalance(userAddress: string): Promise<BigNumberish>;
-//   abstract transfer(toAddress: string, amount: BigNumberish): Promise<TransactionResponse>;
-
-//   toJSON(): object {
-//     return {
-//       address: this.address,
-//       name: this.name,
-//       symbol: this.symbol,
-//       decimals: this.decimals,
-//       logoURI: this.logoURI,
-//       description: this.description,
-//       chainId: this.chainId
-//     };
-//   }
-// }
