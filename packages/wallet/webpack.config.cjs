@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -63,6 +64,7 @@ module.exports = {
     ],
     extensions: ['.ts', '.js'],
     alias: {
+      'process/browser': require.resolve( 'process/browser' ),
       'webextension-polyfill': path.resolve(__dirname, '../../node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
       '$lib': path.resolve(__dirname, 'src/lib'),
       '$lib/common': path.resolve(__dirname, 'src/lib/common'),
@@ -72,7 +74,8 @@ module.exports = {
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
-      vm: require.resolve('vm-browserify')
+      vm: require.resolve( 'vm-browserify' ),
+      process: require.resolve( 'process/browser' ),
     },
   },
   plugins: [

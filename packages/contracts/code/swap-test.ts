@@ -19,7 +19,7 @@ const MAX_WAIT_TIME = 60000; // 60 seconds, adjust as needed - This is for the t
 const MINIMUM_WETH_LIQUIDITY = ethers.parseEther("0.1"); // Adjust this value as needed
 const SLIPPAGE_TOLERANCE = 0.005; // 0.5%
 const AMOUNT_IN = "0.1"; // Adjust this value as needed
-const FEE_BASIS_POINTS = YAKKL_FEE_BASIS_POINTS; // 0.0875% fee
+const FEE_BASIS_POINTS = YAKKL_FEE_BASIS_POINTS; // 42.25 bps fee
 const FEE_PRECISION = 1000000n;
 
 // ABIs

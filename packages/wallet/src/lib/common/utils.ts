@@ -1,5 +1,5 @@
 /* eslint-disable no-debugger */
-// // import browser from 'webextension-polyfill';
+// import browser from 'webextension-polyfill';
 import type { ErrorBody, ParsedError } from '$lib/common';
 // import { Utils } from "alchemy-sdk";
 

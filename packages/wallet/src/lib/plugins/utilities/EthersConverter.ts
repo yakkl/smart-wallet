@@ -11,7 +11,7 @@ import type {
 
 export class EthersConverter {
   static toEthersHex(value: BigNumberish | null | undefined): string | null | undefined {
-    if (value === null || value === undefined) return value;
+    if (value === null || value === undefined) return null;
     if (typeof value === 'string' && value.startsWith('0x')) return value;
     return '0x' + BigInt(value.toString()).toString(16);
   }

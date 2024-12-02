@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es6",                      // Use ES6 syntax (you can use a more modern target if needed).
+    "module": "commonjs",                 // CommonJS module resolution.
+    "moduleResolution": "node",           // Node module resolution.
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules without a default export.
+    "esModuleInterop": true,              // Compatibility with CommonJS modules.
+    "strict": true,                       // Enable strict type checking options.
+    "resolveJsonModule": true,            // Allow importing JSON files.
+    "outDir": "./dist",                   // Optional: Output directory for compiled JavaScript files.
+    "skipLibCheck": true,                 // Skip type checking of declaration files.
+    "sourceMap": true                     // Optional: Generate source maps for debugging.
+  },
+  "include": ["**/*.ts"],                  // Include all TypeScript files in the directory.
+  "exclude": ["node_modules", "dist"]      // Exclude node_modules and build directory.
+}

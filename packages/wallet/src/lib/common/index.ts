@@ -13,7 +13,7 @@ export * from '$lib/common/evm';
 export * from '$lib/plugins/EventManager';
 export * from '$lib/common/icon';
 export * from '$lib/common/bignumber';
-export * from '$lib/common/debug';
+export * from '$lib/common/debug-error';
 // export * from './stores';
 // export * from './bignumber-ethereum';
 // export * from './routes';

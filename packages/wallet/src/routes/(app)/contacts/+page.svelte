@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getYakklContacts, setYakklContactsStorage, yakklCurrentlySelectedStore, yakklContactsStore, yakklMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
+  import { getYakklContacts, setYakklContactsStorage, yakklMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import { dateString } from '$lib/common/datetime';
@@ -294,7 +294,7 @@
           placeholder="Note"
           autocomplete="off"
           bind:value={$form.note}
-          on:change={handleChange}/>
+          on:change={handleChange}></textarea>
         {#if $errors.note}
           <small class="text-red-600 font-bold animate-pulse">{$errors.note}</small>
         {/if}

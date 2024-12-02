@@ -1,4 +1,5 @@
 
+/* eslint-disable @typescript-eslint/no-var-requires */
 import adapter from 'sveltekit-adapter-chrome-extension';
 import { sveltePreprocess } from 'svelte-preprocess'
 

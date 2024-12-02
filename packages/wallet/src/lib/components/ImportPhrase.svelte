@@ -437,21 +437,25 @@
     });
   }
 
+  // Custom paste logic - Always becareful with custom paste logic and make sure not to do it on global basis unless that is desired.
   function handlePaste(e: ClipboardEvent) {
-    e.preventDefault();
-    if (e.clipboardData) {
-      const data = e.clipboardData.getData('Text');
-      const words = data.split(' ');
+    const data = e.clipboardData?.getData('Text');
+    const words = data?.split(' ');
+
+    if (words && words.length > 1) {
+      // If multiple words are being pasted, prevent default and handle custom logic
+      e.preventDefault();
       const nodes = document.querySelectorAll<HTMLInputElement>('[data-id]');
       nodes.forEach((node, index) => {
         node.value = words[index] || '';
       });
     }
+    // Otherwise, let the default paste behavior happen
   }
 
   onMount(() => {
     hideShowWords();
-    document.addEventListener('paste', handlePaste);
+    // document.addEventListener('paste', handlePaste);
   });
 
   function handleSubaccounts() {

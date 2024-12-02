@@ -15,10 +15,12 @@ import { upgrade, updateVersion } from '$lib/upgrades/upgrades';
 import { Alchemy, Network, type TransactionRequest, type BlockTag } from 'alchemy-sdk';
 import Dexie from 'dexie';
 import type { Deferrable } from '@ethersproject/properties';
-import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings} from '$lib/common/interfaces';
+import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings, YakklWallet} from '$lib/common/interfaces';
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
+import type { Yakkl } from '$lib/plugins/providers';
+import { yakklPreferences } from '../../models/dataModels';
 
 type RuntimePort = Runtime.Port;
 type WindowsWindow = Windows.Window;
@@ -254,11 +256,11 @@ try {
   console.log('background.js - onSuspend error',error);
 }
 
-try {
-  browser_ext!.runtime.onMessage.addListener(handleOnMessage); // For onetime messages
-} catch (error) {
-  console.log('background.js - onMessage error',error);
-}
+// try {
+//   browser_ext!.runtime.onMessage.addListener(handleOnMessage); // For onetime messages
+// } catch (error) {
+//   console.log('background.js - onMessage error',error);
+// }
 
 try {
   browser_ext!.tabs.onRemoved.addListener((tabId: any) => { 
@@ -846,7 +848,7 @@ async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { 
         let windowId: number | undefined = undefined; 
 
         if (result) { 
-          windowId = result.windowId;
+          windowId = result.windowId as any;
         }
 
         if (windowId) {
@@ -885,22 +887,23 @@ export async function showExtensionPopup(
 ): Promise<WindowsWindow> {
   try {
     // Uses the default 'get' here
-    const yakkl = await browser_ext!.storage.local.get(STORAGE_YAKKL_PREFERENCES);
+    const pref = await browser_ext!.storage.local.get( STORAGE_YAKKL_PREFERENCES ) as { yakklPreferences: Preferences; };
+    const yakkl = pref['yakklPreferences'] as Preferences;
     // eslint-disable-next-line prefer-const, @typescript-eslint/no-unused-vars
     let { left, top } = await browser_ext!.windows.getCurrent(); //w - 1920
 
     // Pull from settings and get pin information...
-    if (yakkl?.wallet) {
-      popupWidth = yakkl['yakklPreferences'].wallet.popupWidth;
-      popupHeight = yakkl['yakklPreferences'].wallet.popupHeight;
+    if ( yakkl && yakkl.wallet ) {
+      popupWidth = yakkl.wallet.popupWidth;
+      popupHeight = yakkl.wallet.popupHeight;
 
-      const screenWidth = yakkl['yakklPreferences'].screenWidth;
-      const screenHeight = yakkl['yakklPreferences'].screenHeight;
+      const screenWidth = yakkl.screenWidth;
+      const screenHeight = yakkl.screenHeight;
       
       try {              
         // eslint-disable-next-line no-constant-condition
-        if (yakkl['yakklPreferences'].wallet.pinned) {
-          switch (yakkl['yakklPreferences'].wallet.pinnedLocation) {
+        if (yakkl.wallet.pinned) {
+          switch (yakkl.wallet.pinnedLocation) {
             case 'TL':
               top = 0;
               left = 0;
@@ -915,7 +918,7 @@ export async function showExtensionPopup(
               break;
             case 'BR':
               top = screenHeight <= popupWidth ? 0 : screenHeight - popupHeight;
-              left = yakkl['yakklPreferences'].preferences.screenWidth - popupWidth;
+              left = yakkl.screenWidth - popupWidth;
               break;
             case 'M':
               top = screenHeight <= popupHeight ? 0 : screenHeight/2 - popupHeight/2;
@@ -924,7 +927,7 @@ export async function showExtensionPopup(
             default:
               // x,y specific location
               // eslint-disable-next-line no-case-declarations
-              const coord = yakkl['yakklPreferences'].wallet.pinnedLocation.split(',');
+              const coord = yakkl.wallet.pinnedLocation.split(',');
               if (coord) {
                 left = parseInt(coord[0]) <= 0 ? 0 : parseInt(coord[0]);
                 top = parseInt(coord[1]) <= 0 ? 0 : parseInt(coord[1]);

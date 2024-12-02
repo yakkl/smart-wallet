@@ -47,12 +47,12 @@
       showPincodeModal = false;
       showPrivateKeyModal = true;
 
-      // Set a timer for 12 seconds and then hide the private key modal
+      // Set a timer for 20 seconds and then hide the private key modal
       setTimeout(() => {
         showPrivateKeyModal = false;
         privateKey = '';
         initClipboard(); // Clear clipboard
-      }, 12000);
+      }, 20000);
 
       onVerify();
     } catch (e) {

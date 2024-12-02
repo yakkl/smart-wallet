@@ -3,7 +3,7 @@
 import type { SwapToken } from '$lib/common/interfaces';
 import type { Provider } from '../plugins/Provider';
 import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
-import { debug_log } from '$lib/common';
+import { error_log } from '$lib/common';
 
 export async function getTokenBalance(
   token: SwapToken,
@@ -17,17 +17,15 @@ export async function getTokenBalance(
       if ( !provider ) return 0n;
       const retBal = await provider.getBalance( address );
       token.balance = retBal;
-      debug_log( 'getTokenBalance - Native retBal', retBal );
       return retBal
     }
 
     if ( !tokenService ) return 0n;
     const retBal = await tokenService.getBalance( token.address, address ); // address is the user's address. This checks the contract to see if it has the given userAddress registered and if it has a balance
     token.balance = retBal;
-    debug_log( 'getTokenBalance - Token retBal', retBal );
     return retBal;
   } catch ( error ) {
-    console.log( 'getTokenBalance - error', error );
+    error_log( 'getTokenBalance - error', error );
     return 0n;
   }
 }

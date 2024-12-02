@@ -6,7 +6,7 @@
 import { makeError } from '$lib/common/errors';
 import { addHexPrefix, hexlify, isBytesLike, stripHexPrefix } from '$lib/common/misc';
 import type { BytesLike, } from '$lib/common/types';
-import type { BigNumberish, Numeric } from '$lib/common/bignumber';
+import { BigNumber, type BigNumberish, type Numeric } from '$lib/common/bignumber';
 
 // TODO: Some of the things in this file are not used in the project. Remove them if they are not needed or out of date.
 
@@ -576,6 +576,32 @@ export function toBigInt(value: BigNumberish | Uint8Array): bigint {
   }
 
   return getBigInt(value);
+}
+
+// Safe conversion to bigint with comprehensive type handling
+export function safeConvertToBigInt( value: BigNumberish | null | undefined ): bigint | undefined {
+  try {
+    // Handle null or undefined
+    if ( value === null || value === undefined ) return undefined;
+
+    // Check if value is already a bigint
+    if ( typeof value === 'bigint' ) return value;
+
+    // Handle BigNumber type
+    if ( value instanceof BigNumber ) {
+      return BigInt( value.toString() );
+    }
+
+    // Handle object with _hex property (ethers BigNumber-like)
+    if ( typeof value === 'object' && value !== null && '_hex' in value ) {
+      return BigInt( ( value as { _hex: string; } )._hex );
+    }
+
+    // Try to convert using existing toBigInt
+    return toBigInt( value );
+  } catch {
+    return undefined;
+  }
 }
 
 /**

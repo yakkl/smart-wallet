@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser as browserSvelte } from '$app/environment';
 	import { goto } from "$app/navigation";
-	import { yakklGasTransStore, yakklPricingStore, yakklContactStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
+	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
 	import { decryptData } from '$lib/common/encryption';
 	import { createForm } from 'svelte-forms-lib';
 	import * as yup from 'yup';

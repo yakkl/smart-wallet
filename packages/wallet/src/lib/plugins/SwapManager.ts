@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // SwapManager.ts
 import type { Blockchain } from './Blockchain';
 import type { Provider } from './Provider';
 import type { Token } from './Token';
-import { YAKKL_FEE_BASIS_POINTS, YAKKL_FEE_BASIS_POINTS_MAX, type BigNumberish, type TransactionResponse } from '$lib/common';
-import type { PoolInfoData, SwapParams, SwapPriceData, SwapToken, TransactionRequest } from '$lib/common/interfaces';
+import { error_log, YAKKL_FEE_BASIS_POINTS, type BigNumberish, type TransactionResponse } from '$lib/common';
+import type { PoolInfoData, SwapParams, SwapPriceData, SwapToken, TransactionReceipt, TransactionRequest } from '$lib/common/interfaces';
 import { PriceManager } from './PriceManager';
+import { calculateFeeAmount } from '$lib/utilities';
 
 
 export abstract class SwapManager {
@@ -19,8 +21,7 @@ export abstract class SwapManager {
   constructor ( blockchain: Blockchain, provider: Provider, initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS ) {
     this.blockchain = blockchain;
     this.provider = provider;
-    this.feeBasisPoints = initialFeeBasisPoints < 0 ? YAKKL_FEE_BASIS_POINTS : initialFeeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ? YAKKL_FEE_BASIS_POINTS_MAX : initialFeeBasisPoints;
-
+    this.feeBasisPoints = initialFeeBasisPoints < 0 ? YAKKL_FEE_BASIS_POINTS : initialFeeBasisPoints;  // If overriding the default fee basis points, ensure it is formatted correctly!
     this.priceManager = new PriceManager();
   }
 
@@ -30,6 +31,10 @@ export abstract class SwapManager {
 
   getMarketPrice( pair: string ) {
     return this.priceManager.getMarketPrice( pair ); //By default, this will cycle through all specified providers and return the first successful response unless 
+  }
+
+  getProvider(): Provider {
+    return this.provider;
   }
 
   getFeeBasisPoints(): number {
@@ -43,16 +48,14 @@ export abstract class SwapManager {
   protected calculateFee( amount: bigint ): bigint {
     try {
       if ( amount === 0n || this.feeBasisPoints <= 0 ) return 0n;  // No fee if amount is zero or fee is <= zero
-      if ( this.feeBasisPoints > YAKKL_FEE_BASIS_POINTS_MAX ) {
-        this.feeBasisPoints = YAKKL_FEE_BASIS_POINTS_MAX;
-        console.log( 'Fee basis points greater than max, setting to guard amount:', this.feeBasisPoints );
-      } 
-      return ( amount * BigInt( this.feeBasisPoints ) ) / BigInt( 100000 );
+      return calculateFeeAmount( amount, this.feeBasisPoints );
     } catch ( error ) {
-      console.log( 'Error calculating fee:', error );
+      error_log( 'Error calculating fee:', error );
       return 0n;
     }
   }
+
+  abstract estimateSwapGas( swapRouterAddress: string, swapParams: SwapParams ): Promise<bigint>;
 
   abstract checkIfPoolExists( tokenIn: Token, tokenOut: Token, fee: number ): Promise<boolean>;
   abstract fetchTokenList(): Promise<SwapToken[]>;
@@ -68,7 +71,10 @@ export abstract class SwapManager {
     fee?: number
   ): Promise<SwapPriceData>;
 
+  abstract approveToken( token: Token, amount: string ): Promise<TransactionReceipt>;
+  abstract checkAllowance( token: Token, fundingAddress: string ): Promise<bigint>;
   abstract executeSwap( params: SwapParams ): Promise<TransactionResponse>;
+  abstract executeFullSwap( params: SwapParams ): Promise<[TransactionReceipt, TransactionReceipt]>; // Waits for transaction to be mined, sends fees, and returns transaction receipt
 
   abstract getPoolInfo(
     tokenA: Token,
@@ -87,16 +93,13 @@ export abstract class SwapManager {
     estimateOnly?: boolean
   ): Promise<TransactionRequest | bigint>;
 
-  abstract distributeFeeManually(
+  abstract distributeFee(
     tokenOut: Token,
     feeAmount: BigNumberish,
-    feeRecipient: string
-  ): Promise<TransactionResponse>;
-
-  abstract distributeFeeThroughSmartContract(
-    tokenOut: Token,
-    feeAmount: BigNumberish,
-    feeRecipient: string
-  ): Promise<TransactionResponse>;
+    feeRecipient: string,
+    gasLimit: BigNumberish,
+    maxPriorityFeePerGas: BigNumberish,
+    maxFeePerGas: BigNumberish
+  ): Promise<TransactionReceipt>;
 
 }

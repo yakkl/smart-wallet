@@ -970,9 +970,17 @@ export interface SwapParams {
   tokenIn: Token;
   tokenOut: Token;
   amount: BigNumberish;
+  fee: number;
   slippage: number;
   deadline: number;
   recipient: string;
+  feeRecipient: string;
+  feeAmount: BigNumberish;
+
+  // These 3 are transaction related and not swap related
+  gasLimit: BigNumberish;
+  maxFeePerGas: BigNumberish;
+  maxPriorityFeePerGas: BigNumberish;
 }
 
 export interface ExactInputSingleParams {
