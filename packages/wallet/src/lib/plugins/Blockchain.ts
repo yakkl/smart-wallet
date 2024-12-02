@@ -3,23 +3,25 @@
 import { BaseFeeManager } from './FeeManager';
 import { EthereumGasProvider } from '$plugins/providers/fees/ethereum/EthereumGasProvider';
 import type { FeeManager, GasEstimate, GasPrediction, HistoricalGasData } from '$lib/common/gas-types';
-import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH } from '$lib/common';
+import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, type BlockTag, type BlockWithTransactions, type Deferrable, type Filter, type Log, type MetaData, type Transaction, type TransactionReceipt, type TransactionRequest, type TransactionResponse, type YakklPrimaryAccount, type Network, type IMAGEPATH, type Signer } from '$lib/common';
 // import type { Signer } from '$plugins/Signer';
 import type { Provider } from '$plugins/Provider';
 import type { AbstractContract } from './Contract';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
+import type { ethers } from 'ethers';
 
 export interface ContractInterface {
   address: string;
   abi: readonly any[]; // Change this line
-  functions: Record<string, (...args: any[]) => Promise<any>>;
-  call(functionName: string, ...args: any[]): Promise<any>;
+  functions: Record<string, ( ...args: any[] ) => Promise<any>>;
+  call( functionName: string, ...args: any[] ): Promise<any>;
 }
 
 /**
  * Interface for blockchain interactions.
  */
 export interface Blockchain {
+  provider: Provider;
   name: string; // Name of the blockchain
   networks: Network[]; // List of networks supported by this blockchain (e.g. Mainnet, Testnet) - The specific blockchain should set the networks it supports
   network: Network; // Current network
@@ -27,10 +29,10 @@ export interface Blockchain {
   symbol: string; // Symbol of the blockchain, e.g. 'ETH'
   icon: IMAGEPATH; // Icon of the blockchain (could be a URL, path or base64 encoded string)
   providers: Provider[]; // List of providers supported by this blockchain
-  options: { [key: string]: MetaData }; // Additional options for the blockchain (optional)
+  options: { [ key: string ]: MetaData; }; // Additional options for the blockchain (optional)
 
   // Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
-  createContract(address: string, abi: any[]): AbstractContract | null;
+  createContract( address: string, abi: any[], providerNative?: ethers.JsonRpcProvider | null | undefined ): AbstractContract | null;
 
   // getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
@@ -39,21 +41,21 @@ export interface Blockchain {
    * @param transaction - The transaction request to estimate gas for.
    * @returns A promise that resolves to a gas estimate.
    */
-  getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate>;
+  getGasEstimate( transaction: TransactionRequest ): Promise<GasEstimate>;
 
   /**
    * Gets historical gas data.
    * @param duration - The duration for which to fetch historical data.
    * @returns A promise that resolves to an array of historical gas data.
    */
-  getHistoricalGasData(duration: number): Promise<HistoricalGasData[]>;
+  getHistoricalGasData( duration: number ): Promise<HistoricalGasData[]>;
 
   /**
    * Predicts future gas fees.
    * @param duration - The duration for which to predict future fees.
    * @returns A promise that resolves to an array of gas predictions.
    */
-  predictFutureFees(duration: number): Promise<GasPrediction[]>;
+  predictFutureFees( duration: number ): Promise<GasPrediction[]>;
 
   /**
    * Calls a transaction.
@@ -61,14 +63,14 @@ export interface Blockchain {
    * @param blockTag - Optional block tag.
    * @returns The result of the call.
    */
-  call(transaction: Deferrable<TransactionRequest>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  call( transaction: Deferrable<TransactionRequest>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
 
   /**
    * Connects the blockchain to a provider with a specific chain ID.
    * @param provider - The provider to connect.
    * @param chainId - The chain ID to connect.
    */
-  connect(provider: Provider, chainId: number): void;
+  connect( provider: Provider, chainId: number ): void;
 
   /**
    * Creates a new account.
@@ -76,9 +78,9 @@ export interface Blockchain {
    * @param accountInfo - Information about the account.
    * @returns The created account.
    */
-  createAccount<T>(accountToDeriveFrom: YakklPrimaryAccount | null, accountInfo: AccountInfo): Promise<T>;
+  createAccount<T>( accountToDeriveFrom: YakklPrimaryAccount | null, accountInfo: AccountInfo ): Promise<T>;
 
-  estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint>;
+  estimateGas( transaction: Deferrable<TransactionRequest> ): Promise<bigint>;
 
   // Getters for blockchain information
   getBlockchainName(): string;
@@ -88,44 +90,46 @@ export interface Blockchain {
   getIcon(): IMAGEPATH;
   getNetworks(): Network[];
   getSymbol(): string;
-  setChainId(chainId: number): void;
-  setNetwork(network: Network): Network; // Sets the current network and returns the old network or null if not found
-  setNetworkByChainId(chainId: number): Network; // Sets the current network by chain ID and returns the old network or null if not found
+  setChainId( chainId: number ): void;
+  setNetwork( network: Network ): Network; // Sets the current network and returns the old network or null if not found
+  setNetworkByChainId( chainId: number ): Network; // Sets the current network by chain ID and returns the old network or null if not found
 
   // Queries
-  getBalance(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<bigint>;
-  getBlock(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<Block>;
+  getBalance( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<bigint>;
+  getBlock( blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string> ): Promise<Block>;
   getBlockNumber(): Promise<number>;
-  getBlockWithTransactions(blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string>): Promise<BlockWithTransactions>;
-  getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  getBlockWithTransactions( blockHashOrBlockTag: BlockTag | string | Promise<BlockTag | string> ): Promise<BlockWithTransactions>;
+  getCode( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
   getFeeData(): Promise<any>;
   getGasPrice(): Promise<bigint>;
-  getLogs(filter: Filter): Promise<Array<Log>>;
-  getOptions(blockchain: string): MetaData | undefined;
+  getLogs( filter: Filter ): Promise<Array<Log>>;
+  getOptions( blockchain: string ): MetaData | undefined;
   getProvider(): Provider;
   getProviders(): Provider[];
   getProviderList(): string[];
-  getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
-  getTransaction(transactionHash: string): Promise<any>;
-  getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number>;
-  getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
-  getTransactionHistory(address: string): Promise<any>;
+  getSigner(): Signer | null;
+  getSignerNative(): any | null;
+  getStorageAt( addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
+  getTransaction( transactionHash: string ): Promise<any>;
+  getTransactionCount( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<number>;
+  getTransactionReceipt( transactionHash: string ): Promise<TransactionReceipt>;
+  getTransactionHistory( address: string ): Promise<any>;
 
   isNetworkAndChainIdValid( chainId: number ): boolean;
-  
+
   /**
    * Checks if an address is valid.
    * @param address - The address to check.
    * @returns Whether the address is valid.
    */
-  isAddress(address: string): boolean;
+  isAddress( address: string ): boolean;
 
   /**
    * Checks if an address is a smart contract.
    * @param address - The address to check.
    * @returns Whether the address is a smart contract.
    */
-  isSmartContract(address: string): Promise<boolean>;
+  isSmartContract( address: string ): Promise<boolean>;
 
   /**
    * Checks if a given blockchain supports smart contracts.
@@ -139,15 +143,15 @@ export interface Blockchain {
    * @param params - The parameters for the method.
    * @returns The result of the request.
    */
-  request(method: string, params: any[]): Promise<any>;
+  request( method: string, params: any[] ): Promise<any>;
 
   // Execution
-  sendRawTransaction(signedTransaction: string): Promise<TransactionResponse>;
-  sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse>;
-  setProvider(provider: Provider, chainId: number): void;
-  signMessage(message: string): Promise<string>;
-  signTransaction(transaction: Transaction): Promise<string>;
-  signTypedData(transaction: Transaction): Promise<string>;
+  sendRawTransaction( signedTransaction: string ): Promise<TransactionResponse>;
+  sendTransaction( transaction: TransactionRequest ): Promise<TransactionResponse>;
+  setProvider( provider: Provider, chainId: number ): void;
+  signMessage( message: string ): Promise<string>;
+  signTransaction( transaction: Transaction ): Promise<string>;
+  signTypedData( transaction: Transaction ): Promise<string>;
 }
 
 /**
@@ -162,7 +166,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   symbol: string;
   icon: IMAGEPATH;
   name: string;
-  options: { [key: string]: MetaData };
+  options: { [ key: string ]: MetaData; };
   protected feeManager: FeeManager;
 
   /**
@@ -172,10 +176,12 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param providers - The providers supported by this blockchain.
    * @param options - Additional options for the blockchain.
    */
-  constructor(name: string, chainId: number, providers: Provider[], networks: Network[], symbol: string, icon: IMAGEPATH, options: { [key: string]: MetaData } = {}) {
+  constructor ( name: string, chainId: number, providers: Provider[], networks: Network[], symbol: string, icon: IMAGEPATH, options: { [ key: string ]: MetaData; } = {} ) {
     this.name = name;
     this.providers = providers;
-    this.chainId = chainId; 
+    if ( providers.length === 0 ) throw new Error( 'Providers list cannot be empty' );
+    this.provider = providers[ 0 ]; // Default to the first provider
+    this.chainId = chainId;
     this.networks = networks; // providers, networks and chainId are critical
     this.options = options;
     this.symbol = symbol;
@@ -183,16 +189,16 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     this.network = this.getNetwork();
 
     if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( "Unsupported network and chain. Please check the chain ID and/or networks" );
-    if (!this.providers || this.providers.length === 0) throw new Error('Providers list cannot be empty');
-    
-    this.provider = providers[0]; // Default to the first provider
+    if ( !this.providers || this.providers.length === 0 ) throw new Error( 'Providers list cannot be empty' );
+
+    this.provider = providers[ 0 ]; // Default to the first provider
     this.feeManager = new BaseFeeManager( [ new EthereumGasProvider( this.provider, this, new CoinbasePriceProvider() ) ] );
-    if (!this.feeManager) throw new Error('Fee manager not set');
+    if ( !this.feeManager ) throw new Error( 'Fee manager not set' );
   }
 
   // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
   // abstract getContract(address: string, abi: any[]): Promise<ContractInterface>;
-  abstract createContract(address: string, abi: any[]): AbstractContract | null;
+  abstract createContract( address: string, abi: any[] ): AbstractContract | null;
 
   // async estimateGas(transaction: TransactionRequest): Promise<bigint> {
   //   const estimate = await this.feeManager.getGasEstimate(transaction);
@@ -201,17 +207,17 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
 
   async getGasEstimate( transaction: TransactionRequest ): Promise<GasEstimate> {
     if ( !this.feeManager || !transaction ) throw new Error( 'Fee manager or transaction not set' );
-    return await this.feeManager.getGasEstimate(transaction);
+    return await this.feeManager.getGasEstimate( transaction );
   }
 
   async getHistoricalGasData( duration: number ): Promise<HistoricalGasData[]> {
     if ( !this.feeManager || !duration ) throw new Error( 'Fee manager or duration not set' );
-    return await this.feeManager.getHistoricalGasData(duration);
+    return await this.feeManager.getHistoricalGasData( duration );
   }
 
-  async predictFutureFees(duration: number): Promise<GasPrediction[]> {
+  async predictFutureFees( duration: number ): Promise<GasPrediction[]> {
     if ( !this.feeManager || !duration ) throw new Error( 'Fee manager or duration not set' );
-    return await this.feeManager.predictFutureFees(duration);
+    return await this.feeManager.predictFutureFees( duration );
   }
 
   /**
@@ -221,11 +227,11 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @returns The result of the call.
    */
   async call( transaction: Deferrable<TransactionRequest>, blockTag: any ): Promise<string> {
-    if (!transaction) throw new Error("Transaction not set");
+    if ( !transaction ) throw new Error( "Transaction not set" );
     try {
-      return await this.provider.call(transaction, blockTag);
-    } catch (e) {
-      throw new Error(`Error calling - call: ${e}`);
+      return await this.provider.call( transaction, blockTag );
+    } catch ( e ) {
+      throw new Error( `Error calling - call: ${ e }` );
     }
   }
 
@@ -234,16 +240,16 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param provider - The provider to connect.
    * @param chainId - The chain ID to connect.
    */
-  connect(provider: Provider, chainId: number): void {
-    if ( !this.providers || !this.providers.includes(provider)) throw new Error('Provider(s) not supported');
+  connect( provider: Provider, chainId: number ): void {
+    if ( !this.providers || !this.providers.includes( provider ) ) throw new Error( 'Provider(s) not supported' );
     if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
 
     this.provider = provider;
     this.chainId = chainId;
   }
 
-  abstract createAccount<T>(accountToDeriveFrom: YakklPrimaryAccount | null, accountInfo: AccountInfo): Promise<T>;
-  abstract estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint>;
+  abstract createAccount<T>( accountToDeriveFrom: YakklPrimaryAccount | null, accountInfo: AccountInfo ): Promise<T>;
+  abstract estimateGas( transaction: Deferrable<TransactionRequest> ): Promise<bigint>;
 
   getBlockchainName(): string {
     return this.name;
@@ -254,14 +260,14 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   getNetwork(): Network {
-    this.network = this.networks.find((network) => network.chainId === this.chainId) || this.networks[0];
+    this.network = this.networks.find( ( network ) => network.chainId === this.chainId ) || this.networks[ 0 ];
     return this.network;
   }
 
   getNetworkByChainId( chainId: number ): Network {
     if ( !chainId ) throw new Error( 'Chain ID not set' );
     if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
-    return this.networks.find((network) => network.chainId === chainId) || this.networks[0];
+    return this.networks.find( ( network ) => network.chainId === chainId ) || this.networks[ 0 ];
   }
 
   getIcon(): IMAGEPATH {
@@ -269,10 +275,10 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   getNetworks(): Network[] {
-    console.log('Blockchain networks', this.networks);
+    console.log( 'Blockchain networks', this.networks );
     return this.networks;
   }
-  
+
   getSymbol(): string {
     return this.symbol;
   }
@@ -286,46 +292,46 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     if ( !chainId ) throw new Error( 'Chain ID not set' );
     if ( !this.isNetworkAndChainIdValid( chainId ) ) throw new Error( 'Unsupported network and chain' );
 
-    if (this.chainId === chainId) {
+    if ( this.chainId === chainId ) {
       return;
     }
-    if (chainId <= 0) {
-      throw new Error('Invalid chain ID');
+    if ( chainId <= 0 ) {
+      throw new Error( 'Invalid chain ID' );
     }
     // Check if the provider supports the chainId
-    if (this.provider.getChainIds() && !this.provider.getChainIds().includes(chainId)) {
-      throw new Error('Provider does not support chain ID');
+    if ( this.provider.getChainIds() && !this.provider.getChainIds().includes( chainId ) ) {
+      throw new Error( 'Provider does not support chain ID' );
     }
     // Check if the blockchain supports the chainId
-    if (this.networks.find((network) => network.chainId === chainId) === undefined) {
-      throw new Error('Blockchain does not support chain ID');
+    if ( this.networks.find( ( network ) => network.chainId === chainId ) === undefined ) {
+      throw new Error( 'Blockchain does not support chain ID' );
     }
-    this.network = this.getNetworkByChainId(chainId);
+    this.network = this.getNetworkByChainId( chainId );
     this.chainId = chainId;
   }
 
   // Everything pulls from the current network object
   setNetwork( network: Network ): Network {
-    if (!network) throw new Error('Network not set');
+    if ( !network ) throw new Error( 'Network not set' );
     try {
-      if (!this.networks.includes(network)) {
+      if ( !this.networks.includes( network ) ) {
         return this.network; // Return the current network if not found
       }
       const oldNetwork = this.network;
       this.network = network;
       return oldNetwork;
-    } catch (e) {
-      throw new Error(`Error calling - switchNetwork: ${e}`);
+    } catch ( e ) {
+      throw new Error( `Error calling - switchNetwork: ${ e }` );
     }
   }
 
   setNetworkByChainId( chainId: number ): Network {
-    if (!chainId) throw new Error('Chain ID not set');
+    if ( !chainId ) throw new Error( 'Chain ID not set' );
     try {
-      const network = this.getNetworkByChainId(chainId);
-      return this.setNetwork(network);
-    } catch (e) {
-      throw new Error(`Error calling - switchNetwork: ${e}`);
+      const network = this.getNetworkByChainId( chainId );
+      return this.setNetwork( network );
+    } catch ( e ) {
+      throw new Error( `Error calling - switchNetwork: ${ e }` );
     }
   }
 
@@ -334,22 +340,22 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param address - The address to get the balance for.
    * @returns The balance of the address.
    */
-  async getBalance(address: string): Promise<bigint> {
+  async getBalance( address: string ): Promise<bigint> {
     try {
       if ( !address ) return 0n;
-      return await this.provider.getBalance(address);
-    } catch (e) {
-      throw new Error(`Error calling - getBalance: ${e}`);
+      return await this.provider.getBalance( address );
+    } catch ( e ) {
+      throw new Error( `Error calling - getBalance: ${ e }` );
     }
   }
 
-  abstract getBlock(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<Block>;
+  abstract getBlock( blockHashOrBlockTag: BlockTag | Promise<BlockTag> ): Promise<Block>;
   abstract getBlockNumber(): Promise<number>;
-  abstract getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<BlockWithTransactions>;
-  abstract getCode(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  abstract getBlockWithTransactions( blockHashOrBlockTag: BlockTag | Promise<BlockTag> ): Promise<BlockWithTransactions>;
+  abstract getCode( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
   abstract getFeeData(): Promise<any>;
   abstract getGasPrice(): Promise<bigint>;
-  abstract getLogs(filter: Filter): Promise<Log[]>;
+  abstract getLogs( filter: Filter ): Promise<Log[]>;
 
   /**
    * Gets the options for a blockchain.
@@ -358,7 +364,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    */
   getOptions( blockchain: string ): MetaData | undefined {
     if ( !blockchain ) throw new Error( 'Blockchain not set' );
-    return this.options[blockchain];
+    return this.options[ blockchain ];
   }
 
   /**
@@ -369,6 +375,14 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     return this.provider;
   }
 
+  getSigner(): Signer | null {
+    return this.provider.getSigner();
+  }
+
+  getSignerNative(): any | null {
+    return this.provider.getSignerNative();
+  }
+  
   /**
    * Gets the list of providers supported by this blockchain.
    * @returns The list of providers.
@@ -382,27 +396,27 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @returns The list of provider names.
    */
   getProviderList(): string[] {
-    return this.providers.map((provider) => provider.name);
+    return this.providers.map( ( provider ) => provider.name );
   }
 
   isNetworkAndChainIdValid( chainId: number ): boolean {
     if ( !chainId ) throw new Error( 'Chain ID not set' );
-    return this.networks.find((network) => network.chainId === chainId) !== undefined;
+    return this.networks.find( ( network ) => network.chainId === chainId ) !== undefined;
   }
 
-  abstract getStorageAt(addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag>): Promise<string>;
+  abstract getStorageAt( addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
 
-  abstract getTransaction(transactionHash: string): Promise<any>;
-  abstract getTransactionCount(addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag>): Promise<number>;
-  abstract getTransactionHistory(address: string): Promise<any>;
-  abstract getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+  abstract getTransaction( transactionHash: string ): Promise<any>;
+  abstract getTransactionCount( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<number>;
+  abstract getTransactionHistory( address: string ): Promise<any>;
+  abstract getTransactionReceipt( transactionHash: string ): Promise<TransactionReceipt>;
 
-  abstract isAddress(address: string): boolean;
-  abstract isSmartContract(address: string): Promise<boolean>;
-  abstract resolveName(name: string | Promise<string>): Promise<null | string>;
-  abstract lookupAddress(address: string | Promise<string>): Promise<null | string>;
+  abstract isAddress( address: string ): boolean;
+  abstract isSmartContract( address: string ): Promise<boolean>;
+  abstract resolveName( name: string | Promise<string> ): Promise<null | string>;
+  abstract lookupAddress( address: string | Promise<string> ): Promise<null | string>;
 
-  abstract sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse>;
+  abstract sendTransaction( transaction: TransactionRequest ): Promise<TransactionResponse>;
 
   isSmartContractSupported(): boolean {
     return false; // Default to false - override in subclasses
@@ -414,11 +428,11 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param params - The parameters for the method.
    * @returns The result of the request.
    */
-  async request(method: string, params: any[]): Promise<any> {
+  async request( method: string, params: any[] ): Promise<any> {
     try {
-      return await this.provider.request(method, params);
-    } catch (e) {
-      throw new Error(`Error calling - request - ${method}: ${e}`);
+      return await this.provider.request( method, params );
+    } catch ( e ) {
+      throw new Error( `Error calling - request - ${ method }: ${ e }` );
     }
   }
 
@@ -427,11 +441,11 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param signedTransaction - The signed transaction to send.
    * @returns The transaction response.
    */
-  async sendRawTransaction(signedTransaction: string): Promise<TransactionResponse> {
+  async sendRawTransaction( signedTransaction: string ): Promise<TransactionResponse> {
     try {
-      return await this.provider.sendRawTransaction(signedTransaction);
-    } catch (e) {
-      throw new Error(`Error calling - sendTransaction: ${e}`);
+      return await this.provider.sendRawTransaction( signedTransaction );
+    } catch ( e ) {
+      throw new Error( `Error calling - sendTransaction: ${ e }` );
     }
   }
 
@@ -440,25 +454,25 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
    * @param provider - The provider to set.
    * @param chainId - The chain ID to set.
    */
-  setProvider(provider: Provider, chainId: number): void {
-    if (!this.providers.includes(provider)) {
-      throw new Error('Provider not supported');
+  setProvider( provider: Provider, chainId: number ): void {
+    if ( !this.providers.includes( provider ) ) {
+      throw new Error( 'Provider not supported' );
     }
     this.provider = provider;
     this.chainId = chainId;
   }
 
-  abstract signTransaction(transaction: TransactionRequest): Promise<string>;
-  abstract signMessage(message: string): Promise<string>;
-  abstract signTypedData(transction: TransactionRequest): Promise<string>;
+  abstract signTransaction( transaction: TransactionRequest ): Promise<string>;
+  abstract signMessage( message: string ): Promise<string>;
+  abstract signTypedData( transction: TransactionRequest ): Promise<string>;
 
   /**
    * Protected method to add or override metadata.
    * @param newOptions - The new options to add or override.
    * @param overrideAll - Whether to override all existing options.
    */
-  protected _updateOptions(newOptions: { [key: string]: MetaData }, overrideAll: boolean = false): void {
-    if (overrideAll) {
+  protected _updateOptions( newOptions: { [ key: string ]: MetaData; }, overrideAll: boolean = false ): void {
+    if ( overrideAll ) {
       this.options = newOptions;
     } else {
       this.options = { ...this.options, ...newOptions };

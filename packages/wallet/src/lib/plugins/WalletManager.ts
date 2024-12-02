@@ -16,7 +16,7 @@ class WalletManager {
         walletStore.set(WalletManager.instance);
       }
     }
-    return WalletManager.instance;
+    return WalletManager.instance; // This can return with no signer set if the private key is not provided. It will be up to the developer to call the setSigner method with a valid private key.
   }
 
   public static clearInstance(): void {

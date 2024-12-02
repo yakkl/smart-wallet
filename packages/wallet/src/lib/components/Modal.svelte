@@ -31,7 +31,7 @@
         {:else}
           <h2 class="text-2xl font-bold mb-2 text-primary-light dark:text-primary-dark">
             {title}
-         </h2>
+          </h2>
         {/if}
       </div>
       

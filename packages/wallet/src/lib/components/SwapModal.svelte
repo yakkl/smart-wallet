@@ -12,10 +12,9 @@
   export let fundingAddress: string;
   export let provider: Provider;
   export let blockchain: Ethereum;
-  export let url: string;
   export let swapManager: UniswapSwapManager;
   export let tokenService: TokenService<any>;
-  export let gasProvider: EthereumGasProvider;
+  // export let gasProvider: EthereumGasProvider;
   export let className = 'text-gray-600 z-[999]';
 
   // Note: This calls the actual Swap component but handles the onSwap function. If you want to handle the onSwap function then do not use this but call Swap itself.
@@ -28,4 +27,4 @@
 
 </script>
 
-<Swap bind:show={show} {fundingAddress} {provider} {blockchain} {url} {swapManager} {tokenService} {gasProvider} {className} {onSwap}/>
+<Swap bind:show={show} {fundingAddress} {provider} {blockchain} {swapManager} {tokenService} {className} {onSwap}/>

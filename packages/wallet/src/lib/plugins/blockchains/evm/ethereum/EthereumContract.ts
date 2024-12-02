@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AbstractContract } from '$plugins/Contract';
-import { debug_log, type BigNumberish, type TransactionRequest, type TransactionResponse } from '$lib/common';
+import { type BigNumberish, type TransactionRequest, type TransactionResponse } from '$lib/common';
 import type { Provider } from '$plugins/Provider';
-import type { Signer } from '$plugins/Signer';
+// import type { Signer } from '$plugins/Signer';
 import { ethers } from 'ethers';
 import { EthersConverter } from '$plugins/utilities/EthersConverter';
 import type { FunctionFragment, EventFragment } from 'ethers';
@@ -11,12 +11,25 @@ export class EthereumContract extends AbstractContract {
   private contract: ethers.Contract;
   interface: ethers.Interface;
 
-  constructor ( address: string, abi: any[], providerOrSigner: Provider | Signer ) {
-    super( address, abi, providerOrSigner );
-    this.contract = new ethers.Contract( address, abi, providerOrSigner as any );
-    if ( !this.contract ) throw new Error( 'Invalid contract' );
+  // Added providerNative to the constructor - may need to be removed
+  constructor ( address: string, abi: any[], provider: Provider ) { 
+    super( address, abi, provider );
+
+    // Create contract instance with the given provider or fallback to default provider
+    this.contract = new ethers.Contract(
+      address,
+      abi,
+      provider.getSignerNative()
+    );
+
+    if ( !this.contract ) {
+      throw new Error( 'Invalid contract' );
+    }
+
     this.interface = new ethers.Interface( abi );
-    if ( !this.interface ) throw new Error( 'Invalid interface' );
+    if ( !this.interface ) {
+      throw new Error( 'Invalid interface' );
+    }
   }
 
   async call( functionName: string, ...args: any[] ): Promise<any> {
@@ -24,8 +37,6 @@ export class EthereumContract extends AbstractContract {
       if ( !functionName || !this.interface ) throw new Error( 'Invalid function name or invalid interface' );
       if ( !this.interface.getFunction( functionName ) ) throw new Error( `Function ${ functionName } does not exist on contract` );
 
-      debug_log( 'EthereumContract.call', functionName, args );
-      
       return await this.contract[ functionName ]( ...args );
     } catch ( error ) {
       console.log( `Error calling ${ functionName }:`, error );
@@ -37,7 +48,7 @@ export class EthereumContract extends AbstractContract {
     try {
       if ( !functionName || !this.interface ) throw new Error( 'Invalid function name or invalid interface' );
       if ( !this.interface.getFunction( functionName ) ) throw new Error( `Function ${ functionName } does not exist on contract` );
-      
+
       // Get the function from the contract
       const contractFunction = ( this.contract as any )[ functionName ];
       if ( typeof contractFunction !== 'function' ) {
@@ -81,6 +92,8 @@ export class EthereumContract extends AbstractContract {
       }
 
       const tx = await this.contract[ functionName ]( ...args );
+      if ( !tx ) throw new Error( 'Invalid transaction from send transaction' );
+
       return EthersConverter.ethersTransactionResponseToTransactionResponse( tx );
     } catch ( error ) {
       console.error( `Error sending transaction for ${ functionName }:`, error );
@@ -141,4 +154,38 @@ export class EthereumContract extends AbstractContract {
 
     return eventFragments.map( event => event.name );
   }
+
+  // WIP
+  //   async supportsPermit( tokenAddress: string ) {
+  //   try {
+  //     const token = new ethers.Contract( tokenAddress, [
+  //       "function permit(address,address,uint256,uint256,uint8,bytes32,bytes32)"
+  //     ], this.provider?.getProvider() );
+  //     return !!( await token.estimateGas.permit() ); // If estimation does not revert, permit is likely supported
+  //   } catch ( error ) {
+  //     return false;
+  //   }
+  // }
+
+  // WIP
+  //   async permitAndApprove( token, owner, spender, value, nonce, deadline, v, r, s, signer ) {
+  //   const tokenContract = new ethers.Contract( token, [
+  //     "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)"
+  //   ], signer );
+
+  //   await tokenContract.permit( owner, spender, value, deadline, v, r, s );
+  // }
+
+  // WIP Usage:
+  //   if( await supportsPermit( tokenAddress, provider )) {
+  //   try {
+  //     await permitAndApprove( tokenAddress, owner, spender, value, nonce, deadline, v, r, s, signer );
+  //   } catch ( error ) {
+  //     console.log( 'Permit failed, falling back to approve:', error );
+  //     await tokenContract.approve( spender, value );
+  //   }
+  // } else {
+  //   await tokenContract.approve( spender, value );
+  // }
+
 }

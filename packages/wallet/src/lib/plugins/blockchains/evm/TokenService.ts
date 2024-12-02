@@ -1,5 +1,5 @@
 import type { AbstractBlockchain } from '$plugins/Blockchain';
-import { debug_log, type BaseTransaction, type BigNumberish, type TransactionResponse } from '$lib/common';
+import { type BaseTransaction, type BigNumberish, type TransactionResponse } from '$lib/common';
 import { AbstractContract } from '$plugins/Contract';
 import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';  // Only ERC20 ABI is used
 
@@ -12,7 +12,7 @@ export class TokenService<T extends BaseTransaction> {
 
   private getTokenContract( tokenAddress: string ): AbstractContract | null{
     if ( !tokenAddress ) return null; // Want a graceful way to handle this instead of throwing an error
-    return this.blockchain ? this.blockchain.createContract(tokenAddress, ABIs.ERC20) : null;
+    return this.blockchain ? this.blockchain.createContract( tokenAddress, ABIs.ERC20 ) : null; //, this.blockchain?.getProvider()?.getProviderEthers() || undefined) : null;
   }
 
   async getTokenInfo( tokenAddress: string ) {
@@ -21,8 +21,6 @@ export class TokenService<T extends BaseTransaction> {
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
     
-      debug_log( 'getTokenInfo - contract', contract );
-
       const [ name, symbol, decimals, totalSupply ] = await Promise.all( [
         contract.call( 'name' ),
         contract.call( 'symbol' ),
@@ -44,8 +42,6 @@ export class TokenService<T extends BaseTransaction> {
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return 0n;
 
-      debug_log( 'TokenService.getBalance - contract, tokenAddress, userAddress', contract, tokenAddress, userAddress );
-      
       return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);

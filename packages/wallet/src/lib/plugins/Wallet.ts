@@ -312,6 +312,10 @@ export class Wallet {
         console.log( 'Blockchain is not initialized yet' );
         return null;
       }
+      if (!this.provider) {
+        console.log( 'Provider is not initialized yet' );
+        return null;
+      }
       // privateKey can be null if the system is initializing so we simply log and return
       if (!privateKey && !this.privateKey) {
         console.log('No private key provided yet');
@@ -354,7 +358,7 @@ export class Wallet {
       if (this.signer) {
         this.privateKey = privateKey; // Set the private key for the user for signing transactions of the current token.
         Wallet.setInstance(this);
-        this.provider?.setSigner(this.signer);
+        this.provider.setSigner(this.signer);
         return Promise.resolve(this.signer);
       } else {
         throw new Error('Signer could not be created');

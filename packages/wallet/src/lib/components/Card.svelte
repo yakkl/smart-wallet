@@ -543,7 +543,7 @@
             profile.data = result as ProfileData;
             profile.data.registered.type = RegistrationType.PREMIER;
             profile.data.registered.key = serialNumber;
-            yakklVersionStore.set('Premier - ' + serialNumber);
+            yakklVersionStore.set('Pro - ' + serialNumber);
 
             await encryptData(profile.data, yakklMiscStore).then(async (result) => {
               profile.data = result;
@@ -566,7 +566,7 @@
 
   function handleCopy(e: any) {
     toastTrigger(3, 'Copied to clipboard');
-    timeoutClipboard(5);
+    timeoutClipboard(20);
   }
 
   function formatEther(value: BigNumberish): string {
@@ -592,7 +592,7 @@
 
 <ImportPrivateKey bind:show={showAccountImportModal} onComplete={handleImport} className="text-gray-600 z-[999]"/>
 
-<Modal title="Upgrade to Premier" bind:open={upgrade} size="xs" class="xs" color="purple"> 
+<Modal title="Upgrade to Pro" bind:open={upgrade} size="xs" class="xs" color="purple"> 
   <div class="text-center m-2">
     {#if !step1}
     <div id="step1" class="border border-purple-500 rounded-lg w-full mb-2 p-2 ">
@@ -613,7 +613,7 @@
 
           <p class="text-md font-normal">Step 1. <span class="font-bold">Email is required for LATER billing.</span> Entering it here will automatically prefill the billing page (browser window). Billing is handled by Stripe and billing data is maintained there as well. Once you do that you can remove it, but the vendor requires it.</p>
           {#if promoCode === 'IYO'}
-          <p class="text-md text-red">NOTE: The <span class="font-bold">IYO</span> promo code is being automatically passed to the processor. This means you get the Premier version for FREE because you're participating in our BETA release. Stripe, our processor, will prompt for a credit/debit card even though there will be NO CHARGE! This is for the annual recurring billing of $29.99. You can cancel that at any time.</p>
+          <p class="text-md text-red">NOTE: The <span class="font-bold">IYO</span> promo code is being automatically passed to the processor. This means you get the Pro version for FREE because you're participating in our BETA release. Stripe, our processor, will prompt for a credit/debit card even though there will be NO CHARGE! This is for the annual recurring billing of $29.99. You can cancel that at any time.</p>
           {/if}
         </div>
         <div class="mb-2">
@@ -633,7 +633,7 @@
     <div id="step2" class="border border-primary rounded-lg w-full my-2 p-2 ">
       <form class="w-full" on:submit|preventDefault={handleUpgradeSave}>
         <div class="pt-1 item-center w-full text-left">
-        <span class="text-md text-purple-800 font-bold text-left mt-2 mb-1">Premier Serial Number:*</span>
+        <span class="text-md text-purple-800 font-bold text-left mt-2 mb-1">Pro Serial Number:*</span>
         <input id="serialNumber"
             class="w-full px-3 md:py-2 py-1 text-lg font-normal text-gray-700 bg-gray-100  border border-solid border-gray-300 transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Serial Number" autocomplete="off" bind:value="{serialNumber}" aria-label="Serial Number" required />
@@ -648,7 +648,7 @@
   </div>
   <svelte:fragment slot='footer'>
     <p class="text-lg font-bold">Great choice!</p>
-    <p class="text-sm font-normal">A number of advanced features can be unlocked by upgrading to Premier. Copy the serial number from the website (after completing the purchase) and paste it into the serial number field above and save. That's it!</p>
+    <p class="text-sm font-normal">A number of advanced features can be unlocked by upgrading to Pro. Copy the serial number from the website (after completing the purchase) and paste it into the serial number field above and save. That's it!</p>
   </svelte:fragment>
 </Modal>
 {/if}

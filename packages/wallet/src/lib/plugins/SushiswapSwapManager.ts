@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // SushiSwapManager.ts
 import type { AbstractBlockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
 import { SwapManager } from './SwapManager';
-import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest, SwapToken } from '$lib/common/interfaces';
+import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest, SwapToken, TransactionReceipt } from '$lib/common/interfaces';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
 import type { AbstractContract } from '$plugins/Contract';
@@ -29,6 +30,17 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
     this.router = blockchain.createContract( routerAddress, SUSHISWAP_ROUTER_ABI );
+  }
+
+  async estimateSwapGas(swapRouterAddress: string, swapParams: SwapParams): Promise<bigint> {
+    return 0n;    
+  }
+
+  approveToken( token: Token, amount: string ): Promise<TransactionReceipt> {
+    throw new Error( 'Method not implemented.' );
+  }
+  checkAllowance( token: Token, fundingAddress: string ): Promise<bigint> {
+    throw new Error( 'Method not implemented.' );
   }
 
   async fetchTokenList(): Promise<SwapToken[]> {
@@ -60,7 +72,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   
   getRouterAddress(): string | null {
     if ( !this.router ) return null;
-    return this.router.address;
+    return ''; //this.router.address;
   }
 
   private async getWETHToken(): Promise<Token> {
@@ -260,7 +272,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
 
       const gasEstimate = await this.provider.estimateGas( {
         from: await signer.getAddress(),
-        to: this.router.address,
+        to: '',//this.router.address,
         data,
         value: tokenIn.isNative ? amountIn : 0,
         chainId: this.provider.getChainId()
@@ -270,7 +282,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     }
 
     return {
-      to: this.router.address,
+      to: '',//this.router.address,
       data,
       value: tokenIn.isNative ? amountIn : 0,
       from: await this.provider.getSigner()!.getAddress(),
@@ -341,28 +353,39 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     );
   }
 
-  async distributeFeeManually(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async executeFullSwap( params: SwapParams ): Promise<[ TransactionReceipt, TransactionReceipt ]> {
+    throw new Error( "Method not implemented." );
+  }
+
+  async distributeFee(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tokenOut: Token,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     feeAmount: BigNumberish,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeRecipient: string
-  ): Promise<TransactionResponse> {
+    feeRecipient: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    gasLimit: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    maxPriorityFeePerGas: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    maxFeePerGas: BigNumberish
+  ): Promise<TransactionReceipt> {
     throw new Error("Method not implemented.");
   }
 
-  async distributeFeeThroughSmartContract(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    tokenOut: Token,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeAmount: BigNumberish,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeRecipient: string
-  ): Promise<TransactionResponse> {
-    throw new Error("Method not implemented.");
+  // async distributeFeeThroughSmartContract(
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   tokenOut: Token,
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   feeAmount: BigNumberish,
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   feeRecipient: string
+  // ): Promise<TransactionResponse> {
+  //   throw new Error("Method not implemented.");
     
-  }
+  // }
 }
 
 

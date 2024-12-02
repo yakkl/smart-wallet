@@ -744,8 +744,8 @@ export async function getYakklPrimaryAccounts(): Promise<YakklPrimaryAccount[]> 
 // Call these storage functions when you need to update both persistent and memory stores
 export async function setYakklContactsStorage(values: YakklContact[]) {
 	try {
-		yakklContactsStore.set(values);
-		const returnValue = await setObjectInLocalStorage('yakklContacts', values);
+		yakklContactsStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklContacts', values );
 		return returnValue;
 	} catch (error) {
 		console.log(error);

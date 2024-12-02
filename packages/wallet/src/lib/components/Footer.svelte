@@ -19,7 +19,7 @@
 
   let w = 6;
   let h = 6;
-  let registeredType = RegistrationType.PREMIER.toUpperCase(); // Default to Premier for now!!!!
+  let registeredType = RegistrationType.PREMIER.toUpperCase(); // Default to Pro for now!!!!
 
   let yakklMiscStore: string;
   let yakklSettingsStore: Settings | null;

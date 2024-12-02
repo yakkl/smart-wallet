@@ -1,19 +1,28 @@
 <script lang="ts">
-  import { get, type Writable } from 'svelte/store';
+  import { type Writable } from 'svelte/store';
   import type { SwapPriceData } from '$lib/common/interfaces';
 	import { ethers } from 'ethers';
-	import { formatPrice } from '$lib/utilities/utilities';
+	import { calculateFeeAmount, calculateFeeBasisPointsPercent, formatFeeToUSD } from '$lib/utilities/utilities';
 	import { toBigInt } from '$lib/common/math';
+	import { YAKKL_FEE_BASIS_POINTS_DIVISOR } from '$lib/common';
 
   export let swapPriceDataStore: Writable<SwapPriceData>;
+  export let disabled: boolean = false; // This assumes for wrapping and unwrapping of ETH WETH
+  // export let hidden: boolean = false;
 
   let exchangeRate: number = 0;
+  let feeBasisPointsToPercent: string = '0.0000%';
 
   // Declare reactive variables
   $: swapPriceData = $swapPriceDataStore;
-  $: tokenOutPriceInUSD = swapPriceData.tokenOutPriceInUSD || '~N/A~';
-  $: gasEstimateInUSD = swapPriceData.gasEstimateInUSD || '~N/A~';
-  $: feeBasisPointsToPercent = `${swapPriceData.feeBasisPoints / 1000}%`; // 250, 500, 875, 1000 (.25%, .5%, .875%, 1%)
+  $: tokenOutPriceInUSD = swapPriceData.tokenOutPriceInUSD || '--';
+  $: gasEstimateInUSD = swapPriceData.gasEstimateInUSD || '--';
+
+  $: {
+    feeBasisPointsToPercent = swapPriceData 
+      ? calculateFeeBasisPointsPercent(swapPriceData.feeBasisPoints)
+      : '0.0000%';
+  }
 
   $: {
     if (swapPriceData && toBigInt(swapPriceData.amountIn) > 0n && toBigInt(swapPriceData.amountOut) > 0n) {
@@ -37,20 +46,33 @@
     }
   }
 
-  // Fallback fee calculation
-  $: feeAmountInUSD = swapPriceData.feeAmountInUSD 
-    || (swapPriceData.feeAmount && swapPriceData.marketPriceOut 
-      ? formatPrice(
-          parseFloat(
-            ethers.formatUnits(toBigInt(swapPriceData.feeAmount) || 0n, swapPriceData.tokenOut.decimals)
-          ) * swapPriceData.marketPriceOut
-        )
-      : '~N/A~');
+  $: feeAmountInUSD = (() => {
+    if (
+      swapPriceData &&
+      toBigInt(swapPriceData.amountIn) > 0n &&
+      swapPriceData.marketPriceIn > 0 &&
+      swapPriceData.tokenIn &&
+      swapPriceData.tokenIn.decimals && 
+      swapPriceData.feeBasisPoints &&
+      disabled === false
+    ) {
+      // Convert basis points to precise decimal
+      const feeDecimal = swapPriceData.feeBasisPoints / YAKKL_FEE_BASIS_POINTS_DIVISOR;
+      
+      // Calculate fee amount in token units without rounding
+      const feeAmount = calculateFeeAmount(toBigInt(swapPriceData.amountIn), swapPriceData.feeBasisPoints);
+      return formatFeeToUSD(feeAmount, swapPriceData.tokenIn.decimals, swapPriceData.marketPriceIn);
+    } else {
+      // Fallback value until all data is available or valid
+      return disabled ? '' : 'Calculating...';
+    }
+  })();
 
 </script>
 
 <div class="space-y-2 text-sm text-gray-500">
   <!-- Exchange Rate Display -->
+  {#if !disabled}
   <div class="flex justify-between w-full">
     <span class="text-left truncate">
       {#if exchangeRate && exchangeRate > 0}
@@ -67,6 +89,7 @@
       Token Price (USD): {tokenOutPriceInUSD}
     </span>
   </div>
+  {/if}
 
   <!-- Gas Fee Estimate -->
   <div class="flex justify-between items-center w-full">
@@ -81,9 +104,11 @@
   </div>
 
   <!-- Fee Estimate -->
+  {#if !disabled}
   <div class="flex justify-between w-full">
     <span class="text-left truncate">
       Fee ({feeBasisPointsToPercent}): ≈ {feeAmountInUSD}
     </span>
   </div>
+  {/if}
 </div>

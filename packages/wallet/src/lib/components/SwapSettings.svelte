@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { debug_log, type SwapPriceData } from '$lib/common';
+	import { type SwapPriceData } from '$lib/common';
 	import type { Writable } from 'svelte/store';
 
   export let swapPriceDataStore: Writable<SwapPriceData>;
@@ -18,13 +18,12 @@
 
   // Reactive store value
   let swapPriceData: SwapPriceData;
+
   $: { 
     swapPriceData = $swapPriceDataStore;
     slippageTolerance = swapPriceData.slippageTolerance || 0.5;
     deadline = swapPriceData.deadline || 10;
     poolFee = swapPriceData.fee || 3000;
-
-    debug_log('SwapSettings 1:', {swapPriceData, $swapPriceDataStore, slippageTolerance, deadline, poolFee});
   }
 
 
@@ -35,7 +34,6 @@
       // If not, default to the closest match or the default
       poolFee = findClosestPoolFee(poolFee);
     }
-    debug_log('SwapSettings poolFee', {slippageTolerance, deadline, poolFee});
   }
 
   // Helper function to find the closest pool fee
@@ -60,8 +58,6 @@
   function handlePoolFeeChange(event: Event) {
     const value = Number((event.target as HTMLSelectElement).value);
     poolFee = value;
-
-    debug_log('SwapSettings handlePoolFeeChange', {value, poolFee});
     onPoolFeeChange(value);
   }
 </script>

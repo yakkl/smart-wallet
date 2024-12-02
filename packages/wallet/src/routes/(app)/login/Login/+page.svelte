@@ -25,6 +25,7 @@
 	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+  
   let browser_ext: Browser; 
   if (browserSvelte) browser_ext = getBrowserExt();
 
@@ -490,13 +491,13 @@
       
     </div>
 
-    <!-- {#if registeredType !== 'Premier'}
+    <!-- {#if registeredType !== 'Pro'}
     <div id="upgrade" class="w-full mt-10">
       <div class="card bg-base-100 shadow-xl image-full animate-pulse">
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
           <h2 class="card-title self-center">UPGRADE TO PREMIER!</h2>
-          <p>It appears you have not upgraded to the Premier version. Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p>
+          <p>It appears you have not upgraded to the Pro version. Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p>
         </div>
       </div>      
     </div>
@@ -506,7 +507,7 @@
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
           <h2 class="card-title self-center">PREMIER!</h2>
-          <p>Welcome to our Premier version. We have a lot of additional features waiting on you. We're also working hard on advanced features to make your digital asset experience a dream! We also need your suggestions! Enjoy!</p>
+          <p>Welcome to our Pro version. We have a lot of additional features waiting on you. We're also working hard on advanced features to make your digital asset experience a dream! We also need your suggestions! Enjoy!</p>
         </div>
       </div>      
     </div>

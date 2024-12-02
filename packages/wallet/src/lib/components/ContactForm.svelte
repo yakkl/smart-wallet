@@ -2,14 +2,15 @@
 <script lang="ts">
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
-  import type { YakklContact } from '$lib/common';
+  import { debug_log, type YakklContact } from '$lib/common';
   import Modal from './Modal.svelte';
   import { dateString } from '$lib/common/datetime';
   import { onMount } from 'svelte';
   import { yakklCurrentlySelectedStore, yakklContactsStore } from '$lib/common/stores';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
-  import { Ethereum } from '$lib/plugins/blockchains';
+	// import { Input } from './ui/input';
+  
 
   export let show = false;
   export let contact: YakklContact | null = null;
@@ -37,20 +38,21 @@
     }),
     onSubmit: async (values) => {
       try {
-        if (await verifyContact(values.name, values.address, values.alias ? values.alias : '', values.note ? values.note : '')) {
+        const verified = await verifyContact(values.name, values.address, values.alias ? values.alias : '', values.note ? values.note : '');
+        if (verified) {
           const updatedContact: YakklContact = contact
             ? {
                 ...contact,
                 ...values,
                 addressType: addressType,
-                version: $yakklCurrentlySelectedStore!.version ?? '1.0.5',
+                version: $yakklCurrentlySelectedStore!.version ?? '1.1.5',
                 updateDate: dateString(),
               }
             : {
                 id: crypto.randomUUID(),
                 ...values,
                 addressType: addressType,
-                version: $yakklCurrentlySelectedStore!.version ?? '1.0.5',
+                version: $yakklCurrentlySelectedStore!.version ?? '1.1.5',
                 createDate: dateString(),
                 updateDate: dateString(),
               };
@@ -58,7 +60,6 @@
           show = false;
         } else {
           alert('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
-          // console.log('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
         }
       } catch (e) {
         console.log('Error processing contact:', e);
@@ -89,21 +90,9 @@
     let resolvedAddr = null;
     const blockchain = wallet.getBlockchain();
 
-    if (blockchain instanceof Ethereum) {
-      if (blockchain.network.type === 'mainnet') {
-        resolvedAddr = await blockchain.resolveName(falias);
-      } else {
-        resolvedAddr = faddress;
-        // console.log('ENS is only supported on Ethereum mainnet. Skipping ENS resolution on non-mainnet.');
-      }
-    }
-
-    if (resolvedAddr) {
-      faddress = resolvedAddr;
-    }
-
-    if (!blockchain.isAddress(faddress)) {
-      console.error(`Address ${faddress} is not a valid address. A valid address is required.`);
+    const isValid = blockchain.isAddress(faddress);
+    if (!isValid) {
+      debug_log(`Address ${faddress} is not a valid address. A valid address is required.`);
       return false;
     }
 
@@ -112,9 +101,8 @@
 
     // Check for duplicates
     const contacts = $yakklContactsStore;
-    const isDuplicate = contacts.some(c => c.name === fname || c.address === faddress || c.alias === falias);
+    const isDuplicate = contacts.some(c => c.name === fname || c.address === faddress); // alias can be blank so not checking for duplicates
     if (isDuplicate) {
-      // console.log('Duplicate contact name, address, or alias found. Cannot add duplicate contact.');
       return false;
     }
 
@@ -188,4 +176,4 @@
       </div>
     </div>
   </form>
- </Modal>
+</Modal>

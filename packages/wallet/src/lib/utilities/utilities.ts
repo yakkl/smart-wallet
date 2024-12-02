@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
@@ -5,7 +6,7 @@
 import { browser as browserSvelte} from "$app/environment";
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
-import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL } from "$lib/common/constants";
+import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR } from "$lib/common/constants";
 import { map } from "./map";
 import { type BigNumberishLegacy } from '$lib/common';
 import { encodeJSON } from '$lib/common/misc';
@@ -18,6 +19,46 @@ import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser; 
 if (browserSvelte) browser_ext = getBrowserExt();
 
+
+export function calculateFeeAmount( tokenAmount: bigint, feeBasisPoints: number ): bigint {
+  // Convert the fee basis points to an integer for calculation.
+  const feeBasisPointsInt = BigInt( Math.round( feeBasisPoints * 100 ) );
+  // Multiply token amount by fee basis points and divide by the divisor to get the fee.
+  const feeAmount = ( tokenAmount * feeBasisPointsInt ) / BigInt( YAKKL_FEE_BASIS_POINTS_DIVISOR * 100 );
+  return feeAmount;
+}
+
+export function formatFeeToUSD( feeAmount: bigint, tokenDecimals: number, marketPrice: number ): string {
+  // Normalize the fee amount by token decimals.
+  const normalizedFeeAmount = Number( feeAmount ) / Math.pow( 10, tokenDecimals );
+  // Calculate the fee in USD.
+  const feeValueUSD = normalizedFeeAmount * marketPrice;
+  // Format the fee value in USD.
+  return feeValueUSD.toLocaleString( 'en-US', { style: 'currency', currency: 'USD' } );
+}
+
+export function calculateFeeBasisPointsPercent( feeBasisPoints: number ): string {
+  const value = `${ ( feeBasisPoints / 100 ).toFixed( 4 ) }%`;
+  return value;
+}
+
+// decimal values like .04
+// Can use ethers.parseUnits('0.04', 18) to convert to wei 
+export function convertToBigInt( amount: string, decimals: number ): bigint {
+  if ( !amount || parseFloat( amount ) <= 0 ) {
+    throw new Error( 'Invalid approval amount' );
+  }
+
+  // Parse the string amount to a float
+  const parsedAmount = parseFloat( amount );
+
+  // Multiply by 10^decimals to get the integer representation
+  const factor = 10 ** decimals;
+  const convertedAmount = parsedAmount * factor;
+
+  // Convert to BigInt
+  return BigInt( Math.floor( convertedAmount ) ); // Use Math.floor to avoid rounding issues
+}
 
 export function formatPrice( price: number ): string {
   try {
@@ -216,7 +257,7 @@ export function checkUpgrade() {
       }
     }
     return false;
-  } catch (e) {
+  } catch (e: any) {
     return false;
   }
 }

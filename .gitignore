@@ -19,6 +19,7 @@ packages/contracts/code/deployed_*_contracts.json
 packages/contracts/code/deployed_contracts.json
 packages/contracts/code/anvil-config.json
 packages/contracts/code/helper/
+packages/contracts/code/*.old
 **/4337/
 **/forge-tests.txt
 
@@ -65,6 +66,7 @@ packages/wallet/static/ext/
 packages/wallet/src/lib/**/*.tmp
 
 # Optional: Specific patterns to match nested directories (alternative approach)
+**/*.old
 **/*.tmp
 **/*.wip
 **/anvil-state

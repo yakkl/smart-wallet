@@ -15,7 +15,7 @@
     <figure><img src="/images/yakkltoken.png" alt="token"/></figure>
     <div class="card-body">
       <h2 class="card-title">PROMOTION</h2>
-      <p>Upgrade to Premier to and never see an AD again!</p>
+      <p>Upgrade to Pro plan and never see an AD again!</p>
       <div class="card-actions justify-end">
         <button class="btn btn-primary">UPGRADE</button>
       </div>

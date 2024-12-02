@@ -18,16 +18,18 @@ export const DEV_BASE_DELAY = 1000; //milliseconds
 
 export const ETH_BASE_EOA_GAS_UNITS = 21000; // Base amount of gas units it takes for a EOA transaction
 export const ETH_BASE_SCA_GAS_UNITS = 45000; // Base amount of gas units it takes for a Smart Contract transaction
-export const ETH_BASE_UNISWAP_GAS_UNITS = 500000; // Base amount of gas units it takes for a Uniswap transaction
+export const ETH_BASE_SWAP_GAS_UNITS = 500000n; // Base amount of gas units it takes for a Uniswap transaction
 export const ETH_BASE_FORCANCEL_GAS_UNITS = ETH_BASE_EOA_GAS_UNITS * 3;
 
 export const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address on Ethereum mainnet
 
-export const YAKKL_GAS_ESTIMATE_MIN_USD = 2.00;
+export const YAKKL_GAS_ESTIMATE_MIN_USD = 3.50;
 export const YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT = 3750000;
-export const YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS = 15000; // 150%
-export const YAKKL_FEE_BASIS_POINTS = 500; //4375; //0.4375% //875; // 0.875%
-export const YAKKL_FEE_BASIS_POINTS_MAX = 1000; // 10%
+export const YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS = 30000n; // 300%
+export const YAKKL_FEE_BASIS_POINTS = 42.25; //875; // 0.875%
+export const YAKKL_FEE_BASIS_POINTS_DIVISOR = 10_000;
+export const YAKKL_FEE_ACCEPTABLE_TOKENS = ["ETH", "WETH", "YAKKL", "USDC", "USDT", "DAI", "WBTC"] // Tokens that are acceptable for fee payment
+
 export const YAKKL_ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const YAKKL_ZERO_ACCOUNT_NAME = "YAKKL - Zero Account - YAKKL";
 export const YAKKL_ZERO_ACCOUNT_TYPE = "NA"; // Not applicable - default value
@@ -46,7 +48,7 @@ export const DEFAULT_POPUP_WIDTH = 428; //394;
 export const DEFAULT_POPUP_HEIGHT = 926; //620;
 export const DEFAULT_EXT_HEIGHT = 926; //600;
 export const DEFAULT_TITLE = "YAKKL® Smart Wallet";
-export const DEFAULT_UPGRADE_LABEL = "Premier - ";
+export const DEFAULT_UPGRADE_LABEL = "Pro - ";
 
 export const DEFAULT_DERIVED_PATH_ETH = "m/44'/60'/"; // '0'/0/0' - First of these three represents the account. Last of these three represents index and gets dynamically created. Middle one of these three is always '0'
 
@@ -158,7 +160,6 @@ export const BLOCKCHAINS = {
 export const BLOCKCHAINS_NETWORKS = {
     ETHEREUM: {
         mainnet: 'mainnet',
-        goerli: 'goerli', // Deprecates at end of 2023
         sepolia: 'sepolia',
     },
     BITCOIN: 'bitcoin',

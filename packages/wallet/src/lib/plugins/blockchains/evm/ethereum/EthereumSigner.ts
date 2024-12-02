@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumSigner.ts
 import { ethers } from 'ethers';
-import type { EVMTransactionRequest, BigNumberish, TransactionRequest, TransactionResponse, TransactionReceipt, Log } from '$lib/common';
+import { type EVMTransactionRequest, type BigNumberish, type TransactionRequest, type TransactionResponse, type TransactionReceipt, type Log } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import type { Provider } from '$lib/plugins/Provider';
@@ -12,7 +12,7 @@ import type { Provider } from '$lib/plugins/Provider';
  */
 export class EthereumSigner extends Signer {
   private wallet: ethers.Wallet;
-  public readonly provider: Provider | null;
+  public readonly provider: Provider | null = null;
 
   /**
    * Creates an instance of EthereumSigner.
@@ -31,29 +31,36 @@ export class EthereumSigner extends Signer {
     if (privateKey.length !== 66) {
       throw new Error(`Invalid private key length. Instead it is ${privateKey.length}`);
     }
+
     this.provider = provider;
-    this.wallet = new ethers.Wallet(privateKey, provider as any);  
+    const providerNative = provider ? provider.getProvider() : null;
+    this.wallet = new ethers.Wallet( privateKey, providerNative ? providerNative : provider as any );
   }
 
   /**
    * Converts custom BigNumberish to ethers.BigNumberish (as a hex string)
    */
-  private toEthersHex(value: BigNumberish | null | undefined): string | null | undefined {
-    if (value instanceof EthereumBigNumber) {
+  private toEthersHex( value: BigNumberish | null | undefined ): string | null | undefined {
+    if ( value instanceof EthereumBigNumber ) {
       return value.toHex();
     }
-    if (typeof value === 'bigint') {
-      return '0x' + value.toString(16);
+    if ( typeof value === 'bigint' ) {
+      return '0x' + value.toString( 16 );
     }
-    if (typeof value === 'number') {
-      return '0x' + BigInt(value).toString(16);
+    if ( typeof value === 'number' ) {
+      return '0x' + BigInt( value ).toString( 16 );
     }
-    if (typeof value === 'string') {
+    if ( typeof value === 'string' ) {
       // Assuming the string is already in a hex format if not, you might want to parse it
       return value;
     }
-    return value as string | null | undefined;
+    if ( value && typeof value === 'object' && '_hex' in value ) {
+      // Handle BigNumber-like objects, assuming they have a `_hex` property
+      return ( value as any )._hex;
+    }
+    return null; // Return `null` as fallback for other cases
   }
+
 
   /**
    * Signs a transaction request.
@@ -95,15 +102,25 @@ export class EthereumSigner extends Signer {
   async verifySigner(signerAddress: string, messageToVerify: string, signature: string): Promise<boolean> {
     try {
       const value = ethers.recoverAddress(ethers.hashMessage(messageToVerify), signature) === signerAddress;
-      return Promise.resolve(value);
+      return value;
     } catch (e) {
       console.log(e);
-      return Promise.reject(e);
+      return false; 
     }
   }
 
   async getAddress(): Promise<string> {
     return this.wallet.address;
+  }
+
+  getSigner(): any | null {
+    if ( !this.wallet ) return null;
+    return this.wallet;
+  }
+
+  setSigner( provider: Provider ): void {
+    if (!provider) throw new Error("Provider is not provided");    
+    this.wallet = new ethers.Wallet(this.wallet.privateKey, provider.getProvider()); // Replaces the signer with a new one
   }
 
   async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {

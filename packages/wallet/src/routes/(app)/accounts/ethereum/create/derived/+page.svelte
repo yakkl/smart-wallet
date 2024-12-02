@@ -235,7 +235,7 @@
             
       <h3 class="mb-2 text-lg font-normal text-green-700 dark:text-gray-400"><span class="font-bold">SUCCESS - </span> Additional Wallet Account Created!</h3>
       <div class="text-left">
-        <h3 class="mb-1 text-lg font-bold text-green-900 ">(ONLY available for Premier version)</h3>
+        <h3 class="mb-1 text-lg font-bold text-green-900 ">(ONLY available for Pro version)</h3>
         <h4 class="mb-1 text-lg font-normal text-green-700 ">Next steps:</h4>
         <p class="mb-5 text-md font-normal text-green-900"><span class="font-bold">1. Click the Print button (if you have a secure printer you can trust).</span> This printout will be your emergency kit. Store it somewhere safe! Do not let anyone see it because it contains sensitive information!</p>
         <p class="mb-5 text-md font-normal text-green-900"><span class="font-bold">2. Click the Download button.</span> This will download this same emergency kit in a file format but it will be fully encrypted using your credentials that you just created! It's a good idea to store the encrypted file on an encrypted and secure USB drive (not a cold wallet - that is something different). Put the secured file and/or encrypted USB drive somewhere safe like your hardcopy emergency kit!</p>
@@ -264,7 +264,7 @@
     <main class="p-2 max-h-[900px] rounded-xl bg-base-100 overflow-scroll border-2 border-stone-700 border-r-stone-700/75 border-b-slate-700/75">
 
       <div class="mt-[.35rem] ml-1 py-[8px] flex fixed top-0 bg-base-100 print:hidden">
-        <!-- {#if registered.type === 'Premier' && registered.key} -->
+        <!-- {#if registered.type === 'Pro' && registered.key} -->
         <Button class="btn-accent btn-sm inline-flex" on:click={handlePrinting}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
@@ -280,7 +280,7 @@
         <Button id="close" class="inline-flex btn-accent btn-sm" on:click={() => goto(PATH_WELCOME)}>3. Close</Button>
         <!-- {:else}
         <div class="block btn btn-accent">
-          <span class="text-xs font-bold">Emergency Kit only available for Premier version</span>
+          <span class="text-xs font-bold">Emergency Kit only available for Pro version</span>
           <Button id="close" class="inline-flex" on:click={() => goto(PATH_WELCOME)}>Close</Button>
         </div>
         {/if} -->
@@ -355,7 +355,7 @@
   </div>
 </div>
 
-  <!-- {#if registered.type === 'Premier' && registered.key} -->
+  <!-- {#if registered.type === 'Pro' && registered.key} -->
   <!-- Will need to change back or make updates after pre-launch -->
   <div class="hidden print:block">
     <div class="ml-1 mr-1 mb-[10rem] print:ml-0 print:mr-0 w-[1000px] bg-white overscroll-none overflow-scroll">
@@ -452,8 +452,8 @@
         <div class="w-full text-center">
           <h3 class="text-lg print:text-2xl font-medium leading-6 text-gray-900">{network} - Subportfolio Account Secrets Emergency Kit</h3>
           <br/>
-          <h4 class="block mt-1 text-sm print:text-lg text-gray-700">This feature is only available with the Premier version.</h4>
-          <h4 class="block mt-1 text-sm print:hidden text-gray-700">Upgrade to Premier for this and many other features!</h4>
+          <h4 class="block mt-1 text-sm print:text-lg text-gray-700">This feature is only available with the Pro version.</h4>
+          <h4 class="block mt-1 text-sm print:hidden text-gray-700">Upgrade to Pro for this and many other features!</h4>
         </div>
 
       </div>
@@ -463,7 +463,7 @@
   <!--bottom-[63px]-->
 
   <!-- <div style="width: 428px;" class="justify-center py-[10px] flex flex-row fixed top-0 min-w-[{containerWidth}px] max-w-[{containerWidth}px] bg-white dark:bg-gray-900 print:hidden"> -->
-    <!-- {#if registered.type === 'Premier' && registered.key} -->
+    <!-- {#if registered.type === 'Pro' && registered.key} -->
 
     <!-- <Button class="inline-block" on:click={handlePrint}>
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
@@ -482,7 +482,7 @@
     </Button> -->
     <!-- {:else}
     <div class="block">
-      <span class="text-xs font-bold">Emergency Kit only available for Premier version</span>
+      <span class="text-xs font-bold">Emergency Kit only available for Pro version</span>
       <Button id="close" class="inline-block" on:click={() => goto(PATH_WELCOME)}>Close</Button>
     </div>
     {/if} -->

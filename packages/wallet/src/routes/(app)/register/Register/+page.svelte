@@ -560,7 +560,7 @@
     <ul>
         <li class="flex items-center mb-1">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-4 h-4 text-green-400 dark:text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            Upgrading to Premier, Business, or Enterprise/Institution versions only. Not required for the default Standard version.
+            Upgrading to Pro, Business, or Enterprise/Institution versions only. Not required for the default Standard version.
         </li>
     </ul>
 </Popover> -->
@@ -796,7 +796,7 @@
           <figure><img class="h-auto" src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
           <div class="card-body p-1">
             <h2 class="card-title self-center">PREMIER BETA!</h2>
-            <p>This is the beta program for our Premier version. This means you are receiving all Premier features for FREE! We are adding new features and making small cosmetic changes and we would love to have your feedback. To add feedback or create a ticket for a found issue, cloud the BETA button on the Header bar once logged in. We also need your suggestions!
+            <p>This is the beta program for our Pro version. This means you are receiving all Pro features for FREE! We are adding new features and making small cosmetic changes and we would love to have your feedback. To add feedback or create a ticket for a found issue, cloud the BETA button on the Header bar once logged in. We also need your suggestions!
             </p>
           </div>
         </div>      
@@ -807,5 +807,5 @@
 
 
   <!-- <h2 class="card-title">UPGRADE TO PREMIER!</h2>
-  <p>Upgrade to the Premier version! Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p> -->
+  <p>Upgrade to the Pro version! Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p> -->
 

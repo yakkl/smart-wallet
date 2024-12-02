@@ -2,7 +2,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwapToken as Token } from '$lib/common/interfaces';
-	import { debug_log } from '$lib/common/debug';
 
   export let tokens: Token[];
   export let selectedToken: Token;
@@ -61,7 +60,7 @@
 
 <div class="relative w-full max-w-sm mx-auto">
   <button class="w-full flex items-center px-4 py-3
-   {disabled 
+    {disabled 
       ? 'bg-gray-500 text-gray-200 cursor-not-allowed ' 
       : 'bg-purple-600 text-white hover:bg-purple-700 '} 
       font-bold rounded-full transition duration-300 ease-in-out focus:outline-none" on:click={toggleDropdown} disabled={disabled}>
