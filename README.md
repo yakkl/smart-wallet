@@ -27,6 +27,8 @@ YAKKL Smart Wallet is a multi-platform cryptocurrency wallet designed for seamle
     - [Getting Started with the Browser Extension](#getting-started-with-the-browser-extension)
     - [Deploying and Interacting with Smart Contracts](#deploying-and-interacting-with-smart-contracts)
   - [Development](#development)
+    - [VSCode arm64](#vscode-arm64)
+      - [Terminal](#terminal)
     - [Setting Up the Development Environment](#setting-up-the-development-environment)
       - [Initial github setup](#initial-github-setup)
       - [Possible 402 Error](#possible-402-error)
@@ -103,6 +105,42 @@ Provide a brief introduction to the YAKKL Smart Wallet, its purpose, and its imp
 - **Interacting with Contracts**: Examples of how to interact with the deployed contracts, including making transactions and reading data.
 
 ## Development
+
+### VSCode arm64
+
+If running on OSX and using Silcon chip (Apple M1, M2, M3, M4 series) then you're running in an arm64 architecture. Do not run using Rosetta (allows x86 applications to run on an arm64 architecture). You can tell if you click+right on the application icon in the Applications folder. If you see an option to run Rosetta make sure it is off. If you don't see that option then most likely you're running the arm64 version of VSCode which is good. 
+
+#### Terminal
+
+If you use an external terminal to run command line commands like pnpm, npm, etc then you should be good to go. However, if you open and run the VSCode Terminal then by default it will show i386 as the architecture `arch` command will reveal the architecture. This means that when you run sveltekit, webpack, rollup, etc then you may see an error that says something like `@rollup/Darwin ... arm64 not found` (that is not the exact error but it will look something like that). To resolve this, you can create a task.json file and put it in the .vscode directory in the root of the project:
+
+```json
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Force shell to arm64",
+      "type": "shell",
+      "command": "exec arch -arm64 $SHELL",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}
+```
+
+You may have to pull up the command pallet and look for `Tasks: Manage Automatic Tasks`, select that and pick `Allow Automatic Tasks`. Now, exit out of VSCode (all) and launch again. This will change the terminal architecture to arm64 for your sessions.
 
 ### Setting Up the Development Environment
 - **Environment Setup**: Provide detailed instructions for setting up the development environment, including required tools and configurations.

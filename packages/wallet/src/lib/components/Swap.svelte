@@ -38,7 +38,7 @@
 
   const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   // May could have passed this in as a prop
@@ -83,6 +83,7 @@
     gasEstimate: 0n,
     gasEstimateInUSD: '',
     tokenOutPriceInUSD: '',
+    multiHop: false,
     slippageTolerance: 0.5,
     deadline: 10,
     error: null,
@@ -111,8 +112,9 @@
   let isSwapping = false;
   let lastModifiedPanel: 'sell' | 'buy' = 'sell';
   let resetValues = false;
-  let swapManagerName = ''; 
+  let swapManagerName = '';
   let pricesInterval: NodeJS.Timeout;
+  let multiHop = false;
 
   // Reactive statements
   $: {
@@ -120,6 +122,8 @@
       debouncedGetQuote();
     }
   }
+
+  $: multiHop = $swapPriceDataStore.multiHop;
 
   $: isEthWethSwap = (tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH') || (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH');
 
@@ -169,7 +173,7 @@
       const wethAddress = chainId === 1 ? ADDRESSES.WETH : ADDRESSES.WETH_SEPOLIA;
 
       // Provider must have Signer set before calling Swap!
-      gasToken = new GasToken('YAKKL GasToken', 'ETH', blockchain, provider, fundingAddress); // Native token for now 
+      gasToken = new GasToken('YAKKL GasToken', 'ETH', blockchain, provider, fundingAddress); // Native token for now
 
       tokens = await fetchTokenList();
 
@@ -183,7 +187,7 @@
         isStablecoin: false,
         logoURI: '/images/ethereum.svg',
       };
-      
+
       tokens.unshift(eth);
       preferredTokens = getPreferredTokens(tokens);
       tokens = tokens
@@ -252,7 +256,7 @@
     error = '';
     fromAmount = amount;
     lastModifiedPanel = 'sell';
-    
+
     if (amount !== '.' && isNaN(parseFloat(amount))) {
       fromAmount = '';//toAmount = '';
       updateSwapPriceData({
@@ -278,7 +282,7 @@
     error = '';
     toAmount = amount;
     lastModifiedPanel = 'buy';
-    
+
     if (amount !== '.' && isNaN(parseFloat(amount))) {
       toAmount = ''; // TBD: Should it be fromAmount?
       updateSwapPriceData({
@@ -307,13 +311,13 @@
       poolFee = 500;
       token.isStablecoin = true;
       updateSwapPriceData({ fee: poolFee });
-    } 
+    }
 
     if (!token.balance || toBigInt(token.balance) <= 0n) {
       token.balance = await getTokenBalance(token, fundingAddress, provider, tokenService);
     }
     const formattedBalance = ethers.formatUnits(toBigInt(token.balance), token.decimals);  // NOTE: This and all ethers specific code should be moved to the TokenService - maybe
-    
+
     if (type === 'sell') {
       tokenIn = token;
       updateSwapPriceData({ tokenIn: token });
@@ -336,7 +340,7 @@
   function switchTokens() {
     [tokenIn, tokenOut] = [tokenOut, tokenIn];
     [fromAmount, toAmount] = [toAmount, fromAmount];
-    
+
     updateSwapPriceData({
       tokenIn,
       tokenOut,
@@ -360,14 +364,14 @@
       if (!token || !amount || !fundingAddress) {
         insufficientBalanceStore.set(false);
         return false;
-      }      
+      }
       const balance = await getTokenBalance(token, fundingAddress, provider, tokenService);
       const formattedBalance = ethers.formatUnits(balance, token.decimals);
       token.balance = balance;
       if (token === tokenIn) fromBalance = formattedBalance; // Only update balance for tokenIn
       const requiredAmount = parseAmount(amount, token.decimals);
       const isInsufficient = balance < requiredAmount;
-      insufficientBalanceStore.set(isInsufficient);      
+      insufficientBalanceStore.set(isInsufficient);
       return isInsufficient;
     } catch (err) {
       insufficientBalanceStore.set(false);
@@ -407,12 +411,12 @@
 
   async function validateBalance(): Promise<boolean> {
     try {
-      if (!tokenIn || !fromAmount || !fundingAddress) return false;    
+      if (!tokenIn || !fromAmount || !fundingAddress) return false;
       // Get token or native balance
       const balance = await getTokenBalance(tokenIn, fundingAddress, provider, tokenService);
       // Parse amounts
       const swapAmount = ethers.parseUnits(fromAmount, tokenIn.decimals);
-      
+
       // If native token (ETH), account for gas
       if (tokenIn.isNative) {
         const gasEstimate = $swapPriceDataStore.gasEstimate || 0n;
@@ -429,7 +433,7 @@
           error = `Insufficient ${tokenIn.symbol} balance. Need ${ethers.formatUnits(totalRequiredAmount, tokenIn.decimals)} ${tokenIn.symbol}, but have ${ethers.formatUnits(balance, tokenIn.decimals)} ${tokenIn.symbol}`;
           return false;
         }
-      }      
+      }
       return true;
     } catch (err) {
       console.log('Error validating balance:', err);
@@ -449,7 +453,7 @@
 
     try {
       isLoading = true;
-      const amount = isExactIn 
+      const amount = isExactIn
         ? parseAmount(fromAmount, tokenIn.decimals)
         : parseAmount(toAmount, tokenOut.decimals);
 
@@ -468,11 +472,11 @@
 
     // const { multiHopQuoteAlphaRouter } = await import('../plugins/alphaRouter');
 
-    // multiHopQuoteAlphaRouter( 
-    //   Token.fromSwapToken(tokenIn, blockchain, provider), 
-    //   Token.fromSwapToken(tokenOut, blockchain, provider), 
-    //   amount, 
-    //   fundingAddress, 
+    // multiHopQuoteAlphaRouter(
+    //   Token.fromSwapToken(tokenIn, blockchain, provider),
+    //   Token.fromSwapToken(tokenOut, blockchain, provider),
+    //   amount,
+    //   fundingAddress,
     //   isExactIn );
 
 
@@ -481,7 +485,7 @@
         return;
       }
 
-      // Reset the slippage and deadline to correct values 
+      // Reset the slippage and deadline to correct values
       if (quote) {
         quote.slippageTolerance = slippageTolerance;
         quote.deadline = deadline;
@@ -560,7 +564,7 @@
           const receipt = swapManager.unwrapWETH(ethers.parseUnits(fromAmount, tokenIn.decimals), fundingAddress);
           debug_log('SWAP: Unwrap WETH to ETH receipt:', receipt);
         }
-        return; 
+        return;
       }
       isSwapping = true;
       error = '';
@@ -570,7 +574,7 @@
         isSwapping = false;
         return; // Error message is set in validateQuote
       }
-      
+
       const tokenInInstance = Token.fromSwapToken($swapPriceDataStore.tokenIn, blockchain, provider);
       const tokenOutInstance = Token.fromSwapToken($swapPriceDataStore.tokenOut, blockchain, provider);
 
@@ -594,7 +598,7 @@
         slippage: $swapPriceDataStore.slippageTolerance || slippageTolerance,
         deadline: $swapPriceDataStore.deadline || deadline,
         recipient: $swapPriceDataStore.fundingAddress,
-        feeRecipient: 'aifees.eth',
+        feeRecipient: import.meta.env.VITE_YAKKL_FEE_RECIPIENT || 'aifees.eth', // Fee recipient address
         feeAmount: $swapPriceDataStore.feeAmount || 0n,
         gasLimit: toBigInt($swapPriceDataStore.gasEstimate) || ETH_BASE_SWAP_GAS_UNITS,
         maxFeePerGas: maxFeePerGas,
@@ -628,7 +632,7 @@
     try {
       // Use a gas price API or provider method
       const feeData = await provider.getFeeData();
-      
+
       debug_log('Current gas prices (feeData): ====================================>>>>>>>>>>>>>>>>>>>>>>>>', feeData);
       return {
         maxFeePerGas: toBigInt(feeData.maxFeePerGas),
@@ -674,8 +678,9 @@
     />
 
     <!-- Switch Button -->
-    <button 
-      on:click={switchTokens} 
+    <!-- svelte-ignore a11y_consider_explicit_label -->
+    <button
+      on:click={switchTokens}
       class="mx-auto block bg-gray-200 p-2 rounded-full transform transition-transform hover:rotate-180"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -694,13 +699,13 @@
       onAmountChange={handleBuyAmountChange}
     />
 
-    <div class="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+    <div class="w-full bg-blue-400 border border-blue-800 rounded-lg p-3">
       <div class="flex items-center justify-center">
         <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M10 3a1 1 0 00-.707.293l-7 7a1 1 0 000 1.414l7 7a1 1 0 001.414-1.414L4.414 11H17a1 1 0 000-2H4.414l4.293-4.293A1 1 0 0010 3z" clip-rule="evenodd" />
         </svg> -->
-        <div class="text-yellow-500 text-center overflow-x-auto max-w-full">
-            {#if swapPriceDataStore.multihops}
+        <div class="text-blue-700 text-center overflow-x-auto max-w-full">
+            {#if multiHop}
               <span class="whitespace-nowrap">This swap requires multiple hops to complete.</span>
             {:else}
               <span class="whitespace-nowrap">This swap requires a single hop to complete.</span>
@@ -712,10 +717,10 @@
     <!-- Settings -->
     {#if isEthWethSwap === false}
     <SwapSettings
-      swapPriceDataStore={swapPriceDataStore} 
+      swapPriceDataStore={swapPriceDataStore}
       onSlippageChange={(value) => slippageTolerance = value}
       onDeadlineChange={(value) => deadline = value}
-      onPoolFeeChange={(value) => { 
+      onPoolFeeChange={(value) => {
         poolFee = value;
         if (tokenIn?.isStablecoin && swapManagerName.includes('uniswap')) {
           poolFee = 500;
@@ -743,8 +748,8 @@
     {/if}
 
     <!-- Reset Button -->
-    <button 
-      on:click={reset} 
+    <button
+      on:click={reset}
       class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -754,8 +759,8 @@
     </button>
 
     <!-- Swap Button -->
-    <button 
-      on:click={swapTokens} 
+    <button
+      on:click={swapTokens}
       class="w-full px-4 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       disabled={!tokenIn || !tokenOut || !fromAmount || !toAmount || isLoading || isSwapping}
     >

@@ -6,12 +6,12 @@ import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { debug_log, error_log } from '$lib/common/debug-error';
 import type { ExactInputParams, ExactInputSingleParams } from '$lib/common/ISwapRouter';
 import { getToken, type TokenPair } from '$lib/common/tokens';
-import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
+// import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
-import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+// import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import { abi as ISwapRouterABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
 import IQuoterV2ABI from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json';
-import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
+// import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
 // import JSBI from 'jsbi';
 // import JSBI from '@uniswap/sdk-core/node_modules/jsbi';
 import { ethers } from 'ethers';
@@ -23,16 +23,32 @@ import type { Provider } from './Provider';
 import { SwapManager } from './SwapManager';
 import { Token } from './Token';
 import { EVMToken } from './tokens/evm/EVMToken';
-import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
+// import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
 import { EthersConverter } from './utilities/EthersConverter';
+import { AlphaRouterService } from '@yakkl/uniswap-alpha-router-service';
 
 const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
+
+// example
+// import { AlphaRouterService } from 'uniswap-alpha-router-service';
+
+// const service = new AlphaRouterService();
+// try {
+//   const quote = await service.getQuote( tokenIn, tokenOut, amount, fundingAddress );
+//   // Use quote data
+// } catch ( error ) {
+//   console.error( 'Quote error:', error );
+// } finally {
+//   service.dispose();
+// }
+
 
 export class UniswapSwapManager extends SwapManager {
   private routerContract: ethers.Contract | null = null;
   private providerNative: ethers.JsonRpcProvider | null = null;
   private signerNative: ethers.JsonRpcSigner | null = null;
   private factory: ethers.Contract | null = null;
+  private alphaRouter: AlphaRouterService;
 
   constructor (
     blockchain: Ethereum,
@@ -40,6 +56,7 @@ export class UniswapSwapManager extends SwapManager {
     initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
+    this.alphaRouter = new AlphaRouterService();
     this.initialize().then();
   }
 
@@ -63,6 +80,10 @@ export class UniswapSwapManager extends SwapManager {
       .filter( token => !this.preferredTokens.includes( token ) )
       .sort( ( a, b ) => a.symbol.localeCompare( b.symbol ) );
     this.stablecoinTokens = this.tokens.filter( token => token.isStablecoin );
+  }
+
+  dispose() {
+    this.alphaRouter.dispose();
   }
 
   getName(): string {
@@ -212,6 +233,35 @@ export class UniswapSwapManager extends SwapManager {
   ): Promise<SwapPriceData> {
 
     
+
+    // const quote = await this.alphaRouter.getQuote(
+    //   tokenIn,
+    //   tokenOut,
+    //   amount.toString(),
+    //   fundingAddress,
+    //   isExactIn
+    // );
+
+    // if ( !quote.success || !quote.data ) {
+    //   throw new Error( quote.error || 'Failed to get quote' );
+    // }
+
+    // return this.constructQuoteData(
+    //   tokenIn,
+    //   tokenOut,
+    //   fundingAddress,
+    //   amount,
+    //   BigInt( quote.data.quoteAmount ),
+    //   quote.data.fee ?? 3000,
+    //   BigInt( quote.data.gasEstimate ),
+    //   true,
+    //   0n,
+    //   0,
+    //   isExactIn
+    // );
+
+    
+
     // multiHopQuoteAlphaRouter(tokenIn, tokenOut, amount, fundingAddress, isExactIn);
 
     // Step 1: Set up the provider using Alchemy (ethers v5)
@@ -1382,7 +1432,7 @@ export class UniswapSwapManager extends SwapManager {
       const minOut = ( toBigInt( quote.amountOut ) * BigInt( 1000 - Math.floor( slippage * 10 ) ) ) / 1000n;
 
       debug_log( 'executeSwap Quote:', quote );
-      
+
       let tx;
       if ( quote.multiHop ) {
         // No fee required for multi-hop swaps (encoded in path)

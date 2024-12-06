@@ -9,10 +9,10 @@
   import { onMount } from 'svelte';
 	import { Tooltip } from 'flowbite-svelte';
 
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
-  let browser_ext: Browser; 
-  if (browserSvelte) browser_ext = getBrowserExt();
+  // import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+	// import type { Browser } from 'webextension-polyfill';
+  // let browser_ext: Browser; 
+  // if (browserSvelte) browser_ext = getBrowserExt();
 
   // Local version
   let yakklMiscStore: string;
@@ -27,7 +27,7 @@
   let resize = false;
 
   let tooltipTriggerList;
-  let tooltipList;
+  // let tooltipList;
   let legal = false;
 
   let error = false;
@@ -65,7 +65,7 @@
       if (browserSvelte) {
         yakklMiscStore = getMiscStore();
         currentlySelected = await getYakklCurrentlySelected();
-        legal = currentlySelected.shortcuts.legal === true ?? false;
+        legal = currentlySelected.shortcuts.legal === true;
 
         getPreferencesUpdate().then(async result => {
           if (result) {

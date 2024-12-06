@@ -9,7 +9,8 @@
   import { VERSION } from '$lib/common/constants';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
-  import { Confetti } from 'svelte-confetti';
+  // import { Confetti } from 'svelte-confetti';
+  import { confetti } from '@neoconfetti/svelte';
   import { AccountTypeCategory, isEncryptedData, NetworkType, type AccountData, type CurrentlySelectedData, type Profile, type ProfileData, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
@@ -231,7 +232,8 @@
 </script>
 
 {#if showConfetti}
-  <Confetti />
+  <!-- <Confetti /> -->
+  <div use:confetti />
 {/if}
 
 <div class="relative {className}">
