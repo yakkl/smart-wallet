@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 
-const fs = require('fs');
-const cheerio = require('cheerio');
-const path = require('path');
+import fs from 'fs';
+import cheerio from 'cheerio';
+import path from 'path';
 
 // Base directory
 const baseDir = './build';

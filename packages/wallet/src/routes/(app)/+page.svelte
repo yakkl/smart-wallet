@@ -1,21 +1,20 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
   import Legal from './legal/Legal/+page.svelte';
   import { getSettings, syncStoresToStorage } from '$lib/common/stores';
-  import { DEFAULT_TITLE, PATH_LOGIN, PATH_REGISTER, type Settings } from '$lib/common';
+  import { PATH_LOGIN, PATH_REGISTER, type Settings } from '$lib/common';
   import { goto } from '$app/navigation';
 
-  let yakklSettings: Settings | null;
+  let yakklSettings: Settings | null = null;
   let error: Error | undefined = undefined;
 
   // Function to fetch the updated settings
   async function fetchYakklSettings() {
-    if (browserSvelte) {
+    if (typeof window !== 'undefined') { // Check if running in the browser
       try {
         yakklSettings = await getSettings();
-        if (yakklSettings !== null) {
-          if (yakklSettings.init === true) {
-            syncStoresToStorage().then();  // This is called in login too
+        if (yakklSettings) {
+          if (yakklSettings.init) {
+            await syncStoresToStorage(); // Ensure we wait for this
           }
         } else {
           goto(PATH_REGISTER);
@@ -29,18 +28,18 @@
   fetchYakklSettings();
 </script>
 
-<svelte:head>
+<!-- <svelte:head>
   <title>{DEFAULT_TITLE}</title>
-</svelte:head>
+</svelte:head> -->
 
 {#if error}
   <code>{error.message}</code>
 {:else if !yakklSettings}
   <p class="mt-3 ml-3 font-bold">Loading options...</p>
 {:else}
-  {#if yakklSettings.legal?.termsAgreed === false}
+  {#if !yakklSettings.legal?.termsAgreed}
     <Legal />
-  {:else if yakklSettings.init === false}
+  {:else if !yakklSettings.init}
     {goto(PATH_REGISTER)}
   {:else}
     {goto(PATH_LOGIN)}

@@ -9,21 +9,18 @@
       "$plugins/*": ["src/lib/plugins/*"],
       "$components": ["src/lib/components"],
       "$components/*": ["src/lib/components/*"],
-      "@yakkl/*": ["./packages/*/src"],
+      "@yakkl/*": ["./packages/*/src"]
     },
     "verbatimModuleSyntax": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
-    "checkJs": false, // False
+    "checkJs": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    // "moduleResolution": "node",
     "noEmit": false,
     "resolveJsonModule": true,
-    "useDefineForClassFields": true,
     "skipLibCheck": true,
-    // "downlevelIteration": true,
     "strict": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
@@ -33,7 +30,7 @@
       "vite/client",
       "node",
       "@sveltejs/kit"
-    ],
+    ]
   },
   "include": [
     "src",
@@ -42,13 +39,13 @@
     "src/**/*.js",
     "src/**/*.svelte",
     "src/lib/browser-polyfill.d.ts",
-    "src/**/*.svelte",
+    "src/**/*.svelte"
   ],
   "exclude": [
     "**/node_modules/**",
     "../../node_modules",
     "node_modules",
     "dist",
-    "build",
+    "build"
   ]
 }

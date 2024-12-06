@@ -1,3 +1,4 @@
+/** eslint-disable @typescript-eslint/no-unused-vars */
 <script lang="ts">
   import { goto } from "$app/navigation";
 
@@ -17,6 +18,6 @@
 
 </script>
 
-<button class="btn btn-sm btn-circle btn-outline z-10 {defaultClass}" on:click={handleBack}>
+<button class="btn btn-sm btn-circle btn-outline z-10 {defaultClass}" on:click={handleBack} aria-label="Back button">
   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" /></svg>
 </button>

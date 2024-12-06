@@ -6,6 +6,8 @@ import fs from 'fs';
 import { isoImport } from 'vite-plugin-iso-import';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { svelteInspector } from '@sveltejs/vite-plugin-svelte-inspector';
 
 const htmlContent = fs.readFileSync( path.resolve( 'static/snippet-terms.html' ), 'utf-8' );
 
@@ -15,6 +17,8 @@ export default defineConfig( {
       '___HTML_SNIPPET___': htmlContent,
       preventAssignment: true,
     } ),
+    svelte(),
+    svelteInspector(),
     sveltekit(),
     isoImport(),
     nodePolyfills( {
@@ -31,6 +35,7 @@ export default defineConfig( {
   ],
   resolve: {
     alias: {
+      '@': '/src',
       process: 'process/browser',
       $base: path.resolve( './src' ),
       $static: path.resolve( './src/static' ),
@@ -40,9 +45,13 @@ export default defineConfig( {
       $plugins: path.resolve( './src/lib/plugins' ),
       'webextension-polyfill': path.resolve( __dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js' ),
       stream: 'readable-stream',
-      // ethers: path.resolve( 'node_modules/ethers' ), // replace require.resolve() with path.resolve()
+      ethers: path.resolve( 'node_modules/ethers' ), // replace require.resolve() with path.resolve()
       ethersv5: path.resolve( 'node_modules/ethers-v5' ), // replace require.resolve() with path.resolve()
+      '@yakkl/uniswap-alpha-router-service': '../uniswap-alpha-router-service/src',
+      'events': 'events/',
     },
+    // conditions: [ 'browser' ],
+    // resolve: process.env.VITEST ? { conditions: [ 'browser'] } : undefined,
   },
   define: {
     'process.env': {},
@@ -51,13 +60,10 @@ export default defineConfig( {
   },
   optimizeDeps: {
     exclude: [ 'webextension-polyfill' ],
-    include: [
-      'axios',
-      'ethers-v5',
-      '@uniswap/smart-order-router',
-      '@ethersproject/abstract-provider',
-      '@ethersproject/abstract-signer'
-    ],
+    // include: [
+    //   'axios',
+    //   'ethers-v5'
+    // ],
     esbuildOptions: {
       define: {
         global: 'globalThis'
@@ -83,12 +89,11 @@ export default defineConfig( {
       transformMixedEsModules: true,
       include: [
         /node_modules/,
-        /@uniswap\/smart-order-router/,
         /ethers-v5/
       ]
     },
     rollupOptions: {
-      external: [ 'webextension-polyfill' ],
+      external: [ 'webextension-polyfill', 'events' ],
     }
   },
   test: {
