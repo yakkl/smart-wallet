@@ -1,11 +1,16 @@
 <script lang="ts">
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 </script>
 
 <!--visible relative  border-b border-gray-300 inset-x-0 top-0 -->
 <!-- bg-[url('/images/imagebar.png')] style="background-image: url('/images/imagebar.png');"> -->
 <!-- shadow-lg hover:shadow-xl img-background bg-center -->
 <div class="print:hidden bg-base-100  m-2 rounded-xl border border-gray-900 overflow-hidden"> 
-  <slot />
+  {@render children?.()}
 </div>
 
 <!-- <style>

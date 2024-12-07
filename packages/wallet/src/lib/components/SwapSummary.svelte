@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { type Writable } from 'svelte/store';
   import type { SwapPriceData } from '$lib/common/interfaces';
 	import { ethers } from 'ethers';
@@ -6,25 +8,29 @@
 	import { toBigInt } from '$lib/common/math';
 	import { YAKKL_FEE_BASIS_POINTS_DIVISOR } from '$lib/common';
 
-  export let swapPriceDataStore: Writable<SwapPriceData>;
-  export let disabled: boolean = false; // This assumes for wrapping and unwrapping of ETH WETH
+  interface Props {
+    swapPriceDataStore: Writable<SwapPriceData>;
+    disabled?: boolean; // This assumes for wrapping and unwrapping of ETH WETH
+  }
+
+  let { swapPriceDataStore, disabled = false }: Props = $props();
   // export let hidden: boolean = false;
 
-  let exchangeRate: number = 0;
-  let feeBasisPointsToPercent: string = '0.0000%';
+  let exchangeRate: number = $state(0);
+  let feeBasisPointsToPercent: string = $state('0.0000%');
 
   // Declare reactive variables
-  $: swapPriceData = $swapPriceDataStore;
-  $: tokenOutPriceInUSD = swapPriceData.tokenOutPriceInUSD || '--';
-  $: gasEstimateInUSD = swapPriceData.gasEstimateInUSD || '--';
+  let swapPriceData = $derived($swapPriceDataStore);
+  let tokenOutPriceInUSD = $derived(swapPriceData.tokenOutPriceInUSD || '--');
+  let gasEstimateInUSD = $derived(swapPriceData.gasEstimateInUSD || '--');
 
-  $: {
+  run(() => {
     feeBasisPointsToPercent = swapPriceData 
       ? calculateFeeBasisPointsPercent(swapPriceData.feeBasisPoints)
       : '0.0000%';
-  }
+  });
 
-  $: {
+  run(() => {
     if (swapPriceData && toBigInt(swapPriceData.amountIn) > 0n && toBigInt(swapPriceData.amountOut) > 0n) {
       const tokenIn = swapPriceData.tokenIn;
       const tokenOut = swapPriceData.tokenOut;
@@ -44,9 +50,9 @@
     } else {
       exchangeRate = 0;
     }
-  }
+  });
 
-  $: feeAmountInUSD = (() => {
+  let feeAmountInUSD = $derived((() => {
     if (
       swapPriceData &&
       toBigInt(swapPriceData.amountIn) > 0n &&
@@ -66,7 +72,7 @@
       // Fallback value until all data is available or valid
       return disabled ? '' : 'Calculating...';
     }
-  })();
+  })());
 
 </script>
 

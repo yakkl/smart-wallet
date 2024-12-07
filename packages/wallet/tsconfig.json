@@ -14,7 +14,7 @@
     "verbatimModuleSyntax": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
-    "checkJs": false, // False
+    "checkJs": true, // False
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,

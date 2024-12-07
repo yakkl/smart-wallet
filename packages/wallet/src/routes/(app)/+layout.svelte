@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { browser as browserSvelte } from '$app/environment';
   import { setSettings, setPreferencesStorage, getPreferences, getSettings, getMiscStore, getYakklCurrentlySelected } from "$lib/common/stores";
   import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH } from '$lib/common';
@@ -7,35 +9,40 @@
   import Footer from '$components/Footer.svelte';
   import { setIconLock, blockContextMenu, blockWindowResize } from '$lib/utilities';
   import { onMount } from 'svelte';
-	import { Tooltip } from 'flowbite-svelte';
+	// import { Tooltip } from 'flowbite-svelte';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 
   // import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	// import type { Browser } from 'webextension-polyfill';
-  // let browser_ext: Browser; 
+  // let browser_ext: Browser;
   // if (browserSvelte) browser_ext = getBrowserExt();
 
   // Local version
   let yakklMiscStore: string;
   let currentlySelected: YakklCurrentlySelected;
-  let yakklSettings: Settings | null; 
+  let yakklSettings: Settings | null;
   let yakklPreferences: Preferences;
-  
-  let popupWidth = DEFAULT_POPUP_WIDTH;
+
+  let popupWidth = $state(DEFAULT_POPUP_WIDTH);
   let popupHeight = DEFAULT_POPUP_HEIGHT;
-  let title = DEFAULT_TITLE;
+  let title = $state(DEFAULT_TITLE);
   let contextMenu = false;
   let resize = false;
 
-  let tooltipTriggerList;
+  // let tooltipTriggerList;
   // let tooltipList;
-  let legal = false;
+  let legal = $state(false);
 
-  let error = false;
-  let errorValue: string = '';
+  let error = $state(false);
+  let errorValue: string = $state('');
 
-  let maxHeightClass = 'max-h-[448px]';
+  let maxHeightClass = $state('max-h-[448px]');
 
-  $: {
+  run(() => {
     if (browserSvelte) {
       if (!window.navigator.onLine) {
         errorValue = 'It appears your Internet connection is offline. YAKKL needs access to the Internet to obtain current market prices and gas fees. A number of areas will either not function or work in a limited capacity. Thank you!';
@@ -44,7 +51,7 @@
         error = false;
       }
     }
-  }
+  });
 
   async function getSettingsUpdate() {
     if (browserSvelte) {
@@ -88,20 +95,20 @@
                 setSettings(yakklSettings);
                 await setIconLock();
               }
-              
+
               if (yakklPreferences) {
                 if (!yakklPreferences.wallet) {
                   popupWidth = DEFAULT_POPUP_WIDTH;
                   popupHeight = DEFAULT_POPUP_HEIGHT;
                   title = DEFAULT_TITLE;
                   contextMenu = false;
-                  resize = false;  
+                  resize = false;
                 } else {
                   popupWidth = yakklPreferences.wallet.popupWidth ?? DEFAULT_POPUP_WIDTH;
                   popupHeight = yakklPreferences.wallet.popupHeight ?? DEFAULT_POPUP_HEIGHT;
                   title = yakklPreferences.wallet.title ?? DEFAULT_TITLE;
                   contextMenu = yakklPreferences.wallet.enableContextMenu ?? false;
-                  resize = yakklPreferences.wallet.enableResize ?? false;  
+                  resize = yakklPreferences.wallet.enableResize ?? false;
                 }
               } else {
                 popupWidth = DEFAULT_POPUP_WIDTH;
@@ -125,15 +132,15 @@
           blockWindowResize(popupWidth, popupHeight);
         }
 
-        tooltipTriggerList = [].slice.call(
-          document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        );
+        // tooltipTriggerList = [].slice.call(
+        //   document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        // );
 
-        if (tooltipTriggerList.length > 0) {
-          tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new Tooltip(tooltipTriggerEl);  // TODO: This needs to be replaced with another library
-        });
-        }
+        // if (tooltipTriggerList.length > 0) {
+        //   tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        //     return new Tooltip(tooltipTriggerEl);
+        // });
+        //}
       }
     } catch (error) {
       console.log('layout: error', error);
@@ -157,19 +164,19 @@
       <h3 class="text-lg font-bold">ERROR!</h3>
       <p class="py-4">{errorValue}</p>
       <div class="modal-action">
-        <button class="btn" on:click={() => error = false}>Close</button>
+        <button class="btn" onclick={() => error = false}>Close</button>
       </div>
     </div>
   </div>
-  
+
   {#if legal === true}
   <Header containerWidth={popupWidth} />
   {/if}
 
-  <div class="min-h-[40rem] mx-2"> 
+  <div class="min-h-[40rem] mx-2">
     <div class="relative mt-1">
       <main class="p-2 {maxHeightClass} rounded-xl bg-base-100 overflow-scroll border-2 border-stone-700 border-r-stone-700/75 border-b-slate-700/75">
-        <slot/>
+        {@render children?.()}
       </main>
     </div>
   </div>

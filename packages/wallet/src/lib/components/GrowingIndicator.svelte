@@ -1,6 +1,10 @@
 <script lang="ts">
-export let text = 'Loading...';
-export let background = 'bg-current';
+  interface Props {
+    text?: string;
+    background?: string;
+  }
+
+  let { text = 'Loading...', background = 'bg-current' }: Props = $props();
 </script>
 
 <div

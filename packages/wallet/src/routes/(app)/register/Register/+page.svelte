@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
   import { browser as browserSvelte } from '$app/environment';
   import { getSettings, yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, getPreferences, setPreferencesStorage, setSettingsStorage, setMiscStore } from '$lib/common/stores';

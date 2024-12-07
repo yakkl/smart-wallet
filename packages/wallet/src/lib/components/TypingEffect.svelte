@@ -1,9 +1,15 @@
 <script lang="ts">
-  export let text = "";
-  export let typingSpeed = 50;
+  import { run } from 'svelte/legacy';
 
-  let visibleText = "";
-  let typing = false;
+  interface Props {
+    text?: string;
+    typingSpeed?: number;
+  }
+
+  let { text = "", typingSpeed = 50 }: Props = $props();
+
+  let visibleText = $state("");
+  let typing = $state(false);
 
   async function type() {
     if (!typing) {
@@ -17,7 +23,9 @@
     }
   }
 
-  $: text, type();
+  run(() => {
+    text, type();
+  });
 </script>
 
 <div class="typing-effect">

@@ -1,5 +1,9 @@
 <script lang="ts">
-  export let text = "";
+  interface Props {
+    text?: string;
+  }
+
+  let { text = "" }: Props = $props();
 
   function formatText(inputText: string) {
     return inputText
@@ -8,7 +12,7 @@
       .join("");
   }
 
-  $: formattedText = formatText(text);
+  let formattedText = $derived(formatText(text));
 </script>
 
 <div class="formatted-text">{formattedText}</div>

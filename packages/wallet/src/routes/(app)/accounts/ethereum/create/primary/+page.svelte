@@ -20,29 +20,29 @@
 
   let id: string;
   let registered = yakklRegisteredData;
-  let email='';
-  let userName=''; 
-  let accountName = 'Account 1';
+  let email=$state('');
+  let userName=$state(''); 
+  let accountName = $state('Account 1');
   // let encryptDownload = true;
-  let passwordWarning = false;
-  let printPassword = true;
-  let successDialog = false;
-  let wordCount=0;
-  let address='';
-  let privateKey='';
-  let mnemonic='';
+  let passwordWarning = $state(false);
+  let printPassword = $state(true);
+  let successDialog = $state(false);
+  let wordCount=$state(0);
+  let address=$state('');
+  let privateKey=$state('');
+  let mnemonic=$state('');
   let pincode;
   let createDate: string;
   let updateDate: string;
-  let displayDate: Date;
-  let derivedPath = DEFAULT_DERIVED_PATH_ETH; // Account gets created with '/0/0' appended to represent the first
-  let network: string;
-  let registeredType: string;
+  let displayDate: Date = $state();
+  let derivedPath = $state(DEFAULT_DERIVED_PATH_ETH); // Account gets created with '/0/0' appended to represent the first
+  let network: string = $state();
+  let registeredType: string = $state();
   let msgType = 'WARNING';
-  let warning = false;
+  let warning = $state(false);
   let warningValue: string;
-  let error = false;
-  let errorValue: string;
+  let error = $state(false);
+  let errorValue: string = $state();
 
   onMount(async() => {
     if (browserSvelte) {
@@ -222,7 +222,7 @@
     <h3 class="text-lg font-bold">ERROR!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
+      <button class="btn" onclick={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>
@@ -233,7 +233,7 @@
     <h3 class="text-lg font-bold">{msgType}</h3>
     <p class="py-4">{warningValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {warning=false; goto(PATH_WELCOME)}}>Close</button>
+      <button class="btn" onclick={() => {warning=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>
@@ -244,8 +244,8 @@
     <h3 class="text-lg font-bold">WARNING</h3>
     <p class="py-4">Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={handlePrintPwd}>Yes, I'm sure!</button>
-      <button class="btn" on:click={handlePrint}>No</button>
+      <button class="btn" onclick={handlePrintPwd}>Yes, I'm sure!</button>
+      <button class="btn" onclick={handlePrint}>No</button>
     </div>
   </div>
 </div>
@@ -281,7 +281,7 @@
     </div>
     <div class="text-center mt-10" data-size={10}><Spinner/></div>
   </div>
-{:then _ } 
+{:then _} 
 
 <!-- {#if accountName} -->
 <div class="print:hidden min-h-[40rem] mx-2"> 
@@ -392,7 +392,7 @@
 
         <!-- TBD - Need to look into bringing down logo, make larger, raise text -->
           <div class="items-center w-full text-center">
-            <!-- svelte-ignore a11y-missing-attribute -->
+            <!-- svelte-ignore a11y_missing_attribute -->
             <img class="w-24 h-24 z-10 ml-5" src="/images/logoBullFav128x128.png">
           </div>
 
@@ -488,7 +488,7 @@
 
         <!-- TBD - Need to look into bringing down logo, make larger, raise text -->
         <!-- <div class="items-center"> -->
-          <!-- svelte-ignore a11y-missing-attribute -->
+          <!-- svelte-ignore a11y_missing_attribute -->
           <!-- <img class="w-24 h-24 z-10 ml-5" src="/images/logo128x128.png">
         </div>
 

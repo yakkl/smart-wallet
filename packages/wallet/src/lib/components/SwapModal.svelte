@@ -8,14 +8,27 @@
 	import type { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
 	import Swap from './Swap.svelte';
 
-	export let show: boolean = true;
-  export let fundingAddress: string;
-  export let provider: Provider;
-  export let blockchain: Ethereum;
-  export let swapManager: UniswapSwapManager;
-  export let tokenService: TokenService<any>;
-  // export let gasProvider: EthereumGasProvider;
-  export let className = 'text-gray-600 z-[999]';
+  
+  interface Props {
+    show?: boolean;
+    fundingAddress: string;
+    provider: Provider;
+    blockchain: Ethereum;
+    swapManager: UniswapSwapManager;
+    tokenService: TokenService<any>;
+    // export let gasProvider: EthereumGasProvider;
+    className?: string;
+  }
+
+  let {
+    show = $bindable(true),
+    fundingAddress,
+    provider,
+    blockchain,
+    swapManager,
+    tokenService,
+    className = 'text-gray-600 z-[999]'
+  }: Props = $props();
 
   // Note: This calls the actual Swap component but handles the onSwap function. If you want to handle the onSwap function then do not use this but call Swap itself.
 

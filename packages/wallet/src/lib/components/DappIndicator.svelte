@@ -2,13 +2,18 @@
 
   import { browser as browserSvelte } from '$app/environment';
 	import { onDestroy, onMount } from 'svelte';
-	// // import browser from 'webextension-polyfill';
+	
   
-  export let show = false;
-  export let badgeColor = 'badge-secondary';
-  export let defaultClass = '';
+  interface Props {
+    // // import browser from 'webextension-polyfill';
+    show?: boolean;
+    badgeColor?: string;
+    defaultClass?: string;
+  }
+
+  let { show = $bindable(false), badgeColor = 'badge-secondary', defaultClass = '' }: Props = $props();
   
-  let dapp = '';
+  let dapp = $state('');
   // Need to add messaging service so that once content.ts knows it is on a page/domain that is connected to the given address, then it needs to fire a message 
 
 

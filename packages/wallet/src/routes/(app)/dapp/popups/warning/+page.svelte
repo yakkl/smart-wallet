@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import {browser as browserSvelte} from '$app/environment';
   import { page } from '$app/stores';
   import { YAKKL_DAPP } from '$lib/common/constants';
@@ -13,7 +15,7 @@
   type RuntimePort = Runtime.Port | undefined;
 
   let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
-  let message: string;
+  let message: string = $state();
   let method: string;
   let port: RuntimePort;
   let requestId: string;
@@ -96,7 +98,7 @@ function handleReject() {
     <div class="flex space-x-2 justify-center">
       <button 
         type="submit"
-        on:click|preventDefault={() => handleReject()}
+        onclick={preventDefault(() => handleReject())}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Close">
         Close

@@ -12,12 +12,16 @@
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
   
-  export let accounts: YakklAccount[] = [];
-  export let onAccountSelect: (account: YakklAccount) => void = () => {};
+  interface Props {
+    accounts?: YakklAccount[];
+    onAccountSelect?: (account: YakklAccount) => void;
+  }
 
-  let editMode = false;
-  let showDeleteModal = false;
-  let selectedAccount: YakklAccount | null = null;
+  let { accounts = $bindable([]), onAccountSelect = () => {} }: Props = $props();
+
+  let editMode = $state(false);
+  let showDeleteModal = $state(false);
+  let selectedAccount: YakklAccount | null = $state(null);
   let wallet: Wallet;
 
   onMount(() => {
@@ -128,7 +132,7 @@
 <ul>
   {#each accounts as account}
     <li class="mb-4 relative">
-      <button class="w-full flex items-start rounded-lg p-4 transition-colors duration-200 {account.accountType === AccountTypeCategory.PRIMARY ? 'bg-purple-100 hover:bg-purple-200' : account.accountType === AccountTypeCategory.SUB ? 'bg-blue-100 hover:bg-blue-200' : 'bg-green-100 hover:bg-green-200'}" on:click={() => onAccountSelect(account)}>
+      <button class="w-full flex items-start rounded-lg p-4 transition-colors duration-200 {account.accountType === AccountTypeCategory.PRIMARY ? 'bg-purple-100 hover:bg-purple-200' : account.accountType === AccountTypeCategory.SUB ? 'bg-blue-100 hover:bg-blue-200' : 'bg-green-100 hover:bg-green-200'}" onclick={() => onAccountSelect(account)}>
         <div class="w-8 h-8 flex items-center justify-center rounded-full {account.accountType === AccountTypeCategory.PRIMARY ? 'bg-purple-500' : account.accountType === AccountTypeCategory.SUB ? 'bg-blue-500' : 'bg-green-500'} text-white mr-4 shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />

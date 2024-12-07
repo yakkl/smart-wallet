@@ -21,14 +21,14 @@
   let browser_ext: Browser; 
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  let error = false;
-  let errorValue: string;
-  let isPortfolioModalOpen = false;
-  let isSubPortfolioModalOpen = false;
-  let showImportWatch = false;
-  let showImportAccount = false;
-  let showExportPrivateKey = false;
-  let showAccounts = false;
+  let error = $state(false);
+  let errorValue: string = $state();
+  let isPortfolioModalOpen = $state(false);
+  let isSubPortfolioModalOpen = $state(false);
+  let showImportWatch = $state(false);
+  let showImportAccount = $state(false);
+  let showExportPrivateKey = $state(false);
+  let showAccounts = $state(false);
   
   let currentlySelected: YakklCurrentlySelected; 
 
@@ -182,8 +182,8 @@
       <h3 class="text-lg font-bold">Portfolio Wallet Account Creation</h3>
       <p class="py-4">This will create a portfolio level wallet account. Do you wish to continue?</p>
       <div class="modal-action">
-        <button class="btn" on:click={handleAccounts}>Yes</button>
-        <button class="btn" on:click={()=>isPortfolioModalOpen = false}>Cancel</button>
+        <button class="btn" onclick={handleAccounts}>Yes</button>
+        <button class="btn" onclick={()=>isPortfolioModalOpen = false}>Cancel</button>
       </div>
     </div>
   </div>
@@ -201,8 +201,8 @@
       <h3 class="text-lg font-bold">Subportfolio Wallet Account Creation</h3>
       <p class="py-4">This will create a subportfolio level wallet account. Do you wish to continue?</p>
       <div class="modal-action">
-        <button class="btn" on:click={handleSubAccounts}>Yes</button>
-        <button class="btn" on:click={()=>isSubPortfolioModalOpen = false}>Cancel</button>
+        <button class="btn" onclick={handleSubAccounts}>Yes</button>
+        <button class="btn" onclick={()=>isSubPortfolioModalOpen = false}>Cancel</button>
       </div>
     </div>
   </div>
@@ -235,8 +235,8 @@
 
     <!-- TEST -->
     <!-- <div class="rounded-md shadow h-24"> -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
       <!-- <div role="button" on:click={() => goto('/dapp/popups/approve.html')}
         class="btn btn-secondary w-full h-full flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 mb-2">

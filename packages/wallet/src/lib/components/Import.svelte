@@ -6,20 +6,34 @@
 	import ImportPrivateKey from './ImportPrivateKey.svelte';
 	import ImportWatchAccount from './ImportWatchAccount.svelte';
 
-  export let show = false;
-  export let showImportWatch = false;
-  export let onCancel: () => void = () => {show = false};
-  export let onClose: () => void = () => {show = false};
-  export let onComplete: (imported: string) => void = (imported: string) => {show = false};
-  export let onImportKey: () => void = () => {show=false; showImportAccount = true};
-  export let onImportPhrase: () => void = () => {show=false; showImportPhrase = true};
-  export let onImportWatch: () => void = () => {show=false; showImportWatchAccount = true};
-  export let onRestore: () => void = () => {show=false; showEmergencyKit = true};
+  interface Props {
+    show?: boolean;
+    showImportWatch?: boolean;
+    onCancel?: () => void;
+    onClose?: () => void;
+    onComplete?: (imported: string) => void;
+    onImportKey?: () => void;
+    onImportPhrase?: () => void;
+    onImportWatch?: () => void;
+    onRestore?: () => void;
+  }
 
-  let showImportWatchAccount = false;
-  let showImportAccount = false;
-  let showImportPhrase = false;
-  let showEmergencyKit = false;
+  let {
+    show = $bindable(false),
+    showImportWatch = false,
+    onCancel = () => {show = false},
+    onClose = () => {show = false},
+    onComplete = (imported: string) => {show = false},
+    onImportKey = () => {show=false; showImportAccount = true},
+    onImportPhrase = () => {show=false; showImportPhrase = true},
+    onImportWatch = () => {show=false; showImportWatchAccount = true},
+    onRestore = () => {show=false; showEmergencyKit = true}
+  }: Props = $props();
+
+  let showImportWatchAccount = $state(false);
+  let showImportAccount = $state(false);
+  let showImportPhrase = $state(false);
+  let showEmergencyKit = $state(false);
 
   function onCompleteImportPrivateKey() {
     showImportAccount = false;

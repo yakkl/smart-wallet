@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { handleOpenInTab } from "$lib/utilities";
   
-  export let show=false;
-  export let value="This feature is not yet available. We are working on it!";
+  interface Props {
+    show?: boolean;
+    value?: string;
+  }
+
+  let { show = $bindable(false), value = "This feature is not yet available. We are working on it!" }: Props = $props();
 
   // Shim for login page - needs a better way
   function handleLearnMore(_e: any) {
@@ -21,8 +27,8 @@
       <!-- <p class="mt-1">Do you wish to continue?</p> -->
     </div>
     <div class="modal-action">
-      <button class="btn" on:click|preventDefault={handleLearnMore}>Learn More...</button>
-      <button class="btn" on:click|preventDefault={() => {show=false}}>OK</button>
+      <button class="btn" onclick={preventDefault(handleLearnMore)}>Learn More...</button>
+      <button class="btn" onclick={preventDefault(() => {show=false})}>OK</button>
     </div>
   </div>
 </div>

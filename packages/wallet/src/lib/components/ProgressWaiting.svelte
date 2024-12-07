@@ -1,9 +1,13 @@
 <script lang="ts">
-  export let show = false;
-  export let title = 'Verifying';
-  export let value = 'Credentials and Loading...';
+  interface Props {
+    show?: boolean;
+    title?: string;
+    value?: string; // Calling this function will cause the modal to be shown and the caller should bind:show to a variable and pass it in.
+  }
 
-  // Calling this function will cause the modal to be shown and the caller should bind:show to a variable and pass it in.
+  let { show = false, title = 'Verifying', value = 'Credentials and Loading...' }: Props = $props();
+
+  
 </script>
 
 

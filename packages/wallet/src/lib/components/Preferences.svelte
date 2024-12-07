@@ -12,7 +12,7 @@
   import type { Preferences } from '$lib/common/interfaces';
   import { SystemTheme } from '$lib/common/types';
 
-  let preferences: Preferences;
+  let preferences: Preferences = $state();
 
 
   // EXPERIMENTAL: This is a work in progress and is not yet functional
@@ -53,7 +53,7 @@
     }),
   });
 
-  let errors: { [key: string]: string } = {};
+  let errors: { [key: string]: string } = $state({});
 
   async function validateForm() {
     try {
@@ -80,7 +80,7 @@
     }
   }
 
-  let open = false;
+  let open = $state(false);
 
   export function openPreferences() {
     open = true;
@@ -154,9 +154,11 @@
       </div>
     </div>
     <Sheet.Footer>
-      <Sheet.Close asChild let:builder>
-        <Button builders={[builder]} type="submit" on:click={handleSubmit}>Save changes</Button>
-      </Sheet.Close>
+      <Sheet.Close asChild >
+        {#snippet children({ builder })}
+                    <Button builders={[builder]} type="submit" on:click={handleSubmit}>Save changes</Button>
+                          {/snippet}
+                </Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>

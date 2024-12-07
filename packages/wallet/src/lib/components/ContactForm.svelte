@@ -1,5 +1,7 @@
 <!-- ContactForm.svelte -->
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy';
+
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import { debug_log, type YakklContact } from '$lib/common';
@@ -9,12 +11,17 @@
   import { yakklCurrentlySelectedStore, yakklContactsStore } from '$lib/common/stores';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
-	// import { Input } from './ui/input';
+	
   
 
-  export let show = false;
-  export let contact: YakklContact | null = null;
-  export let onSubmit: (contact: YakklContact) => void = () => {};
+  interface Props {
+    // import { Input } from './ui/input';
+    show?: boolean;
+    contact?: YakklContact | null;
+    onSubmit?: (contact: YakklContact) => void;
+  }
+
+  let { show = $bindable(false), contact = null, onSubmit = () => {} }: Props = $props();
 
   const blockchains = ['Ethereum', 'Base', 'Optimism', 'Bitcoin'];
   let wallet: Wallet;
@@ -72,19 +79,6 @@
     wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
   });
 
-  $: {
-    if (contact) {
-      updateInitialValues({
-        blockchain: contact.blockchain,
-        name: contact.name,
-        address: contact.address,
-        alias: contact.alias || '',
-        note: contact.note || '',
-      });
-    } else {
-      resetForm();
-    }
-  }
 
   async function verifyContact(fname: string, faddress: string, falias: string, fnote: string) {
     let resolvedAddr = null;
@@ -118,13 +112,26 @@
       note: '',
     });
   }
+  run(() => {
+    if (contact) {
+      updateInitialValues({
+        blockchain: contact.blockchain,
+        name: contact.name,
+        address: contact.address,
+        alias: contact.alias || '',
+        note: contact.note || '',
+      });
+    } else {
+      resetForm();
+    }
+  });
 </script>
 
 <Modal bind:show title={contact ? 'Edit Contact' : 'Add Contact'}>
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4 p-6">
+  <form onsubmit={preventDefault(handleSubmit)} class="space-y-4 p-6">
     <div>
       <label for="blockchain" class="block text-sm font-medium text-gray-700">Blockchain</label>
-      <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.blockchain} on:change={handleChange}>
+      <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.blockchain} onchange={handleChange}>
         {#each blockchains as blockchain}
           <option value={blockchain}>{blockchain}</option>
         {/each}
@@ -138,7 +145,7 @@
 
 <div>
       <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-      <input type="text" id="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.name} on:change={handleChange} />
+      <input type="text" id="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.name} onchange={handleChange} />
       {#if $errors.name}
         <p class="mt-2 text-sm text-red-600">{$errors.name}</p>
       {/if}
@@ -146,7 +153,7 @@
 
     <div>
       <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-      <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focusring:indigo-500 sm:text-sm text-gray-800" bind:value={$form.address} on:change={handleChange} />
+      <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focusring:indigo-500 sm:text-sm text-gray-800" bind:value={$form.address} onchange={handleChange} />
       {#if $errors.address}
         <p class="mt-2 text-sm text-red-600">{$errors.address}</p>
       {/if}
@@ -154,7 +161,7 @@
 
     <div>
       <label for="alias" class="block text-sm font-medium text-gray-700">Alias</label>
-      <input type="text" id="alias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} on:change={handleChange} />
+      <input type="text" id="alias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} onchange={handleChange} />
       {#if $errors.alias}
         <p class="mt-2 text-sm text-red-600">{$errors.alias}</p>
       {/if}
@@ -162,7 +169,7 @@
 
     <div>
       <label for="note" class="block text-sm font-medium medium text-gray-700">Note</label>
-      <textarea id="note" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border:indigo-500 focus:ring-indigo-500 sm: text-sm text-gray-800" bind:value={$form.note} on:change={handleChange}></textarea>
+      <textarea id="note" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border:indigo-500 focus:ring-indigo-500 sm: text-sm text-gray-800" bind:value={$form.note} onchange={handleChange}></textarea>
       {#if $errors.note}
         <p class="mt-2 text-sm text-red-600">{$errors.note}</p>
       {/if}
@@ -170,8 +177,8 @@
 
     <div class="pt-5">
       <div class="flex justify-end space-x-4">
-        <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={() => show = false}>Cancel</button>
-        <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
+        <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={() => show = false}>Cancel</button>
+        <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={resetForm}>Reset</button>
         <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Save</button>
       </div>
     </div>

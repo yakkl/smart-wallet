@@ -4,10 +4,21 @@
   import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 
-  export let symbol: string; // In a swap this would be the fromToken
-  export let currency: string; // In a swap this would be the toToken
-  export let providers: PriceProvider[] = [new CoinbasePriceProvider()];
-  export let updateInterval: number = 10000;
+  interface Props {
+    symbol: string; // In a swap this would be the fromToken
+    currency: string; // In a swap this would be the toToken
+    providers?: PriceProvider[];
+    updateInterval?: number;
+    children?: import('svelte').Snippet<[any]>;
+  }
+
+  let {
+    symbol,
+    currency,
+    providers = $bindable([new CoinbasePriceProvider()]),
+    updateInterval = 10000,
+    children
+  }: Props = $props();
 
   const priceStore = writable<MarketPriceData | null>(null);
   let interval: NodeJS.Timeout;
@@ -50,4 +61,4 @@
   });
 </script>
 
-<slot price={$priceStore}></slot>
+{@render children?.({ price: $priceStore, })}

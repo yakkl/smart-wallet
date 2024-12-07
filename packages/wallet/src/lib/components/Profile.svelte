@@ -13,8 +13,8 @@
   // This component is intended to be used as a modal for editing the user's profile
 
   
-  let profile: Profile;
-  let profileData: ProfileData;
+  let profile: Profile = $state();
+  let profileData: ProfileData = $state();
 
   onMount(() => {
     const unsubscribe = profileStore.subscribe(value => {
@@ -43,7 +43,7 @@
     email: yup.string().email('Invalid email address').required('Email is required'),
   });
 
-  let errors: { [key: string]: string } = {};
+  let errors: { [key: string]: string } = $state({});
 
   async function validateForm() {
     try {
@@ -75,7 +75,7 @@
     }
   }
 
-  let open = false;
+  let open = $state(false);
 
   export function openProfile() {
     open = true;
@@ -121,9 +121,11 @@
       </div>
     </div>
     <Sheet.Footer>
-      <Sheet.Close asChild let:builder>
-        <Button builders={[builder]} type="submit" on:click={handleSubmit}>Save changes</Button>
-      </Sheet.Close>
+      <Sheet.Close asChild >
+        {#snippet children({ builder })}
+                <Button builders={[builder]} type="submit" on:click={handleSubmit}>Save changes</Button>
+                      {/snippet}
+            </Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>

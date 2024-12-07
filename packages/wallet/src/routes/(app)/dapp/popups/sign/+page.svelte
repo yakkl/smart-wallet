@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import {browser as browserSvelte} from '$app/environment';
   import { page } from '$app/stores';
 
@@ -27,28 +29,28 @@
   let yakklMiscStore: string;
   let yakklDappConnectRequest: string | null;
 
-  let showConfirm = false;
-  let showSuccess = false;
-  let showFailure = false;
-  let showSpinner = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showConfirm = $state(false);
+  let showSuccess = $state(false);
+  let showFailure = $state(false);
+  let showSpinner = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort | undefined;
   
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   let requestData: any;
   let method: string;
   let requestId: string | null;
-  let userName: string;
-  let password: string;
+  let userName: string = $state();
+  let password: string = $state();
   let message;  // This gets passed letting the user know what the intent is
   let context: any;
   let addressToCheck: string;
   let signedData: any;
   let chainId: number;
 
-  let params: any[] = [];
+  let params: any[] = $state([]);
   let personal_sign = {  
     dataToSign: '',   // Only used for personal_sign
     address: '',
@@ -332,8 +334,8 @@ function handleConfirm() {
         placeholder="Password" autocomplete="off" bind:value="{password}" required />
     </div>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleApprove}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleApprove}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -343,7 +345,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Signing for {domain} - Success!</h3>
     <p class="py-4">Success! The signing request you approved has been signed! Click close.</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleClose}>Close</button>
+      <button class="btn" onclick={handleClose}>Close</button>
     </div>
   </div>
 </div>
@@ -353,7 +355,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Close</button>
+      <button class="btn" onclick={handleReject}>Close</button>
     </div>
   </div>
 </div>
@@ -426,7 +428,7 @@ function handleConfirm() {
     <div class="flex space-x-2 justify-center">
       {#if !showSpinner}
       <button 
-        on:click|preventDefault={handleReject}
+        onclick={preventDefault(handleReject)}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
@@ -435,7 +437,7 @@ function handleConfirm() {
       <button 
         type="submit"
         id="recover"
-        on:click|preventDefault={handleConfirm}
+        onclick={preventDefault(handleConfirm)}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve

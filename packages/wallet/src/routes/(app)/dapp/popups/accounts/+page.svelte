@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy';
+
   import {browser as browserSvelte} from '$app/environment';
   import { goto } from '$app/navigation';
   import { Checkbox, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, TableSearch } from 'flowbite-svelte';
@@ -23,27 +25,27 @@
   let yakklAccountsStore: YakklAccount[] = [];
   let yakklConnectedDomainsStore: YakklConnectedDomain[] = [];
 
-  let searchTerm = '';
+  let searchTerm = $state('');
   let addresses: Map<string, ConnectedDomainAddress> = new Map();  // Complete list
-  let filteredAddresses: Map<string, ConnectedDomainAddress> = new Map();  // Filtered list
+  let filteredAddresses: Map<string, ConnectedDomainAddress> = $state(new Map());  // Filtered list
   let accounts: AccountAddress [] = [];
   let accountNumber = 0; // Number of accounts
-  let accountsPicked = 0;
-  let showConfirm = false;
-  let showSuccess = false;
-  let showFailure = false;
-  let showWarning = false;
-  let showProgress = false;
-  let warningValue = 'No accounts were selected. Access to YAKKL® is denied.';
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let accountsPicked = $state(0);
+  let showConfirm = $state(false);
+  let showSuccess = $state(false);
+  let showFailure = $state(false);
+  let showWarning = $state(false);
+  let showProgress = $state(false);
+  let warningValue = $state('No accounts were selected. Access to YAKKL® is denied.');
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
-  let domain: string;
-  let domainLogo: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
   let domainTitle: string;
   let requestId: string | null;
   let requestData: any;
   let pass = false;
-  let filteredAddressesArray: ConnectedDomainAddress[];
+  let filteredAddressesArray: ConnectedDomainAddress[] = $state();
 
   if (browserSvelte) {
     try {
@@ -124,14 +126,14 @@
   // })();
 
 
-  $: {
+  run(() => {
     try {
       filteredAddresses = addresses.has(searchTerm) ? addresses : new Map([...addresses].filter(([k, v]) => v.name.toLowerCase().includes(searchTerm.toLowerCase())));
       filteredAddressesArray = Array.from(filteredAddresses.values());
     } catch(e) {
       console.log(e);
     }
-  }
+  });
 
   onMount(async () => {
     try {
@@ -519,8 +521,8 @@ async function close() {
     <h3 class="text-lg font-bold">Connect to {domain}</h3>
     <p class="py-4">This will connect <span class="font-bold">{domain}</span> to {accountsPicked}  of your addresses! Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=>showConfirm = false}>Cancel</button>
-      <button class="btn" on:click={handleProcess}>Yes</button>
+      <button class="btn" onclick={()=>showConfirm = false}>Cancel</button>
+      <button class="btn" onclick={handleProcess}>Yes</button>
     </div>
   </div>
 </div>
@@ -531,7 +533,7 @@ async function close() {
     <h3 class="text-lg font-bold">Success!</h3>
     <p class="py-4"><span class="font-bold">{domain}</span> is now connected to YAKKL®</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=> window.close()}>Close</button> 
+      <button class="btn" onclick={()=> window.close()}>Close</button> 
     </div>
   </div>
 </div>
@@ -542,7 +544,7 @@ async function close() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=> window.close()}>Close</button>
+      <button class="btn" onclick={()=> window.close()}>Close</button>
     </div>
   </div>
 </div>
@@ -553,7 +555,7 @@ async function close() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{warningValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => showWarning=false}>OK</button>
+      <button class="btn" onclick={() => showWarning=false}>OK</button>
     </div>
   </div>
 </div>
@@ -631,7 +633,7 @@ async function close() {
 <div class="my-4">
   <div class="flex space-x-2 justify-center">
     <button 
-      on:click|preventDefault={handleReject}
+      onclick={preventDefault(handleReject)}
       class="btn-sm btn-accent uppercase rounded-full"
       aria-label="Cancel">
       Reject
@@ -640,7 +642,7 @@ async function close() {
     <button 
       type="submit"
       id="recover"
-      on:click|preventDefault={handleConfirm}
+      onclick={preventDefault(handleConfirm)}
       class="btn-sm btn-primary uppercase rounded-full ml-2"
       aria-label="Confirm">
       Approve

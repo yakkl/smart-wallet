@@ -2,11 +2,11 @@
   import { onMount } from 'svelte';
   import QRCode from 'easyqrcodejs';
   
-  export let qrText;
+  let { qrText } = $props();
   export const width = 220;
   export const height = 220;
   // export const radius = 1;
-  let node: HTMLDivElement;
+  let node: HTMLDivElement = $state();
   
   onMount(() => {    
     const options = {
