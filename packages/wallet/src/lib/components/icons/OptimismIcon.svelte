@@ -1,6 +1,10 @@
 <script lang="ts">
 
-export let className: string = 'h-6 w-6 rounded-full';
+  interface Props {
+    className?: string;
+  }
+
+  let { className = 'h-6 w-6 rounded-full' }: Props = $props();
 
 </script>
 

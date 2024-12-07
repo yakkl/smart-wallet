@@ -19,25 +19,25 @@
   let settings: Settings | null;
   let id: string = '';
   let registered: YakklRegisteredData;
-  let email: string = ''; 
-  let userName: string = '';
-  let primaryAccountName: string = '';
-  let accountName: string = '';
-  let address: string = '';
-  let addressDerived: string = '';
-  let blockchain: string;
-  let privateKey: string = '';
+  let email: string = $state(''); 
+  let userName: string = $state('');
+  let primaryAccountName: string = $state('');
+  let accountName: string = $state('');
+  let address: string = $state('');
+  let addressDerived: string = $state('');
+  let blockchain: string = $state();
+  let privateKey: string = $state('');
   let profile: Profile | null = null;
-  let wordCount: number;
-  let mnemonic: string;
-  let displayDate: Date;
-  let derivedPath = DEFAULT_DERIVED_PATH_ETH; //Index at end is dynamically created
-  let successDialog = false;
+  let wordCount: number = $state();
+  let mnemonic: string = $state();
+  let displayDate: Date = $state();
+  let derivedPath = $state(DEFAULT_DERIVED_PATH_ETH); //Index at end is dynamically created
+  let successDialog = $state(false);
   let createDate: string;
   let updateDate: string;
-  let registeredType: string;
-  let error = false;
-  let errorValue: string;
+  let registeredType: string = $state();
+  let error = $state(false);
+  let errorValue: string = $state();
   
 
   onMount(async () => {
@@ -221,7 +221,7 @@
     <h3 class="text-lg font-bold">ERROR!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
+      <button class="btn" onclick={() => {error=false; goto(PATH_WELCOME)}}>Close</button>
     </div>
   </div>
 </div>
@@ -257,7 +257,7 @@
     </div>
     <div class="text-center mt-10"><Spinner size="{10}"/></div>
   </div>
-{:then _ } 
+{:then _} 
 
 <div class="print:hidden min-h-[40rem] mx-2"> 
   <div class="relative mt-1">
@@ -364,7 +364,7 @@
 
         <!-- TBD - Need to look into bringing down logo, make larger, raise text -->
         <div class="items-center">
-          <!-- svelte-ignore a11y-missing-attribute -->
+          <!-- svelte-ignore a11y_missing_attribute -->
           <img class="w-24 h-24 z-10 ml-5" src="/images/logoBullFav128x128.png">
         </div>
 
@@ -445,7 +445,7 @@
 
         <!-- TBD - Need to look into bringing down logo, make larger, raise text -->
         <!-- <div class="items-center"> -->
-          <!-- svelte-ignore a11y-missing-attribute -->
+          <!-- svelte-ignore a11y_missing_attribute -->
           <!-- <img class="w-24 h-24 z-10 ml-5" src="/images/logo128x128.png">
         </div>
 

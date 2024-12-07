@@ -6,10 +6,19 @@
   import Modal from './Modal.svelte';
   import AccountListing from './AccountListing.svelte';
 
-  export let account: YakklAccount | null = null;
-  export let show = false;
-  export let onAccountSelect: ((account: YakklAccount) => void) | null = null;
-  export let className = 'z-[999]';
+  interface Props {
+    account?: YakklAccount | null;
+    show?: boolean;
+    onAccountSelect?: ((account: YakklAccount) => void) | null;
+    className?: string;
+  }
+
+  let {
+    account = $bindable(null),
+    show = $bindable(false),
+    onAccountSelect = null,
+    className = 'z-[999]'
+  }: Props = $props();
   
   // Not using onCancel here but letting it fall through to the Modal component since we don't need to do anything special
   // export let onCancel: () => void = () => {show = false};
@@ -40,8 +49,10 @@
       {/if}
     </div>
 
-    <svelte:fragment slot="footer">
-      <p class="text-sm text-gray-500">Whatever account you select will become your <span class="font-bold underline">active</span> account!</p>
-    </svelte:fragment>
+    {#snippet footer()}
+      
+        <p class="text-sm text-gray-500">Whatever account you select will become your <span class="font-bold underline">active</span> account!</p>
+      
+      {/snippet}
   </Modal>
 </div>

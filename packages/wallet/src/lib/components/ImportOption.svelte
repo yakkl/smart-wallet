@@ -1,12 +1,24 @@
 <script lang="ts">
-  /// <reference types="svelte" />
+  
 
-  export let showImportWatch: boolean = false;
-  export let title: string = 'Importing/Restoring Options';
-  export let onImportKey: () => void;
-  export let onImportPhrase: () => void;
-  export let onImportWatch: () => void;
-  export let onRestore: () => void;
+  interface Props {
+    /// <reference types="svelte" />
+    showImportWatch?: boolean;
+    title?: string;
+    onImportKey: () => void;
+    onImportPhrase: () => void;
+    onImportWatch: () => void;
+    onRestore: () => void;
+  }
+
+  let {
+    showImportWatch = false,
+    title = 'Importing/Restoring Options',
+    onImportKey,
+    onImportPhrase,
+    onImportWatch,
+    onRestore
+  }: Props = $props();
 </script>
 
 <div class="bg-surface-light dark:bg-surface-dark text-primary-light dark:text-primary-dark rounded-lg p-6 shadow-md">
@@ -27,7 +39,7 @@
   <div class="space-y-3">
     <!-- Import using Private Key -->
     <button 
-      on:click={onImportKey}
+      onclick={onImportKey}
       class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Import using Private Key
@@ -36,7 +48,7 @@
     <!-- Import Watch-Only Address (if applicable) -->
     {#if showImportWatch}
       <button 
-        on:click={onImportWatch}
+        onclick={onImportWatch}
         class="w-full py-2 px-4 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
       >
         Import Watch-Only Address
@@ -45,7 +57,7 @@
         
     <!-- Import using Secret Phrase -->
     <button 
-      on:click={onImportPhrase}
+      onclick={onImportPhrase}
       class="w-full py-2 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Import using Secret Phrase
@@ -53,7 +65,7 @@
     
     <!-- Restore from Emergency Kit -->
     <button 
-      on:click={onRestore}
+      onclick={onRestore}
       class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Restore from Emergency Kit

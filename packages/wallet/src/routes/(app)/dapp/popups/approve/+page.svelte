@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import {browser as browserSvelte} from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
@@ -18,14 +20,14 @@
   
   type RuntimePort = Runtime.Port | undefined;
 
-  let showConfirm = false;
+  let showConfirm = $state(false);
   let showSuccess = false;
-  let showFailure = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showFailure = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   // let requestData: any;
   // let method: string;
   let requestId: string | null = null;
@@ -212,8 +214,8 @@
     <h3 class="text-lg font-bold">Connect to {domain}</h3>
     <p class="py-4">This will connect <span class="font-bold">{domain}</span> to YAKKL®! Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleIsLocked}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleIsLocked}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -262,7 +264,7 @@
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
       <button 
-        on:click|preventDefault={handleReject}
+        onclick={preventDefault(handleReject)}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
@@ -271,7 +273,7 @@
       <button 
         type="submit"
         id="recover"
-        on:click|preventDefault={handleApprove}
+        onclick={preventDefault(handleApprove)}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve

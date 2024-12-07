@@ -1,11 +1,16 @@
  <script lang="ts">
 //@ts-nocheck
 // Confetti needs to be more typescript compliant
-  // import { Confetti } from "svelte-confetti";
+  
 
-  export let show = false;
-  export let value = 'Get ready - coming soon!';
-  export let title = 'YAY!';
+  interface Props {
+    // import { Confetti } from "svelte-confetti";
+    show?: boolean;
+    value?: string;
+    title?: string;
+  }
+
+  let { show = $bindable(false), value = 'Get ready - coming soon!', title = 'YAY!' }: Props = $props();
  
 </script>
 
@@ -17,7 +22,7 @@
     <h3 class="text-lg font-bold">{title}</h3>
     <p class="py-4">{value}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => show = false}>Close</button>
+      <button class="btn" onclick={() => show = false}>Close</button>
     </div>
   </div>
 </div>

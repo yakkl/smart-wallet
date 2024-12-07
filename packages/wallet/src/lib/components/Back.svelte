@@ -2,8 +2,12 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
 
-  export let defaultClass = "left-0 top-0"
-  export let href = '';
+  interface Props {
+    defaultClass?: string;
+    href?: string;
+  }
+
+  let { defaultClass = "left-0 top-0", href = '' }: Props = $props();
   
   // Shim for login page - needs a better way
   function handleBack(_e: any) {
@@ -18,6 +22,6 @@
 
 </script>
 
-<button class="btn btn-sm btn-circle btn-outline z-10 {defaultClass}" on:click={handleBack} aria-label="Back button">
+<button class="btn btn-sm btn-circle btn-outline z-10 {defaultClass}" onclick={handleBack} aria-label="Back button">
   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" /></svg>
 </button>

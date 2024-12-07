@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import { browser as browserSvelte } from '$app/environment';
 	import { goto } from "$app/navigation";
 	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
@@ -40,25 +42,25 @@
 	let currentlySelected: YakklCurrentlySelected | null;
 	let yakklMiscStore: string;
 	let profile: Profile | null;
-	let blockchain: string = 'Ethereum';
-	let address: string = '';
+	let blockchain: string = $state('Ethereum');
+	let address: string = $state('');
 
 	// Global transaction related variables
-	let txStatus = '';
-	let txBlockchain = 'Ethereum';
-	let txNetworkTypeName = 'Mainnet';
-	let txURL = '';
-	let	txHash = '';
-	let	txToAddress = '';
-	let	txValue = '0.0';
-	let	txmaxFeePerGas = '0.0';
+	let txStatus = $state('');
+	let txBlockchain = $state('Ethereum');
+	let txNetworkTypeName = $state('Mainnet');
+	let txURL = $state('');
+	let	txHash = $state('');
+	let	txToAddress = $state('');
+	let	txValue = $state('0.0');
+	let	txmaxFeePerGas = $state('0.0');
 	let	txmaxPriorityFeePerGas = '0.0';
-	let txGasPercentIncrease = 0;
+	let txGasPercentIncrease = $state(0);
 	let	txGasLimit: BigNumberish = 21000n;
-	let txGasLimitIncrease = 0; // This increases the intrinsic gas limit by the amount specified. It is based on the size of optional data * 68. So, if 100 wordsof data is sent then the gas limit will increase by 6800. This is to help to prevent out of gas errors for when the user sends option hex data with the transaction.
-	let	txNonce = 0;
-	let	txStartTimestamp = '';
-	let txHistoryTransactions: any[] = [];
+	let txGasLimitIncrease = $state(0); // This increases the intrinsic gas limit by the amount specified. It is based on the size of optional data * 68. So, if 100 wordsof data is sent then the gas limit will increase by 6800. This is to help to prevent out of gas errors for when the user sends option hex data with the transaction.
+	let	txNonce = $state(0);
+	let	txStartTimestamp = $state('');
+	let txHistoryTransactions: any[] = $state([]);
 
 	let historyCount = 10; // The maximum amount of history transaction to retrieve;
 
@@ -66,88 +68,88 @@
 	let feesTab;
 	let activityTab;
 
-	let recipientPays = false; // This is for the future when we allow the user to select who pays the gas fees
+	let recipientPays = $state(false); // This is for the future when we allow the user to select who pays the gas fees
 
-	let amountTabOpen = true;
-	let feesTabOpen = false;
-	let activityTabOpen = false;
-	let errorFields = false; // Turns the amount tab red if there is an error
+	let amountTabOpen = $state(true);
+	let feesTabOpen = $state(false);
+	let activityTabOpen = $state(false);
+	let errorFields = $state(false); // Turns the amount tab red if there is an error
 
 	let pincode = '';
 	let pincodeVerified = false;
 
   let toAddress: string;
   let toAddressValue = 0n;
-	let toAddressValueUSD = '0';
+	let toAddressValueUSD = $state('0');
 	// NOTE: 'USD' simply means fiat instead of gwei for ether. The 'USD' would be in the local fiat currency.
-	let gasEstimate = 0;
-	let gasEstimateUSD = '';
+	let gasEstimate = $state(0);
+	let gasEstimateUSD = $state('');
 
-	let maxFeePerGas: BigNumberish = 0n;
-	let maxPriorityFeePerGas: BigNumberish = 0n;
+	let maxFeePerGas: BigNumberish = $state(0n);
+	let maxPriorityFeePerGas: BigNumberish = $state(0n);
 	let maxFeePerGasOverride: BigNumberish = 0n;
 	let maxPriorityFeePerGasOverride: BigNumberish = 0n;
 	
-	let gasBase = 0;
-	let gasTotalEstimateUSD = '';
-	let gasBaseUSD = '$0.00';
-	let gasTrend = 'flat';
-	let trendColor = 'text-yellow-500';
-	let lastTrendValue: number = 0;
+	let gasBase = $state(0);
+	let gasTotalEstimateUSD = $state('');
+	let gasBaseUSD = $state('$0.00');
+	let gasTrend = $state('flat');
+	let trendColor = $state('text-yellow-500');
+	let lastTrendValue: number = $state(0);
 
 	// let ethGas = ETH_BASE_EOA_GAS_UNITS; // Gas Units - Standard ETH Transfer - https://ethereum.org/en/developers/docs/gas/
-	let lowGas: number = 0;
-	let lowGasUSD = "$0.00";
-	let marketGas: number = 0;
-	let marketGasUSD = "$0.00";
-	let priorityGas: number = 0;
-	let priorityGasUSD = "$0.00";
+	let lowGas: number = $state(0);
+	let lowGasUSD = $state("$0.00");
+	let marketGas: number = $state(0);
+	let marketGasUSD = $state("$0.00");
+	let priorityGas: number = $state(0);
+	let priorityGasUSD = $state("$0.00");
 	
 	let riskFactorMaxFee: number = 0;//1; //2;  // gwei - We add this to maxFeePerGas that comes back from the provider
 	let riskFactorPriorityFee: number = 0;//.25;  // Adding a little more incentive for the validators
 
 	let greaterThan0 = true;
-	let lowPriorityFee: BigNumberish = 0n;
-	let marketPriorityFee: BigNumberish = 0n;
-	let priorityPriorityFee: BigNumberish = 0n;
+	let lowPriorityFee: BigNumberish = $state(0n);
+	let marketPriorityFee: BigNumberish = $state(0n);
+	let priorityPriorityFee: BigNumberish = $state(0n);
 
-	let selectedGas = 'market';  // If 'custom' then the user updated the value themselves so don't override with a warning.
-	let priorityClass = 'border border-gray-100 ';
-	let marketClass = 'border-white border-2 animate-pulse ';
-	let lowClass = 'border border-gray-100 ';
+	let selectedGas = $state('market');  // If 'custom' then the user updated the value themselves so don't override with a warning.
+	let priorityClass = $state('border border-gray-100 ');
+	let marketClass = $state('border-white border-2 animate-pulse ');
+	let lowClass = $state('border border-gray-100 ');
 
   let checkGasPricesProvider = 'blocknative';
   let checkGasPricesInterval = 10; // Seconds
 
 	let value: BigNumberish = 0n; 
-	let unitPrice: number = 0;
+	let unitPrice: number = $state(0);
 	// let sendValue; // Was used for visual purposes only. May not be needed in the future
-	let totalUSD = '0';
-	let smartContract = false;
-	let blockNumber: number;
-	let estimatedTransactionCount: number;
-	let gasLimit: number; //BigNumberish;
-	let valueType = 'crypto'; // Other value is 'fiat'. This represents if the user want to enter how much in crypto or how much in fiat money. Example, .0004551 or $50.00
-	let valueCrypto = '0.0'; // Maintains the crypto value of the valueUSD
-	let valueUSD = '0.0'; // Maintains the currency equivalent of the valueCrypto
+	let totalUSD = $state('0');
+	let smartContract = $state(false);
+	let blockNumber: number = $state();
+	let estimatedTransactionCount: number = $state();
+	let gasLimit: number = $state(); //BigNumberish;
+	let valueType = $state('crypto'); // Other value is 'fiat'. This represents if the user want to enter how much in crypto or how much in fiat money. Example, .0004551 or $50.00
+	let valueCrypto = $state('0.0'); // Maintains the crypto value of the valueUSD
+	let valueUSD = $state('0.0'); // Maintains the currency equivalent of the valueCrypto
 
-	let error = false;
-  let warning = false;
-  let warningValue: string;
-	let errorValue: string;
-	let showContacts = false;
-	let showVerify = false;
+	let error = $state(false);
+  let warning = $state(false);
+  let warningValue: string = $state();
+	let errorValue: string = $state();
+	let showContacts = $state(false);
+	let showVerify = $state(false);
 
-	let currencyLabel: string;
-  let currencyFormat: Intl.NumberFormat;
-	let gasEstimateUSDNumber;
-	let gasTotalEstimateUSDNumber: any;
+	let currencyLabel: string = $state();
+  let currencyFormat: Intl.NumberFormat = $state();
+	let gasEstimateUSDNumber = $state();
+	let gasTotalEstimateUSDNumber: any = $state();
 	let hexData: string;  // Optional hex data to send with the transfer
 
 	//////// Toast
-	let toastStatus = false;
+	let toastStatus = $state(false);
   let toastCounter = 3;
-  let toastMessage = 'Success';
+  let toastMessage = $state('Success');
   let toastType = 'success'; // 'success', 'warning', 'error'
 
   function toastTrigger(count=3, msg='Success') {
@@ -162,120 +164,8 @@
       return setTimeout(timeout, 1000);
     toastStatus = false;
   }
-  //////// Toast
-
-
-	$: {
-		if ($errors.toAddress || 
-			$errors.hexData || 
-			$errors.maxFeePerGasOverride || 
-			$errors.maxPriorityFeePerGasOverride || 
-			$errors.toAddressValue ){
-				errorFields = true;
-			} else {
-				errorFields = false;
-			}
-	}
 
 	
-	$: {
-		try {
-			txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
-			txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
-			
-			startGasPricingChecks(); // It will start the interval if not already. If it already exists then it will return
-
-			gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS; // These are the norms for gas units it takes for the different eth transactions
-			if ($form.hexData) {
-				handleIncreaseGasLimit(getLengthInBytes($form.hexData) * 68); // 68 may need to be more dynamic in the future. This is for EOA transactions that have hex data
-			} else {
-				gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS;
-				txGasLimitIncrease = 0;
-			}
-			
-			// $yakklGasTransStore and $yakklPricingStore are used to get the gas prices and the current price of ether or other crypto used for gas fees.
-			// These types of stores can be used as is and do not need to be set in the store. They are used to get the values from the store. The others do need to be set due to the way the store is used.
-			unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
-
-			if (valueType !== 'fiat') {
-				valueUSD = Number(Number($form.toAddressValue) * unitPrice).toFixed(2); // Fixed to 2 decimal places but may need to pull from locale
-			} else {
-				valueCrypto = Number(Number($form.toAddressValue) / unitPrice).toString();
-			}
-
-			if ($yakklGasTransStore) {
-				blockNumber = $yakklGasTransStore.results.blockNumber;
-				estimatedTransactionCount = $yakklGasTransStore.results.estimatedTransactionCount;
-
-				const nextTrendValue = Math.round($yakklGasTransStore.results.gasFeeTrend.baseFeePerGasAvg);
-
-				lowPriorityFee = $yakklGasTransStore.results.actual.slow.maxPriorityFeePerGas + riskFactorPriorityFee;
-				marketPriorityFee = $yakklGasTransStore.results.actual.fast.maxPriorityFeePerGas + riskFactorPriorityFee;
-				priorityPriorityFee = $yakklGasTransStore.results.actual.fastest.maxPriorityFeePerGas + riskFactorPriorityFee;
-
-				lowGas = $yakklGasTransStore.results.actual.slow.maxFeePerGas + riskFactorMaxFee;
-				marketGas = $yakklGasTransStore.results.actual.fast.maxFeePerGas + riskFactorMaxFee;
-				priorityGas = $yakklGasTransStore.results.actual.fastest.maxFeePerGas + riskFactorMaxFee;
-
-				lowGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((lowGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
-				marketGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((marketGas * 1) / (10 ** 9)) * (unitPrice * 1))): '0.00';
-				priorityGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((priorityGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
-				
-				gasBase = $yakklGasTransStore.results.actual.baseFeePerGas;
-				gasBaseUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((gasBase * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
-
-				switch(selectedGas) {
-					case 'priority':
-						maxFeePerGas = priorityGas;
-						maxPriorityFeePerGas = priorityPriorityFee;						
-						break;
-					case 'low':
-						maxFeePerGas = lowGas;
-						maxPriorityFeePerGas = lowPriorityFee;
-						break;
-					default:
-						maxFeePerGas = marketGas;
-						maxPriorityFeePerGas = marketPriorityFee;
-						break;
-				}
-				
-				gasEstimate = gasBase + maxPriorityFeePerGas;  // Base fee + validator tip
-
-				handleGasSelect(selectedGas);
-
-				if (lastTrendValue !== 0) {
-					if (nextTrendValue > lastTrendValue) {
-						gasTrend = 'higher';
-						trendColor = 'text-red-500';
-					} else if (nextTrendValue < lastTrendValue) {
-						gasTrend = 'lower';
-						trendColor = 'text-green-500';
-					} else {
-						gasTrend = 'flat';
-						trendColor = 'text-yellow-500';
-					}
-				}
-
-				lastTrendValue = nextTrendValue;
-				maxPriorityFeePerGas = Number(maxPriorityFeePerGas).toFixed(2);
-				// maxFeePerGas = Math.round(maxFeePerGas);
-			}
-
-			if (gasEstimate) {
-				gasEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
-				gasEstimateUSD = currencyFormat ? currencyFormat.format(gasEstimateUSDNumber) : '0.00';
-				
-				gasTotalEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
-				gasTotalEstimateUSD = currencyFormat ? currencyFormat.format(gasTotalEstimateUSDNumber) : '0.00';
-
-				toAddressValueUSD = currencyFormat ? currencyFormat.format(Number(valueUSD)) : '0.00';
-				totalUSD = currencyFormat ? currencyFormat.format(Number(valueUSD) + gasTotalEstimateUSDNumber) : '0.00';
-			}
-
-		} catch(e) {
-			console.log(e);
-		}
-	}
 
 
 	onMount(() => {
@@ -1125,6 +1015,118 @@
 		valueType = 'crypto';
 	}
 
+  //////// Toast
+
+
+	run(() => {
+		if ($errors.toAddress || 
+			$errors.hexData || 
+			$errors.maxFeePerGasOverride || 
+			$errors.maxPriorityFeePerGasOverride || 
+			$errors.toAddressValue ){
+				errorFields = true;
+			} else {
+				errorFields = false;
+			}
+	});
+	run(() => {
+		try {
+			txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
+			txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
+			
+			startGasPricingChecks(); // It will start the interval if not already. If it already exists then it will return
+
+			gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS; // These are the norms for gas units it takes for the different eth transactions
+			if ($form.hexData) {
+				handleIncreaseGasLimit(getLengthInBytes($form.hexData) * 68); // 68 may need to be more dynamic in the future. This is for EOA transactions that have hex data
+			} else {
+				gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS;
+				txGasLimitIncrease = 0;
+			}
+			
+			// $yakklGasTransStore and $yakklPricingStore are used to get the gas prices and the current price of ether or other crypto used for gas fees.
+			// These types of stores can be used as is and do not need to be set in the store. They are used to get the values from the store. The others do need to be set due to the way the store is used.
+			unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
+
+			if (valueType !== 'fiat') {
+				valueUSD = Number(Number($form.toAddressValue) * unitPrice).toFixed(2); // Fixed to 2 decimal places but may need to pull from locale
+			} else {
+				valueCrypto = Number(Number($form.toAddressValue) / unitPrice).toString();
+			}
+
+			if ($yakklGasTransStore) {
+				blockNumber = $yakklGasTransStore.results.blockNumber;
+				estimatedTransactionCount = $yakklGasTransStore.results.estimatedTransactionCount;
+
+				const nextTrendValue = Math.round($yakklGasTransStore.results.gasFeeTrend.baseFeePerGasAvg);
+
+				lowPriorityFee = $yakklGasTransStore.results.actual.slow.maxPriorityFeePerGas + riskFactorPriorityFee;
+				marketPriorityFee = $yakklGasTransStore.results.actual.fast.maxPriorityFeePerGas + riskFactorPriorityFee;
+				priorityPriorityFee = $yakklGasTransStore.results.actual.fastest.maxPriorityFeePerGas + riskFactorPriorityFee;
+
+				lowGas = $yakklGasTransStore.results.actual.slow.maxFeePerGas + riskFactorMaxFee;
+				marketGas = $yakklGasTransStore.results.actual.fast.maxFeePerGas + riskFactorMaxFee;
+				priorityGas = $yakklGasTransStore.results.actual.fastest.maxFeePerGas + riskFactorMaxFee;
+
+				lowGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((lowGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
+				marketGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((marketGas * 1) / (10 ** 9)) * (unitPrice * 1))): '0.00';
+				priorityGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((priorityGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
+				
+				gasBase = $yakklGasTransStore.results.actual.baseFeePerGas;
+				gasBaseUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((gasBase * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
+
+				switch(selectedGas) {
+					case 'priority':
+						maxFeePerGas = priorityGas;
+						maxPriorityFeePerGas = priorityPriorityFee;						
+						break;
+					case 'low':
+						maxFeePerGas = lowGas;
+						maxPriorityFeePerGas = lowPriorityFee;
+						break;
+					default:
+						maxFeePerGas = marketGas;
+						maxPriorityFeePerGas = marketPriorityFee;
+						break;
+				}
+				
+				gasEstimate = gasBase + maxPriorityFeePerGas;  // Base fee + validator tip
+
+				handleGasSelect(selectedGas);
+
+				if (lastTrendValue !== 0) {
+					if (nextTrendValue > lastTrendValue) {
+						gasTrend = 'higher';
+						trendColor = 'text-red-500';
+					} else if (nextTrendValue < lastTrendValue) {
+						gasTrend = 'lower';
+						trendColor = 'text-green-500';
+					} else {
+						gasTrend = 'flat';
+						trendColor = 'text-yellow-500';
+					}
+				}
+
+				lastTrendValue = nextTrendValue;
+				maxPriorityFeePerGas = Number(maxPriorityFeePerGas).toFixed(2);
+				// maxFeePerGas = Math.round(maxFeePerGas);
+			}
+
+			if (gasEstimate) {
+				gasEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
+				gasEstimateUSD = currencyFormat ? currencyFormat.format(gasEstimateUSDNumber) : '0.00';
+				
+				gasTotalEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
+				gasTotalEstimateUSD = currencyFormat ? currencyFormat.format(gasTotalEstimateUSDNumber) : '0.00';
+
+				toAddressValueUSD = currencyFormat ? currencyFormat.format(Number(valueUSD)) : '0.00';
+				totalUSD = currencyFormat ? currencyFormat.format(Number(valueUSD) + gasTotalEstimateUSDNumber) : '0.00';
+			}
+
+		} catch(e) {
+			console.log(e);
+		}
+	});
 </script>
 
 <PincodeModal bind:show={showVerify} onVerify={handlePin} className="text-gray-600"/>
@@ -1136,28 +1138,30 @@
 <Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
 <Toast color="indigo" transition={slide} bind:toastStatus>
-  <svelte:fragment slot="icon">
-    {#if toastType === 'success'}
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    {/if}
-  </svelte:fragment>
+  {#snippet icon()}
+	
+	    {#if toastType === 'success'}
+	    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+	      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+	    </svg>
+	    {/if}
+	  
+	{/snippet}
   {toastMessage}
 </Toast>
 
 <div class="text-center min-h-[75rem] -mt-1 ">
 	<div class="top-[.75rem] right-[1.5rem]">
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<!-- svelte-ignore a11y-interactive-supports-focus -->
-		<span role="button" on:click={handleCancelReset} class="inline-flex items-center rounded-full btn-tiny bg-secondary btn-primary hover:bg-secondary/50 px-2">Cancel/Reset</span>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_interactive_supports_focus -->
+		<span role="button" onclick={handleCancelReset} class="inline-flex items-center rounded-full btn-tiny bg-secondary btn-primary hover:bg-secondary/50 px-2">Cancel/Reset</span>
 	</div>
 	<h2 class="text-xl tracking-tight font-extrabold text-gray-100 dark:text-white mt-1">
 		<span class="lg:inline">Send/Transfer {blockchain}</span>
 	</h2>
 
 	<hr class="mb-0.5 mt-0.5" />
-		<form class="" on:submit|preventDefault={handleSubmit}>
+		<form class="" onsubmit={preventDefault(handleSubmit)}>
 
 			<Tabs defaultClass="flex flex-wrap justify-center space-x-2 h-9" 
 				activeClasses="px-4 text-white border-b-2 animate-pulse text-lg border-purple-300 mt-2 font-extrabold dark:text-blue-500 dark:border-blue-500" 
@@ -1170,9 +1174,9 @@
 						<div class="mt-2 text-left">
 							<div class="flex flex-row">
 								<div class="flex-col w-full">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-interactive-supports-focus -->
-									<div role="button" on:click={() => showContacts=true} class="flex flex-row mb-1">
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_interactive_supports_focus -->
+									<div role="button" onclick={() => showContacts=true} class="flex flex-row mb-1">
 										<span class="text-xs text-gray-100 mr-2 font-bold flex flex-col">Receiving Address</span>
 										<span>
 											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-4 h-4 fill-gray-100 outline-gray-100 flex flex-col">
@@ -1189,8 +1193,8 @@
 										placeholder="Address of recipient"
 										autocomplete="off"
 										bind:value={$form.toAddress}
-										on:change={handleChange}
-										on:blur={onBlur}
+										onchange={handleChange}
+										onblur={onBlur}
 										required />										
 									{#if $errors.toAddress}
 										<small class="text-red-600 font-bold animate-pulse">{$errors.toAddress}</small>
@@ -1205,9 +1209,9 @@
 								<div class="flex-col w-full">
 									<span class="text-xs text-gray-100 font-bold mb-1 mr-1">Send Amount</span>
 									<span class="text-xs text-gray-100 mb-1 mr-1">(Show as ETH</span>
-									<input id="showCrypto" type="radio" name="show_how" class="radio radio-primary radio-xs mb-1" on:click={handleSetCryptoValue} />
+									<input id="showCrypto" type="radio" name="show_how" class="radio radio-primary radio-xs mb-1" onclick={handleSetCryptoValue} />
 									<span class="text-xs text-gray-100 mb-1 mx-1">Show as {currencyLabel}</span>
-									<input id="showUSD" type="radio" name="show_how" class="radio radio-primary radio-xs mb-1" on:click={handleSetFiatValue} />
+									<input id="showUSD" type="radio" name="show_how" class="radio radio-primary radio-xs mb-1" onclick={handleSetFiatValue} />
 									<span class="text-xs text-gray-100 mb-1">)</span>
 									<div class="flex flex-row">
 										<input
@@ -1219,8 +1223,8 @@
 											placeholder="Send amount"
 											autocomplete="off"
 											bind:value={$form.toAddressValue}
-											on:change={handleChange}
-											on:blur={onBlur}
+											onchange={handleChange}
+											onblur={onBlur}
 											required />
 										{#if $errors.toAddressValue}
 											<small class="text-red-600 font-bold animate-pulse">{$errors.toAddressValue}</small>
@@ -1228,9 +1232,9 @@
 									</div>
 									<div class="flex flex-row justify-between mt-1">
 										<div class="mt-0">
-											<!-- svelte-ignore a11y-click-events-have-key-events -->
-											<!-- svelte-ignore a11y-interactive-supports-focus -->
-											<span role="button" on:click={handleMax} class="inline-flex items-center rounded-full bg-blue-100 hover:bg-blue-200 px-2.5 py-0.5 text-[10px]/3 font-normal text-blue-800">Send MAX ETH</span>
+											<!-- svelte-ignore a11y_click_events_have_key_events -->
+											<!-- svelte-ignore a11y_interactive_supports_focus -->
+											<span role="button" onclick={handleMax} class="inline-flex items-center rounded-full bg-blue-100 hover:bg-blue-200 px-2.5 py-0.5 text-[10px]/3 font-normal text-blue-800">Send MAX ETH</span>
 										</div>
 										<div class="flex flex-col">
 											<span class="text-xs text-gray-200 font-bold ml-3 ">Estimated gas/net fees: {gasEstimateUSD}</span>
@@ -1278,7 +1282,7 @@
 					<div class="mt-2">
 						<button
 							id="send"
-							on:click|preventDefault={handleSendRequest} 
+							onclick={preventDefault(handleSendRequest)} 
 							class="inline-block h-10 px-7 md:py-3 py-2 mt-.5 bg-indigo-600 text-gray-300 font-bold
 							text-large leading-snug uppercase rounded-md shadow-md hover:bg-indigo-700
 							hover:shadow-md focus:bg-indogo-700 focus:shadow-md focus:outline-none focus:ring-0
@@ -1311,10 +1315,10 @@
 							<p>Network type: {txNetworkTypeName}</p>
 							<p>Chain ID: {$yakklCurrentlySelectedStore?.shortcuts.chainId}</p>
 						</div>
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
-						<!-- svelte-ignore missing-declaration -->
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<div role="button" id="reload" on:click={handleRecycle} class="inline-flex items-center rounded-full btn-tiny bg-secondary btn-primary hover:bg-secondary/50 px-2">
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
+						<!-- svelte-ignore missing_declaration -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<div role="button" id="reload" onclick={handleRecycle} class="inline-flex items-center rounded-full btn-tiny bg-secondary btn-primary hover:bg-secondary/50 px-2">
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
 							</svg>
@@ -1442,9 +1446,9 @@
 						</Timeline>
 
 						<Hr class="my-4 mx-auto md:my-10" width="w-48" height="h-1"/>
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
-						<div class="text-center mt-1 w-full flex flex-col mx-0" role="button" on:click|preventDefault={() => handleOpenAddress($yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/address/' + address)}>
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
+						<div class="text-center mt-1 w-full flex flex-col mx-0" role="button" onclick={preventDefault(() => handleOpenAddress($yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/address/' + address))}>
 							<div class="flex flex-row">
 								<div class="flex flex-col">FULL history for this account can be found here:</div>
 								<div class="flex flex-col">
@@ -1458,7 +1462,7 @@
 				</TabItem>
 
 				<TabItem id="fees" open={feesTabOpen} on:click={() => {handleCurrentTab("feesTab")}} style={$errors.maxPriorityFeePerGasOverride? "color:red" : $errors.maxFeePerGasOverride ? "color:red": ""} title="Fees">
-					<!-- svelte-ignore missing-declaration -->
+					<!-- svelte-ignore missing_declaration -->
 					<Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGas" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Estimated Gas Fee</h3>
 						<div class="grid grid-cols-4 gap-2">
@@ -1470,7 +1474,7 @@
 						<p class="py-2">The default value is the estimated Gas Fee from the blockchain. The Gas Fee is a transaction cost that can vary based on network traffic and validators. This fee can be edited if you desired. Any lower fee entered could poorly impact the transaction processing time.</p>
 					</Popover>
 
-					<!-- svelte-ignore missing-declaration -->
+					<!-- svelte-ignore missing_declaration -->
 					<Popover class="text-sm z-10" triggeredBy="#maxFeePerGas" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Gas Fee Limit (MAX)</h3>
 						<div class="grid grid-cols-4 gap-2">
@@ -1487,9 +1491,9 @@
 						<div class="w-full text-center mb-1">
 							<span class="font-bold text-sm text-gray-100">(Optional) Advanced breakdown of fees</span>
 						</div>
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-interactive-supports-focus -->
-						<div role="button" on:click|preventDefault={() => handleOpenInTab('https://www.blocknative.com/gas-estimator?utm_source=yakkl')} class="flex flex-row mb-2 -mt-1 text-gray-100 items-center justify-center">
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_interactive_supports_focus -->
+						<div role="button" onclick={preventDefault(() => handleOpenInTab('https://www.blocknative.com/gas-estimator?utm_source=yakkl'))} class="flex flex-row mb-2 -mt-1 text-gray-100 items-center justify-center">
 							<div class="flex flex-row underline">Transaction "Gas" Fee Tracker</div>
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="flex flex-row ml-2 w-4 h-4">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -1503,9 +1507,9 @@
 						{/if}
 
 						<div class="grid grid-cols-3 gap-2 text-gray-100">
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<!-- svelte-ignore a11y-interactive-supports-focus -->
-							<div id="priority" role="button" on:click|preventDefault={() => {handleGasSelect('priority')}} class="{priorityClass} border-green-500 rounded-md shadow h-[10rem]">
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_interactive_supports_focus -->
+							<div id="priority" role="button" onclick={preventDefault(() => {handleGasSelect('priority')})} class="{priorityClass} border-green-500 rounded-md shadow h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->
@@ -1533,9 +1537,9 @@
 								</div>
 							</div>
 
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<!-- svelte-ignore a11y-interactive-supports-focus -->
-							<div id="market" role="button" on:click|preventDefault={() => {handleGasSelect('market')}} class="{marketClass} border-yellow-500 rounded-md shadow-xl h-[10rem]">
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_interactive_supports_focus -->
+							<div id="market" role="button" onclick={preventDefault(() => {handleGasSelect('market')})} class="{marketClass} border-yellow-500 rounded-md shadow-xl h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->
@@ -1563,9 +1567,9 @@
 								</div>
 							</div>
 
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<!-- svelte-ignore a11y-interactive-supports-focus -->
-							<div id="low" role="button" on:click|preventDefault={() => {handleGasSelect('low')}} class="{lowClass} border-amber-500 rounded-md shadow h-[10rem]">
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_interactive_supports_focus -->
+							<div id="low" role="button" onclick={preventDefault(() => {handleGasSelect('low')})} class="{lowClass} border-amber-500 rounded-md shadow h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->
@@ -1637,8 +1641,8 @@
 										placeholder="Est. Gas Fee"
 										autocomplete="off"
 										bind:value={$form.maxPriorityFeePerGasOverride}
-										on:change={handleChange}
-										on:blur={onBlur}
+										onchange={handleChange}
+										onblur={onBlur}
 										required />
 								</div>
 								<div class="flex flex-col w-[49%] text-center">
@@ -1652,8 +1656,8 @@
 										placeholder="Gas Fee Limit"
 										autocomplete="off"
 										bind:value={$form.maxFeePerGasOverride}
-										on:change={handleChange}
-										on:blur={onBlur}
+										onchange={handleChange}
+										onblur={onBlur}
 										required />
 								</div>
 							</div>

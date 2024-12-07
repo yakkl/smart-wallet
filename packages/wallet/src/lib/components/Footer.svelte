@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from "$app/navigation";
   import { PATH_WELCOME, PATH_LOGIN, YEAR, VERSION, PATH_ETHEREUM_TRANSACTIONS_SEND, RegistrationType, type Settings } from "$lib/common";
   import { yakklCurrentlySelectedStore } from '$lib/common/stores';
@@ -8,18 +10,23 @@
 	import { getMiscStore, getSettings } from '$lib/common/stores';
 	import SwapModal from './SwapModal.svelte';
   
-  // Defaults for properties. Can be changed when calling component
-  export let id = "footer";
-  export let containerWidth = "428"; //"394"; // iPhone pro size
-  export let classParam = "text-center";
+  
+  interface Props {
+    // Defaults for properties. Can be changed when calling component
+    id?: string;
+    containerWidth?: string; //"394"; // iPhone pro size
+    classParam?: string;
+  }
 
-  let showChat = false;
-  let showBuy = false;
-  let showSwap = false;
+  let { id = "footer", containerWidth = "428", classParam = "text-center" }: Props = $props();
+
+  let showChat = $state(false);
+  let showBuy = $state(false);
+  let showSwap = $state(false);
 
   let w = 6;
   let h = 6;
-  let registeredType = RegistrationType.PREMIER.toUpperCase(); // Default to Pro for now!!!!
+  let registeredType = $state(RegistrationType.PREMIER.toUpperCase()); // Default to Pro for now!!!!
 
   let yakklMiscStore: string;
   let yakklSettingsStore: Settings | null;
@@ -98,9 +105,9 @@
   <div class="flex flex-row m-2 mb-0 justify-center bg-primary/80 text-base-content rounded-lg">
     <span class="inline-grid grid-cols-2 gap-5">
       <!-- HOME -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={home} 
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={home} 
         class="m-1 flex flex-col w-[60px] h-[40px] fill-base-content hover:fill-base-300 hover:text-base-300 items-center justify-center"
         data-bs-toggle="tooltip" data-bs-placement="top" title="Welcome Page" aria-label="home">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-{w} h-{h} stroke-primary/5 stroke-[1px]">
@@ -111,9 +118,9 @@
       </div>
 
       <!-- Send -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={send} 
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={send} 
         class="m-1 flex flex-col w-[60px] h-[40px] fill-base-content hover:fill-base-300 hover:text-base-300 items-center justify-center" 
         data-bs-toggle="tooltip" data-bs-placement="top" title="Send" aria-label="wallet send">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 font-bold">
@@ -125,12 +132,12 @@
     </span>
 
     <!-- Help Bot -->
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div class="static bg-gray-100 rounded-full w-[50px] h-[50px] shadow-lg z-50">
       <div class="relative bg-gray-300/75 rounded-full m-1 h-[39px] drop-shadow-lg hover:drop-shadow-xl">
         <!-- fill-indigo-700 hover:fill-indigo-400 text-purple-900 hover:text-purple-700 -->
-        <!-- svelte-ignore a11y-interactive-supports-focus -->
-        <div role="button" on:click|preventDefault={() => {showChat=true}} 
+        <!-- svelte-ignore a11y_interactive_supports_focus -->
+        <div role="button" onclick={preventDefault(() => {showChat=true})} 
           class="relative m-1 w-[40px] h-[40px] fill-primary hover:fill-primary/50 text-primary hover:text-primary/50"
           data-bs-toggle="tooltip" data-bs-placement="top" title="Ring for Help" aria-label="help">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 mt-0.5 -ml-[.05rem]">
@@ -145,9 +152,9 @@
 
     <span class="inline-grid grid-cols-2 gap-5 ml-2">
       <!-- Buy -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <div role="button" on:click={buy}
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div role="button" onclick={buy}
         class="m-1 flex flex-col w-[60px] h-[40px] fill-base-content hover:fill-base-300 hover:text-base-300 items-center justify-center" 
         data-bs-toggle="tooltip" data-bs-placement="top" title="Buy" aria-label="Buy">
 
@@ -158,9 +165,9 @@
       </div>
 
       <!-- Swap -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={swap} 
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={swap} 
         class="m-1 flex flex-col w-[60px] h-[40px] fill-base-content hover:fill-base-300 hover:text-base-300 items-center justify-center"
         data-bs-toggle="tooltip" data-bs-placement="top" title="Swap" aria-label="swap">
 

@@ -4,15 +4,27 @@
   import { ethers } from 'ethers';
 	import type { Provider } from '$lib/plugins';
 
-  export let symbol: string;
-  export let address: string | null = null;
-  export let blockTag: BlockTag | 'latest' = 'latest';
-  export let units: number | string = 18;
-  export let provider: Provider;
-  export let className: string = '';
-  export let balanceText: string = 'Balance: ';
+  interface Props {
+    symbol: string;
+    address?: string | null;
+    blockTag?: BlockTag | 'latest';
+    units?: number | string;
+    provider: Provider;
+    className?: string;
+    balanceText?: string;
+  }
 
-  let balance: BigNumberish = 0n;
+  let {
+    symbol,
+    address = null,
+    blockTag = 'latest',
+    units = 18,
+    provider,
+    className = '',
+    balanceText = 'Balance: '
+  }: Props = $props();
+
+  let balance: BigNumberish = $state(0n);
 
   onMount(async () => {
     if (!address || !provider) {

@@ -2,7 +2,11 @@
   import { goto } from '$app/navigation';
   import { PATH_CRYPTO, PATH_ETHEREUM_TRANSACTIONS_SEND, PATH_ETHEREUM_TRANSACTIONS_STAKE, PATH_ETHEREUM_TRANSACTIONS_SWAP } from '$lib/common/constants';
 
-  export let id = "actionbar";
+  interface Props {
+    id?: string;
+  }
+
+  let { id = "actionbar" }: Props = $props();
 
 </script>
 
@@ -14,9 +18,9 @@
   <div class="grid grid-cols-4 gap-10 my-0.5 mx-2 items-center justify-center"> 
     <!-- Send -->
     <div class="rounded-full shadow-lg h-[60px]">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={() => goto(PATH_ETHEREUM_TRANSACTIONS_SEND)}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={() => goto(PATH_ETHEREUM_TRANSACTIONS_SEND)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
@@ -27,9 +31,9 @@
 
     <!-- Receive -->
     <div class="rounded-full shadow-lg h-[60px]">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={() => goto(PATH_CRYPTO)}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={() => goto(PATH_CRYPTO)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">
           <!-- <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" /> -->
@@ -41,9 +45,9 @@
 
     <!-- Stake -->
     <div class="rounded-full shadow-lg h-[60px]">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={() => goto(PATH_ETHEREUM_TRANSACTIONS_STAKE)}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={() => goto(PATH_ETHEREUM_TRANSACTIONS_STAKE)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">
           <!-- <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" /> -->
@@ -55,9 +59,9 @@
 
     <!-- Swap -->
     <div class="rounded-full shadow-lg h-[60px]">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
-      <div role="button" on:click={() => goto(PATH_ETHEREUM_TRANSACTIONS_SWAP)}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={() => goto(PATH_ETHEREUM_TRANSACTIONS_SWAP)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
@@ -68,7 +72,7 @@
 
     <!-- Buy -->
     <!-- <div class="rounded-full shadow h-[60px]"> -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- <div role="button" on:click={() => goto(PATH_ETHEREUM_TRANSACTIONS_BUY)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">
@@ -80,7 +84,7 @@
 
     <!-- Sell -->
     <!-- <div class="rounded-full shadow h-[60px]"> -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- <div role="button" on:click={() => goto(PATH_ETHEREUM_TRANSACTIONS_SELL)}
         class="w-[60px] h-[60px] flex flex-col items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute w-4 h-4 -mt-5 font-bold">

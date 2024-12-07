@@ -26,4 +26,4 @@
 </script>
 
 <!-- add classes -->
-<button on:click={connectWallet}>Connect Wallet</button>
+<button onclick={connectWallet}>Connect Wallet</button>

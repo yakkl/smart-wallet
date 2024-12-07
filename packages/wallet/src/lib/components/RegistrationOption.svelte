@@ -1,10 +1,20 @@
 <script lang="ts">
-  /// <reference types="svelte" />
+  
 
-  export let title: string = 'Registration Options';
-  export let onCreate: () => void;
-  export let onImport: () => void;
-  export let onRestore: () => void;
+  interface Props {
+    /// <reference types="svelte" />
+    title?: string;
+    onCreate: () => void;
+    onImport: () => void;
+    onRestore: () => void;
+  }
+
+  let {
+    title = 'Registration Options',
+    onCreate,
+    onImport,
+    onRestore
+  }: Props = $props();
 </script>
 
 <div class="bg-surface-light dark:bg-surface-dark rounded-lg p-6 shadow-md">
@@ -22,7 +32,7 @@
   <div class="space-y-3">
     <!-- Create New Account Button -->
     <button 
-      on:click={onCreate}
+      onclick={onCreate}
       class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Create New Account
@@ -32,7 +42,7 @@
     
     <!-- Import Existing Account Button -->
     <button 
-      on:click={onImport}
+      onclick={onImport}
       class="w-full py-2 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Import Existing Account(s)
@@ -40,7 +50,7 @@
 
     <!-- Restore from Emergency Kit Button -->
     <button 
-      on:click={onRestore}
+      onclick={onRestore}
       class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
       Restore from Emergency Kit

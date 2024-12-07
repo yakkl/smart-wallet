@@ -39,37 +39,37 @@
 
   const providers = [new CoinbasePriceProvider];
 
-  let profileComponent: Profile;
-  let preferencesComponent: Preferences;
+  let profileComponent: Profile = $state();
+  let preferencesComponent: Preferences = $state();
 
   // Mock token data array
   const tokenDataArray: TokenData[] = [ethTokenData, btcTokenData];
 
-  let showImportPhrase = false;
-  let showExportPrivateKey = false;
-  let showImportWatch = false;
-  let showImportAccount = false;
-  let showPincodeModal = false;
-  let showPincode = false;
-  let showAccounts = false;
-  let showContacts = false;
-  let showReceive = false;
-  let showEmergencyKit = false;
-  let showRegistrationOptions = false;
-  let showImportOptions = false;
-  let showSwap = false;
-  let showSwapModal = false;
+  let showImportPhrase = $state(false);
+  let showExportPrivateKey = $state(false);
+  let showImportWatch = $state(false);
+  let showImportAccount = $state(false);
+  let showPincodeModal = $state(false);
+  let showPincode = $state(false);
+  let showAccounts = $state(false);
+  let showContacts = $state(false);
+  let showReceive = $state(false);
+  let showEmergencyKit = $state(false);
+  let showRegistrationOptions = $state(false);
+  let showImportOptions = $state(false);
+  let showSwap = $state(false);
+  let showSwapModal = $state(false);
 
-  let fundingAddress: string;
+  let fundingAddress: string = $state();
   let account: YakklAccount | null = null;
-  let mode: 'import' | 'export' = 'export';
+  let mode: 'import' | 'export' = $state('export');
   
   let swapPriceProvider: SwapPriceProvider | null = null; // Don't have to set it to null
-  let provider: Provider;
+  let provider: Provider = $state();
   let chainId = 1;
-  let blockchain: Ethereum;
-  let swapManager: UniswapSwapManager;
-  let tokenService: TokenService<any>;
+  let blockchain: Ethereum = $state();
+  let swapManager: UniswapSwapManager = $state();
+  let tokenService: TokenService<any> = $state();
   // let gasProvider: EthereumGasProvider;
 
   onMount(async () => {
@@ -263,14 +263,16 @@
   </div>
 
   <div class="my-4">
-    <PriceTracker symbol="ETH" currency="USD" let:price>
-      {#if price !== null}
-        <span class="text-xl font-semibold text-blue-600">{price.price} USD (no formatting using PriceTracker)</span>
-        <span class="text-sm text-gray-500">{price.provider}</span>
-      {:else}
-        <span class="text-gray-500">Fetching price...</span>
-      {/if}
-    </PriceTracker>  
+    <PriceTracker symbol="ETH" currency="USD" >
+      {#snippet children({ price })}
+            {#if price !== null}
+          <span class="text-xl font-semibold text-blue-600">{price.price} USD (no formatting using PriceTracker)</span>
+          <span class="text-sm text-gray-500">{price.provider}</span>
+        {:else}
+          <span class="text-gray-500">Fetching price...</span>
+        {/if}
+                {/snippet}
+        </PriceTracker>  
   </div>
 
   <div class="my-4">
@@ -303,13 +305,13 @@
     <p class="text-gray-100 text-sm">Experimental Only</p>
     
     <button
-      on:click={() => profileComponent.openProfile()}
+      onclick={() => profileComponent.openProfile()}
       class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
       Open Profile
     </button>
 
     <button
-      on:click={() => preferencesComponent.openPreferences()}
+      onclick={() => preferencesComponent.openPreferences()}
       class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
       Open Preferences
     </button>
@@ -317,97 +319,97 @@
 
 
   <button
-    on:click={() => showSwapModal = true}
+    onclick={() => showSwapModal = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     SwapModal
   </button>
   
   <button
-    on:click={() => showSwap = true}
+    onclick={() => showSwap = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Swap
   </button>
   
   <button
-    on:click={() => showRegistrationOptions = true}
+    onclick={() => showRegistrationOptions = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Registration Options
   </button>
   
   <button
-    on:click={() => showImportOptions = true}
+    onclick={() => showImportOptions = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Options
   </button>
   
   <button
-    on:click={() => {showEmergencyKit = true; mode = 'export';}}
+    onclick={() => {showEmergencyKit = true; mode = 'export';}}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Export Emergency Kit
   </button>
 
   <button
-    on:click={() => {showEmergencyKit = true; mode = 'import';}}
+    onclick={() => {showEmergencyKit = true; mode = 'import';}}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Emergency Kit
   </button>
 
   <button
-    on:click={() => showExportPrivateKey = true}
+    onclick={() => showExportPrivateKey = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Export Private Key
   </button>
 
   <button
-    on:click={() => showPincode = true}
+    onclick={() => showPincode = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Show Pincode
   </button>
 
   <button
-    on:click={() => showPincodeModal = true}
+    onclick={() => showPincodeModal = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Show Pincode Modal
   </button>
 
   <button
-    on:click={() => showReceive = true}
+    onclick={() => showReceive = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Show Receive
   </button>
 
   <button
-    on:click={() => showContacts = true}
+    onclick={() => showContacts = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Show Contacts
   </button>
 
   <button
-    on:click={() => showImportWatch = true}
+    onclick={() => showImportWatch = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Watch Account
   </button>
 
   <button
-    on:click={() => showImportAccount = true}
+    onclick={() => showImportAccount = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Account w/PKey
   </button>
 
   <button
-    on:click={() => {console.log('showImportPhrase'); showImportPhrase = true}}
+    onclick={() => {console.log('showImportPhrase'); showImportPhrase = true}}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Phrase
   </button>
 
   <button
-    on:click={() => showAccounts = true}
+    onclick={() => showAccounts = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Show Accounts
   </button>
 
   <button
-    on:click={close}
+    onclick={close}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Cancel
   </button>

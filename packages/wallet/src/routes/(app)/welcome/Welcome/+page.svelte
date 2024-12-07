@@ -19,10 +19,10 @@
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  let error = false;
-  let errorValue: any;
-  let showComingSoon = false;
-  let showImportOption = false;
+  let error = $state(false);
+  let errorValue: any = $state();
+  let showComingSoon = $state(false);
+  let showImportOption = $state(false);
 
   // let showPin = false;
   // let pinValue = "";

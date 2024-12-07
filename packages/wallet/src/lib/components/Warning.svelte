@@ -1,8 +1,17 @@
 <script lang="ts">
-  export let show = false;
-  export let value = '';
-  export let title = 'WARNING!';
-  export let rejectText = 'Close';
+  interface Props {
+    show?: boolean;
+    value?: string;
+    title?: string;
+    rejectText?: string;
+  }
+
+  let {
+    show = $bindable(false),
+    value = '',
+    title = 'WARNING!',
+    rejectText = 'Close'
+  }: Props = $props();
  
 </script>
 
@@ -11,7 +20,7 @@
     <h3 class="text-lg font-bold">{title}</h3>
     <p class="py-4">{value}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {show=false}}>{rejectText}</button>
+      <button class="btn" onclick={() => {show=false}}>{rejectText}</button>
     </div>
   </div>
 </div>

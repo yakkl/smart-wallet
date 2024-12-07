@@ -3,10 +3,14 @@
   import type { TokenData } from '$lib/common/interfaces';
   import LineChart from '$lib/components/LineChart.svelte';
 
-  export let token: TokenData;
-  export let show: boolean = true;
+  interface Props {
+    token: TokenData;
+    show?: boolean;
+  }
 
-  let chartData: { x: Date; y: number }[] = [];
+  let { token, show = true }: Props = $props();
+
+  let chartData: { x: Date; y: number }[] = $state([]);
 
   onMount(async () => {
     // Fetch historical price data based on the token and timeline

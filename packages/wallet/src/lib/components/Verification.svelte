@@ -1,9 +1,14 @@
 <script lang="ts">
-// Popup a username/pwd verification dialog
-export let show = false;
-export let handleProcess = (param1: any, param2: any) => {};
-let userName: string;
-let password: string;
+
+  interface Props {
+    // Popup a username/pwd verification dialog
+    show?: boolean;
+    handleProcess?: any;
+  }
+
+  let { show = $bindable(false), handleProcess = (param1: any, param2: any) => {} }: Props = $props();
+let userName: string = $state();
+let password: string = $state();
 
 
 // TODO: Need to be able to pass function to handleProcess. Until then simply use the code
@@ -18,8 +23,8 @@ let password: string;
     <input type="text" placeholder="Username" bind:value={userName} class="input input-bordered input-primary w-full max-w-xs mb-2" />
     <input type="password" placeholder="Password" bind:value={password} class="input input-bordered input-primary w-full max-w-xs" />
     <div class="modal-action">
-      <button class="btn" on:click={() => show=false}>Cancel</button>
-      <button class="btn" on:click={() => handleProcess(userName, password)}>Verify</button>
+      <button class="btn" onclick={() => show=false}>Cancel</button>
+      <button class="btn" onclick={() => handleProcess(userName, password)}>Verify</button>
     </div>
   </div>
 </div>

@@ -1,5 +1,7 @@
 <!-- ImportPrivateKey.svelte -->
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { browser as browserSvelte } from '$app/environment';
   import { setYakklAccountsStorage, setYakklCurrentlySelectedStorage, setProfileStorage, getYakklAccounts, getProfile, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
   import { yakklAccount as yakklAccountDefault } from '$lib/models/dataModels';
@@ -22,13 +24,22 @@
   let currentlySelected: YakklCurrentlySelected;
   let yakklMiscStore: string;
   let chainId: number = 1;
-  let error = '';
-  let showConfetti = false;
+  let error = $state('');
+  let showConfetti = $state(false);
 
-  export let show = false;
-  export let className = 'text-gray-600 z-[999]';
-  export let onComplete: (account: YakklAccount) => void = () => {show = false};
-  export let onCancel: () => void = () => {show = false};
+  interface Props {
+    show?: boolean;
+    className?: string;
+    onComplete?: (account: YakklAccount) => void;
+    onCancel?: () => void;
+  }
+
+  let {
+    show = $bindable(false),
+    className = 'text-gray-600 z-[999]',
+    onComplete = () => {show = false},
+    onCancel = $bindable(() => {show = false})
+  }: Props = $props();
 
   onMount(async () => {
     try {
@@ -233,7 +244,7 @@
 
 {#if showConfetti}
   <!-- <Confetti /> -->
-  <div use:confetti />
+  <div use:confetti></div>
 {/if}
 
 <div class="relative {className}">
@@ -243,7 +254,7 @@
         Please be careful! <strong>This private key is important!</strong>
         A bad actor could take the content of your wallet if they have access to your private key!
       </p>
-      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+      <form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
         <div>
           <label for="accountName" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Account Name</label>
           <input
@@ -251,7 +262,7 @@
             id="accountName"
             class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.accountName}
-            on:change={handleChange}
+            onchange={handleChange}
           />
           {#if $errors.accountName}
             <p class="mt-2 text-sm text-red-600">{$errors.accountName}</p>
@@ -264,7 +275,7 @@
             id="alias"
             class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.alias}
-            on:change={handleChange}
+            onchange={handleChange}
           />
         </div>
         <div>
@@ -274,7 +285,7 @@
             rows="3"
             class="mt-1 block w-full rounded-md border-gray-500 dark:border-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-700 sm:text-sm"
             bind:value={$form.prvKey}
-            on:change={handleChange}
+            onchange={handleChange}
           ></textarea>
           {#if $errors.prvKey}
             <p class="mt-2 text-sm text-red-600">{$errors.prvKey}</p>
@@ -282,8 +293,8 @@
         </div>
         <div class="pt-5">
           <div class="flex justify-end space-x-4">
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={onCancel}>Cancel</button>
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={onCancel}>Cancel</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={resetForm}>Reset</button>
             <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Import</button>
           </div>
         </div>

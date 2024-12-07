@@ -3,14 +3,23 @@
   import { onMount } from 'svelte';
   import type { SwapToken as Token } from '$lib/common/interfaces';
 
-  export let tokens: Token[];
-  export let selectedToken: Token;
-  export let disabled: boolean = false;
-  export let onTokenSelect: (token: Token) => void;
+  interface Props {
+    tokens: Token[];
+    selectedToken: Token;
+    disabled?: boolean;
+    onTokenSelect: (token: Token) => void;
+  }
 
-  let isOpen = false;
-  let searchQuery = '';
-  let filteredTokens: Token[] = [];
+  let {
+    tokens,
+    selectedToken = $bindable(),
+    disabled = false,
+    onTokenSelect
+  }: Props = $props();
+
+  let isOpen = $state(false);
+  let searchQuery = $state('');
+  let filteredTokens: Token[] = $state([]);
 
   function toggleDropdown() {
     // Prevent opening if disabled
@@ -63,7 +72,7 @@
     {disabled 
       ? 'bg-gray-500 text-gray-200 cursor-not-allowed ' 
       : 'bg-purple-600 text-white hover:bg-purple-700 '} 
-      font-bold rounded-full transition duration-300 ease-in-out focus:outline-none" on:click={toggleDropdown} disabled={disabled}>
+      font-bold rounded-full transition duration-300 ease-in-out focus:outline-none" onclick={toggleDropdown} disabled={disabled}>
     {#if selectedToken && selectedToken.symbol && selectedToken.name}
       <img src={getLogoURL(selectedToken.logoURI)} alt={selectedToken.name} class="w-8 h-8 rounded-full" />
       <div class="flex-1 flex flex-col ml-3">
@@ -85,15 +94,15 @@
         placeholder="Search..."
         class="w-full px-4 py-2 mb-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition duration-200"
         value={searchQuery}
-        on:input={handleSearch}
+        oninput={handleSearch}
       />
       <ul class="max-h-60 overflow-y-auto w-full">
         {#each filteredTokens as token}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <li
             class="px-4 py-2 flex items-center space-x-3 hover:bg-gray-100 cursor-pointer transition duration-200"
-            on:click={() => selectToken(token)}
+            onclick={() => selectToken(token)}
           >
             <img src={getLogoURL(token.logoURI)} alt={token.name} class="w-8 h-8 rounded-full" />
             <div class="flex-1 flex flex-col">

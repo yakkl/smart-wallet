@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
@@ -7,46 +9,38 @@
   import { debounce } from 'lodash-es';
   import { toBigInt } from '$lib/common';
 
-  // Component props
-  export let tokens: SwapToken[] = [];
-  export let disabled = false;
-  export let insufficientBalance = false;
-  export let balance = '0';
-  export let resetValues = false;
-  export let swapPriceDataStore: Writable<SwapPriceData>;
-  export let onTokenSelect: (token: SwapToken) => void;
-  export let onAmountChange: (amount: string) => void;
+  
+  interface Props {
+    // Component props
+    tokens?: SwapToken[];
+    disabled?: boolean;
+    insufficientBalance?: boolean;
+    balance?: string;
+    resetValues?: boolean;
+    swapPriceDataStore: Writable<SwapPriceData>;
+    onTokenSelect: (token: SwapToken) => void;
+    onAmountChange: (amount: string) => void;
+  }
+
+  let {
+    tokens = [],
+    disabled = false,
+    insufficientBalance = false,
+    balance = '0',
+    resetValues = $bindable(false),
+    swapPriceDataStore,
+    onTokenSelect,
+    onAmountChange
+  }: Props = $props();
 
   // Reactive store value
-  let swapPriceData: SwapPriceData;
-  $: { 
-    swapPriceData = $swapPriceDataStore;
-  }
+  let swapPriceData: SwapPriceData = $state();
 
   // Input state management
-  let userInput = ''; // Temporary user input
-  let formattedAmount = ''; // Formatted display amount
+  let userInput = $state(''); // Temporary user input
+  let formattedAmount = $state(''); // Formatted display amount
 
-  // Reset handling
-  $: {
-    if (resetValues) {
-      userInput = '';
-      formattedAmount = '';
-      resetValues = false;
-    }
-  }
 
-  // Amount formatting from store updates
-  $: {
-    if (!userInput && toBigInt(swapPriceData.amountIn) > 0n) {
-      formattedAmount = formatAmount(
-        toBigInt(swapPriceData.amountIn),
-        swapPriceData.tokenIn.decimals
-      );
-    } else {
-      formattedAmount = userInput;
-    }
-  }
 
   // Amount formatting utility
   function formatAmount(amount: bigint, decimals: number): string {
@@ -117,6 +111,28 @@
       formattedAmount = userInput;
     }
   }
+  run(() => { 
+    swapPriceData = $swapPriceDataStore;
+  });
+  // Reset handling
+  run(() => {
+    if (resetValues) {
+      userInput = '';
+      formattedAmount = '';
+      resetValues = false;
+    }
+  });
+  // Amount formatting from store updates
+  run(() => {
+    if (!userInput && toBigInt(swapPriceData.amountIn) > 0n) {
+      formattedAmount = formatAmount(
+        toBigInt(swapPriceData.amountIn),
+        swapPriceData.tokenIn.decimals
+      );
+    } else {
+      formattedAmount = userInput;
+    }
+  });
 </script>
 
 <div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800 
@@ -126,8 +142,8 @@
       type="text"
       placeholder="0"
       value={userInput || formattedAmount}
-      on:input={handleAmountInput}
-      on:blur={handleBlur}
+      oninput={handleAmountInput}
+      onblur={handleBlur}
       disabled={disabled}
       class="
         bg-transparent 

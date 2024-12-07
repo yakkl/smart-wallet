@@ -9,14 +9,23 @@
   import BitcoinIcon from '$lib/components/icons/BitcoinIcon.svelte';
   import EditControls from './EditControls.svelte';
 
-  export let contacts: YakklContact[] = [];
-  export let onContactSelect: (contact: YakklContact) => void = () => {};
-  export let onContactUpdate: (contact: YakklContact) => void = () => {};
-  export let onContactDelete: (contact: YakklContact) => void = () => {};
+  interface Props {
+    contacts?: YakklContact[];
+    onContactSelect?: (contact: YakklContact) => void;
+    onContactUpdate?: (contact: YakklContact) => void;
+    onContactDelete?: (contact: YakklContact) => void;
+  }
 
-  let selectedContact: YakklContact | null = null;
-  let showEditModal = false;
-  let showDeleteModal = false;
+  let {
+    contacts = [],
+    onContactSelect = () => {},
+    onContactUpdate = () => {},
+    onContactDelete = () => {}
+  }: Props = $props();
+
+  let selectedContact: YakklContact | null = $state(null);
+  let showEditModal = $state(false);
+  let showDeleteModal = $state(false);
 
   function handleEdit(contact: YakklContact) {
     selectedContact = contact;
@@ -43,8 +52,8 @@
 
 <ul class="divide-y divide-gray-300">
   {#each contacts as contact, index}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <li
       class="relative py-4 flex justify-between items-center"
       class:bg-purple-100={index % 2 === 0}
@@ -54,7 +63,7 @@
     >
       <button
         class="flex items-start flex-1 cursor-pointer px-2"
-        on:click={() => onContactSelect(contact)}
+        onclick={() => onContactSelect(contact)}
       >
         <div class="flex items-center">
           {#if contact.blockchain === 'Ethereum'}

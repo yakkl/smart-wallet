@@ -8,7 +8,7 @@
   if (browserSvelte) browser_ext = getBrowserExt();
 
 
-  let flaggedSite: string = "https://yakkl.com";  // Default
+  let flaggedSite: string = $state("https://yakkl.com");  // Default
   let yid:string = '';
 
   if (browserSvelte) {

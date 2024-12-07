@@ -4,8 +4,8 @@
   import { PATH_LOGIN, PATH_REGISTER, type Settings } from '$lib/common';
   import { goto } from '$app/navigation';
 
-  let yakklSettings: Settings | null = null;
-  let error: Error | undefined = undefined;
+  let yakklSettings: Settings | null = $state(null);
+  let error: Error | undefined = $state(undefined);
 
   // Function to fetch the updated settings
   async function fetchYakklSettings() {

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { browser as browserSvelte } from '$app/environment';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
@@ -26,15 +28,29 @@
 	import { validateSwapQuote, type ValidationResult } from '$lib/common/validation';
 	// import { multiHopQuoteAlphaRouter } from '$lib/plugins/alphaRouter';
 
-  // Props
-  export let fundingAddress: string;
-  export let provider: Provider;     // Provider must have Signer set before calling Swap!
-  export let blockchain: Ethereum;
-  export let swapManager: UniswapSwapManager;
-  export let tokenService: TokenService<any>;
-  export let show = false;
-  export let onSwap: (fundingAddress: string, tokenIn: SwapToken, tokenOut: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void = () => {};
-  export let className = 'text-gray-600 z-[999]';
+  
+  interface Props {
+    // Props
+    fundingAddress: string;
+    provider: Provider; // Provider must have Signer set before calling Swap!
+    blockchain: Ethereum;
+    swapManager: UniswapSwapManager;
+    tokenService: TokenService<any>;
+    show?: boolean;
+    onSwap?: (fundingAddress: string, tokenIn: SwapToken, tokenOut: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void;
+    className?: string;
+  }
+
+  let {
+    fundingAddress,
+    provider,
+    blockchain,
+    swapManager,
+    tokenService,
+    show = $bindable(false),
+    onSwap = () => {},
+    className = 'text-gray-600 z-[999]'
+  }: Props = $props();
 
   const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 
@@ -42,7 +58,7 @@
   if (browserSvelte) browser_ext = getBrowserExt();
 
   // May could have passed this in as a prop
-  let gasToken: GasToken;
+  let gasToken: GasToken = $state();
 
   // Initial token values
   let initialToken: SwapToken = {
@@ -95,74 +111,31 @@
   const insufficientBalanceStore = writable(false);
 
   // State
-  let tokenIn: SwapToken = initialToken;
-  let tokenOut: SwapToken = initialToken;
-  let fromAmount = '';
-  let toAmount = '';
-  let tokens: SwapToken[] = [];
-  let preferredTokens: SwapToken[] = [];
+  let tokenIn: SwapToken = $state(initialToken);
+  let tokenOut: SwapToken = $state(initialToken);
+  let fromAmount = $state('');
+  let toAmount = $state('');
+  let tokens: SwapToken[] = $state([]);
+  let preferredTokens: SwapToken[] = $state([]);
   // let stablecoinTokens: SwapToken[] = [];
-  let fromBalance = '0';
+  let fromBalance = $state('0');
   let toBalance = '0'; // Not used yet
-  let slippageTolerance = 0.5;  // 0.5% default - amount in percentage of acceptable slippage from quoted price
-  let deadline = 10;  // 10 minutes default
-  let poolFee = 3000; // 0.3% fee default
-  let error: string | null = null;
-  let isLoading = false;
-  let isSwapping = false;
+  let slippageTolerance = $state(0.5);  // 0.5% default - amount in percentage of acceptable slippage from quoted price
+  let deadline = $state(10);  // 10 minutes default
+  let poolFee = $state(3000); // 0.3% fee default
+  let error: string | null = $state(null);
+  let isLoading = $state(false);
+  let isSwapping = $state(false);
   let lastModifiedPanel: 'sell' | 'buy' = 'sell';
-  let resetValues = false;
+  let resetValues = $state(false);
   let swapManagerName = '';
   let pricesInterval: NodeJS.Timeout;
-  let multiHop = false;
+  let multiHop = $state(false);
 
-  // Reactive statements
-  $: {
-    if (deadline || slippageTolerance || poolFee) {
-      debouncedGetQuote();
-    }
-  }
 
-  $: multiHop = $swapPriceDataStore.multiHop;
 
-  $: isEthWethSwap = (tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH') || (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH');
 
-  $: if (tokenIn && fromAmount) {
-    checkBalance(tokenIn, fromAmount, fundingAddress); // Only need the selling token balance to verify if there are enough funds but we also need to verify ETH for gas
-    if (gasToken && $swapPriceDataStore.marketPriceGas === 0) {
-      gasToken.getMarketPrice().then(price => {
-        updateSwapPriceData( { marketPriceGas: price.price }); // TODO: Need to add isInsufficient check for gas so we can show the error message and offer an alternative if there is one
-      });
-    }
 
-    // Only need to update if we have a tokenIn and the market price is 0
-    if (tokenIn.symbol && swapManager && $swapPriceDataStore.marketPriceIn === 0) {
-      swapManager.getMarketPrice(`${tokenIn.symbol}-USD`).then(price => {
-        if (price.price <= 0) {
-          // debug_log('tokenIn - Market price is 0: (ignored)', price);
-          return;
-        }
-        updateSwapPriceData( { marketPriceIn: price.price });
-      }).catch(err => {
-        error_log('tokenIn - Error fetching market price:', err);
-      });
-    }
-  }
-
-  $: if (tokenOut && toAmount) {
-    // Only need to update if we have a tokenOut and the market price is 0
-    if (tokenOut.symbol && swapManager && $swapPriceDataStore.marketPriceOut === 0) {
-      swapManager.getMarketPrice(`${tokenOut.symbol}-USD`).then(price => {
-        if (price.price <= 0) {
-          // debug_log('tokenOut - Market price is 0: (ignored)', price);
-          return;
-        }
-        updateSwapPriceData( { marketPriceOut: price.price });
-      }).catch(err => {
-        error_log('tokenOut - Error fetching market price:', err);
-      });
-    }
-  }
 
   // Initialize
   onMount(async () => {
@@ -660,6 +633,55 @@
     swapPriceDataStore.set(initialSwapPriceData);
     resetValues = true;
   }
+  // Reactive statements
+  run(() => {
+    if (deadline || slippageTolerance || poolFee) {
+      debouncedGetQuote();
+    }
+  });
+  run(() => {
+    multiHop = $swapPriceDataStore.multiHop;
+  });
+  let isEthWethSwap = $derived((tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH') || (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH'));
+  run(() => {
+    if (tokenIn && fromAmount) {
+      checkBalance(tokenIn, fromAmount, fundingAddress); // Only need the selling token balance to verify if there are enough funds but we also need to verify ETH for gas
+      if (gasToken && $swapPriceDataStore.marketPriceGas === 0) {
+        gasToken.getMarketPrice().then(price => {
+          updateSwapPriceData( { marketPriceGas: price.price }); // TODO: Need to add isInsufficient check for gas so we can show the error message and offer an alternative if there is one
+        });
+      }
+
+      // Only need to update if we have a tokenIn and the market price is 0
+      if (tokenIn.symbol && swapManager && $swapPriceDataStore.marketPriceIn === 0) {
+        swapManager.getMarketPrice(`${tokenIn.symbol}-USD`).then(price => {
+          if (price.price <= 0) {
+            // debug_log('tokenIn - Market price is 0: (ignored)', price);
+            return;
+          }
+          updateSwapPriceData( { marketPriceIn: price.price });
+        }).catch(err => {
+          error_log('tokenIn - Error fetching market price:', err);
+        });
+      }
+    }
+  });
+  run(() => {
+    if (tokenOut && toAmount) {
+      // Only need to update if we have a tokenOut and the market price is 0
+      if (tokenOut.symbol && swapManager && $swapPriceDataStore.marketPriceOut === 0) {
+        swapManager.getMarketPrice(`${tokenOut.symbol}-USD`).then(price => {
+          if (price.price <= 0) {
+            // debug_log('tokenOut - Market price is 0: (ignored)', price);
+            return;
+          }
+          updateSwapPriceData( { marketPriceOut: price.price });
+        }).catch(err => {
+          error_log('tokenOut - Error fetching market price:', err);
+        });
+      }
+    }
+  });
 </script>
 
 <Modal bind:show title="Swap" {className}>
@@ -680,7 +702,7 @@
     <!-- Switch Button -->
     <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
-      on:click={switchTokens}
+      onclick={switchTokens}
       class="mx-auto block bg-gray-200 p-2 rounded-full transform transition-transform hover:rotate-180"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -749,7 +771,7 @@
 
     <!-- Reset Button -->
     <button
-      on:click={reset}
+      onclick={reset}
       class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -760,7 +782,7 @@
 
     <!-- Swap Button -->
     <button
-      on:click={swapTokens}
+      onclick={swapTokens}
       class="w-full px-4 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       disabled={!tokenIn || !tokenOut || !fromAmount || !toAmount || isLoading || isSwapping}
     >

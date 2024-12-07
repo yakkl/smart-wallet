@@ -1,21 +1,27 @@
 <!-- Contacts.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { setYakklContactsStorage, yakklContactsStore } from '$lib/common/stores';
   import { type YakklContact } from '$lib/common';
   import Modal from './Modal.svelte';
   import ContactList from './ContactList.svelte';
   import ContactForm from './ContactForm.svelte';
 
-  export let show = false;
-  export let onContactSelect: ((contact: YakklContact) => void) | null = null;
-  export let className = 'z-[999]';
-
-  let showAddModal = false;
-  let contacts: YakklContact[] = [];
-
-  $: {
-    contacts = $yakklContactsStore;
+  interface Props {
+    show?: boolean;
+    onContactSelect?: ((contact: YakklContact) => void) | null;
+    className?: string;
   }
+
+  let { show = $bindable(false), onContactSelect = null, className = 'z-[999]' }: Props = $props();
+
+  let showAddModal = $state(false);
+  let contacts: YakklContact[] = $state([]);
+
+  run(() => {
+    contacts = $yakklContactsStore;
+  });
 
   function handleContactSelect(selectedContact: YakklContact) {
     if (onContactSelect !== null) {
@@ -74,12 +80,14 @@
       {/if}
     </div>
 
-    <svelte:fragment slot="footer">
-      <button on:click={() => showAddModal = true} class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">+ Add Contact</button>
-      <p class="text-sm text-gray-500 mt-2">
-        The selected contact will be used for sending/transferring.
-      </p>
-    </svelte:fragment>
+    {#snippet footer()}
+      
+        <button onclick={() => showAddModal = true} class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">+ Add Contact</button>
+        <p class="text-sm text-gray-500 mt-2">
+          The selected contact will be used for sending/transferring.
+        </p>
+      
+      {/snippet}
   </Modal>
 </div>
 

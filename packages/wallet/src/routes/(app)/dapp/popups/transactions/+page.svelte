@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import {browser as browserSvelte} from '$app/environment';
   import { page } from '$app/stores';
   import { getYakklCurrentlySelected, yakklCurrentlySelectedStore, yakklMiscStore, yakklDappConnectRequestStore, getYakklConnectedDomains, getYakklAccounts } from '$lib/common/stores';
@@ -24,31 +26,31 @@
 
   let currentlySelected: YakklCurrentlySelected;
 
-  let showConfirm = false;
-  let showSuccess = false;
-  let showFailure = false;
-  let showSpinner = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showConfirm = $state(false);
+  let showSuccess = $state(false);
+  let showFailure = $state(false);
+  let showSpinner = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
   let chainId: number;
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   let requestData: any;
   let method: string;
   let requestId = $yakklDappConnectRequestStore;
-  let userName: string;
-  let password: string;
+  let userName: string = $state();
+  let password: string = $state();
   let message;  // This gets passed letting the user know what the intent is
   let context;
   let smartContract = false;
-  let jsonKeys: (keyof TransactionRequest)[]=[];
+  let jsonKeys: (keyof TransactionRequest)[]=$state([]);
   // let txTransactions = [];
   let tx: TransactionResponse; // returned transaction
   let txGasLimitIncrease = 0;
   let gasLimit: BigNumberish = 0n;
 
-  let transaction: TransactionRequest; 
+  let transaction: TransactionRequest = $state(); 
   // = {  // EIP-1559
   //   from: '', // Hex
   //   to: '', // Hex
@@ -61,7 +63,7 @@
   //   nonce: -1,  // Lets the provider set the nonce
   // };
 
-  let transactionValue: TransactionRequest; // Used to display on UI
+  let transactionValue: TransactionRequest = $state(); // Used to display on UI
   let addressApproved = false;
   let addressToCheck = '';
 
@@ -330,8 +332,8 @@ function handleConfirm() {
         placeholder="Password" autocomplete="off" bind:value="{password}" required />
     </div>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleApprove}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleApprove}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -341,7 +343,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Transaction for {domain} - Success!</h3>
     <p class="py-4">Success! The transaction you approved has been submitted to the BLOCKCHAIN! YAKKL® only assisted in helping you sign the transaction with your private key. The Source of Truth for this transaction is the {domain} DAPP! Click close.</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleClose}>Close</button>
+      <button class="btn" onclick={handleClose}>Close</button>
     </div>
   </div>
 </div>
@@ -351,7 +353,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Close</button>
+      <button class="btn" onclick={handleReject}>Close</button>
     </div>
   </div>
 </div>
@@ -424,7 +426,7 @@ function handleConfirm() {
     <div class="flex space-x-2 justify-center">
       {#if !showSpinner}
       <button 
-        on:click|preventDefault={handleReject}
+        onclick={preventDefault(handleReject)}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
@@ -433,7 +435,7 @@ function handleConfirm() {
       <button 
         type="submit"
         id="recover"
-        on:click|preventDefault={handleConfirm}
+        onclick={preventDefault(handleConfirm)}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve

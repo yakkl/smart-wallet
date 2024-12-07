@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
 	import { formatDate } from '$lib/common/datetime';
   import type { SwapPriceData } from '$lib/common/interfaces';
 	import { toBigInt } from '$lib/common/math';
@@ -7,21 +9,24 @@
 	import { onMount } from 'svelte';
   import type { Writable } from 'svelte/store';
 
-  export let swapPriceDataStore: Writable<SwapPriceData>;
-  export let type: 'sell' | 'buy' = 'sell';
-  export let showLastUpdated: boolean = false;
-  export let className: string = '';
+  interface Props {
+    swapPriceDataStore: Writable<SwapPriceData>;
+    type?: 'sell' | 'buy';
+    showLastUpdated?: boolean;
+    className?: string;
+  }
+
+  let {
+    swapPriceDataStore,
+    type = 'sell',
+    showLastUpdated = false,
+    className = ''
+  }: Props = $props();
 
   // Display the price based on the type (sell/buy)
-  let price = 0;
+  let price = $state(0);
   
-  $: swapPriceData = $swapPriceDataStore;
 
-  $: {
-    if (swapPriceData) {
-      swapPriceDataUpdated();
-    }
-  }
   
   onMount(async () => {
     swapPriceDataUpdated();
@@ -59,6 +64,12 @@
     const outSymbol = swapPriceData.tokenOut?.symbol || '';
     return inSymbol && outSymbol ? `${inSymbol}/${outSymbol}` : '';
   }
+  let swapPriceData = $derived($swapPriceDataStore);
+  run(() => {
+    if (swapPriceData) {
+      swapPriceDataUpdated();
+    }
+  });
 </script>
 
 <div class="flex flex-col w-full gap-1 {className}">

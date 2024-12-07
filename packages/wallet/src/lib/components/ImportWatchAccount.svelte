@@ -1,5 +1,7 @@
 <!-- ImportWatch.svelte -->
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
   import { VERSION } from '$lib/common/constants';
   import { createForm } from 'svelte-forms-lib';
@@ -11,16 +13,25 @@
   import { dateString } from '$lib/common/datetime';
   import Modal from '$components/Modal.svelte';
 
-  export let show = false;
-  export let className = 'z-[999]';
-  export let onCancel: () => void = () => {};
-  export let onComplete: (watch: YakklWatch) => void = () => {};
+  interface Props {
+    show?: boolean;
+    className?: string;
+    onCancel?: () => void;
+    onComplete?: (watch: YakklWatch) => void;
+  }
+
+  let {
+    show = $bindable(false),
+    className = 'z-[999]',
+    onCancel = () => {},
+    onComplete = () => {}
+  }: Props = $props();
 
   let currentlySelected: YakklCurrentlySelected;
   let yakklMiscStore: string;
   let yakklWatchListStore: YakklWatch[];
   let yakklSettingsStore: Settings | null;
-  let error = '';
+  let error = $state('');
 
   onMount(async () => {
     currentlySelected = await getYakklCurrentlySelected();
@@ -162,44 +173,44 @@
       <p class="text-sm text-green-500 mb-4">
         This is a <strong>WATCH - ONLY address</strong>. This means that you will not be able to perform any transactions with this specific address in YAKKL. You can <strong>Import</strong> this address if you have your private key using the Import option. This `watch-only` address allows you to keep track of <strong>ALL</strong> of your crypto in one wallet and have a complete portfolio view. For example, if you have an account with a centralized exchange like Coinbase, Kraken, Binance, etc. You can also use this feature to keep track of addresses belonging to others (e.g, `whales`, `market makers`) and be alerted on activities (useful for staying aware of potential market moves).
       </p>
-      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+      <form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
         <div>
           <label for="blockchain" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Blockchain</label>
-          <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.blockchain} on:change={handleChange}>
+          <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.blockchain} onchange={handleChange}>
             <option value="Ethereum">Ethereum</option>
             <option value="Polygon">Polygon</option>
           </select>
         </div>
         <div>
           <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address</label>
-          <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.address} on:change={handleChange} />
+          <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.address} onchange={handleChange} />
           {#if $errors.address}
             <p class="mt-2 text-sm text-red-600">{$errors.address}</p>
           {/if}
         </div>
         <div>
           <label for="addressName" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address Name</label>
-          <input type="text" id="addressName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressName} on:change={handleChange} />
+          <input type="text" id="addressName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressName} onchange={handleChange} />
           {#if $errors.addressName}
             <p class="mt-2 text-sm text-red-600">{$errors.addressName}</p>
           {/if}
         </div>
         <div class="flex items-center">
-          <input type="checkbox" id="includeInPortfolio" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={$form.includeInPortfolio} on:change={handleChange} />
+          <input type="checkbox" id="includeInPortfolio" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={$form.includeInPortfolio} onchange={handleChange} />
           <label for="includeInPortfolio" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Include this account in your portfolio totals?</label>
         </div>
         <div>
           <label for="addressAlias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address Alias (optional)</label>
-          <input type="text" id="addressAlias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressAlias} on:change={handleChange} />
+          <input type="text" id="addressAlias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.addressAlias} onchange={handleChange} />
         </div>
         <div>
           <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Explorer URL - checking address data (optional)</label>
-          <input type="text" id="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.url} on:change={handleChange} />
+          <input type="text" id="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.url} onchange={handleChange} />
         </div>
         <div class="pt-5">
           <div class="flex justify-end space-x-4">
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={closeModal}>Cancel</button>
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={closeModal}>Cancel</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={resetForm}>Reset</button>
             <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Import</button>
           </div>
         </div>

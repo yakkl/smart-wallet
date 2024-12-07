@@ -12,11 +12,11 @@
   import ClipboardJS from 'clipboard';
   import { VERSION, type YakklChat } from '$lib/common';
 
-  let messages: YakklChat[] = [];
-  let error = false;
-  let errorValue = 'An error has occurred. Please try again.';
+  let messages: YakklChat[] = $state([]);
+  let error = $state(false);
+  let errorValue = $state('An error has occurred. Please try again.');
   let clipboard;
-  let showClearWarning = false;
+  let showClearWarning = $state(false);
 
   $yakklGPTRunningStore = false;
   
@@ -129,15 +129,15 @@
   <ErrorNoAction bind:show={error} bind:value={errorValue} title="ERROR!" />
 
   <div class="grid grid-cols-2 gap-4 mb-4 px-2">
-    <button class="btn btn-sm btn-outline w-full" on:click={handlePrint}>
+    <button class="btn btn-sm btn-outline w-full" onclick={handlePrint}>
       Print conversation
     </button>
-    <button class="btn btn-sm btn-outline btn-error w-full" on:click={() => showClearWarning = true}>
+    <button class="btn btn-sm btn-outline btn-error w-full" onclick={() => showClearWarning = true}>
       Clear messages
     </button>
     <button 
       class="btn btn-sm btn-primary col-span-2 w-full" 
-      on:click={() => handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=yakkl_gpt&utm_content=knowledge_base&utm_term=extension')}
+      onclick={() => handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=yakkl_gpt&utm_content=knowledge_base&utm_term=extension')}
     >
       YAKKL® Knowledge base 
     </button>
@@ -176,8 +176,8 @@
       <h3 class="text-lg font-bold mb-4">Clear all messages?</h3>
       <p class="mb-4">Are you sure you want to clear all messages? This action cannot be undone.</p>
       <div class="flex justify-end">
-        <button class="btn btn-sm btn-outline mr-2" on:click={() => showClearWarning = false}>Cancel</button>
-        <button class="btn btn-sm btn-error" on:click={clearMessages}>Clear</button>
+        <button class="btn btn-sm btn-outline mr-2" onclick={() => showClearWarning = false}>Cancel</button>
+        <button class="btn btn-sm btn-error" onclick={clearMessages}>Clear</button>
       </div>
     </div>
   </div>
