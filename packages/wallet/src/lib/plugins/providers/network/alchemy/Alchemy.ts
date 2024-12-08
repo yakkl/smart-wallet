@@ -7,7 +7,7 @@ import { AbstractProvider } from '$plugins/Provider';
 import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings, type Filter as AlchemyFilter, type Log as AlchemyLog, type BlockTag as AlchemyBlockTag } from "alchemy-sdk";
 import type { Signer } from '$lib/plugins/Signer';
 import { EthersConverter } from '$lib/plugins/utilities/EthersConverter';
-import { ethers as ethersv6 } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 interface AlchemyOptions {
   apiKey?: string | null;
@@ -25,9 +25,9 @@ export class Alchemy extends AbstractProvider {
   private alchemy: AlchemyAPI | null = null;
 
   constructor(options: AlchemyOptions = {}) {
-    super('Alchemy', options.blockchains || ['Ethereum', 'Solana', 'Optimism', 'Polygon', 'Base', 'Arbitrum', 'Avalanche', 'Celo'], 
-      options.chainIds || [1, 10, 69, 137, 80001, 42161, 421611, 11155111], 
-      options.blockchain || 'Ethereum', 
+    super('Alchemy', options.blockchains || ['Ethereum', 'Solana', 'Optimism', 'Polygon', 'Base', 'Arbitrum', 'Avalanche', 'Celo'],
+      options.chainIds || [1, 10, 69, 137, 80001, 42161, 421611, 11155111],
+      options.blockchain || 'Ethereum',
       options.chainId || 1,
       null
     );
@@ -90,7 +90,7 @@ export class Alchemy extends AbstractProvider {
   }
 
   // Returns the ethers v6 provider
-  
+
   getProvider(): ethersv6.JsonRpcProvider | null {
     if ( !this.provider ) {
       return null;
@@ -114,10 +114,10 @@ export class Alchemy extends AbstractProvider {
       }
       const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
       const resolvedBlockTag = await blockTag;
-      
+
       const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
       const result = await this.alchemy.core.call(ethersTransaction as any, resolvedBlockTag as any);
-  
+
       eventManager.emit('call', { transaction: resolvedTransaction, blockTag: resolvedBlockTag, result });
       return result;
     } catch (error) {
@@ -125,7 +125,7 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   async estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
     try {
       await this.getAlchemy( this.chainId ); // Ensure the provider is connected
@@ -133,10 +133,10 @@ export class Alchemy extends AbstractProvider {
         throw new Error( "No Alchemy set" );
       }
       const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
-      
+
       const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
       const gasEstimate = await this.alchemy.core.estimateGas(ethersTransaction as any);
-  
+
       eventManager.emit('estimateGas', { transaction: resolvedTransaction, gasEstimate });
       return BigInt(gasEstimate.toString());
     } catch (error) {
@@ -144,7 +144,7 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   // Helper method to resolve deferred transaction properties
   private async resolveDeferredTransaction( transaction: Deferrable<TransactionRequest> ): Promise<TransactionRequest> {
     // Use Record<string, any> to collect the resolved values
@@ -162,7 +162,7 @@ export class Alchemy extends AbstractProvider {
     // Cast the final resolved object to TransactionRequest
     return resolved as TransactionRequest;
   }
-  
+
   /**
    * Gets the current block number.
    * @returns A promise that resolves with the current block number.
@@ -193,7 +193,7 @@ export class Alchemy extends AbstractProvider {
         throw new Error( "No Alchemy set" );
       }
       const price = await this.alchemy.core.getGasPrice();
-      eventManager.emit('gasPrice', { price: price.toBigInt() }); 
+      eventManager.emit('gasPrice', { price: price.toBigInt() });
       return price.toBigInt(); // as unknown as bigint;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getGasPrice', error });
@@ -215,7 +215,7 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   /**
    * Gets the balance of an address.
    * @param addressOrName - The address or ENS name to get the balance for.
@@ -280,7 +280,7 @@ export class Alchemy extends AbstractProvider {
         EthersConverter.toEthersHex(position) as string || '0x0',
         resolvedBlockTag as any
       );
-  
+
       eventManager.emit('getStorageAt', { addressOrName, position, blockTag: resolvedBlockTag, storage });
       return storage;
     } catch (error) {
@@ -301,7 +301,7 @@ export class Alchemy extends AbstractProvider {
         throw new Error( "No Alchemy set" );
       }
       const response = await this.alchemy.transact.sendTransaction(signedTransaction);
-      
+
       eventManager.emit('sendRawTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
@@ -489,11 +489,11 @@ export class Alchemy extends AbstractProvider {
       if (filter.toBlock) {
         alchemyFilter.toBlock = this.convertToAlchemyBlockTag(filter.toBlock);
       }
-  
+
       const logs = await this.alchemy.core.getLogs(alchemyFilter)
       // Convert Alchemy logs to your custom Log type
       const convertedLogs: CustomLog[] = logs.map(log => this.convertAlchemyLogToCustomLog(log));
-  
+
       eventManager.emit('getLogs', { filter, logs: convertedLogs });
       return convertedLogs;
     } catch (error) {
@@ -501,7 +501,7 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   // Helper method to convert custom BlockTag to Alchemy BlockTag
   private convertToAlchemyBlockTag(blockTag: CustomBlockTag): AlchemyBlockTag {
     if (typeof blockTag === 'string') {
@@ -516,7 +516,7 @@ export class Alchemy extends AbstractProvider {
     }
     throw new Error(`Invalid block tag: ${blockTag}`);
   }
-  
+
   // Helper method to convert Alchemy Log to custom Log
   private convertAlchemyLogToCustomLog(log: AlchemyLog): CustomLog {
     return {
@@ -622,11 +622,11 @@ export class Alchemy extends AbstractProvider {
     this.chainId = chainId;
   }
 
-  // Example if needing to override eventManager 
+  // Example if needing to override eventManager
   // on(eventName: EventType, listener: Listener): Provider {
     // Custom logic here
     // return super.on(eventName, listener);
-  // } 
+  // }
 }
 
 /**

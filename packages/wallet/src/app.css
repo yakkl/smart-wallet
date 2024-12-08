@@ -1,11 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-@layer base {
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+/* @layer base {
 }
 
-@layer components {
+@layer components { */
     /* .td-toc :where(a) {
       @apply block font-light pb-1;
     }
@@ -32,7 +36,7 @@
 
     .d-flex {
       @apply flex;
-    } 
+    }
 
     .justify-content-between {
       @apply justify-between;
@@ -57,7 +61,7 @@
     .prose :where(tbody tr:nth-child(even)):not(:where([class~="not-prose"] *)) {
       @apply bg-primary-50;
     }
-    
+
     .prose :where(tbody tr:nth-child(odd)):not(:where([class~="not-prose"] *)) {
       @apply bg-white;
     }
@@ -69,18 +73,18 @@
     .prose :where(thead th:first-child):not(:where([class~="not-prose"] *)) {
       @apply pl-1;
     }
-        
+
     .prose :where(tbody td:first-child):not(:where([class~="not-prose"] *)) {
       @pply pl-1;
-    }     
+    }
 
     .prose :where(thead th:last-child):not(:where([class~="not-prose"] *)) {
       @apply pr-2;
     }
-        
+
     .prose :where(tbody td:last-child):not(:where([class~="not-prose"] *)) {
       @apply pr-2;
-    }     
+    }
 
     .breadcrumb-item {
       @apply text-primary-500;
@@ -89,9 +93,9 @@
     .breadcrumb-item::before {
       @apply pl-1;
     } */
-}
+/* }
 
-@layer utilities {
+@layer utilities { */
     /* .btn {
       @apply pointer-events-auto;
     }
@@ -100,7 +104,7 @@
       @apply pointer-events-none;
     } */
 
-}
+/* } */
 
 /* test */
 /* .theme-elegant {

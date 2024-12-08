@@ -22,15 +22,16 @@
 	import PincodeModal from '$lib/components/PincodeVerify.svelte';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-  
+  import { handleOnMessage } from '$lib/common/handlers';
+
 	import type { Browser } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
 	// Toast
 	import { Toast } from 'flowbite-svelte';
-  import { slide } from 'svelte/transition';  
+  import { slide } from 'svelte/transition';
 	import Contacts from '$lib/components/Contacts.svelte';
   // Toast
 
@@ -89,7 +90,7 @@
 	let maxPriorityFeePerGas: BigNumberish = $state(0n);
 	let maxFeePerGasOverride: BigNumberish = 0n;
 	let maxPriorityFeePerGasOverride: BigNumberish = 0n;
-	
+
 	let gasBase = $state(0);
 	let gasTotalEstimateUSD = $state('');
 	let gasBaseUSD = $state('$0.00');
@@ -104,7 +105,7 @@
 	let marketGasUSD = $state("$0.00");
 	let priorityGas: number = $state(0);
 	let priorityGasUSD = $state("$0.00");
-	
+
 	let riskFactorMaxFee: number = 0;//1; //2;  // gwei - We add this to maxFeePerGas that comes back from the provider
 	let riskFactorPriorityFee: number = 0;//.25;  // Adding a little more incentive for the validators
 
@@ -121,7 +122,7 @@
   let checkGasPricesProvider = 'blocknative';
   let checkGasPricesInterval = 10; // Seconds
 
-	let value: BigNumberish = 0n; 
+	let value: BigNumberish = 0n;
 	let unitPrice: number = $state(0);
 	// let sendValue; // Was used for visual purposes only. May not be needed in the future
 	let totalUSD = $state('0');
@@ -142,7 +143,7 @@
 
 	let currencyLabel: string = $state();
   let currencyFormat: Intl.NumberFormat = $state();
-	let gasEstimateUSDNumber = $state();
+	let gasEstimateUSDNumber: number = $state();
 	let gasTotalEstimateUSDNumber: any = $state();
 	let hexData: string;  // Optional hex data to send with the transfer
 
@@ -165,7 +166,7 @@
     toastStatus = false;
   }
 
-	
+
 
 
 	onMount(() => {
@@ -207,7 +208,7 @@
 			console.log(e);
 			errorValue = e as string;
 			error = true;  // This 'should' show an error message but being in the onMount it may not.
-		} 
+		}
 	});
 
 
@@ -248,7 +249,7 @@
 			if ($form.toAddress) {
 				// Checks to see if address belongs to a smart contract. If so, then it will have a larger base gas fee.
 				const blockchain = wallet.getBlockchain();
-				if (blockchain.isSmartContractSupported()) { 
+				if (blockchain.isSmartContractSupported()) {
 					smartContract = await blockchain.isSmartContract($form.toAddress) ?? false;
 				} else {
 					smartContract = false;
@@ -378,17 +379,17 @@
 			}
 
 			if (resolvedAddr) {
-				address = resolvedAddr; 
-			} 
+				address = resolvedAddr;
+			}
 
-			if (!blockchain.isAddress(address)) { 
+			if (!blockchain.isAddress(address)) {
 				warningValue = `Wallet Address ${address} is not a valid address. This can be verified on a platform like https://etherscan.io. A valid toAddress is required.`;
 				warning = true;
 				clearVerificationValues();
 				return;
 			}
-			
-			const feePerGas: number = BigNumber.from(maxFeePerGas).toNumber() as number;			
+
+			const feePerGas: number = BigNumber.from(maxFeePerGas).toNumber() as number;
 			if ( feePerGas < gasEstimate) {
 				warningValue = "The transaction Max Fee Per Gas Unit is LESS than the estimated Gas Fee. This may result in a slow transaction or no transaction at all. Keeping the Max Fee Per Gas Unit equal or greater than the estimated Gas Fee increases the possibility of a faster transaction time."
 				clearVerificationValues();
@@ -431,113 +432,97 @@
 
 
 	async function loadTransactionHistory(networkType: string, address: string, historyCount: number) {
-	try {
-		let subDomainName = $yakklCurrentlySelectedStore?.shortcuts.network.explorer; //txNetworkTypeName.toLowerCase() !== 'mainnet' ? txNetworkTypeName.toLowerCase() + '.' : '';
-		let apiSubDomainName = txNetworkTypeName.toLowerCase() !== 'mainnet' ? 'api-' + txNetworkTypeName.toLowerCase() : 'api';
+    try {
+      let subDomainName = $yakklCurrentlySelectedStore?.shortcuts.network.explorer; //txNetworkTypeName.toLowerCase() !== 'mainnet' ? txNetworkTypeName.toLowerCase() + '.' : '';
+      let apiSubDomainName = txNetworkTypeName.toLowerCase() !== 'mainnet' ? 'api-' + txNetworkTypeName.toLowerCase() : 'api';
 
-		currentlySelected = $yakklCurrentlySelectedStore;
-		const etherscanUrl = `https://${apiSubDomainName}.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${historyCount}&sort=desc&apikey=${import.meta.env.VITE_ETHERSCAN_API_KEY}`; // TODO: Change this to send to our edges and change keys
+      currentlySelected = $yakklCurrentlySelectedStore;
+      const etherscanUrl = `https://${apiSubDomainName}.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${historyCount}&sort=desc&apikey=${import.meta.env.VITE_ETHERSCAN_API_KEY}`; // TODO: Change this to send to our edges and change keys
 
-		if (!$yakklConnectionStore) {
-			throw 'Warning. Your Internet connection appears to be down. Try again later.';
-		}
-
-		const response = await fetch(etherscanUrl);
-		const contentType = response.headers.get('content-type');
-
-		let data: any;
-		if (contentType && contentType.includes('application/json')) {
-			data = await response.json();
-		} else if (contentType && contentType.includes('text/html')) {
-			data = await response.text();
-			// throw new Error(`Received HTML instead of JSON: ${data}`);
-			console.log(`Received HTML instead of JSON: ${data}`);
-		} else {
-			// throw new Error('Unsupported content type: ' + contentType);
-			console.log('Unsupported content type: ' + contentType);
-		}
-
-		// Throw error if there is an error in the data - later
-
-		txHistoryTransactions = [];
-		for (let element of data.result) {
-			let yakklHistory = {
-				id: currentlySelected!.id,
-				type: 'etherscan',
-				chainId: getChainId(networkType),
-				formattedTimestamp: new Date(parseInt(element.timeStamp) * 1000),
-				explorer: subDomainName + '/tx/' + element.hash,  //'https://' + subDomainName + 'etherscan.io/tx/' + element.hash,
-				blockNumber: element.blockNumber, // From here down comes from etherscan. Above here is our data
-				timestamp: element.timeStamp,
-				hash: element.hash,
-				nonce: element.nonce,
-				blockHash: element.blockHash,
-				transactionIndex: element.transactionIndex,
-				from: element.from,
-				to: element.to,
-				value: formatValue(blockchain, element.value),  // TODO: Change this to support EthereumBigNumber
-				gas: element.gas,
-				gasPrice: element.gasPrice,
-				isError: element.isError,
-				txtreceipt_status: element.txreceipt_status,
-				input: element.input,
-				contractAddress: element.contractAddress,
-				cumulativeGasUsed: element.cumulativeGasUsed,
-				gasUsed: element.gasUsed,
-				confirmations: element.confirmations,
-				methodId: element.methodId,
-				functionName: element.functionName,
-			};
-
-			// Example of a history transaction for Sepolia:
-			// {
-			// 	blockNumber: "3844890",
-			// 	timeStamp: "1688751360",
-			// 	hash: "0x9f0a3aa982ffd0637e59207fdca8852ea27bb60c6d312c3562d23fda906032e4",
-			// 	nonce: "0",
-			// 	blockHash: "0x8fbdee9b285695bd4c11a73623f5461a8c0d82709cae26dd3558976d597c6df7",
-			// 	transactionIndex: "16",
-			// 	from: "0xb14a122382cd291f13dbc233abdedbca226fa93e",
-			// 	to: "0xef9bdacbf5cd84bc66df3a2dc0c8bf22e221cb34",
-			// 	value: "15000000000000000",
-			// 	gas: "21000",
-			// 	gasPrice: "600000010",
-			// 	isError: "0",
-			// 	txreceipt_status: "1",
-			// 	input: "0x",
-			// 	contractAddress: "",
-			// 	cumulativeGasUsed: "10684268",
-			// 	gasUsed: "21000",
-			// 	confirmations: "2514084",
-			// 	methodId: "0x",
-			// 	functionName: ""
-			// },
-
-			txHistoryTransactions.push(yakklHistory);
-		}
-	} catch (e) {
-		console.log(e);
-		errorValue = e as string;
-		error = true;
-		clearVerificationValues();
-	}
-}
-
-
-	function handleOnMessage(request: any, sender: any) {
-    if (browserSvelte) {
-      try {
-        switch(request.method) {
-          case 'yak_lockdown':
-            goto(PATH_LOCK);
-            break;
-        }
-      } catch (e) {
-        console.log(e);
+      if (!$yakklConnectionStore) {
+        throw 'Warning. Your Internet connection appears to be down. Try again later.';
       }
+
+      const response = await fetch(etherscanUrl);
+      const contentType = response.headers.get('content-type');
+
+      let data: any;
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else if (contentType && contentType.includes('text/html')) {
+        data = await response.text();
+        // throw new Error(`Received HTML instead of JSON: ${data}`);
+        console.log(`Received HTML instead of JSON: ${data}`);
+      } else {
+        // throw new Error('Unsupported content type: ' + contentType);
+        console.log('Unsupported content type: ' + contentType);
+      }
+
+      // Throw error if there is an error in the data - later
+
+      txHistoryTransactions = [];
+      for (let element of data.result) {
+        let yakklHistory = {
+          id: currentlySelected!.id,
+          type: 'etherscan',
+          chainId: getChainId(networkType),
+          formattedTimestamp: new Date(parseInt(element.timeStamp) * 1000),
+          explorer: subDomainName + '/tx/' + element.hash,  //'https://' + subDomainName + 'etherscan.io/tx/' + element.hash,
+          blockNumber: element.blockNumber, // From here down comes from etherscan. Above here is our data
+          timestamp: element.timeStamp,
+          hash: element.hash,
+          nonce: element.nonce,
+          blockHash: element.blockHash,
+          transactionIndex: element.transactionIndex,
+          from: element.from,
+          to: element.to,
+          value: formatValue(blockchain, element.value),  // TODO: Change this to support EthereumBigNumber
+          gas: element.gas,
+          gasPrice: element.gasPrice,
+          isError: element.isError,
+          txtreceipt_status: element.txreceipt_status,
+          input: element.input,
+          contractAddress: element.contractAddress,
+          cumulativeGasUsed: element.cumulativeGasUsed,
+          gasUsed: element.gasUsed,
+          confirmations: element.confirmations,
+          methodId: element.methodId,
+          functionName: element.functionName,
+        };
+
+        // Example of a history transaction for Sepolia:
+        // {
+        // 	blockNumber: "3844890",
+        // 	timeStamp: "1688751360",
+        // 	hash: "0x9f0a3aa982ffd0637e59207fdca8852ea27bb60c6d312c3562d23fda906032e4",
+        // 	nonce: "0",
+        // 	blockHash: "0x8fbdee9b285695bd4c11a73623f5461a8c0d82709cae26dd3558976d597c6df7",
+        // 	transactionIndex: "16",
+        // 	from: "0xb14a122382cd291f13dbc233abdedbca226fa93e",
+        // 	to: "0xef9bdacbf5cd84bc66df3a2dc0c8bf22e221cb34",
+        // 	value: "15000000000000000",
+        // 	gas: "21000",
+        // 	gasPrice: "600000010",
+        // 	isError: "0",
+        // 	txreceipt_status: "1",
+        // 	input: "0x",
+        // 	contractAddress: "",
+        // 	cumulativeGasUsed: "10684268",
+        // 	gasUsed: "21000",
+        // 	confirmations: "2514084",
+        // 	methodId: "0x",
+        // 	functionName: ""
+        // },
+
+        txHistoryTransactions.push(yakklHistory);
+      }
+    } catch (e) {
+      console.log(e);
+      errorValue = e as string;
+      error = true;
+      clearVerificationValues();
     }
   }
-
 
 	async function checkSettings() {
 		try {
@@ -602,7 +587,7 @@
 				await decryptData(profile?.data, yakklMiscStore).then(result => {
 					(profile as Profile).data = result as ProfileData;
 				});
-			} 
+			}
 
 			if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
 				throw 'PINCODE was not verified.';
@@ -636,7 +621,7 @@
 			// Override values are set at submit time so we use those
 			// If cancel = true then have from and to be the same address, value = 0 and increase gas
 
-			
+
 			const priorityFeePerGas = Math.max(Number(maxPriorityFeePerGas), Number(maxPriorityFeePerGasOverride));// EthereumBigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride).toString(); //BigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride));
 			let feePerGas = Math.max(Number(maxFeePerGas), Number(maxFeePerGasOverride)); //EthereumBigNumber.max(maxFeePerGas, maxFeePerGasOverride);
 
@@ -652,8 +637,8 @@
 				to: cancel === false ? toAddress : currentlySelected!.shortcuts.address, // Allows for sending to yourself to cancel a transaction
 				value: cancel === true ? 0n : EthereumBigNumber.toWei(toAddressValue).value, //parseEther(toAddressValue.toString()), // If cancel is true then set value to 0
 				chainId: currentlySelected!.shortcuts.network.chainId,
-				gasLimit: gasLimit, 
-				maxPriorityFeePerGas: EthereumBigNumber.toGwei(priorityFeePerGas).value, //parseUnits(priorityFeePerGas.toString(), 'gwei'),   // In gwei 
+				gasLimit: gasLimit,
+				maxPriorityFeePerGas: EthereumBigNumber.toGwei(priorityFeePerGas).value, //parseUnits(priorityFeePerGas.toString(), 'gwei'),   // In gwei
 				maxFeePerGas: EthereumBigNumber.toGwei(feePerGas).value, // parseUnits(feePerGas.toString(), 'gwei'),
 				data: hexData.length > 0 ? hexData : '0x',
 				hash: hash,
@@ -661,7 +646,7 @@
 			};
 
 			// let hexTransaction = convertToHexStrings(transaction,['type', 'nonce']);
-			// All 'tx' prefix variables are available for the UI and misc  
+			// All 'tx' prefix variables are available for the UI and misc
 			txBlockchain = blockchain;
 			txNetworkTypeName = currentlySelected!.shortcuts.network.name;
 
@@ -669,9 +654,9 @@
 			txHash = transaction.hash ?? '';
 			txToAddress = transaction.to ?? '';
 			txValue = transaction.value?.toString() ?? '0.0';
-			txmaxFeePerGas = transaction.maxFeePerGas?.toString() ?? '0'; 
-			txmaxPriorityFeePerGas = transaction.maxPriorityFeePerGas?.toString() ?? '0'; 
-			txGasLimit = transaction.gasLimit as bigint; 
+			txmaxFeePerGas = transaction.maxFeePerGas?.toString() ?? '0';
+			txmaxPriorityFeePerGas = transaction.maxPriorityFeePerGas?.toString() ?? '0';
+			txGasLimit = transaction.gasLimit as bigint;
 			txNonce = Number(transaction.nonce);
 			txStartTimestamp = Date.now().toString();
 
@@ -692,7 +677,7 @@
 			}
 
 			if (privateKey === null) {
-				throw 'Private key was not obtained'; 
+				throw 'Private key was not obtained';
 			}
 
 			await wallet.setSigner(privateKey!);
@@ -735,7 +720,7 @@
 			case "amountTab":
 				amountTabOpen = false;
 				break;
-		
+
 			case "activityTab":
 				activityTabOpen = false;
 				break;
@@ -753,7 +738,7 @@
 			case "activityTab":
 				activityTabOpen = true;
 				break;
-		
+
 			case "feesTab":
 				feesTabOpen = true;
 				break;
@@ -768,7 +753,7 @@
 				feesTabOpen = false;
 				activityTabOpen = false;
 				break;
-		
+
 			case "feesTab":
 				amountTabOpen = false;
 				feesTabOpen = true;
@@ -850,8 +835,8 @@
 
 	function handleGasSelect(select: string) {
 		try {
-			let selectedClass = 'border-2 animate-pulse '; 
-			let nonSelectedClass = 'border '; 
+			let selectedClass = 'border-2 animate-pulse ';
+			let nonSelectedClass = 'border ';
 
 			selectedGas = select;
 
@@ -1019,10 +1004,10 @@
 
 
 	run(() => {
-		if ($errors.toAddress || 
-			$errors.hexData || 
-			$errors.maxFeePerGasOverride || 
-			$errors.maxPriorityFeePerGasOverride || 
+		if ($errors.toAddress ||
+			$errors.hexData ||
+			$errors.maxFeePerGasOverride ||
+			$errors.maxPriorityFeePerGasOverride ||
 			$errors.toAddressValue ){
 				errorFields = true;
 			} else {
@@ -1033,7 +1018,7 @@
 		try {
 			txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
 			txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
-			
+
 			startGasPricingChecks(); // It will start the interval if not already. If it already exists then it will return
 
 			gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS; // These are the norms for gas units it takes for the different eth transactions
@@ -1043,7 +1028,7 @@
 				gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS;
 				txGasLimitIncrease = 0;
 			}
-			
+
 			// $yakklGasTransStore and $yakklPricingStore are used to get the gas prices and the current price of ether or other crypto used for gas fees.
 			// These types of stores can be used as is and do not need to be set in the store. They are used to get the values from the store. The others do need to be set due to the way the store is used.
 			unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
@@ -1071,14 +1056,14 @@
 				lowGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((lowGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
 				marketGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((marketGas * 1) / (10 ** 9)) * (unitPrice * 1))): '0.00';
 				priorityGasUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((priorityGas * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
-				
+
 				gasBase = $yakklGasTransStore.results.actual.baseFeePerGas;
 				gasBaseUSD = currencyFormat ? currencyFormat.format(Number(gasLimit * ((gasBase * 1) / (10 ** 9)) * (unitPrice * 1))) : '0.00';
 
 				switch(selectedGas) {
 					case 'priority':
 						maxFeePerGas = priorityGas;
-						maxPriorityFeePerGas = priorityPriorityFee;						
+						maxPriorityFeePerGas = priorityPriorityFee;
 						break;
 					case 'low':
 						maxFeePerGas = lowGas;
@@ -1089,7 +1074,7 @@
 						maxPriorityFeePerGas = marketPriorityFee;
 						break;
 				}
-				
+
 				gasEstimate = gasBase + maxPriorityFeePerGas;  // Base fee + validator tip
 
 				handleGasSelect(selectedGas);
@@ -1115,7 +1100,7 @@
 			if (gasEstimate) {
 				gasEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
 				gasEstimateUSD = currencyFormat ? currencyFormat.format(gasEstimateUSDNumber) : '0.00';
-				
+
 				gasTotalEstimateUSDNumber = gasLimit * (((gasEstimate * 1) / (10 ** 9)) * (Number(unitPrice) * 1));
 				gasTotalEstimateUSD = currencyFormat ? currencyFormat.format(gasTotalEstimateUSDNumber) : '0.00';
 
@@ -1131,21 +1116,21 @@
 
 <PincodeModal bind:show={showVerify} onVerify={handlePin} className="text-gray-600"/>
 
-<ErrorNoAction bind:show={error} bind:value={errorValue} handle={handleClose}/>
+<ErrorNoAction bind:show={error} value={errorValue} handle={handleClose}/>
 
-<Warning bind:show={warning} bind:value={warningValue} />
+<Warning bind:show={warning} value={warningValue} />
 
 <Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
 <Toast color="indigo" transition={slide} bind:toastStatus>
   {#snippet icon()}
-	
+
 	    {#if toastType === 'success'}
 	    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
 	      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 	    </svg>
 	    {/if}
-	  
+
 	{/snippet}
   {toastMessage}
 </Toast>
@@ -1163,9 +1148,9 @@
 	<hr class="mb-0.5 mt-0.5" />
 		<form class="" onsubmit={preventDefault(handleSubmit)}>
 
-			<Tabs defaultClass="flex flex-wrap justify-center space-x-2 h-9" 
-				activeClasses="px-4 text-white border-b-2 animate-pulse text-lg border-purple-300 mt-2 font-extrabold dark:text-blue-500 dark:border-blue-500" 
-				contentClass="" 
+			<Tabs defaultClass="flex flex-wrap justify-center space-x-2 h-9"
+				activeClasses="px-4 text-white border-b-2 animate-pulse text-lg border-purple-300 mt-2 font-extrabold dark:text-blue-500 dark:border-blue-500"
+				contentClass=""
 				inactiveClasses="px-4 border-b-2 border-transparent text-md text-gray-100 font-semibold hover:text-purple-200 hover:border-purple-200 dark:hover:text-gray-300 dark:text-gray-400">
 
 				<TabItem id="amount" open={amountTabOpen} on:click={() => {handleCurrentTab("amountTab")}} style={errorFields ? "color:red" : errorFields ? "color:red": ""} title="Send">
@@ -1195,7 +1180,7 @@
 										bind:value={$form.toAddress}
 										onchange={handleChange}
 										onblur={onBlur}
-										required />										
+										required />
 									{#if $errors.toAddress}
 										<small class="text-red-600 font-bold animate-pulse">{$errors.toAddress}</small>
 									{/if}
@@ -1204,7 +1189,7 @@
 									{/if}
 								</div>
 							</div>
-				
+
 							<div class="flex flex-row mt-2">
 								<div class="flex-col w-full">
 									<span class="text-xs text-gray-100 font-bold mb-1 mr-1">Send Amount</span>
@@ -1245,10 +1230,10 @@
 												<input type="checkbox"
 													class="mr-1 h-3 w-3 cursor-pointer appearance-none rounded-sm border border-blue-800 bg-white bg-contain bg-center bg-no-repeat align-top transition duration-200 checked:border-blue-600 checked:bg-blue-600 focus:outline-none"
 													id="recipientFees">
-												<label class="inline-block text-xs/3 text-orange-500 dark:text-white font-bold" for="recipientFees">Recipient pays fees! (experimental)</label>	
+												<label class="inline-block text-xs/3 text-orange-500 dark:text-white font-bold" for="recipientFees">Recipient pays fees! (experimental)</label>
 											</div>
 											{/if}
-										</div>				
+										</div>
 									</div>
 
 									<!-- <div class="hidden hover:show"> -->
@@ -1276,13 +1261,13 @@
 									{/if}
 								</div>
 							</div>
-						</div>					
+						</div>
 					</div>
 
 					<div class="mt-2">
 						<button
 							id="send"
-							onclick={preventDefault(handleSendRequest)} 
+							onclick={preventDefault(handleSendRequest)}
 							class="inline-block h-10 px-7 md:py-3 py-2 mt-.5 bg-indigo-600 text-gray-300 font-bold
 							text-large leading-snug uppercase rounded-md shadow-md hover:bg-indigo-700
 							hover:shadow-md focus:bg-indogo-700 focus:shadow-md focus:outline-none focus:ring-0
@@ -1308,6 +1293,7 @@
 					{/if}
 
 					<!-- Status window -->
+					<!-- svelte-ignore unknown_code -->
 					<div class="my-2 border border-white rounded-md w-full h-[8rem] text-white">
 						<div class="text-left m-1 text-md break-all">
 							<p>Most recent transaction history for: {address}</p>
@@ -1316,7 +1302,6 @@
 							<p>Chain ID: {$yakklCurrentlySelectedStore?.shortcuts.chainId}</p>
 						</div>
 						<!-- svelte-ignore a11y_interactive_supports_focus -->
-						<!-- svelte-ignore missing_declaration -->
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<div role="button" id="reload" onclick={handleRecycle} class="inline-flex items-center rounded-full btn-tiny bg-secondary btn-primary hover:bg-secondary/50 px-2">
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
@@ -1327,7 +1312,7 @@
 					</div>
 
 					<div class="m-4 mr-1 text-left text-base-content">
-						<Timeline > 
+						<Timeline >
 							<!-- order="vertical"> -->
 							{#if txStatus === 'pending'}
 							<TimelineItem >
@@ -1426,7 +1411,7 @@
 										Transaction nonce: {transaction.nonce}
 									</p>
 								</div>
-								{#if txStatus === 'pending'} 
+								{#if txStatus === 'pending'}
 								<div class="flex flex-row mt-1">
 									<Button size="xs" pill={true} on:click={() => handleSpeedUp(txGasPercentIncrease, transaction.nonce, transaction.hash)} class="mr-2">Speed Up</Button>
 									<Button size="xs" pill={true} color="alternative" on:click={() => handleCancel(txGasPercentIncrease, transaction.nonce, transaction.hash)}>Cancel</Button>
@@ -1445,7 +1430,7 @@
 						{/await}
 						</Timeline>
 
-						<Hr class="my-4 mx-auto md:my-10" width="w-48" height="h-1"/>
+						<Hr class="my-4 mx-auto md:my-10 w-48 h-1" />
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_interactive_supports_focus -->
 						<div class="text-center mt-1 w-full flex flex-col mx-0" role="button" onclick={preventDefault(() => handleOpenAddress($yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/address/' + address))}>
@@ -1599,32 +1584,32 @@
 
 						</div>
 
-						<div class="w-full text-center mt-2"> 
+						<div class="w-full text-center mt-2">
 							<span class="text-gray-300 text-xs font-semibold">Fee cost trend since last check: <span class="{trendColor}">{gasTrend}</span></span>
 						</div>
 
-						<div class="w-full text-left mt-1 border border-yellow-300 rounded-md"> 
-							<div class="w-full text-left ml-1"> 
+						<div class="w-full text-left mt-1 border border-yellow-300 rounded-md">
+							<div class="w-full text-left ml-1">
 								<span class="text-yellow-300 text-xs font-semibold">Base fee: {Number(gasBase).toFixed(2)} gwei - {gasBaseUSD}</span>
 							</div>
 						</div>
-						<div class="w-full text-left mt-1 ml-1"> 
+						<div class="w-full text-left mt-1 ml-1">
 							<span class="text-gray-300 text-xs font-semibold">Current blockchain number: {blockNumber}</span>
 						</div>
-						<div class="w-full text-left mt-1 ml-1"> 
+						<div class="w-full text-left mt-1 ml-1">
 							<span class="text-gray-300 text-xs font-semibold">Estimated transaction count for block: {estimatedTransactionCount}</span>
 						</div>
 
-						<div class="w-full text-left mt-1 border border-green-300 rounded-md"> 
-							<div class="w-full text-left"> 
+						<div class="w-full text-left mt-1 border border-green-300 rounded-md">
+							<div class="w-full text-left">
 								<span class="text-green-300 text-xs font-semibold">Priority fee: {Number(maxPriorityFeePerGas).toFixed(2)}</span>
 							</div>
-							<div class="w-full text-left"> 
+							<div class="w-full text-left">
 								<span class="text-green-300 text-xs font-semibold">Max fee limit: {Math.round(Number(maxFeePerGas))}</span>
 							</div>
 						</div>
 
-						<div class="w-full text-left mt-1 border border-amber-300 rounded-md"> 
+						<div class="w-full text-left mt-1 border border-amber-300 rounded-md">
 							<div class="w-full text-center mb-1">
 								<span class="font-bold text-xs text-gray-100">Overrides will be used instead of above dynamic numbers</span>
 							</div>

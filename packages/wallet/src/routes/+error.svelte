@@ -1,13 +1,12 @@
 <script lang="ts">
 
   interface Props {
-    error?: { message: string }; // Default value
+    error: { message: string }; // Default value
     // eslint-disable-next-line @typescript-eslint/no-inferrable-types
-    status?: number; // Default HTTP status code
+    status: number; // Default HTTP status code
   }
 
   let { error = { message: 'Unknown error' }, status = 500 }: Props = $props();
 </script>
 
-<h1>{status}: {error?.message}</h1>
-<span style="font-size: 10em; color: red;">Ooops - Error</span>
+<h1>{status}: {error.message}</h1>

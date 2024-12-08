@@ -16,11 +16,12 @@ import { Alchemy, Network, type TransactionRequest, type BlockTag } from 'alchem
 import Dexie from 'dexie';
 import type { Deferrable } from '@ethersproject/properties';
 import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings, YakklWallet} from '$lib/common/interfaces';
+// import browser from 'webextension-polyfill';
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
-import type { Yakkl } from '$lib/plugins/providers';
-import { yakklPreferences } from '../../models/dataModels';
+// import type { Yakkl } from '$lib/plugins/providers';
+// import { yakklPreferences } from '../../models/dataModels';
 
 type RuntimePort = Runtime.Port;
 type WindowsWindow = Windows.Window;
@@ -106,12 +107,12 @@ async function setIconUnlock(): Promise<void> {
 
 // eslint-disable-next-line prefer-const
 let requestsExternal = new Map<
-  string, 
+  string,
   {
     data: unknown;
   }
   >();
-  
+
 // let dappParams = []; // Handles actual params passed from dapps
 // let metaDataParams = []; // Handles metadata passed from dapps
 // let dappPort;
@@ -198,14 +199,14 @@ try {
   browser_ext!.tabs.onUpdated.addListener(async (tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tab: Tabs.Tab) => {
     if (changeInfo.url) {
       const domain = extractDomain(changeInfo.url);
-      
+
       if (await isBlacklisted(domain)) {
         if (changeInfo.url.endsWith('yid=' + tab.id?.toString())) {
           // The user said 'continue to site'
           console.log('Phishing warning but user elected to proceed to:', changeInfo.url);
           // Bypasses check since it has already been done. If the yid=<whatever the id is> is at the end then it will bypass
         } else {
-          console.log('Warning: Attempting to navigate to a known or potential phishing site.', changeInfo.url); 
+          console.log('Warning: Attempting to navigate to a known or potential phishing site.', changeInfo.url);
           const url = browser_ext!.runtime.getURL('/phishing.html?flaggedSite=' + changeInfo.url + '&yid=' + tab.id);
           browser_ext!.tabs.update(tabId, { url: url });
         }
@@ -263,8 +264,8 @@ try {
 // }
 
 try {
-  browser_ext!.tabs.onRemoved.addListener((tabId: any) => { 
-    try {    
+  browser_ext!.tabs.onRemoved.addListener((tabId: any) => {
+    try {
       if (tabId && portsExternal.size > 0) {
         portsExternal.delete(tabId);
       }
@@ -277,7 +278,7 @@ try {
 }
 
 /*********************************/
-// EIP-6963 
+// EIP-6963
 try {
   browser_ext!.runtime.onConnect.addListener((port: RuntimePort) => {
     port.onMessage.addListener((message: any) => {
@@ -288,7 +289,7 @@ try {
         const { id, method, params } = message;
 
         // console.log('Received EIP-6963 request:', method, params);
-        
+
         // Process the request or forward it to the Ethereum node
         handleRequest(method, params).then((result) => {
           // console.log('Sending EIP-6963 response:', result);
@@ -337,7 +338,7 @@ async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType
         }
       });
 
-      await browser_ext!.runtime.setUninstallURL(encodeURI("https://yakkl.com?userName=&utm_source=yakkl&utm_medium=extension&utm_campaign=uninstall&utm_content=" + `${VERSION}` + "&utm_term=extension"));  
+      await browser_ext!.runtime.setUninstallURL(encodeURI("https://yakkl.com?userName=&utm_source=yakkl&utm_medium=extension&utm_campaign=uninstall&utm_content=" + `${VERSION}` + "&utm_term=extension"));
 
       await setLocalObjectStorage(platform, false);
     }
@@ -419,7 +420,7 @@ async function onDisconnectListener(port: RuntimePort): Promise<void> {
       }
     }
   } catch (error) {
-    console.log('background.js - onDisconnectListener error',error);        
+    console.log('background.js - onDisconnectListener error',error);
   }
 }
 
@@ -522,19 +523,33 @@ async function onConnect(port: RuntimePort) {
 
 // Onetime messages
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function handleOnMessage(request: any, sender: any) {  
-  try {
-    if (request && request.method) {
-      switch(request.method) {
-        case '':
-          break;
-      }
-    }
-  } catch (error) { 
-    console.log(error);
-  }
-}
+// function handleOnMessage(request: any, sender: any) {
+//   try {
+//     if (request && request.method) {
+//       switch(request.method) {
+//         case '':
+//           break;
+//       }
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
 
+// function handleOnMessage(
+//   request: any,
+//   sender: browser.Runtime.MessageSender
+// ): true | Promise<unknown> {
+//   try {
+//     if (request?.method === '<whatever>') {
+//       return true;
+//     }
+//     return Promise.resolve(); // Correct TypeScript return type
+//   } catch (e) {
+//     console.error('Error handling message:', e);
+//     return Promise.resolve(); // Ensure a valid return type
+//   }
+// }
 
 async function onPortInternalListener(event: any): Promise<void> {
   if (event && event.method) {
@@ -609,7 +624,7 @@ async function checkDomain(domain: any): Promise<boolean | undefined> {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 async function onPortExternalListener(event, sender): Promise<void> {
-  try {        
+  try {
     if (event.method) {
       let yakklCurrentlySelected;
       let error = false;
@@ -620,11 +635,11 @@ async function onPortExternalListener(event, sender): Promise<void> {
         case 'yak_dappsite':
           // This is a WIP. DappIndicator.svelte is done and the messaging here is complete. Content.ts needs to send the site to here!
           browser_ext!.runtime.sendMessage({method: event.method});  // This sends the message to the UI for it to display 'DAPP'. Later we can add which site if we need to.
-          return;  
-        
+          return;
+
         case 'yak_checkdomain':
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          checkDomain(event.params[0]).then(result => { 
+          checkDomain(event.params[0]).then(result => {
 // WIP - Need to update the background.ts in yakkl to build the db from the json file and then have the inpage.ts send the domain to content.ts which will ask background.ts to check it. If it's flagged, then we'll redirect to this page. My concern is the performance of this. We'll need to test it.
           });
           break;
@@ -666,7 +681,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
             break;
         }
       }
-      
+
       // wallet_getPermissions
       switch(event.method) {
         case 'eth_requestAccounts':
@@ -682,22 +697,22 @@ async function onPortExternalListener(event, sender): Promise<void> {
           showDappPopup('/dapp/popups/sign.html?requestId=' + Number(event.id).toString());
           break;
         case 'eth_estimateGas':
-          if (yakklCurrentlySelected?.shortcuts?.chainId) { 
-            const response = await estimateGas(yakklCurrentlySelected.shortcuts.chainId, event.params, process.env.VITE_ALCHEMY_API_KEY_PROD);  
+          if (yakklCurrentlySelected?.shortcuts?.chainId) {
+            const response = await estimateGas(yakklCurrentlySelected.shortcuts.chainId, event.params, process.env.VITE_ALCHEMY_API_KEY_PROD);
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: response});
           }
         break;
         case 'eth_getBlockByNumber':
-          if (yakklCurrentlySelected?.shortcuts?.chainId) { 
+          if (yakklCurrentlySelected?.shortcuts?.chainId) {
             const block = event?.params[0] ?? 'latest';
             let value;
             getBlock(yakklCurrentlySelected.shortcuts.chainId, block, process.env.VITE_ALCHEMY_API_KEY_PROD).then(result => {
               value = result;
               sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: value});
-            });                  
+            });
           }
           break;
-        case 'wallet_addEthereumChain': 
+        case 'wallet_addEthereumChain':
           sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: null});
           break;
         case 'wallet_switchEthereumChain':
@@ -715,8 +730,8 @@ async function onPortExternalListener(event, sender): Promise<void> {
                     await setObjectInLocalStorage('yakklCurrentlySelected', yakklCurrentlySelected);
                   }
                 }
-              } 
-            } 
+              }
+            }
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: value});
           }
           break;
@@ -724,7 +739,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
         case 'eth_chainId':
           yakklCurrentlySelected = await getObjectFromLocalStorage("yakklCurrentlySelected") as YakklCurrentlySelected;
           if (yakklCurrentlySelected?.shortcuts?.chainId) {
-            const value = yakklCurrentlySelected.shortcuts.chainId; 
+            const value = yakklCurrentlySelected.shortcuts.chainId;
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: value});
           } else {
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: 1}); // Default to mainnet
@@ -733,7 +748,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
         case 'net_version':
           yakklCurrentlySelected = await getObjectFromLocalStorage("yakklCurrentlySelected") as YakklCurrentlySelected;
           if (yakklCurrentlySelected?.shortcuts?.chainId) {
-            const value = yakklCurrentlySelected.shortcuts.chainId.toString(); 
+            const value = yakklCurrentlySelected.shortcuts.chainId.toString();
             sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', result: value});
           }
           break;
@@ -811,12 +826,12 @@ async function onDappListener(event: any, sender: any): Promise<void> {
   } catch (error) {
     console.log(error);
     sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', data: {code: -1, message: error}});
-  } 
+  }
 }
 
 
 async function showDappPopup(request: string) {
-  try {   
+  try {
     const popupId = openPopups.get('popupId');
     if (popupId) {
       browser_ext!.windows.get(popupId).then(async (_result: any) => {
@@ -839,15 +854,15 @@ async function showDappPopup(request: string) {
 
 // Has to check the method here too since this function gets called from different places
 async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { popup: string; } ) => void; }) {
-  try {   
-    // try/catch should catch if m or p are undefined 
+  try {
+    // try/catch should catch if m or p are undefined
     if (m.popup && m.popup === "YAKKL: Splash") {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       await browser_ext!.storage.session.get('windowId').then(async (result) => {
-        let windowId: number | undefined = undefined; 
+        let windowId: number | undefined = undefined;
 
-        if (result) { 
+        if (result) {
           windowId = result.windowId as any;
         }
 
@@ -856,9 +871,9 @@ async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { 
             browser_ext!.windows.get(windowId).then(async (_result: any) => {
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
               browser_ext!.windows.update(windowId, {focused: true}).then(() => {
-                // result not currently used              
+                // result not currently used
               }).catch((error: any) => {console.log(error)});
-              
+
               p.postMessage({popup: "YAKKL: Launched"}); // Goes to +page@popup.svelte
               return;
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -899,8 +914,8 @@ export async function showExtensionPopup(
 
       const screenWidth = yakkl.screenWidth;
       const screenHeight = yakkl.screenHeight;
-      
-      try {              
+
+      try {
         // eslint-disable-next-line no-constant-condition
         if (yakkl.wallet.pinned) {
           switch (yakkl.wallet.pinnedLocation) {
@@ -947,7 +962,7 @@ export async function showExtensionPopup(
       top = 0;
       left = 0;
     }
-    
+
     return browser_ext!.windows.create({
       url: `${browser_ext!.runtime.getURL((url ? url : "index.html"))}`,
       type: "panel",
@@ -1006,7 +1021,7 @@ function onEthereumListener(event: any) {
   try {
     console.log('background.js -', `yakkl-eth port: ${event}`);
   } catch (error) {
-    console.log(error);  
+    console.log(error);
   }
 }
 
@@ -1015,7 +1030,7 @@ function onEIP6963Listener(event: any) {
   try {
     console.log('background.js -', `yakkl-eip6963 port: ${event}`);
   } catch (error) {
-    console.log(error);  
+    console.log(error);
   }
 }
 
@@ -1035,11 +1050,11 @@ async function onIdleListener(state: string): Promise<void> {
         // May be a good idea to monitor this if yakklSettings is failing
         return;
       }
-        
+
       yakklPreferences = await getObjectFromLocalStorage("preferences") as Preferences;
       if (yakklPreferences.idleAutoLock) {
         browser_ext!.alarms.create("yakkl-lock-alarm", {when: Date.now() + (60000*(idleAutoLockCycle > 0 ? idleAutoLockCycle : 1))});
-      } 
+      }
     }
   } catch (error) {
     console.log('background.js - idleListener',error);
@@ -1050,7 +1065,7 @@ async function onIdleListener(state: string): Promise<void> {
 async function clearAlarm(alarmName: string | undefined): Promise<void> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    browser_ext!.alarms.get(alarmName).then(async () => {      
+    browser_ext!.alarms.get(alarmName).then(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       browser_ext!.alarms.clear(alarmName).then(() => {
         // Noop
@@ -1065,7 +1080,7 @@ async function clearAlarm(alarmName: string | undefined): Promise<void> {
 async function handleOnAlarm(alarm: AlarmsAlarm): Promise<void> {
   try {
     let yakklSettings;
-    // try/catch should catch an invalid alarm object    
+    // try/catch should catch an invalid alarm object
     if (alarm.name === "yakkl-lock-alarm") {
       yakklSettings = await getObjectFromLocalStorage("settings") as Settings;
       if (yakklSettings) {
@@ -1094,7 +1109,7 @@ async function handleOnAlarm(alarm: AlarmsAlarm): Promise<void> {
     }
   } catch (error) {
     console.log('background.js - alarm',error);
-  }  
+  }
 }
 
 /**********************************************************************************************************************/
@@ -1144,8 +1159,8 @@ function getProviderConfig(chainId: any, kval: any) {
         break;
     }
     return {
-      apiKey: api, 
-      network: network, 
+      apiKey: api,
+      network: network,
     }
   } catch (e) {
     console.log(e);

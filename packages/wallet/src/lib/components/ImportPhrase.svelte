@@ -3,7 +3,7 @@
   import { preventDefault } from 'svelte/legacy';
 
   import { browser as browserSvelte } from '$app/environment';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import { onMount } from 'svelte';
@@ -55,7 +55,7 @@
             const dPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/${derivedIndex}`;
 
             const randomMnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
-            const ethWallet = ethers.HDNodeWallet.fromPhrase(randomMnemonic, dPath);
+            const ethWallet = ethersv6.HDNodeWallet.fromPhrase(randomMnemonic, dPath);
             const wallet = getWallet(ethWallet.privateKey);
 
             const balance = await wallet.getBalance();
@@ -164,8 +164,8 @@
         index = (profile.data as ProfileData).accountIndex ?? 0;
         let derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/0`;
 
-        const mnemonicObject = ethers.Mnemonic.fromPhrase(mnemonic);
-        const ethWallet = ethers.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
+        const mnemonicObject = ethersv6.Mnemonic.fromPhrase(mnemonic);
+        const ethWallet = ethersv6.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
 
         if (!ethWallet) {
           throw "The Ethereum Wallet (Portfolio Account) was not able to be created. Please try again.";
@@ -482,7 +482,7 @@
 <PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
 
 <div class="relative {className}">
-  <Modal bind:show={show} bind:onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>
+  <Modal bind:show={show} onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>
     <div class="p-6 text-gray-700 dark:text-gray-200">
       <p class="text-sm text-red-500 mb-4">
         Please be careful! <strong>This Secret Recovery Phrase is important!</strong>

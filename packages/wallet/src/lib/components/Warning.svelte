@@ -1,7 +1,7 @@
 <script lang="ts">
   interface Props {
-    show?: boolean;
-    value?: string;
+    show: boolean;
+    value: string;
     title?: string;
     rejectText?: string;
   }
@@ -12,7 +12,7 @@
     title = 'WARNING!',
     rejectText = 'Close'
   }: Props = $props();
- 
+
 </script>
 
 <div class="modal" class:modal-open={show}>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ethers } from "ethers";
+  import { ethers as ethersv6 } from 'ethers-v6';
 
   async function connectWallet() {
     if (typeof window.ethereum !== "undefined") {
@@ -12,7 +12,7 @@
         if (accounts.length > 0) {
           console.log("Connected wallet address:", accounts[0]);
           // @ts-ignore
-          const provider = new ethers.BrowserProvider(window.ethereum);
+          const provider = new ethersv6.BrowserProvider(window.ethereum);
           const signer = await provider.getSigner();
           console.log("Signer:", signer);
         }

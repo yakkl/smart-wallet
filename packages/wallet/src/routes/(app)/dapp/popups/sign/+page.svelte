@@ -19,8 +19,8 @@
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import { verify } from '$lib/common/security';
-	
-  let browser_ext: Browser; 
+
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   type RuntimePort = Runtime.Port;
@@ -35,7 +35,7 @@
   let showSpinner = $state(false);
   let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort | undefined;
-  
+
   let domain: string = $state();
   let domainLogo: string = $state();
   let domainTitle: string = $state();
@@ -51,10 +51,10 @@
   let chainId: number;
 
   let params: any[] = $state([]);
-  let personal_sign = {  
+  let personal_sign = {
     dataToSign: '',   // Only used for personal_sign
     address: '',
-    description: '', 
+    description: '',
   };
 
   interface SignTypedData {
@@ -68,7 +68,7 @@
     address: '',
     dataToSign: '',
   }
-  
+
   let messageValue; // Used to display non-hex data that matches transaction or message
 
   onMount(async () => {
@@ -82,7 +82,7 @@
         chainId = currentlySelected.shortcuts.chainId as number;
 
         wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
-        
+
         port = browser_ext.runtime.connect({name: YAKKL_DAPP});
         if (port) {
           port.onMessage.addListener(async(event: any) => {
@@ -104,7 +104,7 @@
               switch(context) {
                 case 'personal_sign':
                   personal_sign.dataToSign = params[0];
-                  personal_sign.address = addressToCheck = params[1]; 
+                  personal_sign.address = addressToCheck = params[1];
                   personal_sign.description = message = params[2];
                   break;
                 case 'eth_signTypedData_v3':
@@ -115,13 +115,13 @@
                     data = JSON.parse(signTypedData_v3v4.dataToSign);
                   } else {
                     data = signTypedData_v3v4.dataToSign;
-                  }                  
+                  }
                   message = data.message?.contents;
                   break;
                 default:
                   messageValue = 'No message request was passed in. Error.';
                   break;
-              } 
+              }
 
             }
           });
@@ -183,21 +183,21 @@ async function bail() {
 async function handleApprove() {
   try {
     showConfirm = false;
-    if (!userName || !password || !userName.trim() || !password.trim()) 
+    if (!userName || !password || !userName.trim() || !password.trim())
       bail();
 
     let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
-    if (!profile) 
+    if (!profile)
       bail();
 
     showSpinner = true;
 
     let accounts: YakklAccount[] = [];
     accounts = await getYakklAccounts();
-    if (!accounts) 
+    if (!accounts)
       bail();
     const accountFind = accounts.find(element => {
-      if (element.address === addressToCheck) 
+      if (element.address === addressToCheck)
         return element;
     });
 
@@ -209,7 +209,7 @@ async function handleApprove() {
         account.data = result as AccountData;
       });
     }
-    if (!(account.data as AccountData).privateKey) 
+    if (!(account.data as AccountData).privateKey)
       await bail();
 
     if ( context === 'personal_sign' ) {
@@ -231,10 +231,10 @@ async function handleApprove() {
 async function handlePersonalSign(account: YakklAccount) {
   return new Promise(async (resolve, reject) => {
     try {
-      if (!personal_sign.dataToSign || !personal_sign.address) 
+      if (!personal_sign.dataToSign || !personal_sign.address)
         reject('No message to sign or address to sign with was found.');
 
-      // const wallet = new ethers.Wallet(account.data.privateKey);
+      // const wallet = new ethersv6.Wallet(account.data.privateKey);
       // account.data.privateKey = null; // Remove private key from memory
       // signedData = await wallet.signMessage(personal_sign.dataToSign);
       const blockchain = wallet.getBlockchain();
@@ -249,17 +249,17 @@ async function handlePersonalSign(account: YakklAccount) {
 async function handleSignTypedData(account: YakklAccount) {
   return new Promise(async (resolve, reject) => {
     try {
-      if (!signTypedData_v3v4.dataToSign || !signTypedData_v3v4.address) 
+      if (!signTypedData_v3v4.dataToSign || !signTypedData_v3v4.address)
         reject('No data to sign or address to sign with was found.');
- 
-      // const signer = new ethers.providers.JsonRpcSigner(account.data.privateKey, provider);
+
+      // const signer = new ethersv6.providers.JsonRpcSigner(account.data.privateKey, provider);
       // account.data.privateKey = null; // Remove private key from memory
       // signedData = await signer._signTypedData(signTypedData_v3v4.dataToSign.domain, signTypedData_v3v4.dataToSign.types, signTypedData_v3v4.dataToSign.message);
      //console.log('signTypedData_v3v4 --->', signTypedData_v3v4, account);
       const blockchain = wallet.getBlockchain();
 
 
-      
+
 
       // TODO: Verify this!
       //@ts-ignore
@@ -279,7 +279,7 @@ async function handleSignTypedData(account: YakklAccount) {
 async function handleClose() {
   try {
     if (port) {
-      port.postMessage({id: requestId, method: method, type: 'YAKKL_RESPONSE', result: signedData }); 
+      port.postMessage({id: requestId, method: method, type: 'YAKKL_RESPONSE', result: signedData });
       port.disconnect();
       // port.onMessage.removeListener();
       port = undefined;
@@ -293,7 +293,7 @@ async function handleClose() {
     }
   } catch(e) {
     console.log(e);
-  } finally { 
+  } finally {
     await close();
   }
 }
@@ -378,15 +378,15 @@ function handleConfirm() {
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
       </div>
     </div>
   </div>
-</div>  
-{:then _}   
+</div>
+{:then _}
 <div class="w-[96%] text-center justify-center m-2 flex flex-col absolute top-[225px]">
   <!-- <Beta /> -->
   <div class="text-primary-content text-2xl font-bold flex flex-col">
@@ -405,7 +405,7 @@ function handleConfirm() {
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
@@ -427,14 +427,14 @@ function handleConfirm() {
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
       {#if !showSpinner}
-      <button 
+      <button
         onclick={preventDefault(handleReject)}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
       </button>
-      
-      <button 
+
+      <button
         type="submit"
         id="recover"
         onclick={preventDefault(handleConfirm)}
@@ -447,8 +447,8 @@ function handleConfirm() {
       <h3 class="mt-2 font-bold animate-pulse">Signing - please wait...</h3>
       {/if}
     </div>
-  </div>   
-  
+  </div>
+
 </div>
 
 {/await}

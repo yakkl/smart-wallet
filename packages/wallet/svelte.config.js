@@ -3,7 +3,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	extensions: [ '.svelte' ],
+	// extensions: [ '.svelte' ],
 
 	preprocess: vitePreprocess( { script: true } ),
 
@@ -27,6 +27,17 @@ const config = {
 			'@yakkl/uniswap-alpha-router-service': '../uniswap-alpha-router-service/src',
 		},
 
+    prerender: {
+      handleHttpError: ({ status, path, referrer, referenceType }) => {
+        console.warn(`Prerendering error: ${status} on ${path}`);
+        if (status === 500 && path === '/accounts') {
+          // Ignore the error or log it
+          return;
+        }
+        throw new Error(`${status} on ${path}`);
+      },
+    },
+    
 		appDir: 'app',
 	},
 };

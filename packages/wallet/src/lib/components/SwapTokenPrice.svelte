@@ -5,7 +5,7 @@
   import type { SwapPriceData } from '$lib/common/interfaces';
 	import { toBigInt } from '$lib/common/math';
   import { formatPrice } from '$lib/utilities';
-	import { ethers } from 'ethers';
+	import { ethers as ethersv6 } from 'ethers-v6';
 	import { onMount } from 'svelte';
   import type { Writable } from 'svelte/store';
 
@@ -25,9 +25,9 @@
 
   // Display the price based on the type (sell/buy)
   let price = $state(0);
-  
 
-  
+
+
   onMount(async () => {
     swapPriceDataUpdated();
   });
@@ -45,13 +45,13 @@
 
       if (type === 'sell') {
         if (amountIn > 0n && marketPriceIn > 0) {
-          price = parseFloat(ethers.formatUnits(amountIn, tokenIn.decimals)) * marketPriceIn;
+          price = parseFloat(ethersv6.formatUnits(amountIn, tokenIn.decimals)) * marketPriceIn;
         } else {
           price = Math.abs(marketPriceIn);
         }
       } else if (type === 'buy') {
         if (amountOut > 0n && marketPriceOut > 0) {
-          price = parseFloat(ethers.formatUnits(amountOut, tokenOut.decimals)) * marketPriceOut;
+          price = parseFloat(ethersv6.formatUnits(amountOut, tokenOut.decimals)) * marketPriceOut;
         } else {
           price = Math.abs(marketPriceOut);
         }
