@@ -3,7 +3,7 @@ import { type BigNumberish, type TransactionRequest, type TransactionResponse } 
 import type { Provider } from '$plugins/Provider';
 import { Signer } from './Signer';
 // import type { Signer } from '$plugins/Signer';
-// import { ethers } from 'ethers';
+// import { ethers as ethersv6 } from 'ethers-v6';
 
 export abstract class AbstractContract {
   protected address: string;
@@ -12,7 +12,7 @@ export abstract class AbstractContract {
   abstract interface: any; // Add this to support interface operations
 
   // Added providerNative to the constructor - may need to be removed
-  constructor ( address: string, abi: any[], provider: Provider ) { 
+  constructor ( address: string, abi: any[], provider: Provider ) {
     if ( !address || !abi || !provider ) throw new Error( "Invalid parameters" );
 
     this.address = address;

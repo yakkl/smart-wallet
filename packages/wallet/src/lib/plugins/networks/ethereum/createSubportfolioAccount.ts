@@ -1,6 +1,6 @@
 /* eslint-disable prefer-const */
 
-import { ethers } from "ethers"; // Just need to call a few non-blockchain access functions
+import { ethers as ethersv6 } from 'ethers-v6'; // Just need to call a few non-blockchain access functions
 import { setSettings, getSettings, setProfileStorage, setYakklCurrentlySelectedStorage, getYakklPrimaryAccounts, setYakklPrimaryAccountsStorage, getYakklAccounts, setYakklAccountsStorage, getMiscStore, getYakklCurrentlySelected, getProfile } from '$lib/common/stores';
 import { encryptData, decryptData, isEncryptedData } from '$lib/common';
 import { DEFAULT_DERIVED_PATH_ETH, VERSION } from '$lib/common/constants';
@@ -21,7 +21,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     }
 
     if (!currentlySelected) {
-      currentlySelected = await getYakklCurrentlySelected();      
+      currentlySelected = await getYakklCurrentlySelected();
     }
 
     if (isEncryptedData(currentlySelected.data)) {
@@ -80,7 +80,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
       yakklPrimaryAccount = (selectedData as CurrentlySelectedData).primaryAccount as YakklPrimaryAccount;
       if (!yakklPrimaryAccount) {
         // Check to see if this is a primary account. If the user delete a subaccount then the primary account will be null
-        yakklPrimaryAccount = profileData.primaryAccounts.find(account => account.address === currentlySelected?.shortcuts.address) as YakklPrimaryAccount; 
+        yakklPrimaryAccount = profileData.primaryAccounts.find(account => account.address === currentlySelected?.shortcuts.address) as YakklPrimaryAccount;
         if (!yakklPrimaryAccount) {
           throw "The primary account data does not appear to be correct. Please select a different primary account and try again. Thank you.";
         }
@@ -90,7 +90,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     }
 
     let index = profileData.primaryAccounts.indexOf(yakklPrimaryAccount);
-    
+
     if (isEncryptedData(yakklPrimaryAccount.data)) {
       await decryptData(yakklPrimaryAccount.data, yakklMiscStore).then(result => {
         yakklPrimaryAccount.data = result as PrimaryAccountData;
@@ -107,7 +107,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     }
 
     const mnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic;
-    let ethWallet = ethers.HDNodeWallet.fromPhrase(mnemonic as string, undefined, derivedPath); 
+    let ethWallet = ethersv6.HDNodeWallet.fromPhrase(mnemonic as string, undefined, derivedPath);
     if ( !ethWallet ) {
       throw "The subportfolio account was not able to be created. Please try again.";
     }
@@ -127,7 +127,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
       privateKey: ethWallet.privateKey,
       publicKey: ethWallet.publicKey,
       publicKeyUncompressed: ethWallet.publicKey,//ethWallet.signingKey.publicKey,
-      path: derivedPath, //ethWallet.path ? ethWallet.path : derivedPath,     
+      path: derivedPath, //ethWallet.path ? ethWallet.path : derivedPath,
       pathIndex: ethWallet.index,
       fingerPrint: ethWallet.fingerprint,
       parentFingerPrint: ethWallet.parentFingerprint,
@@ -147,14 +147,14 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
       description: '',
       primaryAccount: yakklPrimaryAccount,  // If subaccount then it must be a valid primaryaccount else undefined
       data: accountData,
-      value: 0n, 
+      value: 0n,
       class: "Default",  // This is only used for enterprise like environments. It can be used for departments like 'Finance', 'Accounting', '<whatever>'
       level: 'L1',
       isSigner: true,
       avatar: '', // Default is identityicon but can be changed to user/account avatar
       tags: [currentlySelected.shortcuts.network.blockchain, 'sub'],
       includeInPortfolio: true,   // This only applys to the value in this primary account and not any of the derived accounts from this primary account
-      connectedDomains: [], 
+      connectedDomains: [],
       createDate: currentDate,
       updateDate: currentDate,
       version: VERSION,
@@ -174,7 +174,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
     yakklPrimaryAccount.subAccounts.push(yakklAccountEnc);
     profileData.primaryAccounts[index] = yakklPrimaryAccount;
 
-    setYakklPrimaryAccountsStorage(profileData.primaryAccounts);  // It was updated and not added 
+    setYakklPrimaryAccountsStorage(profileData.primaryAccounts);  // It was updated and not added
 
     const profileEnc = deepCopy(profile);
 

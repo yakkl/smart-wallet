@@ -3,7 +3,7 @@
 
   import { onMount } from 'svelte';
   import type { SwapToken } from '$lib/common/interfaces';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { getTokenBalance } from '$lib/utilities/balanceUtils';
 	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
 	import type { Provider } from '$lib/plugins';
@@ -47,5 +47,5 @@
 </script>
 
 <span class="{className}">
-  {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', token.decimals)} {token.symbol}
+  {balanceText}{ethersv6.formatUnits(balance ? balance.toString() : '0', token.decimals)} {token.symbol}
 </span>

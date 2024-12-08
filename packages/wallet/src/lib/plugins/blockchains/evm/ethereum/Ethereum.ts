@@ -4,7 +4,7 @@ import { type AccountData, type AccountInfo, type Deferrable, type EthereumTrans
 import { dateString } from '$lib/common/datetime';
 import { AbstractBlockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 import { EthereumContract } from './EthereumContract';
 import type { AbstractContract } from '$lib/plugins/Contract';
 
@@ -137,7 +137,7 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
   }
 
   isAddress( address: string ): boolean {
-    const returnValue = ethers.isAddress( address );
+    const returnValue = ethersv6.isAddress( address );
     return returnValue;
   }
 
@@ -177,13 +177,13 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
   }
 
   private async createPrimaryAccount( accountInfo: AccountInfo ): Promise<YakklPrimaryAccount> {
-    const entropy = ethers.randomBytes( 32 );
+    const entropy = ethersv6.randomBytes( 32 );
     if ( !entropy ) throw new Error( 'Error generating entropy for the mnemonic' );
 
-    const randomMnemonic = ethers.Mnemonic.fromEntropy( entropy );
+    const randomMnemonic = ethersv6.Mnemonic.fromEntropy( entropy );
     if ( !randomMnemonic ) throw new Error( 'Error generating mnemonic from entropy' );
 
-    const ethWallet = ethers.HDNodeWallet.fromMnemonic( randomMnemonic, accountInfo.path );
+    const ethWallet = ethersv6.HDNodeWallet.fromMnemonic( randomMnemonic, accountInfo.path );
     if ( !ethWallet ) throw new Error( 'Error creating wallet from mnemonic' );
 
     const accountData: AccountData = {
@@ -264,7 +264,7 @@ export class Ethereum extends AbstractBlockchain<EthereumTransaction> {
     const mnemonic = ( primaryAccount.data as PrimaryAccountData ).mnemonic;
     if ( !mnemonic ) throw new Error( 'Mnemonic is missing from the primary account data' );
 
-    const ethWallet = ethers.HDNodeWallet.fromPhrase( mnemonic, undefined, derivedPath );
+    const ethWallet = ethersv6.HDNodeWallet.fromPhrase( mnemonic, undefined, derivedPath );
     if ( !ethWallet ) throw new Error( 'Error deriving sub account from primary account' );
 
     const accountData: AccountData = {

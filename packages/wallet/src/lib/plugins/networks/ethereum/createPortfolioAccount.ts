@@ -1,6 +1,6 @@
 /* eslint-disable prefer-const */
 
-import { ethers } from "ethers";
+import { ethers as ethersv6 } from 'ethers-v6';
 import { setSettingsStorage, getSettings, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, setYakklPrimaryAccountsStorage, getYakklPrimaryAccounts, getYakklAccounts, setYakklAccountsStorage } from '$lib/common/stores';
 import { encryptData, decryptData } from '$lib/common/encryption';
 import { DEFAULT_DERIVED_PATH_ETH } from '$lib/common/constants';
@@ -54,8 +54,8 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       const meta = profile.data.meta as MetaData;
       if (isString(meta.accountName)) {
         accountName = meta.accountName;
-      } 
-    } 
+      }
+    }
 
     let index: number = 0;
 
@@ -70,13 +70,13 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       accountName = `Portfolio Level Account ${index+1}`;
     }
 
-    const entropy = ethers.randomBytes(32);
-    const randomMnemonic = ethers.Mnemonic.fromEntropy(entropy); 
-    const ethWallet = ethers.HDNodeWallet.fromMnemonic(randomMnemonic, derivedPath); 
+    const entropy = ethersv6.randomBytes(32);
+    const randomMnemonic = ethersv6.Mnemonic.fromEntropy(entropy);
+    const ethWallet = ethersv6.HDNodeWallet.fromMnemonic(randomMnemonic, derivedPath);
 
     if ( !ethWallet ) {
       throw "The Ethereum Wallet (Portfolio Account) was not able to be created. Please try again.";
-    } 
+    }
 
     const currentDate = dateString();
     const address = ethWallet.address;
@@ -87,7 +87,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       privateKey: ethWallet.privateKey,
       publicKey: ethWallet.publicKey,
       publicKeyUncompressed: ethWallet.publicKey,
-      path: derivedPath, // ethWallet.path,     
+      path: derivedPath, // ethWallet.path,
       pathIndex: index,
       fingerPrint: ethWallet.fingerprint,
       parentFingerPrint: ethWallet.parentFingerprint,
@@ -107,7 +107,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       description: '',
       primaryAccount: null,  // If subaccount then it must be a valid primaryaccount else undefined
       data: accountData,
-      value: 0n, 
+      value: 0n,
       class: "Default",  // This is only used for enterprise like environments. It can be used for departments like 'Finance', 'Accounting', '<whatever>'
       level: 'L1',
       isSigner: true,
@@ -134,7 +134,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       password: ethWallet.mnemonic?.password,
       publicKeyUncompressed: ethWallet.publicKey,
       wordCount: ethWallet.mnemonic?.phrase.split(" ").length,
-      wordListLocale: ethWallet.mnemonic?.wordlist.locale      
+      wordListLocale: ethWallet.mnemonic?.wordlist.locale
     };
 
     const yakklPrimaryAccount = {
@@ -151,7 +151,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       updateDate: yakklAccount.updateDate,
       version: VERSION,
     }
-    
+
     let yakklPrimaryAccountEnc = deepCopy(yakklPrimaryAccount) as YakklPrimaryAccount;
     if (!isEncryptedData(yakklPrimaryAccountEnc.data)) {
       await encryptData(yakklPrimaryAccountEnc.data, yakklMiscStore).then(result => {
@@ -170,7 +170,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
       });
       yakklAccount.data = yakklPrimaryAccountEnc.account.data;
     }
-    
+
     let yakklPrimaryAccounts: YakklPrimaryAccount[] = await getYakklPrimaryAccounts();
     if (!yakklPrimaryAccounts) {
       yakklPrimaryAccounts = [];
@@ -250,12 +250,12 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
     currentlySelectedData.primaryAccount = yakklPrimaryAccountEnc;
     (currentlySelectedData as CurrentlySelectedData).account = yakklPrimaryAccountEnc.account;
 
-    yakklCurrentlySelected.id = profile.id;    
+    yakklCurrentlySelected.id = profile.id;
     yakklCurrentlySelected.createDate = yakklPrimaryAccountEnc.account.createDate;
     yakklCurrentlySelected.updateDate = yakklPrimaryAccountEnc.account.updateDate;
 
     yakklCurrentlySelected.data = currentlySelectedData;
-    
+
     if (!isEncryptedData(yakklCurrentlySelected.data)) {
       await encryptData(yakklCurrentlySelected.data, yakklMiscStore).then(result => {
         yakklCurrentlySelected.data = result;

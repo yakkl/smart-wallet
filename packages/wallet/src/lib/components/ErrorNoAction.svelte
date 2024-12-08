@@ -1,18 +1,18 @@
 <script lang="ts">
   interface Props {
-    show?: boolean;
+    show: boolean;
+    value: string;
     title?: string;
-    value?: string;
-    handle?: any;
+    handle?: () => void;
   }
 
+  // Destructure props correctly
   let {
     show = $bindable(false),
     title = 'ERROR!',
-    value = $bindable(''),
-    handle = () => {value=''}
+    value = 'An error occurred',
+    handle = () => {}
   }: Props = $props();
-  
 </script>
 
 <div class="modal" class:modal-open={show}>
@@ -20,8 +20,10 @@
     <h3 class="text-lg font-bold">{title}</h3>
     <p class="py-4">{value}</p>
     <div class="modal-action">
-      <button class="btn" onclick={() => {show=false; handle}}>Close</button>
+      <button class="btn" onclick={() => {
+        show = false;
+        handle(); // Correct function call
+      }}>Close</button>
     </div>
   </div>
 </div>
-

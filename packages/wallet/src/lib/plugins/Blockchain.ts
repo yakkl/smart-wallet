@@ -8,7 +8,7 @@ import { type AccountInfo, type BaseTransaction, type BigNumberish, type Block, 
 import type { Provider } from '$plugins/Provider';
 import type { AbstractContract } from './Contract';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
-import type { ethers } from 'ethers';
+import type { ethers as ethersv6 } from 'ethers-v6';
 
 export interface ContractInterface {
   address: string;
@@ -32,7 +32,7 @@ export interface Blockchain {
   options: { [ key: string ]: MetaData; }; // Additional options for the blockchain (optional)
 
   // Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
-  createContract( address: string, abi: any[], providerNative?: ethers.JsonRpcProvider | null | undefined ): AbstractContract | null;
+  createContract( address: string, abi: any[], providerNative?: ethersv6.JsonRpcProvider | null | undefined ): AbstractContract | null;
 
   // getContract(address: string, abi: any): Promise<any>; // Replace 'any' with appropriate types
 
@@ -382,7 +382,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   getSignerNative(): any | null {
     return this.provider.getSignerNative();
   }
-  
+
   /**
    * Gets the list of providers supported by this blockchain.
    * @returns The list of providers.

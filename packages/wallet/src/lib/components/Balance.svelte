@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { BigNumberish, BlockTag } from '$lib/common';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
 	import type { Provider } from '$lib/plugins';
 
   interface Props {
@@ -35,6 +35,6 @@
 </script>
 
 <span class="text-gray-500 {className}">
-  {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', units)} {symbol.toUpperCase()}
+  {balanceText}{ethersv6.formatUnits(balance ? balance.toString() : '0', units)} {symbol.toUpperCase()}
 </span>
 

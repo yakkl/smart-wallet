@@ -20,7 +20,7 @@ export class TokenService<T extends BaseTransaction> {
     try {
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
-    
+
       const [ name, symbol, decimals, totalSupply ] = await Promise.all( [
         contract.call( 'name' ),
         contract.call( 'symbol' ),
@@ -38,7 +38,7 @@ export class TokenService<T extends BaseTransaction> {
   async getBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
       if ( !tokenAddress || !userAddress ) return 0n; // Want a graceful way to handle this instead of throwing an error
-      // Could check tokenAddress to see if it 'ethers.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
+      // Could check tokenAddress to see if it 'ethersv6.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return 0n;
 
@@ -51,10 +51,10 @@ export class TokenService<T extends BaseTransaction> {
 
   async transfer( tokenAddress: string, toAddress: string, amount: BigNumberish ): Promise<TransactionResponse> {
     try {
-      if ( !tokenAddress || !toAddress || !amount ) throw new Error( 'Invalid parameters' ); 
+      if ( !tokenAddress || !toAddress || !amount ) throw new Error( 'Invalid parameters' );
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) throw new Error( 'Invalid contract' );
-    
+
       const gasEstimate = await contract.estimateGas( 'transfer', toAddress, amount );
       const tx = await contract.populateTransaction( 'transfer', toAddress, amount );
       if ( !tx ) throw new Error( 'Invalid transaction' );

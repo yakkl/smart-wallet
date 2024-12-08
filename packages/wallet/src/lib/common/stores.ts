@@ -128,7 +128,7 @@ export async function verifyEncryption<T extends HasData<any>>(value: T | T[]): 
 // ---------------------------------
 // Svelte memory stores
 
-export const yakklPreferencesStore = writable(yakklPreferences);
+export const yakklPreferencesStore = writable<Preferences>(yakklPreferences);
 export const yakklSettingsStore = writable(yakklSettings);
 export const profileStore = writable(profile);
 export const yakklCurrentlySelectedStore = writable<YakklCurrentlySelected | null>(yakklCurrentlySelected);
@@ -823,7 +823,7 @@ export async function setProfileStorage(values: Profile) {
 	} catch (error) {
 		console.log(error);
     throw new Error("Error in setProfileStorage: " + error);
-    
+
   }
 }
 

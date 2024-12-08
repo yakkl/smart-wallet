@@ -4,11 +4,11 @@
   import { YAKKL_SPLASH, NUM_OF_SPLASH_IMAGES } from '$lib/common/constants';
 	import { wait } from '$lib/common/utils';
 
-  // Splash size should be maximum default browser extension size. 
+  // Splash size should be maximum default browser extension size.
   // Note: May want to look into providing a communications window for the user to see what is going on if we need to provide them with an important message.
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   type RuntimePort = Runtime.Port;
@@ -50,13 +50,13 @@
             port.onDisconnect.addListener(() => {
               isPortDisconnected = true; // Mark port as disconnected
               console.log("Port has been disconnected.");
-            });   
+            });
           } else {
             browser_ext.runtime.reload(); // Reload the extension. This will exit it and apply any pending updates.
           }
         }
 
-        browser_ext.alarms.create('yakkl-splash-alarm', {when: Date.now() + 3000}); // Change this number to reflect how much time we want the user to see the splash screen
+        browser_ext.alarms.create('yakkl-splash-alarm', {when: Date.now() + 2500}); // Change this number to reflect how much time we want the user to see the splash screen
         browser_ext.alarms.onAlarm.addListener((m: any) => {
           if (port && !isPortDisconnected) port.postMessage({popup: "YAKKL: Splash"}); // Fire when the timer ends - goes to the background.ts
         });

@@ -13,7 +13,7 @@
   import SwapSummary from './SwapSummary.svelte';
   import Modal from './Modal.svelte';
   import { BigNumber, ETH_BASE_SWAP_GAS_UNITS, parseAmount, YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
   import { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
   import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
@@ -28,7 +28,7 @@
 	import { validateSwapQuote, type ValidationResult } from '$lib/common/validation';
 	// import { multiHopQuoteAlphaRouter } from '$lib/plugins/alphaRouter';
 
-  
+
   interface Props {
     // Props
     fundingAddress: string;
@@ -289,7 +289,7 @@
     if (!token.balance || toBigInt(token.balance) <= 0n) {
       token.balance = await getTokenBalance(token, fundingAddress, provider, tokenService);
     }
-    const formattedBalance = ethers.formatUnits(toBigInt(token.balance), token.decimals);  // NOTE: This and all ethers specific code should be moved to the TokenService - maybe
+    const formattedBalance = ethersv6.formatUnits(toBigInt(token.balance), token.decimals);  // NOTE: This and all ethers specific code should be moved to the TokenService - maybe
 
     if (type === 'sell') {
       tokenIn = token;
@@ -339,7 +339,7 @@
         return false;
       }
       const balance = await getTokenBalance(token, fundingAddress, provider, tokenService);
-      const formattedBalance = ethers.formatUnits(balance, token.decimals);
+      const formattedBalance = ethersv6.formatUnits(balance, token.decimals);
       token.balance = balance;
       if (token === tokenIn) fromBalance = formattedBalance; // Only update balance for tokenIn
       const requiredAmount = parseAmount(amount, token.decimals);
@@ -388,14 +388,14 @@
       // Get token or native balance
       const balance = await getTokenBalance(tokenIn, fundingAddress, provider, tokenService);
       // Parse amounts
-      const swapAmount = ethers.parseUnits(fromAmount, tokenIn.decimals);
+      const swapAmount = ethersv6.parseUnits(fromAmount, tokenIn.decimals);
 
       // If native token (ETH), account for gas
       if (tokenIn.isNative) {
         const gasEstimate = $swapPriceDataStore.gasEstimate || 0n;
         const totalRequiredAmount = swapAmount + (BigNumber.toBigInt(gasEstimate) || 0n);
         if (balance < totalRequiredAmount) {
-          error = `Insufficient ${tokenIn.symbol} balance. Need ${ethers.formatUnits(totalRequiredAmount, tokenIn.decimals)} ${tokenIn.symbol}, but have ${ethers.formatUnits(balance, tokenIn.decimals)} ${tokenIn.symbol}`;
+          error = `Insufficient ${tokenIn.symbol} balance. Need ${ethersv6.formatUnits(totalRequiredAmount, tokenIn.decimals)} ${tokenIn.symbol}, but have ${ethersv6.formatUnits(balance, tokenIn.decimals)} ${tokenIn.symbol}`;
           return false;
         }
       } else {
@@ -403,7 +403,7 @@
         const feeAmount = $swapPriceDataStore.feeAmount || 0n;
         const totalRequiredAmount = swapAmount;
         if (balance < totalRequiredAmount) {
-          error = `Insufficient ${tokenIn.symbol} balance. Need ${ethers.formatUnits(totalRequiredAmount, tokenIn.decimals)} ${tokenIn.symbol}, but have ${ethers.formatUnits(balance, tokenIn.decimals)} ${tokenIn.symbol}`;
+          error = `Insufficient ${tokenIn.symbol} balance. Need ${ethersv6.formatUnits(totalRequiredAmount, tokenIn.decimals)} ${tokenIn.symbol}, but have ${ethersv6.formatUnits(balance, tokenIn.decimals)} ${tokenIn.symbol}`;
           return false;
         }
       }
@@ -467,10 +467,10 @@
       // Handle the BigNumberish type safely
       if (isExactIn) {
         const amountOut = quote.amountOut ?? 0n;
-        toAmount = ethers.formatUnits(toBigInt(amountOut), tokenOut.decimals);
+        toAmount = ethersv6.formatUnits(toBigInt(amountOut), tokenOut.decimals);
       } else {
         const amountIn = quote.amountIn ?? 0n;
-        fromAmount = ethers.formatUnits(toBigInt(amountIn), tokenIn.decimals);
+        fromAmount = ethersv6.formatUnits(toBigInt(amountIn), tokenIn.decimals);
       }
 
       updateSwapPriceData(quote);
@@ -530,11 +530,11 @@
         // May want to do something with receipts later...
         if (tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH') {
           // Wrap ETH to WETH
-          const receipt = swapManager.wrapETH(ethers.parseUnits(fromAmount, tokenIn.decimals), fundingAddress);
+          const receipt = swapManager.wrapETH(ethersv6.parseUnits(fromAmount, tokenIn.decimals), fundingAddress);
           debug_log('SWAP: Wrap ETH to WETH receipt:', receipt);
         } else if (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH') {
           // Unwrap WETH to ETH
-          const receipt = swapManager.unwrapWETH(ethers.parseUnits(fromAmount, tokenIn.decimals), fundingAddress);
+          const receipt = swapManager.unwrapWETH(ethersv6.parseUnits(fromAmount, tokenIn.decimals), fundingAddress);
           debug_log('SWAP: Unwrap WETH to ETH receipt:', receipt);
         }
         return;
@@ -553,7 +553,7 @@
 
       if (!$swapPriceDataStore.tokenIn.isNative) {
         const allowance = await swapManager.checkAllowance(tokenInInstance, fundingAddress);
-        const requiredAmount = ethers.parseUnits(fromAmount, tokenInInstance.decimals);
+        const requiredAmount = ethersv6.parseUnits(fromAmount, tokenInInstance.decimals);
 
         if (allowance < requiredAmount) {
           const receipt = await swapManager.approveToken(tokenInInstance, fromAmount);
@@ -566,7 +566,7 @@
       const params: SwapParams = {
         tokenIn: tokenInInstance,
         tokenOut: tokenOutInstance,
-        amount: ethers.parseUnits(fromAmount, $swapPriceDataStore.tokenIn.decimals),
+        amount: ethersv6.parseUnits(fromAmount, $swapPriceDataStore.tokenIn.decimals),
         fee: $swapPriceDataStore.fee || poolFee, // Basis points - not used here for multihops
         slippage: $swapPriceDataStore.slippageTolerance || slippageTolerance,
         deadline: $swapPriceDataStore.deadline || deadline,
@@ -587,8 +587,8 @@
         fundingAddress,
         tokenIn,
         tokenOut,
-        ethers.parseUnits(fromAmount, tokenIn.decimals),
-        ethers.parseUnits(toAmount, tokenOut.decimals)
+        ethersv6.parseUnits(fromAmount, tokenIn.decimals),
+        ethersv6.parseUnits(toAmount, tokenOut.decimals)
       ); // Notify parent component - could add more data here such as fee, feeAmount, etc.
 
       error = '';
@@ -615,8 +615,8 @@
       // Fallback to manual rates
       debug_log('Error fetching gas prices (fallback being used):', error);
       return {
-        maxFeePerGas: ethers.parseUnits('30', 'gwei'),
-        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
+        maxFeePerGas: ethersv6.parseUnits('30', 'gwei'),
+        maxPriorityFeePerGas: ethersv6.parseUnits('1', 'gwei')
       };
     }
   }

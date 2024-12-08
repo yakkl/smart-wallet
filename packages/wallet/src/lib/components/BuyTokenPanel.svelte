@@ -5,11 +5,11 @@
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { debounce } from 'lodash-es';
   import { toBigInt } from '$lib/common';
 
-  
+
   interface Props {
     // Component props
     tokens?: SwapToken[];
@@ -41,13 +41,13 @@
   // Amount formatting utility
   function formatAmount(amount: bigint, decimals: number): string {
     if (amount === 0n) return '';
-    
+
     const formattedValue = ethers.formatUnits(amount, decimals);
-    
+
     // Remove trailing zeros after decimal point
     const [integerPart, decimalPart] = formattedValue.split('.');
     if (!decimalPart) return integerPart;
-    
+
     const trimmedDecimal = decimalPart.replace(/0+$/, '');
     return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
   }
@@ -61,23 +61,23 @@
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
-  
+
     // Sanitize input
     value = value.replace(/[^0-9.]/g, '');
-    
+
     // Ensure only one decimal point
     const parts = value.split('.');
     if (parts.length > 2) {
       value = `${parts[0]}.${parts.slice(1).join('')}`;
     }
-    
+
     // Limit to 6 decimal places
     if (parts[1] && parts[1].length > 6) {
       value = `${parts[0]}.${parts[1].slice(0, 6)}`;
     }
 
     userInput = value;
-    
+
     // Clear if empty
     if (value === '' || value === '.') {
       userInput = '';
@@ -85,9 +85,9 @@
       onAmountChange('');
       return;
     }
-    
+
     userInput = value;
-    formattedAmount = value; 
+    formattedAmount = value;
 
     // Trigger change only for meaningful input
     debouncedAmountChange(value);
@@ -108,7 +108,7 @@
       userInput = '';
     }
   }
-  run(() => { 
+  run(() => {
     swapPriceData = $swapPriceDataStore;
   });
   // Reset handling
@@ -132,7 +132,7 @@
   });
 </script>
 
-<div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800 
+<div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800
   {disabled ? ' opacity-50 pointer-events-none' : ''}">
   <div class="flex justify-between items-center">
     <input
@@ -143,23 +143,23 @@
       onblur={handleBlur}
       disabled={disabled}
       class="
-        bg-transparent 
-        text-3xl 
-        font-bold 
-        w-1/2 
-        mr-4 
-        focus:outline-none 
-        focus:border-b-2 
+        bg-transparent
+        text-3xl
+        font-bold
+        w-1/2
+        mr-4
+        focus:outline-none
+        focus:border-b-2
         focus:border-blue-500
         text-black dark:text-white
         {disabled ? 'cursor-not-allowed' : ''}
       "
     />
-    <TokenDropdown 
+    <TokenDropdown
       {tokens}
       disabled={disabled}
       selectedToken={swapPriceData.tokenOut}
-      onTokenSelect={onTokenSelect} 
+      onTokenSelect={onTokenSelect}
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">

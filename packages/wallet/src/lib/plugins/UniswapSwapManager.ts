@@ -14,8 +14,8 @@ import IQuoterV2ABI from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV
 // import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
 // import JSBI from 'jsbi';
 // import JSBI from '@uniswap/sdk-core/node_modules/jsbi';
-import { ethers } from 'ethers';
-import { ethers as ethersv5 } from 'ethers-v5';
+import { ethers as ethersv6 } from 'ethers-v6';
+import { ethers as ethersv5 } from 'ethers';
 import { formatFeeToUSD, formatPrice, safeConvertBigIntToNumber } from '../utilities/utilities';
 import type { Ethereum } from './blockchains/evm/ethereum/Ethereum';
 import { ADDRESSES } from './contracts/evm/constants-evm';
@@ -44,10 +44,10 @@ const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 
 
 export class UniswapSwapManager extends SwapManager {
-  private routerContract: ethers.Contract | null = null;
-  private providerNative: ethers.JsonRpcProvider | null = null;
-  private signerNative: ethers.JsonRpcSigner | null = null;
-  private factory: ethers.Contract | null = null;
+  private routerContract: ethersv6.Contract | null = null;
+  private providerNative: ethersv6.JsonRpcProvider | null = null;
+  private signerNative: ethersv6.JsonRpcSigner | null = null;
+  private factory: ethersv6.Contract | null = null;
   private alphaRouter: AlphaRouterService;
 
   constructor (
@@ -65,10 +65,10 @@ export class UniswapSwapManager extends SwapManager {
     if ( !this.providerNative ) throw new Error( 'Ethereum native provider not initialized' );
     this.signerNative = this.provider.getSignerNative();
     if ( !this.signerNative ) throw new Error( 'Ethereum native signer not initialized' );
-    
-    this.factory = new ethers.Contract( ADDRESSES.UNISWAP_FACTORY, IUniswapV3FactoryABI.abi, this.providerNative );
 
-    this.routerContract = new ethers.Contract(
+    this.factory = new ethersv6.Contract( ADDRESSES.UNISWAP_FACTORY, IUniswapV3FactoryABI.abi, this.providerNative );
+
+    this.routerContract = new ethersv6.Contract(
       ADDRESSES.UNISWAP_V3_ROUTER,
       ISwapRouterABI,
       this.signerNative
@@ -96,7 +96,7 @@ export class UniswapSwapManager extends SwapManager {
     if ( !this.factory ) throw new Error( 'Factory contract not initialized' );
     try {
       const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
-      return poolAddress !== ethers.ZeroAddress;
+      return poolAddress !== ethersv6.ZeroAddress;
     } catch ( error ) {
       return false;
     }
@@ -161,7 +161,7 @@ export class UniswapSwapManager extends SwapManager {
 //     const router = new AlphaRouter( { chainId: 1, provider } );
 
 //     const slippageTolerance = new Percent( 5, 100 );
-    
+
 //     // Step 3: Set up the Swap route request
 //     const amountInOrOut = ethersv5.BigNumber.from( amount );
 //     const swapRouteOptions: SwapOptions = {
@@ -232,7 +232,7 @@ export class UniswapSwapManager extends SwapManager {
     fee: number = 3000
   ): Promise<SwapPriceData> {
 
-    
+
 
     // const quote = await this.alphaRouter.getQuote(
     //   tokenIn,
@@ -260,7 +260,7 @@ export class UniswapSwapManager extends SwapManager {
     //   isExactIn
     // );
 
-    
+
 
     // multiHopQuoteAlphaRouter(tokenIn, tokenOut, amount, fundingAddress, isExactIn);
 
@@ -385,7 +385,7 @@ export class UniswapSwapManager extends SwapManager {
       }
     } catch ( error ) {
       debug_log( 'Error fetching multi-hop quote - falling back to alpha routing:', error );
-      throw new Error("Failed to get multi-hop quote. This means pools do not exist");      
+      throw new Error("Failed to get multi-hop quote. This means pools do not exist");
       // AlphaRouter causes issues with current version of ethers so it is no longer used here
       // return this.multiHopQuoteAlphaRouter( tokenIn, tokenOut, amount, fundingAddress, isExactIn );
     }
@@ -437,8 +437,8 @@ export class UniswapSwapManager extends SwapManager {
         marketPriceGas: 0,
         priceImpactRatio: 0,
         path: [
-          tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address,
-          tokenOut.isNative ? ethers.ZeroAddress : tokenOut.address
+          tokenIn.isNative ? ethersv6.ZeroAddress : tokenIn.address,
+          tokenOut.isNative ? ethersv6.ZeroAddress : tokenOut.address
         ],
         fee,
         feeBasisPoints: this.feeBasisPoints,
@@ -484,7 +484,7 @@ export class UniswapSwapManager extends SwapManager {
         ...( isExactIn ? { amountIn: amount } : { amount: amount } ),
       };
 
-      const quoterContract = new ethers.Contract( ADDRESSES.UNISWAP_V3_QUOTER, IQuoterV2ABI.abi, this.providerNative );
+      const quoterContract = new ethersv6.Contract( ADDRESSES.UNISWAP_V3_QUOTER, IQuoterV2ABI.abi, this.providerNative );
       let quoteAmount: bigint;
       let sqrtPriceX96After: bigint = 0n;
       let initializedTicksCrossed: number = 0;
@@ -526,10 +526,10 @@ export class UniswapSwapManager extends SwapManager {
     }
   }
 
-  // WIP - Not yet implemented 
+  // WIP - Not yet implemented
   async estimateSwapGas( swapRouterAddress: string, swapParams: SwapParams ): Promise<bigint> {
     debug_log( 'Estimating gas for swap:', swapParams );
-    return 0n; 
+    return 0n;
   }
 
   async getAvailablePools( tokenA: Token, tokenB: Token ): Promise<number[]> {
@@ -540,7 +540,7 @@ export class UniswapSwapManager extends SwapManager {
     for ( const fee of feeTiers ) {
       try {
         const poolAddress = await this.getPoolAddress( tokenA, tokenB, fee );
-        if ( poolAddress !== ethers.ZeroAddress ) {
+        if ( poolAddress !== ethersv6.ZeroAddress ) {
           availablePools.push( fee );
         }
       } catch ( error ) {
@@ -558,7 +558,7 @@ export class UniswapSwapManager extends SwapManager {
     return poolAddress;
   }
 
-  // WIP - Not yet implemented - Liquidity consideration of pools. 
+  // WIP - Not yet implemented - Liquidity consideration of pools.
   // async getQuoteWithLiquidityConsideration(
   //   tokenIn: Token,
   //   tokenOut: Token,
@@ -618,7 +618,7 @@ export class UniswapSwapManager extends SwapManager {
   //       ...( isExactIn ? { amountIn: amount } : { amount: amount } ),
   //     };
 
-  //     const quoterContract = new ethers.Contract(
+  //     const quoterContract = new ethersv6.Contract(
   //       ADDRESSES.UNISWAP_V3_QUOTER,
   //       IQuoterV2ABI.abi,
   //       this.providerNative
@@ -671,12 +671,12 @@ export class UniswapSwapManager extends SwapManager {
   // async getPoolLiquidity( tokenA: Token, tokenB: Token, fee: number ): Promise<BigNumberish | null> {
   //   try {
   //     const poolAddress = await this.getPoolAddress( tokenA, tokenB, fee );
-  //     if ( poolAddress === ethers.ZeroAddress ) {
+  //     if ( poolAddress === ethersv6.ZeroAddress ) {
   //       console.log( `No pool exists for the token pair ${ tokenA.symbol }/${ tokenB.symbol } at fee ${ fee }` );
   //       return null;
   //     }
 
-  //     const poolContract = new ethers.Contract( poolAddress, UNISWAP_POOL_ABI, this.providerNative );
+  //     const poolContract = new ethersv6.Contract( poolAddress, UNISWAP_POOL_ABI, this.providerNative );
   //     const liquidity = await poolContract.liquidity();
   //     return liquidity;
   //   } catch ( error ) {
@@ -702,11 +702,11 @@ export class UniswapSwapManager extends SwapManager {
   ): Promise<SwapPriceData> {
     // Fee should always be calculated based on the 'buy' side
     const feeAmount = this.calculateFee( isExactIn ? quoteAmount : toBigInt( amount ) );
-    
+
     const amountAfterFee = isExactIn ? quoteAmount - feeAmount : quoteAmount + feeAmount; // Adjusted amount after fee
 
-    const formattedAmountIn = Number( ethers.formatUnits( isExactIn ? toBigInt( amount ) : amountAfterFee, tokenIn.decimals ) );
-    const formattedAmountOut = Number( ethers.formatUnits( isExactIn ? amountAfterFee : toBigInt( amount ), tokenOut.decimals ) );
+    const formattedAmountIn = Number( ethersv6.formatUnits( isExactIn ? toBigInt( amount ) : amountAfterFee, tokenIn.decimals ) );
+    const formattedAmountOut = Number( ethersv6.formatUnits( isExactIn ? amountAfterFee : toBigInt( amount ), tokenOut.decimals ) );
     const exchangeRate = formattedAmountOut / formattedAmountIn;
 
     // Fetch USD prices (these should come back as `number`)
@@ -719,7 +719,7 @@ export class UniswapSwapManager extends SwapManager {
       throw new Error( 'Failed to get price from provider' );
     }
 
-    // const feeAmountInTokenOut = ethers.formatUnits( feeAmount, tokenOut.decimals ); // Fee amount in tokenOut
+    // const feeAmountInTokenOut = ethersv6.formatUnits( feeAmount, tokenOut.decimals ); // Fee amount in tokenOut
 
     const feeAmountInUSD = formatFeeToUSD( feeAmount, tokenOut.decimals, priceOut.price );  //feeAmountInTokenOut * priceOut.price; // Always in tokenOut (buy side)
     const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
@@ -765,7 +765,7 @@ export class UniswapSwapManager extends SwapManager {
       marketPriceOut: priceOut.price,
       marketPriceGas: gasPrice.price, // Defaults to ETH
       priceImpactRatio: 0,
-      path: [ tokenIn.isNative ? ethers.ZeroAddress : tokenIn.address, tokenOut.isNative ? ethers.ZeroAddress : tokenOut.address ],
+      path: [ tokenIn.isNative ? ethersv6.ZeroAddress : tokenIn.address, tokenOut.isNative ? ethersv6.ZeroAddress : tokenOut.address ],
       fee,
       feeBasisPoints: this.feeBasisPoints,
       feeAmountPrice: (Number(feeAmount) * priceOut.price) / formattedAmountOut,
@@ -851,7 +851,7 @@ export class UniswapSwapManager extends SwapManager {
 
       // Add value for native token input
       // If tokenIn is native, add the amountIn as value
-      const isNativeInput = tokenIn.toLowerCase() === ethers.ZeroAddress.toLowerCase();
+      const isNativeInput = tokenIn.toLowerCase() === ethersv6.ZeroAddress.toLowerCase();
       if ( isNativeInput ) {
         tx.value = ethersv5.BigNumber.from( amountIn.toString() );
       }
@@ -893,14 +893,14 @@ export class UniswapSwapManager extends SwapManager {
 
   //   try {
   //     const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
-  //     if ( !poolAddress || poolAddress === ethers.ZeroAddress ) {
+  //     if ( !poolAddress || poolAddress === ethersv6.ZeroAddress ) {
   //       throw new Error( 'Pool does not exist' );
   //     }
 
   //     const tokenA = convertToUniswapToken( tokenIn );
   //     const tokenB = convertToUniswapToken( tokenOut );
 
-  //     const poolContract = new ethers.Contract( poolAddress, IUniswapV3PoolABI.abi, this.providerNative );
+  //     const poolContract = new ethersv6.Contract( poolAddress, IUniswapV3PoolABI.abi, this.providerNative );
   //     if ( !poolContract ) throw new Error( 'Pool contract not found' );
 
   //     const [ slot0, liquidity, token0Address, token1Address, tickSpacing, poolFee, tickBitmap, ticks ] = await Promise.all( [
@@ -1017,10 +1017,10 @@ export class UniswapSwapManager extends SwapManager {
 
   //     // Calculate reserves
   //     const token0Reserve = parseFloat(
-  //       ethers.formatUnits( liquidity.toString(), token0.decimals )
+  //       ethersv6.formatUnits( liquidity.toString(), token0.decimals )
   //     );
   //     const token1Reserve = parseFloat(
-  //       ethers.formatUnits( liquidity.toString(), token1.decimals )
+  //       ethersv6.formatUnits( liquidity.toString(), token1.decimals )
   //     );
 
   //     debug_log( 'Token0 reserve:', token0Reserve );
@@ -1104,8 +1104,8 @@ export class UniswapSwapManager extends SwapManager {
   //       token1Price = '0';
   //     }
 
-  //     const token0Reserves = ethers.formatUnits( token0Amount.toString(), tokenIn.decimals );
-  //     const token1Reserves = ethers.formatUnits( token1Amount.toString(), tokenOut.decimals );
+  //     const token0Reserves = ethersv6.formatUnits( token0Amount.toString(), tokenIn.decimals );
+  //     const token1Reserves = ethersv6.formatUnits( token1Amount.toString(), tokenOut.decimals );
 
   //     debug_log( 'token0Reserves:', token0Reserves );
   //     debug_log( 'token1Reserves:', token1Reserves );
@@ -1274,7 +1274,7 @@ export class UniswapSwapManager extends SwapManager {
       to: this.routerContract.target as string,
       data: populatedTx.data,
       value: tokenIn.isNative ? amountIn : 0,
-      from: params.recipient, 
+      from: params.recipient,
       chainId: this.getChainId()
     };
   }
@@ -1315,7 +1315,7 @@ export class UniswapSwapManager extends SwapManager {
         return 0n;
       }
 
-      const tokenContract = new ethers.Contract(
+      const tokenContract = new ethersv6.Contract(
         token.address,
         [ 'function allowance(address,address) view returns (uint256)' ],
         this.providerNative
@@ -1344,15 +1344,15 @@ export class UniswapSwapManager extends SwapManager {
     if ( !this.signerNative ) {
       throw new Error( 'Signer not initialized' );
     }
-    if ( !token.address || token.address === ethers.ZeroAddress ) {
+    if ( !token.address || token.address === ethersv6.ZeroAddress ) {
       throw new Error( 'Invalid token address' );
     }
     const routerAddress = this.getRouterAddress();
-    if ( !routerAddress || routerAddress === ethers.ZeroAddress ) {
+    if ( !routerAddress || routerAddress === ethersv6.ZeroAddress ) {
       throw new Error( 'Invalid router address' );
     }
     // Create token contract
-    const tokenContract = new ethers.Contract(
+    const tokenContract = new ethersv6.Contract(
       token.address,
       [ 'function approve(address,uint256) public returns (bool)' ],
       this.signerNative
@@ -1363,15 +1363,15 @@ export class UniswapSwapManager extends SwapManager {
 
     try {
       // Parse the amount with correct decimals
-      const parsedAmount = ethers.parseUnits( amount, token.decimals );
+      const parsedAmount = ethersv6.parseUnits( amount, token.decimals );
       if ( !parsedAmount ) {
         throw new Error( 'Failed to parse amount' );
       }
 
       // Set gas parameters defaults - these can be adjusted based on network conditions and token approval requirements
       const gasLimit = 100000; // Set an appropriate gas limit value
-      const maxPriorityFeePerGas = ethers.parseUnits( '1.5', 'gwei' ); // Adjust based on network conditions
-      const maxFeePerGas = ethers.parseUnits( '20', 'gwei' ); // Adjust based on network conditions
+      const maxPriorityFeePerGas = ethersv6.parseUnits( '1.5', 'gwei' ); // Adjust based on network conditions
+      const maxFeePerGas = ethersv6.parseUnits( '20', 'gwei' ); // Adjust based on network conditions
 
       // Call approve with gas overrides
       const tx = await tokenContract.approve(
@@ -1560,17 +1560,17 @@ export class UniswapSwapManager extends SwapManager {
           const gasUsed = toBigInt( receipt.gasUsed ) || 0n;
 
           debug_log( 'DF - Gas used:', gasUsed.toString() );
-          
+
           const cummulativeGasUsed = receipt.cumulativeGasUsed ? toBigInt( receipt.cumulativeGasUsed.toString() ) : 0n;
-          
+
           debug_log( 'DF - Cumulative gas used:', cummulativeGasUsed.toString() );
-          
+
           const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
-          
+
           debug_log( 'DF - Effective gas price:', effectiveGasPrice.toString() );
-          
+
           const gasCost = gasUsed * effectiveGasPrice;
-          
+
           debug_log( 'DF - Gas cost:', gasCost, 'Gas used:', gasUsed.toString(), 'Cumulative gas used:', cummulativeGasUsed.toString(), 'Effective gas price:', effectiveGasPrice.toString() );
         } catch ( error ) {
           error_log( 'Error calculating gas cost (informational-transaction):', error );
@@ -1586,7 +1586,7 @@ export class UniswapSwapManager extends SwapManager {
     }
 
     try {
-      const tokenContract = new ethers.Contract(
+      const tokenContract = new ethersv6.Contract(
         tokenOut.address,
         [
           'function transfer(address recipient, uint256 amount) public returns (bool)'
@@ -1611,19 +1611,19 @@ export class UniswapSwapManager extends SwapManager {
       // Use the gas spends that come back and calculate actual gas cost for transaction
       try {
         const gasUsed = toBigInt( receipt.gasUsed ) || 0n;
-        
+
         debug_log( 'DFERC - Gas used:', gasUsed.toString() );
-        
+
         const cummulativeGasUsed = toBigInt( receipt.cumulativeGasUsed.toString() ) || 0n;
-        
+
         debug_log( 'DFERC - Cumulative gas used:', cummulativeGasUsed.toString() );
-        
+
         const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
-        
+
         debug_log( 'DFERC - Effective gas price:', effectiveGasPrice.toString() );
-        
+
         const gasCost = gasUsed * effectiveGasPrice;
-        
+
         debug_log( 'DFERC - Gas cost:', gasCost, 'Gas used:', gasUsed.toString(), 'Cumulative gas used:', cummulativeGasUsed.toString(), 'Effective gas price:', effectiveGasPrice.toString() );
       } catch ( error ) {
         error_log( 'Error calculating gas cost (informational-transfer):', error );
@@ -1643,7 +1643,7 @@ export class UniswapSwapManager extends SwapManager {
     if ( !amount ) throw new Error( 'Amount is required' );
 
     try {
-      const wethContract = new ethers.Contract(
+      const wethContract = new ethersv6.Contract(
         ADDRESSES.WETH,
         [ 'function deposit() public payable' ],
         this.signerNative
@@ -1683,7 +1683,7 @@ export class UniswapSwapManager extends SwapManager {
     if ( !amount ) throw new Error( 'Amount is required' );
 
     try {
-      const wethContract = new ethers.Contract(
+      const wethContract = new ethersv6.Contract(
         ADDRESSES.WETH,
         [
           'function withdraw(uint256 amount) public',

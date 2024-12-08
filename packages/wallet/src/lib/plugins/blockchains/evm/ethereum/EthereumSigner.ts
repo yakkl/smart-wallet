@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumSigner.ts
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 import { type EVMTransactionRequest, type BigNumberish, type TransactionRequest, type TransactionResponse, type TransactionReceipt, type Log } from '$lib/common';
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
@@ -11,7 +11,7 @@ import type { Provider } from '$lib/plugins/Provider';
  * EthereumSigner class extending the Signer class to provide specific implementations for Ethereum.
  */
 export class EthereumSigner extends Signer {
-  private wallet: ethers.Wallet;
+  private wallet: ethersv6.Wallet;
   public readonly provider: Provider | null = null;
 
   /**
@@ -34,11 +34,11 @@ export class EthereumSigner extends Signer {
 
     this.provider = provider;
     const providerNative = provider ? provider.getProvider() : null;
-    this.wallet = new ethers.Wallet( privateKey, providerNative ? providerNative : provider as any );
+    this.wallet = new ethersv6.Wallet( privateKey, providerNative ? providerNative : provider as any );
   }
 
   /**
-   * Converts custom BigNumberish to ethers.BigNumberish (as a hex string)
+   * Converts custom BigNumberish to ethersv6.BigNumberish (as a hex string)
    */
   private toEthersHex( value: BigNumberish | null | undefined ): string | null | undefined {
     if ( value instanceof EthereumBigNumber ) {
@@ -88,7 +88,7 @@ export class EthereumSigner extends Signer {
    * @param value - The value of the typed data.
    * @returns The signed typed data as a string.
    */
-  async signTypedData(domain: ethers.TypedDataDomain, types: Record<string, ethers.TypedDataField[]>, value: Record<string, any>): Promise<string> {
+  async signTypedData(domain: ethersv6.TypedDataDomain, types: Record<string, ethersv6.TypedDataField[]>, value: Record<string, any>): Promise<string> {
     return await this.wallet.signTypedData(domain, types, value);
   }
 
@@ -101,11 +101,11 @@ export class EthereumSigner extends Signer {
    */
   async verifySigner(signerAddress: string, messageToVerify: string, signature: string): Promise<boolean> {
     try {
-      const value = ethers.recoverAddress(ethers.hashMessage(messageToVerify), signature) === signerAddress;
+      const value = ethersv6.recoverAddress(ethersv6.hashMessage(messageToVerify), signature) === signerAddress;
       return value;
     } catch (e) {
       console.log(e);
-      return false; 
+      return false;
     }
   }
 
@@ -119,8 +119,8 @@ export class EthereumSigner extends Signer {
   }
 
   setSigner( provider: Provider ): void {
-    if (!provider) throw new Error("Provider is not provided");    
-    this.wallet = new ethers.Wallet(this.wallet.privateKey, provider.getProvider()); // Replaces the signer with a new one
+    if (!provider) throw new Error("Provider is not provided");
+    this.wallet = new ethersv6.Wallet(this.wallet.privateKey, provider.getProvider()); // Replaces the signer with a new one
   }
 
   async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
@@ -128,7 +128,7 @@ export class EthereumSigner extends Signer {
     return this.ethersTransactionResponseToTransactionResponse(tx);
   }
 
-  private transactionToEthersTransaction(transaction: EVMTransactionRequest): ethers.TransactionRequest {
+  private transactionToEthersTransaction(transaction: EVMTransactionRequest): ethersv6.TransactionRequest {
     return {
       to: transaction.to ?? undefined,
       from: transaction.from ?? undefined,
@@ -150,7 +150,7 @@ export class EthereumSigner extends Signer {
     };
   }
 
-  private async ethersTransactionResponseToTransactionResponse(tx: ethers.TransactionResponse): Promise<TransactionResponse> {
+  private async ethersTransactionResponseToTransactionResponse(tx: ethersv6.TransactionResponse): Promise<TransactionResponse> {
     return {
       hash: tx.hash,
       to: tx.to ?? '',
@@ -179,8 +179,8 @@ export class EthereumSigner extends Signer {
       }
     };
   }
-  
-  private async ethersTransactionReceiptToTransactionReceipt(receipt: ethers.TransactionReceipt): Promise<TransactionReceipt> {
+
+  private async ethersTransactionReceiptToTransactionReceipt(receipt: ethersv6.TransactionReceipt): Promise<TransactionReceipt> {
     return {
       to: receipt.to ?? '',
       from: receipt.from,

@@ -18,7 +18,7 @@ import type { Blockchain, Wallet } from '$lib/plugins';
 import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
 import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
 import type { Provider } from '$plugins/Provider';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 const DEFAULT_GAS_ESTIMATES = {
   ERC20_APPROVE: 46000n,
@@ -156,7 +156,7 @@ export class EthereumGasProvider implements GasProvider {
       return 'Unable to estimate gas';
     }
   }
-  
+
   // First one was tested after bottom one
   // async estimateSwapGasFee(
   //   tokenIn: SwapToken,
@@ -327,7 +327,7 @@ export class EthereumGasProvider implements GasProvider {
   async getCurrentGasPriceInGwei(factor: number = 1): Promise<number> {
     const gasPrice = await this.provider.getGasPrice();
     // Convert from wei to gwei (1 gwei = 10^9 wei)
-    return Number( ethers.formatUnits( gasPrice, "gwei" ) ) * factor;
+    return Number( ethersv6.formatUnits( gasPrice, "gwei" ) ) * factor;
   }
 
   async getGasPriceFromEtherscan( apiKey: string ): Promise<number> {
@@ -376,14 +376,14 @@ export class EthereumGasProvider implements GasProvider {
     const gasPriceInEth = gasPriceInGwei * 1e-9;
 
     debug_log( 'gasEstimate, gasPriceGwei, gasPriceInEth, ethPriceInUsd :==>>', { gasEstimate, gasPriceInGwei, gasPriceInEth, ethPriceInUsd } );
-    
+
     // Calculate the gas cost in ETH
     const gasEstimateInEth = Number(gasEstimate) * gasPriceInEth;  // May want to stay as bigint
 
     debug_log( 'gasEstimateInEth :==>>', gasEstimateInEth );
 
     // Calculate the gas cost in USD
-    const gasEstimateInUsd = gasEstimateInEth * ethPriceInUsd; 
+    const gasEstimateInUsd = gasEstimateInEth * ethPriceInUsd;
 
     return gasEstimateInUsd;
   }

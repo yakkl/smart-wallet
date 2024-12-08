@@ -5,9 +5,9 @@
     value?: string; // Calling this function will cause the modal to be shown and the caller should bind:show to a variable and pass it in.
   }
 
-  let { show = false, title = 'Verifying', value = 'Credentials and Loading...' }: Props = $props();
+  let { show = $bindable(false), title = 'Verifying', value = 'Credentials and Loading...' }: Props = $props();
 
-  
+
 </script>
 
 

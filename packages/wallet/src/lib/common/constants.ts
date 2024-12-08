@@ -62,7 +62,7 @@ export const STORAGE_YAKKL_CURRENTLY_SELECTED = "yakklCurrentlySelected";
 export const STORAGE_YAKKL_REGISTERED_DATA = "yakklRegisteredData";
 
 export const STORAGE_YAKKL_PROFILE = "profile";
-export const STORAGE_YAKKL_PROFILES = "profiles";  
+export const STORAGE_YAKKL_PROFILES = "profiles";
 export const STORAGE_YAKKL_ACCOUNTS = "yakklAccounts";
 export const STORAGE_YAKKL_PRIMARY_ACCOUNTS = "yakklPrimaryAccounts";
 export const STORAGE_YAKKL_CONTACTS = "yakklContacts";
@@ -83,7 +83,7 @@ export const PATH_REGISTER = "/register/Register";
 export const PATH_LOGIN = "/login/Login";
 export const PATH_LOCK = "/lock";
 export const PATH_CONTACTS = "/contacts";
-export const PATH_WELCOME = "/welcome/Welcome";
+export const PATH_WELCOME = "/welcome/welcome";
 export const PATH_DASHBOARD = "/dashboard";
 export const PATH_LOGOUT = "/logout";
 export const PATH_IMPORT_EMERGENCYKIT = "/import/import-emergencykit";

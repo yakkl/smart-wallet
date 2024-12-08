@@ -2,7 +2,7 @@
 
 
 import fs from 'fs';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 import path from 'path';
 
 // Base directory
@@ -35,7 +35,7 @@ htmlFilePaths.forEach(htmlFilePath => {
     const html = fs.readFileSync(htmlFilePath, 'utf-8');
 
     // Load the HTML into cheerio
-    const $ = cheerio.load(html);
+    const $ = load(html);
 
     // Find the script tag, get its contents, and remove it
     $('script').each((i, script) => {

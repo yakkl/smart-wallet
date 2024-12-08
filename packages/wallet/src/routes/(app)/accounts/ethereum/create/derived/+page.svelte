@@ -19,7 +19,7 @@
   let settings: Settings | null;
   let id: string = '';
   let registered: YakklRegisteredData;
-  let email: string = $state(''); 
+  let email: string = $state('');
   let userName: string = $state('');
   let primaryAccountName: string = $state('');
   let accountName: string = $state('');
@@ -38,7 +38,7 @@
   let registeredType: string = $state();
   let error = $state(false);
   let errorValue: string = $state();
-  
+
 
   onMount(async () => {
     try {
@@ -52,11 +52,11 @@
         if (!currentlySelected || !currentlySelected.data) {
           goto(PATH_WELCOME);
         }
-        
+
         if (isEncryptedData(currentlySelected.data)) {
           await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
             currentlySelected.data = result as CurrentlySelectedData;
-          });  
+          });
         }
 
         profile = await getProfile();
@@ -115,7 +115,7 @@
 
       await createSubportfolioAccount(yakklMiscStore, currentlySelected, profile).then(async (result) => {
         try {
-          currentlySelected = deepCopy(result); 
+          currentlySelected = deepCopy(result);
           if (isEncryptedData(currentlySelected.data)) {
             await decryptData(currentlySelected.data, yakklMiscStore).then(result => {
               currentlySelected.data = result as CurrentlySelectedData;
@@ -148,7 +148,7 @@
           address = yakklPrimaryAccount.address;
           wordCount = (yakklPrimaryAccount.data as PrimaryAccountData).wordCount as number;
           mnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
-          
+
           derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${yakklPrimaryAccount.index}'/0/${yakklPrimaryAccount.subIndex}`;
           displayDate = new Date(createDate);
 
@@ -183,7 +183,7 @@
     }
   }
 
-  
+
   async function handleDownload() {
     let ekAccountData: EmergencyKitAccountData = {
       id: id,
@@ -232,7 +232,7 @@
       <svg aria-hidden="true" class="mx-auto mb-4 w-14 h-14 text-green-600 dark:text-gray-200 fill-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
       </svg>
-            
+
       <h3 class="mb-2 text-lg font-normal text-green-700 dark:text-gray-400"><span class="font-bold">SUCCESS - </span> Additional Wallet Account Created!</h3>
       <div class="text-left">
         <h3 class="mb-1 text-lg font-bold text-green-900 ">(ONLY available for Pro version)</h3>
@@ -255,11 +255,11 @@
     <div class="text-center">
       <span class="font-bold mt-10 text-xl">Creating {blockchain} Subportfolio Account...</span>
     </div>
-    <div class="text-center mt-10"><Spinner size="{10}"/></div>
+    <div class="text-center mt-10"><Spinner size={10}></Spinner></div>
   </div>
-{:then _} 
+{:then _}
 
-<div class="print:hidden min-h-[40rem] mx-2"> 
+<div class="print:hidden min-h-[40rem] mx-2">
   <div class="relative mt-1">
     <main class="p-2 max-h-[900px] rounded-xl bg-base-100 overflow-scroll border-2 border-stone-700 border-r-stone-700/75 border-b-slate-700/75">
 
@@ -289,7 +289,7 @@
       <div class="print:hidden m-1 mt-12 mb-[12rem] rounded-t-lg bg-base-100 text-base-content overflow-scroll">
         <h4 class="text-center font-extrabold text-lg text-gray-300 mt-5">VERY IMPORTANT!</h4>
         <h4 class="text-center font-extrabold text-lg text-gray-300 mb-4">PRINT THIS PAGE and COPY YOUR SECRET PHRASE SOMEWHERE SAFE!</h4>
-      
+
         <div class="ml-2 mr-2 text-center">
           <h3 class="text-lg font-medium leading-6 text-gray-300">{blockchain} - Subportfolio Account Secrets Emergency Kit</h3>
           <br/>
@@ -348,7 +348,7 @@
         <br/>
         <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> The {wordCount} words MUST be in the order above! DO NOT mix the order up if you need to enter them to recover your account!</span>
         <br/>
-        <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> To safely destroy this document, redact and shred or burn it!</span>     
+        <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> To safely destroy this document, redact and shred or burn it!</span>
       </div>
 
     </main>
@@ -437,7 +437,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- {:else}
   <div class="hidden print:block">
     <div class="ml-1 mr-1 mb-[10rem] print:ml-0 print:mr-0 w-[1000px] bg-white overscroll-none overflow-scroll">

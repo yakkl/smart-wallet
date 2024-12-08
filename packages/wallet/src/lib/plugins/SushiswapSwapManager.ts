@@ -10,7 +10,7 @@ import type { AbstractContract } from '$plugins/Contract';
 import type { Token } from '$plugins/Token';
 import { EVMToken } from './tokens/evm/EVMToken';
 import { ADDRESSES } from './contracts/evm/constants-evm';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 const SUSHISWAP_ROUTER_ABI = [
   'function getAmountsOut(uint amountIn, address[] memory path) public view returns (uint[] memory amounts)',
@@ -33,7 +33,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   }
 
   async estimateSwapGas(swapRouterAddress: string, swapParams: SwapParams): Promise<bigint> {
-    return 0n;    
+    return 0n;
   }
 
   approveToken( token: Token, amount: string ): Promise<TransactionReceipt> {
@@ -67,9 +67,9 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const path = [ tokenIn.address, tokenOut.address ];
     const pairAddress = await this.getPairAddress( tokenIn.address, tokenOut.address );
 
-    return pairAddress !== ethers.ZeroAddress;
+    return pairAddress !== ethersv6.ZeroAddress;
   }
-  
+
   getRouterAddress(): string | null {
     if ( !this.router ) return null;
     return ''; //this.router.address;
@@ -203,7 +203,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     // Get pair address from SushiSwap factory
     const pairAddress = await this.getPairAddress( actualTokenA.address, actualTokenB.address );
 
-    if ( pairAddress === ethers.ZeroAddress ) {
+    if ( pairAddress === ethersv6.ZeroAddress ) {
       throw new Error( 'Pool does not exist' );
     }
 
@@ -318,8 +318,8 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const priceA = await this.getTokenUSDPrice( tokenA );
     const priceB = await this.getTokenUSDPrice( tokenB );
 
-    const valueA = Number( ethers.formatUnits( reserveA.toString(), tokenA.decimals ) ) * priceA;
-    const valueB = Number( ethers.formatUnits( reserveB.toString(), tokenB.decimals ) ) * priceB;
+    const valueA = Number( ethersv6.formatUnits( reserveA.toString(), tokenA.decimals ) ) * priceA;
+    const valueB = Number( ethersv6.formatUnits( reserveB.toString(), tokenB.decimals ) ) * priceB;
 
     return valueA + valueB;
   }
@@ -384,7 +384,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   //   feeRecipient: string
   // ): Promise<TransactionResponse> {
   //   throw new Error("Method not implemented.");
-    
+
   // }
 }
 
@@ -435,7 +435,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
 //     if( !tokenIn || !tokenOut || !amountIn ) {
 //       throw new Error( 'Invalid token or amount' );
 //     }
-    
+
 //     const path = [ tokenIn.address, tokenOut.address ];
 //     const amounts = await this.router.call( 'getAmountsOut', amountIn, path );
 //     const amountOut = amounts[ 1 ];

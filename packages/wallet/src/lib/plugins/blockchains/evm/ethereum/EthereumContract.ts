@@ -3,20 +3,20 @@ import { AbstractContract } from '$plugins/Contract';
 import { type BigNumberish, type TransactionRequest, type TransactionResponse } from '$lib/common';
 import type { Provider } from '$plugins/Provider';
 // import type { Signer } from '$plugins/Signer';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 import { EthersConverter } from '$plugins/utilities/EthersConverter';
-import type { FunctionFragment, EventFragment } from 'ethers';
+import type { FunctionFragment, EventFragment } from 'ethers-v6';
 
 export class EthereumContract extends AbstractContract {
-  private contract: ethers.Contract;
-  interface: ethers.Interface;
+  private contract: ethersv6.Contract;
+  interface: ethersv6.Interface;
 
   // Added providerNative to the constructor - may need to be removed
-  constructor ( address: string, abi: any[], provider: Provider ) { 
+  constructor ( address: string, abi: any[], provider: Provider ) {
     super( address, abi, provider );
 
     // Create contract instance with the given provider or fallback to default provider
-    this.contract = new ethers.Contract(
+    this.contract = new ethersv6.Contract(
       address,
       abi,
       provider.getSignerNative()
@@ -26,7 +26,7 @@ export class EthereumContract extends AbstractContract {
       throw new Error( 'Invalid contract' );
     }
 
-    this.interface = new ethers.Interface( abi );
+    this.interface = new ethersv6.Interface( abi );
     if ( !this.interface ) {
       throw new Error( 'Invalid interface' );
     }
@@ -158,7 +158,7 @@ export class EthereumContract extends AbstractContract {
   // WIP
   //   async supportsPermit( tokenAddress: string ) {
   //   try {
-  //     const token = new ethers.Contract( tokenAddress, [
+  //     const token = new ethersv6.Contract( tokenAddress, [
   //       "function permit(address,address,uint256,uint256,uint8,bytes32,bytes32)"
   //     ], this.provider?.getProvider() );
   //     return !!( await token.estimateGas.permit() ); // If estimation does not revert, permit is likely supported
@@ -169,7 +169,7 @@ export class EthereumContract extends AbstractContract {
 
   // WIP
   //   async permitAndApprove( token, owner, spender, value, nonce, deadline, v, r, s, signer ) {
-  //   const tokenContract = new ethers.Contract( token, [
+  //   const tokenContract = new ethersv6.Contract( token, [
   //     "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)"
   //   ], signer );
 
