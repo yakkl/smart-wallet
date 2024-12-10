@@ -1,14 +1,13 @@
 <script lang="ts">
-  import type { SwapPriceProvider, SwapToken } from '$lib/common/interfaces';
+  import type { SwapToken } from '$lib/common/interfaces';
 	import type { BigNumberish } from '$lib/common';
 	import type { Provider } from '$lib/plugins/Provider';
 	import type { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
 	import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
 	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
-	import type { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
 	import Swap from './Swap.svelte';
 
-  
+
   interface Props {
     show?: boolean;
     fundingAddress: string;

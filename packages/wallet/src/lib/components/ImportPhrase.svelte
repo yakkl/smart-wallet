@@ -1,7 +1,5 @@
 <!-- ImportPhrase.svelte -->
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import { browser as browserSvelte } from '$app/environment';
   import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from 'svelte-forms-lib';
@@ -489,7 +487,7 @@
         A bad actor could take the content of your wallet if they have access to your Private Key or Secret Recovery Phrase!
         This process will restore all of the accounts that were created by YAKKL only! If you imported existing private keys from another wallet then you will need to do so again.
       </p>
-      <form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
+      <form onsubmit={handleSubmit} class="space-y-4">
         <div>
           <label for="words" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Secret Recovery Phrase Length</label>
           <select id="words" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={selected} onchange={hideShowWords}>

@@ -676,7 +676,7 @@
 <div use:confetti></div>
 {/if}
 
-<ErrorNoAction bind:show={error} bind:value={errorValue} />
+<ErrorNoAction bind:show={error} value={errorValue} />
 
 <!-- <div class="modal" class:modal-open={error}>
   <div class="modal-box relative">

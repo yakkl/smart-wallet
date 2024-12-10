@@ -28,8 +28,6 @@
   // let showPin = false;
   // let pinValue = "";
 
-  debug_log('Welcome Page');
-
   onMount(() => {
     try {
       if (browserSvelte) {

@@ -1,7 +1,5 @@
 <!-- AccountForm.svelte -->
 <script lang="ts">
-  import { run, preventDefault } from 'svelte/legacy';
-
   import { createForm } from 'svelte-forms-lib';
   import { ClipboardIcon } from 'svelte-feather-icons';
   import * as yup from 'yup';
@@ -18,7 +16,7 @@
 
   // Not using onCancel here but letting it fall through to the Modal component since we don't need to do anything special
   // export let onCancel: () => void = () => {show = false};
-  
+
   const { form, errors, handleChange, handleSubmit, updateInitialValues } = createForm({
     initialValues: {
       name: '',
@@ -56,8 +54,8 @@
   function copyAddress(address: string) {
     navigator.clipboard.writeText(address);
   }
-  
-  run(() => {
+
+  $effect(() => {
     if (account) {
       updateInitialValues({
         name: account.name,
@@ -71,7 +69,7 @@
 </script>
 
 <Modal bind:show title={account ? 'Edit Account' : 'Add Account'}>
-  <form onsubmit={preventDefault(handleSubmit)} class="space-y-4 p-6">
+  <form onsubmit={handleSubmit} class="space-y-4 p-6">
     <div>
       <!-- svelte-ignore a11y_label_has_associated_control -->
       <label class="block text-sm font-medium text-gray-700">Address</label>
@@ -91,7 +89,7 @@
         </button>
       </div>
     </div>
-    
+
     <div>
       <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
       <input type="text" id="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.name} onchange={handleChange} />

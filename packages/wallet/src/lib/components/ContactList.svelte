@@ -95,7 +95,7 @@
 
 <ContactForm
   bind:show={showEditModal}
-  bind:contact={selectedContact}
+  contact={selectedContact}
   onSubmit={onContactUpdate}
 />
 

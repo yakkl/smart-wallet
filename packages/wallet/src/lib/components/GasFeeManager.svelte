@@ -7,7 +7,7 @@
   import { Line } from 'svelte-chartjs';
 
   // TODO: Implement the GasFeeManager component to pick from ranges of gas fees
-  
+
   let gasEstimate: GasEstimate = $state();
   let historicalData: HistoricalGasData[] = $state();
   let predictions: GasPrediction[] = $state();
@@ -67,13 +67,13 @@
 <div>
   <h2>Gas Fee Manager</h2>
   <button onclick={updateGasEstimate}>Refresh Gas Estimate</button>
-  
+
   {#if gasEstimate}
   <p>Estimated Gas Limit: {BigNumber.from(gasEstimate.gasLimit).toString()}</p>
   <p>Base Fee: {BigNumber.from(gasEstimate.feeEstimate.baseFee).toString()}</p>
   <p>Priority Fee: {BigNumber.from(gasEstimate.feeEstimate.priorityFee).toString()}</p>
   <p>Total Fee: {BigNumber.from(gasEstimate.feeEstimate.totalFee).toString()}</p>
- 
+
     <input type="number" bind:value={customGasPrice} placeholder="Custom Gas Price" />
     <input type="number" bind:value={customPriorityFee} placeholder="Custom Priority Fee" />
     <button onclick={applyCustomGasFees}>Apply Custom Fees</button>

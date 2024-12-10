@@ -23,6 +23,6 @@
   }
 </script>
 
-<Modal bind:show={show} bind:onCancel={onCancel} bind:onClose={onClose} title="Emergency Kit">
-  <EmergencyKit mode={mode} onComplete={onComplete} bind:onCancel={onCancel}/>
+<Modal bind:show={show} onCancel={onCancel} onClose={onClose} title="Emergency Kit">
+  <EmergencyKit mode={mode} onComplete={onComplete} onCancel={onCancel}/>
 </Modal>

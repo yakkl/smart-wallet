@@ -7,12 +7,8 @@
   import { Label } from "$lib/components/ui/label";
   import { profileStore, yakklPreferencesStore } from '$lib/common/stores';
   import type { Profile, ProfileData } from '$lib/common/interfaces';
+  // import type { BuilderReturn } from '@melt-ui/svelte';
 
-
-  // EXPERIMENTAL: This is a work in progress and is not yet functional
-  // This component is intended to be used as a modal for editing the user's profile
-
-  
   let profile: Profile = $state();
   let profileData: ProfileData = $state();
 
@@ -121,12 +117,11 @@
       </div>
     </div>
     <Sheet.Footer>
-      <Sheet.Close asChild >
-        {#snippet children({ builder })}
-                <Button builders={[builder]} type="submit" on:click={handleSubmit}>Save changes</Button>
-                      {/snippet}
-            </Sheet.Close>
+      <Sheet.Close let:builder>
+        <Button {builder} type="submit" on:click={handleSubmit}>
+          Save changes
+        </Button>
+      </Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
-

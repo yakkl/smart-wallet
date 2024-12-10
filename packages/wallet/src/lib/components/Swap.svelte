@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { browser as browserSvelte } from '$app/environment';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
@@ -131,11 +129,6 @@
   let swapManagerName = '';
   let pricesInterval: NodeJS.Timeout;
   let multiHop = $state(false);
-
-
-
-
-
 
   // Initialize
   onMount(async () => {
@@ -634,16 +627,16 @@
     resetValues = true;
   }
   // Reactive statements
-  run(() => {
+  $effect(() => {
     if (deadline || slippageTolerance || poolFee) {
       debouncedGetQuote();
     }
   });
-  run(() => {
+  $effect(() => {
     multiHop = $swapPriceDataStore.multiHop;
   });
   let isEthWethSwap = $derived((tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH') || (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH'));
-  run(() => {
+  $effect(() => {
     if (tokenIn && fromAmount) {
       checkBalance(tokenIn, fromAmount, fundingAddress); // Only need the selling token balance to verify if there are enough funds but we also need to verify ETH for gas
       if (gasToken && $swapPriceDataStore.marketPriceGas === 0) {
@@ -666,7 +659,7 @@
       }
     }
   });
-  run(() => {
+  $effect(() => {
     if (tokenOut && toAmount) {
       // Only need to update if we have a tokenOut and the market price is 0
       if (tokenOut.symbol && swapManager && $swapPriceDataStore.marketPriceOut === 0) {

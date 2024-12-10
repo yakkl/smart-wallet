@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
@@ -36,13 +34,11 @@
   let userInput = $state(''); // Temporary user input
   let formattedAmount = $state(''); // Formatted display amount
 
-
-
   // Amount formatting utility
   function formatAmount(amount: bigint, decimals: number): string {
     if (amount === 0n) return '';
 
-    const formattedValue = ethers.formatUnits(amount, decimals);
+    const formattedValue = ethersv6.formatUnits(amount, decimals);
 
     // Remove trailing zeros after decimal point
     const [integerPart, decimalPart] = formattedValue.split('.');
@@ -108,11 +104,11 @@
       userInput = '';
     }
   }
-  run(() => {
+  $effect(() => {
     swapPriceData = $swapPriceDataStore;
   });
   // Reset handling
-  run(() => {
+  $effect(() => {
     if (resetValues) {
       userInput = '';
       formattedAmount = '';
@@ -120,7 +116,7 @@
     }
   });
   // Amount formatting from store updates
-  run(() => {
+  $effect(() => {
     if (!userInput && toBigInt(swapPriceData.amountOut) > 0n) {
       formattedAmount = formatAmount(
         toBigInt(swapPriceData.amountOut),

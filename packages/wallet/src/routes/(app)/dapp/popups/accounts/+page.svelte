@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run, preventDefault } from 'svelte/legacy';
-
   import {browser as browserSvelte} from '$app/environment';
   import { goto } from '$app/navigation';
   import { Checkbox, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, TableSearch } from 'flowbite-svelte';
@@ -126,7 +124,7 @@
   // })();
 
 
-  run(() => {
+  $effect(() => {
     try {
       filteredAddresses = addresses.has(searchTerm) ? addresses : new Map([...addresses].filter(([k, v]) => v.name.toLowerCase().includes(searchTerm.toLowerCase())));
       filteredAddressesArray = Array.from(filteredAddresses.values());
@@ -633,7 +631,7 @@ async function close() {
 <div class="my-4">
   <div class="flex space-x-2 justify-center">
     <button
-      onclick={preventDefault(handleReject)}
+      onclick={handleReject}
       class="btn-sm btn-accent uppercase rounded-full"
       aria-label="Cancel">
       Reject
@@ -642,7 +640,7 @@ async function close() {
     <button
       type="submit"
       id="recover"
-      onclick={preventDefault(handleConfirm)}
+      onclick={handleConfirm}
       class="btn-sm btn-primary uppercase rounded-full ml-2"
       aria-label="Confirm">
       Approve

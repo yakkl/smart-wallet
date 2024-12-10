@@ -19,7 +19,7 @@
   let showClearWarning = $state(false);
 
   $yakklGPTRunningStore = false;
-  
+
   if (browserSvelte) {
     try {
       clipboard = new ClipboardJS('.clip');
@@ -31,7 +31,7 @@
   onMount(async () => {
     try {
       if ($yakklGPTKeyStore === null || $yakklGPTKeyStore === undefined) {
-        await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {          
+        await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {
           if (results) {
             $yakklGPTKeyStore = results;
           } else {
@@ -53,7 +53,7 @@
 
   async function storeChats() {
     try {
-      await setYakklChatsStorage(messages);  
+      await setYakklChatsStorage(messages);
     } catch (e) {
       console.log(e);
     }
@@ -73,9 +73,9 @@
       $yakklGPTRunningStore = true;
 
       messages = [...messages, {
-        text: input, 
-        sender: 'user', 
-        timestamp: Date.now().toString(), 
+        text: input,
+        sender: 'user',
+        timestamp: Date.now().toString(),
         usage: {},
         id: '',
         version: VERSION,
@@ -84,19 +84,19 @@
       }];
 
       response = await fetchGPT4Response(input);
-      
+
       let formattedResponse = response?.content?.replace(/[\n]+/g, '<br/><br/>');
       messages = [...messages, {
-        text: formattedResponse ? formattedResponse : '', 
-        sender: 'yak', 
-        timestamp: Date.now().toString(), 
+        text: formattedResponse ? formattedResponse : '',
+        sender: 'yak',
+        timestamp: Date.now().toString(),
         usage: response?.usage,
         id: '',
         version: VERSION,
         createDate: dateNow,
         updateDate: dateNow
       }];
-      
+
       $yakklChatsStore = messages;
       await storeChats();
     } catch(e: any) {
@@ -126,7 +126,7 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <ErrorNoAction bind:show={error} bind:value={errorValue} title="ERROR!" />
+  <ErrorNoAction bind:show={error} value={errorValue} title="ERROR!" />
 
   <div class="grid grid-cols-2 gap-4 mb-4 px-2">
     <button class="btn btn-sm btn-outline w-full" onclick={handlePrint}>
@@ -135,11 +135,11 @@
     <button class="btn btn-sm btn-outline btn-error w-full" onclick={() => showClearWarning = true}>
       Clear messages
     </button>
-    <button 
-      class="btn btn-sm btn-primary col-span-2 w-full" 
+    <button
+      class="btn btn-sm btn-primary col-span-2 w-full"
       onclick={() => handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=yakkl_gpt&utm_content=knowledge_base&utm_term=extension')}
     >
-      YAKKL® Knowledge base 
+      YAKKL® Knowledge base
     </button>
   </div>
 

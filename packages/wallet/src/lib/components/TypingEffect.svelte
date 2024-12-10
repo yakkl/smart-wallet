@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   interface Props {
     text?: string;
     typingSpeed?: number;
@@ -23,8 +21,8 @@
     }
   }
 
-  run(() => {
-    text, type();
+  $effect(() => {
+    type();
   });
 </script>
 

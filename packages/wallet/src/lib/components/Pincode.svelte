@@ -117,7 +117,7 @@
 </script>
 
 <div class="relative {className}">
-  <Modal bind:show={show} title="Pincode Change" on:close={closeModal}>
+  <Modal bind:show={show} title="Pincode Change" onClose={closeModal}>
     <div class="p-6 text-primary-light dark:text-primary-dark">
       <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your current pincode and then enter your new pincode. Thank you.</p>
       <div class="relative mb-4">

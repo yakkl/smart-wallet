@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
@@ -111,11 +109,11 @@
       formattedAmount = userInput;
     }
   }
-  run(() => {
+  $effect(() => {
     swapPriceData = $swapPriceDataStore;
   });
   // Reset handling
-  run(() => {
+  $effect(() => {
     if (resetValues) {
       userInput = '';
       formattedAmount = '';
@@ -123,7 +121,7 @@
     }
   });
   // Amount formatting from store updates
-  run(() => {
+  $effect(() => {
     if (!userInput && toBigInt(swapPriceData.amountIn) > 0n) {
       formattedAmount = formatAmount(
         toBigInt(swapPriceData.amountIn),

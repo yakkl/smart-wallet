@@ -37,7 +37,7 @@ const config = {
         throw new Error(`${status} on ${path}`);
       },
     },
-    
+
 		appDir: 'app',
 	},
 };

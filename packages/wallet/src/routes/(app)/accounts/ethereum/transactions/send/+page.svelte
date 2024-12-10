@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import { browser as browserSvelte } from '$app/environment';
 	import { goto } from "$app/navigation";
 	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
@@ -1003,7 +1001,7 @@
   //////// Toast
 
 
-	run(() => {
+	$effect(() => {
 		if ($errors.toAddress ||
 			$errors.hexData ||
 			$errors.maxFeePerGasOverride ||
@@ -1014,7 +1012,7 @@
 				errorFields = false;
 			}
 	});
-	run(() => {
+	$effect(() => {
 		try {
 			txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
 			txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
@@ -1123,15 +1121,11 @@
 <Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
 <Toast color="indigo" transition={slide} bind:toastStatus>
-  {#snippet icon()}
-
-	    {#if toastType === 'success'}
-	    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-	      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-	    </svg>
-	    {/if}
-
-	{/snippet}
+  {#if toastType === 'success'}
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  {/if}
   {toastMessage}
 </Toast>
 
@@ -1146,7 +1140,7 @@
 	</h2>
 
 	<hr class="mb-0.5 mt-0.5" />
-		<form class="" onsubmit={preventDefault(handleSubmit)}>
+		<form class="" onsubmit={handleSubmit}>
 
 			<Tabs defaultClass="flex flex-wrap justify-center space-x-2 h-9"
 				activeClasses="px-4 text-white border-b-2 animate-pulse text-lg border-purple-300 mt-2 font-extrabold dark:text-blue-500 dark:border-blue-500"
@@ -1267,7 +1261,7 @@
 					<div class="mt-2">
 						<button
 							id="send"
-							onclick={preventDefault(handleSendRequest)}
+							onclick={handleSendRequest}
 							class="inline-block h-10 px-7 md:py-3 py-2 mt-.5 bg-indigo-600 text-gray-300 font-bold
 							text-large leading-snug uppercase rounded-md shadow-md hover:bg-indigo-700
 							hover:shadow-md focus:bg-indogo-700 focus:shadow-md focus:outline-none focus:ring-0
@@ -1433,7 +1427,7 @@
 						<Hr class="my-4 mx-auto md:my-10 w-48 h-1" />
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_interactive_supports_focus -->
-						<div class="text-center mt-1 w-full flex flex-col mx-0" role="button" onclick={preventDefault(() => handleOpenAddress($yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/address/' + address))}>
+						<div class="text-center mt-1 w-full flex flex-col mx-0" role="button" onclick={() => handleOpenAddress($yakklCurrentlySelectedStore?.shortcuts.network.explorer + '/address/' + address)}>
 							<div class="flex flex-row">
 								<div class="flex flex-col">FULL history for this account can be found here:</div>
 								<div class="flex flex-col">
@@ -1447,7 +1441,6 @@
 				</TabItem>
 
 				<TabItem id="fees" open={feesTabOpen} on:click={() => {handleCurrentTab("feesTab")}} style={$errors.maxPriorityFeePerGasOverride? "color:red" : $errors.maxFeePerGasOverride ? "color:red": ""} title="Fees">
-					<!-- svelte-ignore missing_declaration -->
 					<Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGas" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Estimated Gas Fee</h3>
 						<div class="grid grid-cols-4 gap-2">
@@ -1459,7 +1452,6 @@
 						<p class="py-2">The default value is the estimated Gas Fee from the blockchain. The Gas Fee is a transaction cost that can vary based on network traffic and validators. This fee can be edited if you desired. Any lower fee entered could poorly impact the transaction processing time.</p>
 					</Popover>
 
-					<!-- svelte-ignore missing_declaration -->
 					<Popover class="text-sm z-10" triggeredBy="#maxFeePerGas" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Gas Fee Limit (MAX)</h3>
 						<div class="grid grid-cols-4 gap-2">
@@ -1478,7 +1470,7 @@
 						</div>
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_interactive_supports_focus -->
-						<div role="button" onclick={preventDefault(() => handleOpenInTab('https://www.blocknative.com/gas-estimator?utm_source=yakkl'))} class="flex flex-row mb-2 -mt-1 text-gray-100 items-center justify-center">
+						<div role="button" onclick={() => handleOpenInTab('https://www.blocknative.com/gas-estimator?utm_source=yakkl')} class="flex flex-row mb-2 -mt-1 text-gray-100 items-center justify-center">
 							<div class="flex flex-row underline">Transaction "Gas" Fee Tracker</div>
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="flex flex-row ml-2 w-4 h-4">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -1494,7 +1486,7 @@
 						<div class="grid grid-cols-3 gap-2 text-gray-100">
 							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<!-- svelte-ignore a11y_interactive_supports_focus -->
-							<div id="priority" role="button" onclick={preventDefault(() => {handleGasSelect('priority')})} class="{priorityClass} border-green-500 rounded-md shadow h-[10rem]">
+							<div id="priority" role="button" onclick={() => {handleGasSelect('priority')}} class="{priorityClass} border-green-500 rounded-md shadow h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->
@@ -1524,7 +1516,7 @@
 
 							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<!-- svelte-ignore a11y_interactive_supports_focus -->
-							<div id="market" role="button" onclick={preventDefault(() => {handleGasSelect('market')})} class="{marketClass} border-yellow-500 rounded-md shadow-xl h-[10rem]">
+							<div id="market" role="button" onclick={() => {handleGasSelect('market')}} class="{marketClass} border-yellow-500 rounded-md shadow-xl h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->
@@ -1554,7 +1546,7 @@
 
 							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<!-- svelte-ignore a11y_interactive_supports_focus -->
-							<div id="low" role="button" onclick={preventDefault(() => {handleGasSelect('low')})} class="{lowClass} border-amber-500 rounded-md shadow h-[10rem]">
+							<div id="low" role="button" onclick={() => {handleGasSelect('low')}} class="{lowClass} border-amber-500 rounded-md shadow h-[10rem]">
 								<div class="flex flex-col items-center justify-center">
 									<div class="flex-row">
 										<!-- Maybe an icon -->

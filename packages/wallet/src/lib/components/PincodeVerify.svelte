@@ -88,7 +88,7 @@
 </script>
 
 <div class="relative {className}">
-  <Modal bind:show={show} title="Pincode Authorization" on:close={closeModal}>
+  <Modal bind:show={show} title="Pincode Authorization" onClose={closeModal}>
     <div class="p-6 text-primary-light dark:text-primary-dark">
       <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your pincode to move forward. Thank you.</p>
       <div class="relative">
