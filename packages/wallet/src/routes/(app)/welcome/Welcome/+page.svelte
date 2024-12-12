@@ -15,7 +15,6 @@
 	import type { Browser } from 'webextension-polyfill';
 	import { setIconLock } from '$lib/utilities';
 	import Import from '$lib/components/Import.svelte';
-	import { debug_log } from "$lib/common/debug-error";
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -31,7 +30,6 @@
   onMount(() => {
     try {
       if (browserSvelte) {
-        debug_log('Welcome Page Mounted');
         browser_ext.runtime.onMessage.addListener(handleOnMessage);
       }
     } catch (e) {

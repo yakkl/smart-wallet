@@ -25,7 +25,7 @@ import { Token } from './Token';
 import { EVMToken } from './tokens/evm/EVMToken';
 // import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
 import { EthersConverter } from './utilities/EthersConverter';
-import { AlphaRouterService } from '@yakkl/uniswap-alpha-router-service';
+// import { AlphaRouterService } from '@yakkl/uniswap-alpha-router-service';
 
 const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 
@@ -48,7 +48,7 @@ export class UniswapSwapManager extends SwapManager {
   private providerNative: ethersv6.JsonRpcProvider | null = null;
   private signerNative: ethersv6.JsonRpcSigner | null = null;
   private factory: ethersv6.Contract | null = null;
-  private alphaRouter: AlphaRouterService;
+  // private alphaRouter: AlphaRouterService;
 
   constructor (
     blockchain: Ethereum,
@@ -56,7 +56,7 @@ export class UniswapSwapManager extends SwapManager {
     initialFeeBasisPoints: number = YAKKL_FEE_BASIS_POINTS
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
-    this.alphaRouter = new AlphaRouterService();
+    // this.alphaRouter = new AlphaRouterService();
     this.initialize().then();
   }
 
@@ -83,7 +83,7 @@ export class UniswapSwapManager extends SwapManager {
   }
 
   dispose() {
-    this.alphaRouter.dispose();
+    // this.alphaRouter.dispose();
   }
 
   getName(): string {
@@ -498,6 +498,8 @@ export class UniswapSwapManager extends SwapManager {
           await quoterContract.quoteExactOutputSingle.staticCall( params );
       }
 
+      debug_log( 'Direct pool quote amount:', quoteAmount);
+      
       if ( quoteAmount > 0n ) {
         return await this.constructQuoteData(
           tokenIn,

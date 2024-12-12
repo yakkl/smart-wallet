@@ -27,7 +27,7 @@
   let poolFee = $state(3000);
 
   // Reactive store value
-  let swapPriceData = $state($swapPriceDataStore);
+  let swapPriceData = $derived($swapPriceDataStore);
 
   function findClosestPoolFee(fee: number): number {
     return poolFeeOptions.reduce((prev, curr) =>
@@ -55,20 +55,30 @@
 
   // Replace first run with $effect
   $effect(() => {
-    swapPriceData = $swapPriceDataStore;
-    slippageTolerance = swapPriceData.slippageTolerance || 0.5;
-    deadline = swapPriceData.deadline || 10;
-    poolFee = swapPriceData.fee || 3000;
+    if (swapPriceData) {
+      if (swapPriceData.slippageTolerance !== undefined) {
+        slippageTolerance = swapPriceData.slippageTolerance;
+      }
+      if (swapPriceData.deadline !== undefined) {
+        deadline = swapPriceData.deadline;
+      }
+      if (swapPriceData.fee !== undefined) {
+        const newFee = poolFeeOptions.includes(swapPriceData.fee)
+          ? swapPriceData.fee
+          : findClosestPoolFee(swapPriceData.fee);
+        poolFee = newFee;
+      }
+    }
   });
 
   // Replace second run with $effect
-  $effect(() => {
-    // Ensure the selected pool fee is one of the valid options
-    if (!poolFeeOptions.includes(poolFee)) {
-      // If not, default to the closest match or the default
-      poolFee = findClosestPoolFee(poolFee);
-    }
-  });
+  // $effect(() => {
+  //   // Ensure the selected pool fee is one of the valid options
+  //   if (!poolFeeOptions.includes(poolFee)) {
+  //     // If not, default to the closest match or the default
+  //     poolFee = findClosestPoolFee(poolFee);
+  //   }
+  // });
 </script>
 
 <div class="flex justify-between items-center space-x-4 {className}">

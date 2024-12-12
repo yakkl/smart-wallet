@@ -39,7 +39,6 @@
     }
   }
 
-  // Replace run with $effect
   $effect(() => {
     if (token) {
       getBalance();
