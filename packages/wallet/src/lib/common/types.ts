@@ -24,7 +24,7 @@ export enum SystemTheme {
   SYSTEM = 'system',
 }
 
-export enum AccountTypeCategory { 
+export enum AccountTypeCategory {
   PRIMARY = 'primary',
   SUB = 'sub',
   CONTRACT = 'contract',
@@ -39,7 +39,7 @@ export enum AccountTypeStatus {
 
 export enum RegistrationType {
   STANDARD = 'standard',
-  PREMIER = 'premier',
+  PRO = 'pro',
 }
 
 export enum NetworkType {
@@ -80,7 +80,7 @@ export type Hash = string;
 
 export type BlockTag = BigNumberish | string;
 
-// Allows us to creates a new type that takes a generic type T and transforms it such that each property of T can either be its original type or a promise of its original type. 
+// Allows us to creates a new type that takes a generic type T and transforms it such that each property of T can either be its original type or a promise of its original type.
 export type Deferrable<T> = {
   [ K in keyof T ]: T[K] | Promise<T[K]>;
 }

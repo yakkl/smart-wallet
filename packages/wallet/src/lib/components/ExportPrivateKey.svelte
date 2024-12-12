@@ -78,9 +78,9 @@
 </script>
 
 <div class="relative {className}">
-  <PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} on:close={closePincodeModal} />
+  <PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
 
-  <Modal bind:show={showPrivateKeyModal} title="Private Key" on:close={() => showPrivateKeyModal = false}>
+  <Modal bind:show={showPrivateKeyModal} title="Private Key" onClose={() => showPrivateKeyModal = false}>
     <div class="p-6">
       <p class="text-sm text-red-500 mb-4">
         Please be careful! <strong>Your PRIVATE KEY should remain PRIVATE</strong>.
@@ -96,6 +96,7 @@
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Private Key</label>
         <div class="mt-1 flex">
           <input type="text" class="flex-1 block w-full rounded-none rounded-l-md border-gray-300 bg-gray-100 cursor-not-allowed focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={privateKey} readonly />
+          <!-- svelte-ignore a11y_consider_explicit_label -->
           <button class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 clipboard-btn" data-clipboard-text={privateKey} onclick={initClipboard}>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -106,7 +107,7 @@
     </div>
   </Modal>
 
-  <Modal bind:show={show} title="Export Private Key" on:close={closeModal}>
+  <Modal bind:show={show} title="Export Private Key" onClose={closeModal}>
     <div class="p-6">
       <p class="text-sm text-gray-700 dark:text-gray-200 mb-4">
         To export the private key of your account, please verify your pincode first.

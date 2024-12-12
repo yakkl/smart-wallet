@@ -30,7 +30,7 @@
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   let currentlySelected: YakklCurrentlySelected;
@@ -38,7 +38,7 @@
 
   let profile: Profile | null;
   let error = false;
-  let errorValue: string;   
+  let errorValue: string;
   let warning = false;
   let warningValue: string;
   let init = false;
@@ -48,7 +48,7 @@
   let pweyeOpen = false;
   let pweyeOpenId: HTMLButtonElement;
   let pweyeClosedId: HTMLButtonElement;
-  
+
   let showRegistrationOption = false;
   let showImportOption = false;
   let showImportAccount = false;
@@ -57,10 +57,10 @@
 
   // Force 'Standard' version on registration - normally
   // DURING FREE - REMOVE LATER
-  let promoDate = new Date('2025-01-01T00:00:00');
+  let promoDate = new Date('2026-01-01T00:00:00');
   let date = new Date();
   if (date < promoDate) {
-    $yakklVersionStore = RegistrationType.PREMIER; 
+    $yakklVersionStore = RegistrationType.PRO;
   } else {
     $yakklVersionStore = RegistrationType.STANDARD;
   }
@@ -74,13 +74,13 @@
         currentlySelected = await getYakklCurrentlySelected() || yakklCurrentlySelectedDefaults;
         yakklMiscStore = '';
 
-        eyeOpenId = document.getElementById("eye-open") as HTMLButtonElement; 
+        eyeOpenId = document.getElementById("eye-open") as HTMLButtonElement;
         eyeClosedId = document.getElementById("eye-closed") as HTMLButtonElement;
         eyeOpenId.setAttribute('tabindex', '-1');
         eyeClosedId.setAttribute('tabindex', '-1');
         eyeOpenId.setAttribute('hidden', 'hidden');
 
-        pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement; 
+        pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement;
         pweyeClosedId = document.getElementById("pweye-closed") as HTMLButtonElement;
         pweyeOpenId.setAttribute('tabindex', '-1');
         pweyeClosedId.setAttribute('tabindex', '-1');
@@ -114,7 +114,7 @@
     // Make the following are not showing before continuing
     showEmergencyKit = false;
     showImportAccount = false;
-    await goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY); 
+    await goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);
   }
 
   function handleImport() {
@@ -197,10 +197,10 @@
   //         errorReg = true; // Don't need to log since it is not an actual error.
   //         errorValue = "Your account has already been initialized. Going forward will RESET your account by wiping out your secret phrase and addresses (balances remain the same). This will take back.";
   //       }
-  //     });                
+  //     });
   //   }
   // }
-  
+
   // checkRegistration();
 
   async function register(userName: string, password: string, pincode: string, accountName: string, email: string): Promise<void> {
@@ -218,9 +218,9 @@
 
         yakklMiscStore = digest;
         setMiscStore(digest);
-        
+
         if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected() || yakklCurrentlySelectedDefaults;
-        
+
         if (isEncryptedData(currentlySelected.data)) {
           currentlySelected.data = await decryptData(currentlySelected.data, digest) as CurrentlySelectedData;
         }
@@ -259,8 +259,8 @@
 
         if (date < promoDate) {
           profileData.registered = {
-            type: RegistrationType.PREMIER,
-            key: RegistrationType.PREMIER,
+            type: RegistrationType.PRO,
+            key: RegistrationType.PRO,
             version: VERSION,
             createDate: dateString(),
             updateDate: dateString()
@@ -313,7 +313,7 @@
         const settings = await getSettings();
         if (settings !== null) {
           settings.id = profile.id;
-          settings.registeredType = RegistrationType.PREMIER;
+          settings.registeredType = RegistrationType.PRO;
           settings.lastAccessDate = settings.updateDate = profile.createDate;
           settings.init = true;
           settings.isLocked = false;
@@ -336,7 +336,7 @@
     initialValues: { userName: "", password: "", confirmPassword: "", pincode: "", email: "", accountName: "Primary Portfolio Account"},
     validationSchema: yup.object().shape({
         userName: yup
-          .string()                
+          .string()
           .lowercase()
           .required('Please enter your username (used in encryption) - min of 6 characters')
           .matches(/^[a-z0-9]{6,}$/, "Must be lowercase and at least 6 characters and not contain '.nfs.id'"),
@@ -357,7 +357,7 @@
           .required('Please enter your email. Required for additional security'),
         accountName: yup
           .string()
-          .trim()                
+          .trim()
           .matches(/^[A-Za-z0-9#@!*&_.() ]{3,}$/, "Can contain uppercase, lowercase, numeric, and a few special characters, and at least 3 characters"),
     }),
     onSubmit: async data => {
@@ -412,7 +412,7 @@
     }
   }
 
-</script>  
+</script>
 
 <svelte:head>
 	<title>
@@ -430,7 +430,7 @@
 
 <RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} onImport={handleImport} onRestore={handleRestore} />
 
-<ErrorNoAction bind:show={error} bind:value={errorValue} title="ERROR!"/>
+<ErrorNoAction bind:show={error} value={errorValue} title="ERROR!"/>
 
 <Warning bind:show={warning} value={warningValue} title="WARNING!" />
 
@@ -438,7 +438,7 @@
   <div class="modal-box relative">
     <div class="m-2 text-center p-1">
       <h1 class="font-bold"><span class="font-bold text-white">OPTIONS</span></h1>
-      <p class="pt-2">If this is a new install then (click): Create initial account!</p> 
+      <p class="pt-2">If this is a new install then (click): Create initial account!</p>
       <p class="mt-1">If you wish to restore then (click): Restore from Emergency Kit!</p>
     </div>
     <div class="flex flex-col">
@@ -461,11 +461,11 @@
     <ul>
         <li class="flex items-center mb-1">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-4 h-4 text-green-400 dark:text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-  Upper &amp; lower case letters 
+  Upper &amp; lower case letters
         </li>
         <li class="flex items-center mb-1">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-4 h-4 text-green-400 dark:text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            A symbol (#$&amp;!) 
+            A symbol (#$&amp;!)
         </li>
         <li class="flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-4 h-4 text-green-400 dark:text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -631,10 +631,10 @@
                 <div class="form-control w-full">
                   <input id="password" type="password"
                     class="input input-bordered input-primary w-full mt-2"
-                    placeholder="Password" 
-                    autocomplete="off" 
-                    bind:value="{$form.password}" 
-                    on:change="{handleChange}" 
+                    placeholder="Password"
+                    autocomplete="off"
+                    bind:value="{$form.password}"
+                    on:change="{handleChange}"
                     required />
                   <!-- svelte-ignore a11y-click-events-have-key-events -->
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -649,7 +649,7 @@
                     <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
                     <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
                   </svg>
-                </div>                
+                </div>
                 <svg id="pwd-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
                 </svg>
@@ -784,7 +784,7 @@
         </div>
       <!-- <div class="divider lg:divider-vertical">Upgrade AFTER registration is complete!</div> -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- <div class="flex flex-row justify-center items-center">        
+      <!-- <div class="flex flex-row justify-center items-center">
         <div role="button" on:click="{handleGOTO}" class="font-extrabold underline uppercase">
           Click to import wallet (with secret phrase)
         </div>
@@ -797,17 +797,17 @@
         <div class="card bg-base-100 shadow-xl image-full">
           <figure><img class="h-auto" src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
           <div class="card-body p-1">
-            <h2 class="card-title self-center">PREMIER BETA!</h2>
+            <h2 class="card-title self-center">PRO</h2>
             <p>This is the beta program for our Pro version. This means you are receiving all Pro features for FREE! We are adding new features and making small cosmetic changes and we would love to have your feedback. To add feedback or create a ticket for a found issue, cloud the BETA button on the Header bar once logged in. We also need your suggestions!
             </p>
           </div>
-        </div>      
+        </div>
       </div> -->
 
     </main>
   </div>
 
 
-  <!-- <h2 class="card-title">UPGRADE TO PREMIER!</h2>
+  <!-- <h2 class="card-title">UPGRADE TO PRO!</h2>
   <p>Upgrade to the Pro version! Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p> -->
 

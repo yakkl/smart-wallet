@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { browser as browserSvelte } from '$app/environment';
   import { setSettings, setPreferencesStorage, getPreferences, getSettings, getMiscStore, getYakklCurrentlySelected } from "$lib/common/stores";
   import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH } from '$lib/common';
@@ -42,7 +40,7 @@
 
   let maxHeightClass = $state('max-h-[448px]');
 
-  run(() => {
+  $effect(() => {
     if (browserSvelte) {
       if (!window.navigator.onLine) {
         errorValue = 'It appears your Internet connection is offline. YAKKL needs access to the Internet to obtain current market prices and gas fees. A number of areas will either not function or work in a limited capacity. Thank you!';

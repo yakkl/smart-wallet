@@ -21,7 +21,7 @@
   }: Props = $props();
 </script>
 
-<Modal bind:show title="{title}">
+<Modal bind:show title={title}>
   <div class="p-6">
     <p class="text-sm text-gray-500">{message}</p>
     <div class="mt-4 flex justify-end">

@@ -26,10 +26,10 @@
 
 </script>
 
-<Modal 
-  bind:show={show} 
-  bind:onCancel={onCancel}
-  bind:onClose={onClose}
+<Modal
+  bind:show={show}
+  onCancel={onCancel}
+  onClose={onClose}
   title='Import or Restore Wallet'
 >
   <ImportOption showImportWatch={showImportWatch} {onImportKey} {onImportPhrase} {onImportWatch} {onRestore} />

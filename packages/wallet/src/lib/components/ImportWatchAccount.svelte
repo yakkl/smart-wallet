@@ -1,7 +1,5 @@
 <!-- ImportWatch.svelte -->
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import { onMount } from 'svelte';
   import { VERSION } from '$lib/common/constants';
   import { createForm } from 'svelte-forms-lib';
@@ -168,12 +166,12 @@
 </script>
 
 <div class="relative {className}">
-  <Modal bind:show title="Add Watch-Only Address" on:close={closeModal}>
+  <Modal bind:show title="Add Watch-Only Address" onClose={closeModal}>
     <div class="p-6">
       <p class="text-sm text-green-500 mb-4">
         This is a <strong>WATCH - ONLY address</strong>. This means that you will not be able to perform any transactions with this specific address in YAKKL. You can <strong>Import</strong> this address if you have your private key using the Import option. This `watch-only` address allows you to keep track of <strong>ALL</strong> of your crypto in one wallet and have a complete portfolio view. For example, if you have an account with a centralized exchange like Coinbase, Kraken, Binance, etc. You can also use this feature to keep track of addresses belonging to others (e.g, `whales`, `market makers`) and be alerted on activities (useful for staying aware of potential market moves).
       </p>
-      <form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
+      <form onsubmit={handleSubmit} class="space-y-4">
         <div>
           <label for="blockchain" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Blockchain</label>
           <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={$form.blockchain} onchange={handleChange}>

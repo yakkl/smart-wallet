@@ -14,7 +14,7 @@
   import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Welcome from '$lib/components/Welcome.svelte';
-	import { RegistrationType, checkAccountRegistration, debug_log, isEncryptedData, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
+	import { RegistrationType, checkAccountRegistration, isEncryptedData, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
 	import { verify } from '$lib/common/security';
 
@@ -97,7 +97,7 @@
         if (yakklSettings) {
           registeredType = yakklSettings.registeredType as string;
           // if (!checkUpgrade()) { // The checkUpgrade is not valid until after user is validated
-          if (registeredType !== RegistrationType.PREMIER) {
+          if (registeredType !== RegistrationType.PRO) {
             registeredType = RegistrationType.STANDARD;
           }
 
@@ -105,7 +105,7 @@
           let promoDate = new Date('2025-01-01T00:00:00');  // TODO: May want to remove this altogether later...
           let date = new Date();
           if (date < promoDate) {
-            registeredType = RegistrationType.PREMIER;
+            registeredType = RegistrationType.PRO;
           }
           ////
 
@@ -122,7 +122,6 @@
     }
   });
 
-
   const { form, errors, handleSubmit } = createForm({
     initialValues: { userName: "", password: "" },
     onSubmit: async data => {
@@ -136,27 +135,21 @@
     }
   });
 
-
   async function login(userName: string, password: string): Promise<void> {
     if (browserSvelte) {
       try {
         showProgress = true;
 
-        debug_log('Login');
         let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
         if (!profile) {
           throw `User [ ${userName} ] was not found OR password is not correct OR no primary account was not found. Please try again or register if not already registered`;
         } else {
-          debug_log('Login: profile', profile);
-
           if (!yakklMiscStore) yakklMiscStore = getMiscStore(); // This should be set by the verify function
           if (!yakklMiscStore) {
             throw `User [ ${userName} ] was not found OR password is not correct. Please try again or register if not already registered`;
           }
-          debug_log('Login: yakklMiscStore', yakklMiscStore);
           $yakklUserNameStore = userName;
 
-          debug_log('Login: currentlySelected', currentlySelected);
           if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected();
 
           currentlySelected.shortcuts.isLocked = false;
@@ -183,8 +176,8 @@
           }
           if ((profile.data as ProfileData).registered?.key) {
             let key = (profile.data as ProfileData).registered.key;
-            if (key !== null || key !== '' && (profile.data as ProfileData).registered.type === RegistrationType.PREMIER) {
-              $yakklVersionStore = RegistrationType.PREMIER; // Add this later... + ' - ' + key;
+            if (key !== null || key !== '' && (profile.data as ProfileData).registered.type === RegistrationType.PRO) {
+              $yakklVersionStore = RegistrationType.PRO; // Add this later... + ' - ' + key;
             } else {
               $yakklVersionStore = RegistrationType.STANDARD;
               (profile.data as ProfileData).registered.key = '';
@@ -250,7 +243,6 @@
 
           // Make sure there is at least one Primary or Imported account
           if (await checkAccountRegistration()) {
-            debug_log('Login: checkAccountRegistration: true');
             goto(redirect);
           } else {
             showRegistrationOption = true;
@@ -265,7 +257,6 @@
     }
   }
 
-
   function toggleVisability(id="password", type="text") {
     let x = document.getElementById(id) as HTMLInputElement;
     if (x.type === "password") {
@@ -274,7 +265,6 @@
       x.type = "password";
     }
   }
-
 
   function togglePasswordVisability() {
     toggleVisability("password", "text");
@@ -508,7 +498,7 @@
       <div class="card bg-base-100 shadow-xl image-full animate-pulse">
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
-          <h2 class="card-title self-center">UPGRADE TO PREMIER!</h2>
+          <h2 class="card-title self-center">UPGRADE TO PRO!</h2>
           <p>It appears you have not upgraded to the Pro version. Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p>
         </div>
       </div>
@@ -518,7 +508,7 @@
       <div class="card bg-base-100 shadow-xl image-full animate-pulse">
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
-          <h2 class="card-title self-center">PREMIER!</h2>
+          <h2 class="card-title self-center">PRO!</h2>
           <p>Welcome to our Pro version. We have a lot of additional features waiting on you. We're also working hard on advanced features to make your digital asset experience a dream! We also need your suggestions! Enjoy!</p>
         </div>
       </div>

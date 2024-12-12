@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
@@ -9,9 +7,7 @@
   import { debounce } from 'lodash-es';
   import { toBigInt } from '$lib/common';
 
-
   interface Props {
-    // Component props
     type?: 'sell' | 'buy';
     tokens?: SwapToken[];
     disabled?: boolean;
@@ -38,20 +34,16 @@
   }: Props = $props();
 
   // Reactive store value
-  let swapPriceData: SwapPriceData = $state();
+  let swapPriceData = $state($swapPriceDataStore);
 
   // Input state management
-  let userInput = $state(''); // Temporary user input
-  let formattedAmount = $state(''); // Formatted display amount
+  let userInput = $state('');
+  let formattedAmount = $state('');
 
-
-  // Amount formatting utility
   function formatAmount(amount: bigint, decimals: number): string {
     if (amount === 0n) return '';
 
     const formattedValue = ethersv6.formatUnits(amount, decimals);
-
-    // Remove trailing zeros after decimal point
     const [integerPart, decimalPart] = formattedValue.split('.');
     if (!decimalPart) return integerPart;
 
@@ -59,39 +51,32 @@
     return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
   }
 
-  // Debounced amount change handler
   const debouncedAmountChange = debounce((value: string) => {
     onAmountChange(value);
   }, 300);
 
-  // Input handling
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
 
-    // Sanitize input
     value = value.replace(/[^0-9.]/g, '');
 
-    // Ensure only one decimal point
     const parts = value.split('.');
     if (parts.length > 2) {
       value = `${parts[0]}.${parts.slice(1).join('')}`;
     }
 
-    // Limit to 6 decimal places
     if (parts[1] && parts[1].length > 6) {
       value = `${parts[0]}.${parts[1].slice(0, 6)}`;
     }
 
     userInput = value;
 
-    // Trigger debounced change only for meaningful input
     if (value !== '' && value !== '.') {
       debouncedAmountChange(value);
     }
   }
 
-  // Blur handler for final validation
   function handleBlur(event: FocusEvent) {
     const value = (event.target as HTMLInputElement).value;
 
@@ -99,10 +84,14 @@
       onAmountChange(value);
     }
   }
-  run(() => {
+
+  // Replace run with $effect for store subscription
+  $effect(() => {
     swapPriceData = $swapPriceDataStore;
   });
-  run(() => {
+
+  // Replace run with $effect for reset values
+  $effect(() => {
     if (resetValues) {
       userInput = '';
       formattedAmount = '';
@@ -113,8 +102,9 @@
       resetValues = false;
     }
   });
-  // Reactive formatting based on store updates
-  run(() => {
+
+  // Replace run with $effect for amount formatting
+  $effect(() => {
     if (type === 'sell') {
       if (toBigInt(swapPriceData.amountIn) > 0n) {
         formattedAmount = formatAmount(
@@ -146,7 +136,7 @@
       value={userInput || formattedAmount}
       oninput={handleAmountInput}
       onblur={handleBlur}
-      disabled={disabled}
+      {disabled}
       readonly={readOnly}
       class="
         bg-transparent
@@ -165,15 +155,15 @@
     />
     <TokenDropdown
       {tokens}
-      disabled={disabled}
+      {disabled}
       selectedToken={type === 'sell' ? swapPriceData.tokenIn : swapPriceData.tokenOut}
-      onTokenSelect={onTokenSelect}
+      {onTokenSelect}
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">
     <SwapTokenPrice {swapPriceDataStore} {type} />
     {#if type === 'sell'}
-        Balance: {balance}
+      Balance: {balance}
     {/if}
   </div>
   {#if insufficientBalance}

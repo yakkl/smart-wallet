@@ -26,16 +26,15 @@
   import PriceTracker from '$lib/components/PriceTracker.svelte';
   import TokenPrice from '$lib/components/TokenPrice.svelte';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
-	// import { UniswapSwapPriceProvider } from '$lib/plugins/providers/swapprice/uniswap/UniswapSwapPriceProvider';
 	import type { Wallet } from '$lib/plugins/Wallet';
 	import WalletManager from '$lib/plugins/WalletManager';
 	import type { Blockchain, Provider } from '$lib/plugins';
 	import type { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
 	import { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
 	import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
-	import { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
 	import Swap from '$lib/components/Swap.svelte';
 	import { getYakklCurrentlySelectedAccountKey } from '$lib/common/security';
+	import SendFormModal from '$lib/components/send/SendFormModal.svelte';
 
   const providers = [new CoinbasePriceProvider];
 
@@ -59,11 +58,12 @@
   let showImportOptions = $state(false);
   let showSwap = $state(false);
   let showSwapModal = $state(false);
+  let showSendModal = $state(false);
 
   let fundingAddress: string = $state();
   let account: YakklAccount | null = null;
   let mode: 'import' | 'export' = $state('export');
-  
+
   let swapPriceProvider: SwapPriceProvider | null = null; // Don't have to set it to null
   let provider: Provider = $state();
   let chainId = 1;
@@ -124,7 +124,15 @@
 
 
   function onSwap(fundingAddress: string, fromToken: Token, toToken: Token, fromAmount: BigNumberish, toAmount: BigNumberish) {
-    console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);    
+    console.log(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
+  }
+
+  function openSendModal() {
+    showSendModal = true;
+  }
+
+  function handleSendModal() {
+    showSendModal = false;
   }
 
   function handleAccounts(selectedAccount: YakklAccount) {
@@ -136,7 +144,7 @@
     // Handle the selected contact here
     console.log('Selected contact:', selectedContact);
   }
-  
+
   function handleImport(account: YakklAccount) {
     // Handle the imported account here
     console.log('Imported account:', account);
@@ -205,18 +213,22 @@
   </div>
 
   <div class="my-4">
+    <SendFormModal bind:show={showSendModal} />
+  </div>
+
+  <div class="my-4">
     <RegistrationOptionModal bind:show={showRegistrationOptions} onCreate={handleCreateAccount} onImport={handleImportPrivateKey} onRestore={handleRestore} />
   </div>
 
   <div class="my-4">
     <!-- Shows SwapPriceTracker and SwapTokenPrice -->
-    <SwapModal bind:show={showSwapModal} {fundingAddress} {provider} {blockchain} {swapManager} {tokenService} /> 
+    <SwapModal bind:show={showSwapModal} {fundingAddress} {provider} {blockchain} {swapManager} {tokenService} />
   </div>
-  
+
   <div class="my-4">
     <Swap bind:show={showSwap} {fundingAddress} {onSwap} {provider} {blockchain} {swapManager} {tokenService} />
   </div>
-  
+
   <div class="my-4">
     <ImportOptionModal bind:show={showImportOptions} showImportWatch={true} onImportKey={() => {showImportOptions=false; showImportAccount=true;}} onImportPhrase={() => {showImportOptions=false; showImportPhrase=true;}} onRestore={() => {showImportOptions=false; mode='import'; showEmergencyKit=true;}} onImportWatch={() => {showImportOptions=false; showImportWatch=true;}}/>
   </div>
@@ -272,24 +284,24 @@
           <span class="text-gray-500">Fetching price...</span>
         {/if}
                 {/snippet}
-        </PriceTracker>  
+        </PriceTracker>
   </div>
 
   <div class="my-4">
     <div class="p-6 space-y-8">
       <h1 class="text-2xl font-bold mb-4">Crypto Dashboard example using TokenPrice</h1>
-    
+
       <div class="bg-white shadow rounded-lg p-4">
         <h2 class="text-lg font-semibold mb-2">Ethereum Price</h2>
-        <TokenPrice 
-          symbol="ETH" 
+        <TokenPrice
+          symbol="ETH"
           currency="USD" />
       </div>
-    
+
       <div class="bg-gray-100 shadow rounded-lg p-4">
         <h2 class="text-lg font-semibold mb-2">BTC Price</h2>
-        <TokenPrice 
-          symbol="BTC" 
+        <TokenPrice
+          symbol="BTC"
           customClass="bg-yellow-100 p-2 rounded"
         />
       </div>
@@ -303,7 +315,7 @@
 
   <div class="my-4 p-2 border-gray-100 border-2">
     <p class="text-gray-100 text-sm">Experimental Only</p>
-    
+
     <button
       onclick={() => profileComponent.openProfile()}
       class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
@@ -323,25 +335,31 @@
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     SwapModal
   </button>
-  
+
   <button
     onclick={() => showSwap = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Swap
   </button>
-  
+
+  <button
+    onclick={() => showSendModal = true}
+    class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
+    Send Transaction
+  </button>
+
   <button
     onclick={() => showRegistrationOptions = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Registration Options
   </button>
-  
+
   <button
     onclick={() => showImportOptions = true}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
     Import Options
   </button>
-  
+
   <button
     onclick={() => {showEmergencyKit = true; mode = 'export';}}
     class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">

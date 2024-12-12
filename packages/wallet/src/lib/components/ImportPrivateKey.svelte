@@ -1,7 +1,5 @@
 <!-- ImportPrivateKey.svelte -->
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import { browser as browserSvelte } from '$app/environment';
   import { setYakklAccountsStorage, setYakklCurrentlySelectedStorage, setProfileStorage, getYakklAccounts, getProfile, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
   import { yakklAccount as yakklAccountDefault } from '$lib/models/dataModels';
@@ -248,13 +246,13 @@
 {/if}
 
 <div class="relative {className}">
-  <Modal bind:show={show} title="Import Account" on:close={closeModal} bind:onCancel={onCancel} className={className}>
+  <Modal bind:show={show} title="Import Account" onClose={closeModal} onCancel={onCancel} className={className}>
     <div class="p-6 border-t border-gray-500 dark:border-gray-300">
       <p class="text-sm text-red-500 dark:text-red-300 mb-4">
         Please be careful! <strong>This private key is important!</strong>
         A bad actor could take the content of your wallet if they have access to your private key!
       </p>
-      <form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
+      <form onsubmit={handleSubmit} class="space-y-4">
         <div>
           <label for="accountName" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Account Name</label>
           <input

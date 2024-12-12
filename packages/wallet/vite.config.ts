@@ -6,8 +6,6 @@ import fs from 'fs';
 import { isoImport } from 'vite-plugin-iso-import';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-// import { svelte } from '@sveltejs/vite-plugin-svelte';
-// import { svelteInspector } from '@sveltejs/vite-plugin-svelte-inspector';
 
 const htmlContent = fs.readFileSync( path.resolve( 'static/snippet-terms.html' ), 'utf-8' );
 
@@ -22,8 +20,6 @@ export default defineConfig( {
     nodePolyfills({
       protocolImports: true,
     }),
-    // svelte(),
-    // svelteInspector(),
     viteStaticCopy( {
       targets: [
         {
@@ -49,8 +45,6 @@ export default defineConfig( {
       '@yakkl/uniswap-alpha-router-service': '../uniswap-alpha-router-service/src',
       'events': 'events',
     },
-    // conditions: [ 'browser' ],
-    // resolve: process.env.VITEST ? { conditions: [ 'browser'] } : undefined,
   },
   define: {
     'process.env': {},
@@ -58,7 +52,15 @@ export default defineConfig( {
     'process.env.DEV_DEBUG': process.env.DEV_DEBUG || false,
   },
   optimizeDeps: {
-    exclude: [ 'webextension-polyfill' ],
+    exclude: [
+      'webextension-polyfill',
+      '**/*.tmp/**/*',  // Exclude .tmp directories - the .tmp items here do not seem to be working as expected. I will keep it and handle it another way.
+      '**/*.tmp',       // Exclude .tmp files
+    ],
+    entries: [
+      '!**/*.tmp/**/*',  // Exclude .tmp directories
+      '!**/*.tmp',       // Exclude .tmp files
+    ],
     esbuildOptions: {
       define: {
         global: 'globalThis'
@@ -66,7 +68,7 @@ export default defineConfig( {
     },
   },
   ssr: {
-    noExternal: [ 'webextension-polyfill' ],
+    noExternal: [ 'webextension-polyfill', '@walletconnect/web3wallet', '@walletconnect/core' ],
   },
   build: {
     sourcemap: true,
@@ -84,14 +86,12 @@ export default defineConfig( {
       transformMixedEsModules: true,
       include: [
         /node_modules/,
-        // /ethers-v6/
       ]
     },
     rollupOptions: {
-      external: [ 'webextension-polyfill', 'events' ],
+      external: [
+        'webextension-polyfill',
+      ],
     }
-  },
-  test: {
-    include: [ 'src/**/*.{test,spec}.{js,ts}' ],
   },
 } );

@@ -11,7 +11,7 @@
   import EditControls from './EditControls.svelte';
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
-  
+
   interface Props {
     accounts?: YakklAccount[];
     onAccountSelect?: (account: YakklAccount) => void;
@@ -57,7 +57,7 @@
       accounts = accounts.filter(a => a.address !== selectedAccount!.address);
       setYakklAccountsStorage(accounts);
       $yakklAccountsStore = accounts;
-      
+
       if (selectedAccount.accountType === AccountTypeCategory.PRIMARY) {
         let primaryAccounts = $yakklPrimaryAccountsStore.filter(a => a.address !== selectedAccount!.address);
         setYakklPrimaryAccountsStorage(primaryAccounts);
@@ -156,7 +156,7 @@
 
 <AccountForm
   bind:show={editMode}
-  bind:account={selectedAccount}
+  account={selectedAccount}
   onSubmit={updateAccount}
 />
 

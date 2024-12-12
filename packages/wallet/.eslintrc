@@ -30,6 +30,7 @@
 		}
 	],
 	"rules": {
+    "svelte/non-reactive-update": "off",
 		"svelte/no-invalid-html-attribute": "off",
 		"jsx-a11y/no-static-element-interactions": "off",
     "jsx-a11y/click-events-have-key-events": "off",

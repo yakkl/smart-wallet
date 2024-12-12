@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import {browser as browserSvelte} from '$app/environment';
   import { page } from '$app/stores';
 
@@ -428,7 +426,7 @@ function handleConfirm() {
     <div class="flex space-x-2 justify-center">
       {#if !showSpinner}
       <button
-        onclick={preventDefault(handleReject)}
+        onclick={handleReject}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
@@ -437,7 +435,7 @@ function handleConfirm() {
       <button
         type="submit"
         id="recover"
-        onclick={preventDefault(handleConfirm)}
+        onclick={handleConfirm}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve

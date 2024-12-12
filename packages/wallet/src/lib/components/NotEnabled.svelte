@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import { handleOpenInTab } from "$lib/utilities";
-  
+
   interface Props {
     show?: boolean;
     value?: string;
@@ -23,12 +21,12 @@
     <!-- <label for="my-modal-3" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label> -->
     <div class="border border-base-content rounded-md m-2 text-center p-1">
       <h1 class="font-bold"><span class="font-bold text-white">INFO</span></h1>
-      <p class="pt-4 text-white">{value}</p> 
+      <p class="pt-4 text-white">{value}</p>
       <!-- <p class="mt-1">Do you wish to continue?</p> -->
     </div>
     <div class="modal-action">
-      <button class="btn" onclick={preventDefault(handleLearnMore)}>Learn More...</button>
-      <button class="btn" onclick={preventDefault(() => {show=false})}>OK</button>
+      <button class="btn" onclick={handleLearnMore}>Learn More...</button>
+      <button class="btn" onclick={() => {show=false}}>OK</button>
     </div>
   </div>
 </div>

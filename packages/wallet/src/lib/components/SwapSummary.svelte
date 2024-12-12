@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { type Writable } from 'svelte/store';
   import type { SwapPriceData } from '$lib/common/interfaces';
-	import { ethers as ethersv6 } from 'ethers-v6';
-	import { calculateFeeAmount, calculateFeeBasisPointsPercent, formatFeeToUSD } from '$lib/utilities/utilities';
-	import { toBigInt } from '$lib/common/math';
-	import { YAKKL_FEE_BASIS_POINTS_DIVISOR } from '$lib/common';
+  import { ethers as ethersv6 } from 'ethers-v6';
+  import {
+    calculateFeeAmount,
+    calculateFeeBasisPointsPercent,
+    formatFeeToUSD
+  } from '$lib/utilities/utilities';
+  import { toBigInt } from '$lib/common/math';
+  import { YAKKL_FEE_BASIS_POINTS_DIVISOR } from '$lib/common';
 
   interface Props {
     swapPriceDataStore: Writable<SwapPriceData>;
@@ -14,24 +16,27 @@
   }
 
   let { swapPriceDataStore, disabled = false }: Props = $props();
-  // export let hidden: boolean = false;
 
-  let exchangeRate: number = $state(0);
-  let feeBasisPointsToPercent: string = $state('0.0000%');
+  let exchangeRate = $state(0);
+  let feeBasisPointsToPercent = $state('0.0000%');
 
   // Declare reactive variables
   let swapPriceData = $derived($swapPriceDataStore);
   let tokenOutPriceInUSD = $derived(swapPriceData.tokenOutPriceInUSD || '--');
   let gasEstimateInUSD = $derived(swapPriceData.gasEstimateInUSD || '--');
 
-  run(() => {
+  // Replace first run with $effect
+  $effect(() => {
     feeBasisPointsToPercent = swapPriceData
       ? calculateFeeBasisPointsPercent(swapPriceData.feeBasisPoints)
       : '0.0000%';
   });
 
-  run(() => {
-    if (swapPriceData && toBigInt(swapPriceData.amountIn) > 0n && toBigInt(swapPriceData.amountOut) > 0n) {
+  // Replace second run with $effect
+  $effect(() => {
+    if (swapPriceData &&
+        toBigInt(swapPriceData.amountIn) > 0n &&
+        toBigInt(swapPriceData.amountOut) > 0n) {
       const tokenIn = swapPriceData.tokenIn;
       const tokenOut = swapPriceData.tokenOut;
 
@@ -42,6 +47,7 @@
       const amountOutFormatted = parseFloat(
         ethersv6.formatUnits(toBigInt(swapPriceData.amountOut) || 0n, tokenOut.decimals)
       );
+
       if (amountInFormatted > 0 && amountOutFormatted > 0) {
         exchangeRate = amountOutFormatted / amountInFormatted;
       } else {
@@ -66,14 +72,20 @@
       const feeDecimal = swapPriceData.feeBasisPoints / YAKKL_FEE_BASIS_POINTS_DIVISOR;
 
       // Calculate fee amount in token units without rounding
-      const feeAmount = calculateFeeAmount(toBigInt(swapPriceData.amountIn), swapPriceData.feeBasisPoints);
-      return formatFeeToUSD(feeAmount, swapPriceData.tokenIn.decimals, swapPriceData.marketPriceIn);
+      const feeAmount = calculateFeeAmount(
+        toBigInt(swapPriceData.amountIn),
+        swapPriceData.feeBasisPoints
+      );
+      return formatFeeToUSD(
+        feeAmount,
+        swapPriceData.tokenIn.decimals,
+        swapPriceData.marketPriceIn
+      );
     } else {
       // Fallback value until all data is available or valid
       return disabled ? '' : 'Calculating...';
     }
   })());
-
 </script>
 
 <div class="space-y-2 text-sm text-gray-500">
