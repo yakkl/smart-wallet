@@ -9,13 +9,13 @@ export interface IToken {
   name: string;
   symbol: string;
   decimals: number;
-  isNative: boolean;
-  isStablecoin: boolean;
+  isNative?: boolean;
+  isStablecoin?: boolean;
   logoURI: string;
   description: string;
   chainId: number;
-  blockchain: Blockchain;
-  provider: Provider;
+  blockchain?: Blockchain;
+  provider?: Provider;
   balance?: BigNumberish;
   privateKey?: string;
   getContract(): Promise<AbstractContract | null>;
@@ -31,12 +31,12 @@ export abstract class Token implements IToken {
   readonly logoURI: string;
   readonly description: string;
   readonly chainId: number;
-  readonly isNative: boolean;
-  readonly isStablecoin: boolean;
-  readonly blockchain: Blockchain;
-  readonly provider: Provider;
+  readonly isNative?: boolean;
+  readonly isStablecoin?: boolean;
+  readonly blockchain?: Blockchain;
+  readonly provider?: Provider;
   readonly privateKey?: string;
-  balance: BigNumberish = 0n;
+  balance?: BigNumberish = 0n;
 
   constructor(
     address: string,
@@ -46,11 +46,11 @@ export abstract class Token implements IToken {
     logoURI: string,
     description: string,
     chainId: number,
-    isNative: boolean,
-    isStablecoin: boolean,
-    blockchain: Blockchain,
-    provider: Provider,
-    balance: BigNumberish = 0n,
+    isNative?: boolean,
+    isStablecoin?: boolean,
+    blockchain?: Blockchain,
+    provider?: Provider,
+    balance?: BigNumberish,
     privateKey?: string
   ) {
     this.address = address;
@@ -58,14 +58,14 @@ export abstract class Token implements IToken {
     this.symbol = symbol;
     this.decimals = decimals;
     this.logoURI = logoURI;
-    this.description = description;
-    this.chainId = chainId;
-    this.isNative = isNative;
-    this.isStablecoin = isStablecoin;
+    this.description = description || `${ name } token`;
+    this.chainId = chainId || 1;
+    this.isNative = isNative || false;
+    this.isStablecoin = isStablecoin || false;
     this.blockchain = blockchain;
     this.provider = provider;
-    this.balance = balance;
-    this.privateKey = privateKey;
+    this.balance = balance || 0n;
+    this.privateKey = privateKey || '';
   }
 
   abstract getContract(): Promise<AbstractContract | null>;
@@ -89,9 +89,9 @@ export abstract class Token implements IToken {
 
   // New static method to create a Token from a SwapToken
   static fromSwapToken(
-    swapToken: SwapToken, 
-    blockchain: Blockchain, 
-    provider: Provider, 
+    swapToken: SwapToken,
+    blockchain: Blockchain,
+    provider: Provider,
     privateKey?: string
   ): Token {
     // This is a factory method that returns a concrete implementation of Token
@@ -112,7 +112,7 @@ export abstract class Token implements IToken {
       privateKey
     );
   }
-  
+
 }
 
 // Concrete implementation of Token

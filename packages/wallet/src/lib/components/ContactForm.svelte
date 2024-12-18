@@ -15,10 +15,11 @@
     // import { Input } from './ui/input';
     show?: boolean;
     contact?: YakklContact | null;
+    className?: string;
     onSubmit?: (contact: YakklContact) => void;
   }
 
-  let { show = $bindable(false), contact = null, onSubmit = () => {} }: Props = $props();
+  let { show = $bindable(false), contact=null, className='z-[999]', onSubmit = () => {} }: Props = $props();
 
   const blockchains = ['Ethereum', 'Base', 'Optimism', 'Bitcoin'];
   let wallet: Wallet;
@@ -109,6 +110,7 @@
       note: '',
     });
   }
+
   $effect(() => {
     if (contact) {
       updateInitialValues({
@@ -124,10 +126,10 @@
   });
 </script>
 
-<Modal bind:show title={contact ? 'Edit Contact' : 'Add Contact'}>
+<Modal bind:show title={contact ? 'Edit Contact' : 'Add Contact'} {className}>
   <form onsubmit={handleSubmit} class="space-y-4 p-6">
     <div>
-      <label for="blockchain" class="block text-sm font-medium text-gray-700">Blockchain</label>
+      <label for="blockchain" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Blockchain</label>
       <select id="blockchain" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.blockchain} onchange={handleChange}>
         {#each blockchains as blockchain}
           <option value={blockchain}>{blockchain}</option>
@@ -136,12 +138,10 @@
       {#if $errors.blockchain}
         <p class="mt-2 text-sm text-red-600">{$errors.blockchain}</p>
       {/if}
+    </div>
 
-
-</div>
-
-<div>
-      <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
       <input type="text" id="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.name} onchange={handleChange} />
       {#if $errors.name}
         <p class="mt-2 text-sm text-red-600">{$errors.name}</p>
@@ -149,7 +149,7 @@
     </div>
 
     <div>
-      <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+      <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Address</label>
       <input type="text" id="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focusring:indigo-500 sm:text-sm text-gray-800" bind:value={$form.address} onchange={handleChange} />
       {#if $errors.address}
         <p class="mt-2 text-sm text-red-600">{$errors.address}</p>
@@ -157,7 +157,7 @@
     </div>
 
     <div>
-      <label for="alias" class="block text-sm font-medium text-gray-700">Alias</label>
+      <label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alias</label>
       <input type="text" id="alias" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} onchange={handleChange} />
       {#if $errors.alias}
         <p class="mt-2 text-sm text-red-600">{$errors.alias}</p>
@@ -165,7 +165,7 @@
     </div>
 
     <div>
-      <label for="note" class="block text-sm font-medium medium text-gray-700">Note</label>
+      <label for="note" class="block text-sm font-medium medium text-gray-700 dark:text-gray-200">Note</label>
       <textarea id="note" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border:indigo-500 focus:ring-indigo-500 sm: text-sm text-gray-800" bind:value={$form.note} onchange={handleChange}></textarea>
       {#if $errors.note}
         <p class="mt-2 text-sm text-red-600">{$errors.note}</p>

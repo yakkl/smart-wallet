@@ -1,4 +1,8 @@
 import type { SwapToken } from './interfaces';
+import { get } from 'svelte/store';
+import { ethers } from 'ethers';
+import { yakklTokensStore, yakklTokensCustomStore, setYakklTokensStorage, setYakklTokensCustomStorage } from '$lib/common/stores';
+import { type TokenStorage } from '$lib/common';
 
 type TokenKey = string;
 
@@ -19,7 +23,7 @@ const commonTokens: Map<TokenKey, SwapToken> = new Map<TokenKey, SwapToken>( [
   [ 'LINK-1', { chainId: 1, symbol: 'LINK', name: 'Chainlink', decimals: 18, address: '0x514910771AF9Ca656af840dff83E8264EcF986CA' } ],
   [ 'MATIC-1', { chainId: 1, symbol: 'MATIC', name: 'Polygon', decimals: 18, address: '0x7D1Afa7B718fb893DB30A3abc0Cfc608AaCfebb0' } ],
   [ 'PEPE-1', { chainId: 1, symbol: 'PEPE', name: 'Pepe', decimals: 18, address: '0x6982508145454Ce325dDbE47a25d4ec3d2311933' } ],
-  [ 'DOGE-1', { chainId: 1, symbol: 'DOGE', name: 'Dogecoin', decimals: 8, address: '0xba2ae424d960c26247dd6c32edc70b295c744c43' } ],
+  //[ 'DOGE-1', { chainId: 1, symbol: 'DOGE', name: 'Dogecoin', decimals: 8, address: '0xba2ae424d960c26247dd6c32edc70b295c744c43' } ],
   [ 'SHIB-1', { chainId: 1, symbol: 'SHIB', name: 'Shiba Inu', decimals: 18, address: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE' } ],
   [ 'FLOKI-1', { chainId: 1, symbol: 'FLOKI', name: 'Floki', decimals: 9, address: '0x43F11C02439E2736800433B4594994BD43CD066D' } ],
 
@@ -68,3 +72,70 @@ export function loadTokenListFromLocalStorage() {
     tokensArray.forEach( ( [ key, token ] ) => commonTokens.set( key, token ) );
   }
 }
+
+// Example usage:
+// updateTokenBalances(userAddress, provider)
+//   .then(() => console.log('Balances updated'))
+//   .catch((error) => console.error('Error updating balances:', error));
+
+// TODO: Evaluate if this function should be here or in a different file. Also, change to ethers v6 OR our own custom classes
+export async function updateTokenBalances(userAddress: string, provider: ethers.providers.Provider): Promise<void> {
+  // Retrieve current token lists
+  const tokens = get(yakklTokensStore);
+  const customTokens = get(yakklTokensCustomStore);
+
+  // Helper function to get balance for a token
+  async function getTokenBalance(token: TokenStorage): Promise<string | undefined> {
+    try {
+      if (!ethers.utils.isAddress(token.address)) {
+        console.log(`Invalid token address: ${token.address}`);
+        return undefined;
+      }
+
+      const tokenContract = new ethers.Contract(
+        token.address,
+        [
+          'function balanceOf(address owner) view returns (uint256)',
+          'function decimals() view returns (uint8)',
+        ],
+        provider
+      );
+
+      const balance = await tokenContract.balanceOf(userAddress);
+      const decimals = await tokenContract.decimals();
+
+      return ethers.utils.formatUnits(balance, decimals);
+    } catch (error) {
+      console.log(`Failed to get balance for token: ${token.name}`, error);
+      return undefined;
+    }
+  }
+
+  // Update balances for tokens
+  const updatedTokens = await Promise.all(
+    tokens.map(async (token) => {
+      const balance = await getTokenBalance(token);
+      return {
+        ...token,
+        balance: balance !== undefined ? balance : token.balance,
+      };
+    })
+  );
+
+  const updatedCustomTokens = await Promise.all(
+    customTokens.map(async (token) => {
+      const balance = await getTokenBalance(token);
+      return {
+        ...token,
+        balance: balance !== undefined ? balance : token.balance,
+      };
+    })
+  );
+
+  // Save updated tokens to storage and stores
+  setYakklTokensStorage(updatedTokens);
+  setYakklTokensCustomStorage(updatedCustomTokens);
+
+  console.log('Token balances updated successfully.');
+}
+

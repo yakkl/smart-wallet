@@ -1,12 +1,19 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { PATH_WELCOME, PATH_LOGIN, YEAR, VERSION, PATH_ETHEREUM_TRANSACTIONS_SEND, RegistrationType, type Settings } from "$lib/common";
-  import { yakklCurrentlySelectedStore } from '$lib/common/stores';
+  import { PATH_WELCOME, PATH_LOGIN, YEAR, VERSION, PATH_ETHEREUM_TRANSACTIONS_SEND, RegistrationType, type Settings, type SwapPriceProvider } from "$lib/common";
+  import { getYakklCurrentlySelected } from '$lib/common/stores';
   import ChatbotModal from './ChatbotModal.svelte';
 	import Buy from "$lib/components/Buy.svelte";
 	import { onMount } from 'svelte';
 	import { getMiscStore, getSettings } from '$lib/common/stores';
-	import SwapModal from './SwapModal.svelte';
+	import Swap from "./Swap.svelte";
+	import type { Provider } from "$lib/plugins/Provider";
+	import type { Ethereum } from "$lib/plugins/blockchains/evm/ethereum/Ethereum";
+	import { UniswapSwapManager } from "$lib/plugins/UniswapSwapManager";
+	import { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+	import type { Wallet } from "$lib/plugins/Wallet";
+	import WalletManager from "$lib/plugins/WalletManager";
+	import { getYakklCurrentlySelectedAccountKey } from "$lib/common/security";
 
 
   interface Props {
@@ -29,16 +36,56 @@
   let yakklMiscStore: string;
   let yakklSettingsStore: Settings | null;
 
-  let fundingAddress: string | null | undefined = $yakklCurrentlySelectedStore?.shortcuts.address || null;
+  let fundingAddress: string = $state(''); //| null | undefined = $yakklCurrentlySelectedStore?.shortcuts.address || null;
+  let swapPriceProvider: SwapPriceProvider | null = null; // Don't have to set it to null
+  let provider: Provider = $state();
+  let chainId = 1;
+  let blockchain: Ethereum = $state();
+  let swapManager: UniswapSwapManager = $state();
+  let tokenService: TokenService<any> = $state();
 
   onMount(async () => {
     try {
+      yakklMiscStore = getMiscStore();
+      if (!yakklMiscStore) {
+        return; // Don't do anything if not logged in
+      }
+
       // Get the settings
       yakklSettingsStore = await getSettings();
-      yakklMiscStore = getMiscStore();
       if (yakklSettingsStore) {
         registeredType = yakklSettingsStore.registeredType.toUpperCase();
       }
+
+      const currentlySelected = await getYakklCurrentlySelected();
+      if (currentlySelected) {
+        fundingAddress = currentlySelected.shortcuts.address;
+      }
+
+            if (swapPriceProvider === null) {
+        let wallet: Wallet | null = null;
+        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+        if (wallet) {
+          if (!wallet.getSigner()) {
+            const accountKey = await getYakklCurrentlySelectedAccountKey();
+            if (accountKey && accountKey.privateKey) await wallet.setSigner(accountKey.privateKey); // Could have sent this to getInstance as well
+          }
+
+          provider = wallet.getProvider()!; // Only for testing
+          if (provider) {
+            const signer = wallet.getSigner();
+            if (signer) {
+              provider.setSigner(signer);
+            }
+            blockchain = wallet.getBlockchain() as Ethereum;
+
+            swapManager = new UniswapSwapManager(blockchain as Ethereum, provider!);
+            tokenService = new TokenService(blockchain as Ethereum);
+          }
+        }
+      }
+
+
     } catch (e) {
       console.log(`Footer: onMount - ${e}`);
     }
@@ -96,8 +143,8 @@
 
 <Buy bind:show={showBuy}/>
 
-<!-- TODO: Make sure the new props are provided and uncomment -->
 <!-- <SwapModal bind:show={showSwap} {fundingAddress} /> -->
+<Swap bind:show={showSwap} {fundingAddress} {provider} {blockchain} {swapManager} {tokenService} />
 
 <footer id="{id}" class="visible fixed bg-base-100 mb-2 inset-x-0 bottom-0 mx-2 mt-0 rounded-lg max-w-[{containerWidth}px] {classParam}">
 

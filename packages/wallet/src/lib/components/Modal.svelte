@@ -24,13 +24,13 @@
 </script>
 
 {#if show}
-  <div class="fixed inset-0 flex items-center justify-center z-[999]">
+  <div class="fixed inset-0 flex items-center justify-center z-[699] {className}">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="absolute inset-0 bg-black opacity-50" onclick={onClose}></div>
 
     <!-- Modal container -->
-    <div class="bg-surface-light dark:bg-surface-dark text-primary-light dark:text-primary-dark rounded-lg shadow-lg w-full max-w-md mx-auto z-10 max-h-[80%] flex flex-col {className}">
+    <div class="bg-surface-light dark:bg-surface-dark text-primary-light dark:text-primary-dark rounded-lg shadow-lg w-full max-w-md mx-auto z-10 max-h-[80%] flex flex-col">
 
       <!-- Modal header -->
       <div class="p-4 relative">

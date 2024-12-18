@@ -10,6 +10,7 @@
   import { createPortfolioAccount } from '$lib/plugins/networks/ethereum/createPortfolioAccount';
 	import { onMount } from 'svelte';
 	import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
+	import { sendNotification } from '$lib/common/notifications';
   // import ErrorModal from '$lib/components/ErrorModal.svelte';
   // import { jsPDF } from "jspdf";
 
@@ -21,7 +22,7 @@
   let id: string;
   let registered = yakklRegisteredData;
   let email=$state('');
-  let userName=$state(''); 
+  let userName=$state('');
   let accountName = $state('Account 1');
   // let encryptDownload = true;
   let passwordWarning = $state(false);
@@ -57,7 +58,7 @@
       registeredType = settings.registeredType ?? 'unknown reg type';
     }
   });
-  
+
   async function createAccount() {
     try {
       profile = await getProfile() as Profile;
@@ -69,7 +70,7 @@
       if (!profile || !yakklMiscStore) {
         throw 'Profile data does not seem to be valid. Please register or re-register. Thank you.';
       }
-          
+
       let profileData: ProfileData | null = null;
       if (isEncryptedData(profile.data)) {
         await decryptData(profile.data, yakklMiscStore).then(result => {
@@ -83,7 +84,7 @@
       pincode = profileData!.pincode;
       registered = profileData!.registered;
       email = profileData!.email;
-      
+
       await createPortfolioAccount(yakklMiscStore, profile).then(async result => {
         if (result) {
           try {
@@ -92,11 +93,11 @@
             if (!primaryAccountValues.currentlySelected || !primaryAccountValues.primaryAccount) {
               throw 'Portfolio account was not created. Please try again. Thank you.';
             }
-            
+
             accountName = primaryAccountValues.currentlySelected.shortcuts.accountName;
 
             id = primaryAccountValues.currentlySelected.id;
-            
+
             network = blockchain = primaryAccountValues.currentlySelected.shortcuts.network.blockchain;
             address = primaryAccountValues.currentlySelected.shortcuts.address;
             createDate = primaryAccountValues.primaryAccount.createDate;
@@ -118,6 +119,7 @@
             derivedPath = (primaryData as PrimaryAccountData).path as string;
             displayDate = new Date(createDate);
 
+            sendNotification("Primary Address Created!", "Your primary address has been created. Please print and store your emergency kit in a safe place.  🔐 DO NOT share this information with anyone! Thank you.");
             successDialog = true;
           } catch (e) {
             throw `Wallet was created but the following occured: ${e}`;
@@ -256,7 +258,7 @@
       <svg aria-hidden="true" class="mx-auto mb-4 w-14 h-14 text-green-600 dark:text-gray-200 fill-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
       </svg>
-            
+
       <h3 class="mb-2 text-lg font-normal text-green-700 dark:text-gray-400"><span class="font-bold">SUCCESS - </span> Wallet Created!</h3>
       <div class="text-left">
         <h3 class="mb-1 text-lg font-bold text-green-900 ">(ONLY available for Pro version)</h3>
@@ -281,10 +283,10 @@
     </div>
     <div class="text-center mt-10" data-size={10}><Spinner/></div>
   </div>
-{:then _} 
+{:then _}
 
 <!-- {#if accountName} -->
-<div class="print:hidden min-h-[40rem] mx-2"> 
+<div class="print:hidden min-h-[40rem] mx-2">
   <div class="relative mt-1">
     <main class="p-2 max-h-[900px] rounded-xl bg-base-100 overflow-scroll border-2 border-stone-700 border-r-stone-700/75 border-b-slate-700/75">
 
@@ -314,7 +316,7 @@
       <div class="print:hidden m-1 mt-12 mb-[12rem] rounded-t-lg bg-base-100 text-base-content overflow-scroll">
         <h4 class="text-center font-extrabold text-lg mt-5">VERY IMPORTANT!</h4>
         <h4 class="text-center font-extrabold text-lg mb-4">PRINT THIS PAGE and/or COPY YOUR SECRET PHRASE SOMEWHERE SAFE!</h4>
-      
+
         <div class="ml-2 mr-2 text-center">
           <h3 class="text-lg font-medium leading-6">{network} - Account Secrets Emergency Kit</h3>
           <br/>
@@ -347,12 +349,12 @@
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
               <dt class="text-xs ml-1 text-gray-700 mt-1">PRIVATE KEY</dt>
-              <dd class="text-xl font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0 break-all">{privateKey}  
+              <dd class="text-xl font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0 break-all">{privateKey}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-gray-100">
               <dt class="text-xs ml-1 text-gray-700 mt-1">SECRET PHRASE!</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0 break-normal">{mnemonic}  
+              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0 break-normal">{mnemonic}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
@@ -361,12 +363,12 @@
             </div>
             <div class="py-4 grid grid-cols-5 bg-gray-100">
               <dt class="text-xs ml-1 text-gray-700 mt-1">DATE CREATED</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0">{displayDate}  
+              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0">{displayDate}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
               <dt class="text-xs ml-1 text-gray-700 mt-1">EMAIL</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0">{email}  
+              <dd class="text-lg font-extrabold font-mono text-gray-700 col-span-4 ml-4 mt-0">{email}
               </dd>
             </div>
           </dl>
@@ -376,7 +378,7 @@
         <br/>
         <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> The {wordCount} words MUST be in the order above! DO NOT mix the order up if you need to enter them to recover your account!</span>
         <br/>
-        <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> To safely destroy this document, redact and shred or burn it!</span>     
+        <span class="block mt-2 text-base text-gray-300 justify-center relative"><span class="font-bold">IMPORTANT:</span> To safely destroy this document, redact and shred or burn it!</span>
       </div>
 
     </main>
@@ -404,7 +406,7 @@
             <h4 class="block text-sm text-primary">Portfolio Account</h4>
           </div>
 
-        <div class="mt-5 border-t border-gray-400"> 
+        <div class="mt-5 border-t border-gray-400">
           <dl class="divide-y divide-gray-400">
             <div class="py-4 grid grid-cols-5 bg-gray-100">
               <dt class="text-sm ml-3 font-medium text-gray-500 mt-1">USERNAME</dt>
@@ -443,12 +445,12 @@
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
               <dt class="text-sm ml-3 font-medium text-gray-500 mt-1">PRIVATE KEY</dt>
-              <dd class="text-xl font-extrabold font-mono text-gray-900 col-span-4 mt-0">{privateKey}  
+              <dd class="text-xl font-extrabold font-mono text-gray-900 col-span-4 mt-0">{privateKey}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-gray-100">
               <dt class="text-sm ml-3 font-medium text-gray-500 mt-1">SECRET PHRASE!</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{mnemonic}  
+              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{mnemonic}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
@@ -457,12 +459,12 @@
             </div>
             <div class="py-4 grid grid-cols-5 bg-gray-100">
               <dt class="text-sm ml-3 font-medium text-gray-500 mt-1">DATE CREATED</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{displayDate}  
+              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{displayDate}
               </dd>
             </div>
             <div class="py-4 grid grid-cols-5 bg-white">
               <dt class="text-sm ml-3 font-medium text-gray-500 mt-1">EMAIL</dt>
-              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{email}  
+              <dd class="text-lg font-extrabold font-mono text-gray-900 col-span-4 mt-0">{email}
               </dd>
             </div>
           </dl>

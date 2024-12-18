@@ -11,6 +11,7 @@
 	import { EmergencyKitManager } from '$plugins/EmergencyKitManager';
 	import { onMount } from 'svelte';
 	import { dateString } from '$lib/common/datetime';
+	import { sendNotification } from '$lib/common/notifications';
   // import { jsPDF } from "jspdf";
 
   let currentlySelected: YakklCurrentlySelected;
@@ -152,6 +153,7 @@
           derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${yakklPrimaryAccount.index}'/0/${yakklPrimaryAccount.subIndex}`;
           displayDate = new Date(createDate);
 
+          sendNotification("Secondary (sub) Address Created!", "Your primary address has been created. Please print and store your emergency kit in a safe place.  🔐 DO NOT share this information with anyone! Thank you.");
           successDialog = true;
         } catch (e) {
           console.log(`Account Derived: Error inside: ${e}`);

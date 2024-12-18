@@ -5,10 +5,11 @@
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
   import { debounce } from 'lodash-es';
   import { ethers as ethersv6 } from 'ethers-v6';
-  import { toBigInt } from '$lib/common';
+  import { convertTokenToUsd, convertUsdToTokenAmount, debug_log, toBigInt } from '$lib/common';
+  import ToggleSwitch from './ToggleSwitch.svelte';
+  import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
 
   interface Props {
-    // tokens?: SwapToken[];
     disabled?: boolean;
     resetValues?: boolean;
     insufficientBalance?: boolean;
@@ -19,7 +20,6 @@
   }
 
   let {
-    // tokens = [],
     disabled = false,
     resetValues = $bindable(false),
     insufficientBalance = false,
@@ -32,6 +32,7 @@
   let userInput = $state('');
   let formattedAmount = $state('');
 
+  // Ensure resetValues resets inputs
   $effect(() => {
     if (resetValues) {
       userInput = '';
@@ -40,57 +41,83 @@
     }
   });
 
+  // Calculate formattedAmount dynamically
   $effect(() => {
-    if (!userInput && toBigInt($swapPriceDataStore.amountIn) > 0n) {
-      formattedAmount = formatAmount(toBigInt($swapPriceDataStore.amountIn), $swapPriceDataStore.tokenIn.decimals);
-    } else {
-      formattedAmount = userInput;
-    }
+    const tokenAmount = ethersv6.formatUnits(toBigInt($swapPriceDataStore.amountIn), $swapPriceDataStore.tokenIn.decimals);
+    const usdAmount = $swapPriceDataStore.marketPriceIn > 0
+      ? convertTokenToUsd(Number(tokenAmount), $swapPriceDataStore.marketPriceIn)
+      : 0;
+
+    debug_log('SELL - usdAmount, tokenAmount, marketPriceIn', usdAmount, tokenAmount, $swapPriceDataStore.marketPriceIn);
+
+    formattedAmount = $isUsdModeStore ? usdAmount.toFixed(2) : tokenAmount;
+    userInput = '';
   });
 
-  function formatAmount(amount: bigint, decimals: number): string {
-    if (amount === 0n) return '';
-    const formattedValue = ethersv6.formatUnits(amount, decimals);
-    const [integerPart, decimalPart] = formattedValue.split('.');
-    if (!decimalPart) return integerPart;
-    const trimmedDecimal = decimalPart.replace(/0+$/, '');
-    return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
-  }
-
+  // Debounced amount change handler
   const debouncedAmountChange = debounce((value: string) => {
     onAmountChange(value);
   }, 300);
 
+  // Handle user input changes
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
 
+    debug_log('SELL - User input 1:', value);
+
+    // Allow only valid numbers
     value = value.replace(/[^0-9.]/g, '');
 
+    // Handle decimals
     const parts = value.split('.');
     if (parts.length > 2) value = `${parts[0]}.${parts.slice(1).join('')}`;
-    if (parts[1]?.length > 6) value = `${parts[0]}.${parts[1].slice(0, 6)}`;
+
+    // Limit decimal precision
+    if ($isUsdModeStore && parts[1]?.length > 2) {
+      value = `${parts[0]}.${parts[1].slice(0, 2)}`;
+    } else if (!$isUsdModeStore) {
+      const tokenDecimals = $swapPriceDataStore.tokenIn.decimals || 18;
+      if (parts[1]?.length > tokenDecimals) {
+        value = `${parts[0]}.${parts[1].slice(0, tokenDecimals)}`;
+      }
+    }
+
+    debug_log('SELL - User input 2:', value);
 
     userInput = value;
 
-    if (value === '' || value === '.') {
-      userInput = '';
-      formattedAmount = '';
-      onAmountChange('');
-      return;
-    }
+    debug_log('SELL - User input 3:', value, userInput);
 
-    formattedAmount = value;
-    debouncedAmountChange(value);
+    if (value === '' || value === '.') {
+      formattedAmount = '';
+      debouncedAmountChange('');
+    } else {
+      formattedAmount = value;
+
+      if ($isUsdModeStore) {
+        debug_log('SELL - Converting USD to token amount...');
+        const marketPrice = $swapPriceDataStore.marketPriceIn || 0;
+        if (marketPrice > 0) {
+          const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenIn.decimals);
+          debouncedAmountChange(tokenAmount.toString());
+        } else {
+          debug_log('Market price unavailable for conversion.');
+          debouncedAmountChange('');
+        }
+      } else {
+        debug_log('SELL - Token amount:', value);
+        debouncedAmountChange(value);
+      }
+    }
   }
 
   function handleBlur() {
-    if (!userInput || userInput === '.' || userInput === '') {
+    if (!userInput || userInput === '.') {
       userInput = '';
-      if (!formattedAmount || formattedAmount === '0') formattedAmount = '';
+      formattedAmount = '';
     } else {
       formattedAmount = userInput;
-      userInput = '';
     }
   }
 </script>
@@ -127,7 +154,15 @@
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">
-    <div class="flex justify-between items-center mt-2 text-sm">
+    <div class="flex items-center">
+      <ToggleSwitch
+        value={$isUsdModeStore}
+        labelOn="USD"
+        labelOff="Token"
+        className="bg-purple-400"
+        onChange={(value) => isUsdModeStore.set(value)} />
+    </div>
+    <div class="flex flex-col items-end text-right">
       <SwapTokenPrice {swapPriceDataStore} type="sell" />
       <span>Balance: {balance}</span>
     </div>
@@ -137,5 +172,5 @@
       Insufficient balance for this swap
     </div>
   {/if}
-
 </div>
+

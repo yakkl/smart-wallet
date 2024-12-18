@@ -32,7 +32,9 @@ import {
 	STORAGE_YAKKL_CONNECTED_DOMAINS,
 	STORAGE_YAKKL_CHATS,
 	STORAGE_YAKKL_WALLET_BLOCKCHAINS,
-	STORAGE_YAKKL_WALLET_PROVIDERS
+	STORAGE_YAKKL_WALLET_PROVIDERS,
+  STORAGE_YAKKL_TOKENS,
+  STORAGE_YAKKL_TOKENS_CUSTOM
 } from '$lib/common/constants';
 
 import { encryptData, decryptData } from '$lib/common/encryption';
@@ -56,9 +58,9 @@ import type {
 	YakklChat,
 	GasTransStore,
 	ContractData,
+  TokenStorage,
 	// PriceData
 } from '$lib/common/interfaces';
-
 
 import type { Wallet } from '$plugins/Wallet';
 
@@ -149,6 +151,8 @@ export const yakklContactStore = writable<YakklContact | null>(undefined); // Th
 export const yakklAccountStore = writable<YakklAccount>(undefined); // The single selcted account from the yakklAccountsStore list
 export const yakklWalletProvidersStore = writable<string[]>([]);
 export const yakklWalletBlockchainsStore = writable<string[]>( [] );
+export const yakklTokensStore = writable<TokenStorage[]>( [] );
+export const yakklTokensCustomStore = writable<TokenStorage[]>( [] );
 // export const yakklPriceStore = writable<PriceData | null>( null );
 
 
@@ -208,6 +212,9 @@ export function storageChange(changes: any) {
 		if (changes.yakklBlockedList) {
 			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
 		}
+    if (changes.yakklTokensCustom) {
+			setYakklTokensCustomStore(changes.yakklTokensCustom.newValue);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -225,6 +232,8 @@ export async function syncStoresToStorage() {
 		setYakklPrimaryAccountsStore(await getYakklPrimaryAccounts());
 		setYakklContactsStore(await getYakklContacts());
 		setYakklChatsStore(await getYakklChats());
+    setYakklTokensStore(await getYakklTokens());
+    setYakklTokensCustomStore(await getYakklTokensCustom());
 		setYakklConnectedDomainsStore(await getYakklConnectedDomains());
 	} catch (error) {
 		console.log(error);
@@ -282,6 +291,11 @@ export function getYakklPrimaryAccountsStore() {
 
 export function getYakklContactsStore() {
 	const store = get(yakklContactsStore);
+	return store;
+}
+
+export function getYakklTokensStore() {
+	const store = get(yakklTokensStore);
 	return store;
 }
 
@@ -423,6 +437,18 @@ export function setYakklContactsStore(values: YakklContact[]) {
 	return store;
 }
 
+export function setYakklTokensStore(values: TokenStorage[]) {
+	const store = get(yakklTokensStore);
+	yakklTokensStore.set(values);
+	return store;
+}
+
+export function setYakklTokensCustomStore(values: TokenStorage[]) {
+	const store = get(yakklTokensCustomStore);
+	yakklTokensCustomStore.set(values);
+	return store;
+}
+
 // Return previous values
 export function setYakklChatsStore(values: YakklChat[]) {
 	const store = get(yakklChatsStore);
@@ -560,6 +586,32 @@ export async function getYakklRegisteredData(): Promise<YakklRegisteredData | nu
 export async function getYakklContacts(): Promise<YakklContact[]> {
   try {
     const value = await getObjectFromLocalStorage<YakklContact[]>(STORAGE_YAKKL_CONTACTS);
+		if (typeof value === 'string') {
+      // Handle the case where value is a string, which shouldn't happen in this context
+      throw new Error('Unexpected string value received from local storage');
+    }
+    return value || []; // Return an empty array or provide a default value if necessary
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getYakklTokens(): Promise<TokenStorage[]> {
+  try {
+    const value = await getObjectFromLocalStorage<TokenStorage[]>(STORAGE_YAKKL_TOKENS);
+		if (typeof value === 'string') {
+      // Handle the case where value is a string, which shouldn't happen in this context
+      throw new Error('Unexpected string value received from local storage');
+    }
+    return value || []; // Return an empty array or provide a default value if necessary
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getYakklTokensCustom(): Promise<TokenStorage[]> {
+  try {
+    const value = await getObjectFromLocalStorage<TokenStorage[]>(STORAGE_YAKKL_TOKENS_CUSTOM);
 		if (typeof value === 'string') {
       // Handle the case where value is a string, which shouldn't happen in this context
       throw new Error('Unexpected string value received from local storage');
@@ -746,6 +798,26 @@ export async function setYakklContactsStorage(values: YakklContact[]) {
 	try {
 		yakklContactsStore.set( values );
 		const returnValue = await setObjectInLocalStorage( 'yakklContacts', values );
+		return returnValue;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+export async function setYakklTokensStorage(values: TokenStorage[]) {
+	try {
+		yakklTokensStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklTokens', values );
+		return returnValue;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+export async function setYakklTokensCustomStorage(values: TokenStorage[]) {
+	try {
+		yakklTokensCustomStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklTokensCustom', values );
 		return returnValue;
 	} catch (error) {
 		console.log(error);

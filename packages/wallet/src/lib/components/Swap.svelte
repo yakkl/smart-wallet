@@ -4,13 +4,13 @@
 	import type { Browser } from 'webextension-polyfill';
   import { debug_log, error_log } from '$lib/common/debug-error';
   import { onDestroy, onMount } from 'svelte';
-  import type { SwapParams, SwapPriceData, SwapToken } from '$lib/common/interfaces';
+  import type { Profile, ProfileData, SwapParams, SwapPriceData, SwapToken } from '$lib/common/interfaces';
   import SellTokenPanel from './SellTokenPanel.svelte';
   import BuyTokenPanel from './BuyTokenPanel.svelte';
   import SwapSettings from './SwapSettings.svelte';
   import SwapSummary from './SwapSummary.svelte';
   import Modal from './Modal.svelte';
-  import { BigNumber, ETH_BASE_SWAP_GAS_UNITS, parseAmount, YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
+  import { BigNumber, decryptData, ETH_BASE_SWAP_GAS_UNITS, isEncryptedData, parseAmount, YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
   import { ethers as ethersv6 } from 'ethers-v6';
   import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
   import { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
@@ -23,6 +23,14 @@
   import { toBigInt } from '$lib/common/math';
 	import { GasToken } from '$lib/plugins/GasToken';
 	import { validateSwapQuote, type ValidationResult } from '$lib/common/validation';
+  import { getMiscStore, getProfile } from '$lib/common/stores';
+	import { deepCopy } from '$lib/utilities';
+	import ErrorNoAction from './ErrorNoAction.svelte';
+	import Warning from './Warning.svelte';
+	import PincodeVerify from './PincodeVerify.svelte';
+	import Confirmation from './Confirmation.svelte';
+	import { sendNotification, sendNotificationPing } from '$lib/common/notifications';
+
 	// import { multiHopQuoteAlphaRouter } from '$lib/plugins/alphaRouter';
 
 // Add back to package.json - 		"@yakkl/uniswap-alpha-router-service": "workspace:*",
@@ -35,8 +43,8 @@
     swapManager: UniswapSwapManager;
     tokenService: TokenService<any>;
     show?: boolean;
-    onSwap?: (fundingAddress: string, tokenIn: SwapToken, tokenOut: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void;
     className?: string;
+    onSwap?: (fundingAddress: string, tokenIn: SwapToken, tokenOut: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) => void;
   }
 
   let {
@@ -46,8 +54,8 @@
     swapManager,
     tokenService,
     show = $bindable(false),
+    className = 'text-gray-600 z-[699]',
     onSwap = () => {},
-    className = 'text-gray-600 z-[999]'
   }: Props = $props();
 
   const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
@@ -171,6 +179,13 @@
   let swapManagerName = '';
   let pricesInterval: NodeJS.Timeout;
   let isEthWethSwap = $state(false);
+  let showVerify = $state(false);
+  let showError = $state(false);
+  let errorValue = $state('');
+  let showWarning = $state(false);
+  let warningValue = $state('');
+  let showConfirmation = $state(false);
+  let pincodeVerified = false;
 
   // Initialize
   onMount(async () => {
@@ -221,7 +236,7 @@
 
   // Reactive statements
   // $effect(() => {
-  //   if (deadline || slippageTolerance || poolFee) {
+  //   if ($swapStateStore.deadline || $swapStateStore.slippageTolerance || $swapStateStore.poolFee) {
   //     debouncedGetQuote();
   //   }
   // });
@@ -240,46 +255,6 @@
       isEthWethSwap = false;
     }
   });
-
-  // const isEthWethSwap = derived(
-  //   [swapPriceDataStore], // Source store(s)
-  //   ([$swapPriceDataStore]) => {
-  //     const { tokenIn, tokenOut } = $swapPriceDataStore;
-  //     if (tokenIn.symbol === 'ETH' && tokenOut.symbol === 'WETH' ||
-  //       (tokenIn.symbol === 'WETH' && tokenOut.symbol === 'ETH')) {
-  //       return true;
-  //     }
-  //     else {
-  //       return false;
-  //     }
-  //   }
-  // );
-
-  // $effect(() => {
-  //   if ($swapStateStore.tokenIn && $swapStateStore.fromAmount) {
-  //     debug_log('Checking balance:', $swapStateStore.tokenIn, $swapStateStore.fromAmount, fundingAddress);
-
-  //     checkBalance($swapStateStore.tokenIn, $swapStateStore.fromAmount, fundingAddress); // Only need the selling token balance to verify if there are enough funds but we also need to verify ETH for gas
-  //     if (gasToken && $swapPriceDataStore.marketPriceGas === 0) {
-  //       gasToken.getMarketPrice().then(price => {
-  //         updateSwapPriceData( { marketPriceGas: price.price }); // TODO: Need to add isInsufficient check for gas so we can show the error message and offer an alternative if there is one
-  //       });
-  //     }
-
-  //     // Only need to update if we have a tokenIn and the market price is 0
-  //     if ($swapStateStore.tokenIn.symbol && swapManager && $swapPriceDataStore.marketPriceIn === 0) {
-  //       swapManager.getMarketPrice(`${$swapStateStore.tokenIn.symbol}-USD`).then(price => {
-  //         if (price.price <= 0) {
-  //           // debug_log('$swapStateStore.tokenIn - Market price is 0: (ignored)', price);
-  //           return;
-  //         }
-  //         updateSwapPriceData( { marketPriceIn: price.price });
-  //       }).catch(err => {
-  //         error_log('$swapStateStore.tokenIn - Error fetching market price:', err);
-  //       });
-  //     }
-  //   }
-  // });
 
   $effect(() => {
     const { tokenIn, fromAmount } = $swapStateStore;
@@ -542,7 +517,7 @@
         }
       } else {
         // For ERC20 tokens, check swap amount
-        const feeAmount = $swapPriceDataStore.feeAmount || 0n;
+        // const feeAmount = $swapPriceDataStore.feeAmount || 0n;
         const totalRequiredAmount = swapAmount;
         if (balance < totalRequiredAmount) {
           $swapStateStore.error = `Insufficient ${$swapStateStore.tokenIn.symbol} balance. Need ${ethersv6.formatUnits(totalRequiredAmount, $swapStateStore.tokenIn.decimals)} ${$swapStateStore.tokenIn.symbol}, but have ${ethersv6.formatUnits(balance, $swapStateStore.tokenIn.decimals)} ${$swapStateStore.tokenIn.symbol}`;
@@ -573,6 +548,7 @@
 
       $swapStateStore.slippageTolerance = $swapPriceDataStore.slippageTolerance || 0.5;
       $swapStateStore.deadline = $swapPriceDataStore.deadline || 10;
+      $swapStateStore.poolFee = $swapPriceDataStore.fee || 3000;
 
       const quote = await swapManager.getQuote(
         Token.fromSwapToken($swapStateStore.tokenIn, blockchain, provider),
@@ -662,6 +638,13 @@
 
   async function swapTokens() {
     try {
+      // Verify pin for one more security check before calling this function!
+
+      if (!pincodeVerified) {
+        showVerify = true;
+        return;
+      }
+
       if (isEthWethSwap) {
         updateSwapPriceData({feeAmount: 0n}); // May want to force fees, slippage, etc. to 0 here
         // May want to do something with receipts later...
@@ -722,6 +705,10 @@
       ); // Notify parent component - could add more data here such as fee, feeAmount, etc.
 
       $swapStateStore.error = '';
+
+      // Add more details to the notification in the future
+      await sendNotification('Swap completed successfully', 'Your swap has been completed successfully.');
+
       reset();
       show = false;
     } catch (err: any) {
@@ -753,11 +740,20 @@
   }
 
   function reset() {
+    showConfirmation = false;
+    showError = false;
+    errorValue = '';
+    showWarning = false;
+    warningValue = '';
+    pincodeVerified = false;
+    showVerify = false;
+
     $swapStateStore.tokenIn = initialToken;
     $swapStateStore.tokenOut = initialToken;
     $swapStateStore.fromAmount = '';
     $swapStateStore.toAmount = '';
     $swapStateStore.fromBalance = '0';
+    $swapStateStore.poolFee = 3000;
     $swapStateStore.error = '';
     lastModifiedPanel = 'sell';
     insufficientBalanceStore.set(false);
@@ -765,13 +761,127 @@
     $uiStateStore.resetValues = true;
   }
 
+  function handleConfirmSwap() {
+    showWarning = false;
+    warningValue = '';
+    showConfirmation = true;
+  }
+
+  function handleCancelSwap() {
+    showConfirmation = false;
+  }
+
+  function handleConfirm() {
+    showConfirmation = false;
+    showWarning = false;
+    warningValue = '';
+    handleSwap();
+  }
+
+  function handleSwap() {
+    pincodeVerified = false;
+    showWarning = false;
+    warningValue = '';
+    showVerify = true;
+  }
+
+  function handleClose() {
+    showConfirmation = false;
+    showError = false;
+    errorValue = '';
+    showWarning = false;
+    warningValue = '';
+    pincodeVerified = false;
+    showVerify = false;
+  }
+
+  // Pincode verification
+  function handleReject(rejection: string = 'You have rejected or Pincode was not validated. No swap transaction was sent.') {
+		try {
+      showConfirmation = false;
+			showVerify = false;
+      showError = false;
+      pincodeVerified = false;
+			showWarning = true;
+			warningValue = rejection;
+		} catch(e: any) {
+			debug_log(e);
+		}
+	}
+
+  async function handleVerified(pincode: string) {
+		try {
+			let profile: Profile | null = await verifyWithPin(pincode, pincodeVerified);
+      if (profile === null) {
+        debug_log('Profile was not found.');
+        throw 'Profile was not found.';
+      }
+
+      pincodeVerified = true;
+      showVerify = false;
+
+      await swapTokens();
+
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  // One more internal check to verify the pincode
+	async function verifyWithPin(pincode: string, pincodeVerified: boolean): Promise<Profile | null>{
+		try {
+      const yakklMiscStore = getMiscStore();
+			let profile: Profile | null = await getProfile();
+			if (profile === null) {
+        pincodeVerified = false;
+				throw 'Profile was not found.';
+			}
+
+			let profileEncrypted = null;
+
+			if (isEncryptedData(profile.data)) {
+				profileEncrypted = deepCopy(profile);
+				await decryptData(profile?.data, yakklMiscStore).then(result => {
+					(profile as Profile).data = result as ProfileData;
+				});
+			}
+
+			if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
+        pincodeVerified = false;
+				throw 'PINCODE was not verified.';
+			}
+
+			if (pincode === (profile.data as ProfileData).pincode) {
+				profile = null;
+				return profileEncrypted;
+			} else {
+        pincodeVerified = false;
+				throw 'PINCODE did not match.';
+			}
+		} catch(e: any) {
+      debug_log(e);
+      pincodeVerified = false;
+			return null;
+		}
+	}
+
+  function handleCloseModal() {
+    reset();
+    show = false;
+  }
 </script>
 
-<Modal bind:show title="Swap" {className}>
+<!-- TODO: Move these two to a SecurityBaseLayout.svelte and wrap the content in them -->
+<Confirmation bind:show={showConfirmation} className="z-[990]" onConfirm={handleConfirm} onReject={handleCancelSwap} />
+<PincodeVerify bind:show={showVerify} className="text-gray-600 z-[990]" onRejected={handleReject} onVerified={handleVerified} />
+
+<!-- TODO: Move these two to layout and use stores -->
+<ErrorNoAction bind:show={showError} className="z-[999]" value={errorValue} handle={handleClose} />
+<Warning bind:show={showWarning} className="z-[999]" value={warningValue} handle={handleClose} />
+
+<Modal bind:show={show} title="Swap" {className} onClose={handleCloseModal}>
   <div class="p-6 space-y-4">
     <!-- Sell Section -->
-           <!-- tokens={[...preferredTokens, ...tokens]} -->
-
     <span>Sell</span>
     <SellTokenPanel
       swapPriceDataStore={swapPriceDataStore}
@@ -827,9 +937,12 @@
       onDeadlineChange={(value) => $swapStateStore.deadline = value}
       onPoolFeeChange={(value) => {
         $swapStateStore.poolFee = value;
-        if ($swapStateStore.tokenIn?.isStablecoin && swapManagerName.includes('uniswap')) {
+        if (($swapStateStore.tokenIn?.isStablecoin || $swapStateStore.tokenOut?.isStablecoin) && swapManagerName.includes('uniswap')) {
           $swapStateStore.poolFee = 500;
         }
+
+        debug_log('Pool Fee:', $swapStateStore.poolFee);
+
         updateSwapPriceData({ fee: $swapStateStore.poolFee });
       }}
     />
@@ -865,7 +978,7 @@
 
     <!-- Swap Button -->
     <button
-      onclick={swapTokens}
+      onclick={handleConfirmSwap}
       class="w-full px-4 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       disabled={!$swapStateStore.tokenIn || !$swapStateStore.tokenOut || !$swapStateStore.fromAmount || !$swapStateStore.toAmount || $uiStateStore.isLoading || $uiStateStore.isSwapping}
     >
@@ -874,6 +987,13 @@
       {:else}
         {$uiStateStore.isLoading ? 'Loading...' : $swapStateStore.tokenIn.symbol === 'WETH' ? 'Unwrap' : 'Wrap'}
       {/if}
+    </button>
+    <!-- Cancel Button -->
+    <button
+      onclick={handleCloseModal}
+      class="w-full px-4 py-3 text-lg font-medium text-white bg-red-500 rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400"
+    >
+      Cancel
     </button>
   </div>
 </Modal>

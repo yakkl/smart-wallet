@@ -1,6 +1,6 @@
 /* eslint-disable no-debugger */
 // import browser from 'webextension-polyfill';
-import type { ErrorBody, ParsedError } from '$lib/common';
+import { debug_log, type ErrorBody, type ParsedError } from '$lib/common';
 // import { Utils } from "alchemy-sdk";
 
 import { AccountTypeCategory } from '$lib/common/types';
@@ -103,15 +103,38 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
 }
 
 // Optional: Format amount back to a string with proper decimal handling
-export function formatAmount( amount: bigint, decimals: number ): string {
-  const formattedAmount = ethersv6.formatUnits( amount, decimals );
+// export function formatAmount( amount: bigint, decimals: number ): string {
+//   const formattedAmount = ethersv6.formatUnits( amount, decimals );
 
-  // Remove trailing zeros after decimal point
-  const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
-  if ( !decimalPart ) return integerPart;
+//   // Remove trailing zeros after decimal point
+//   const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
+//   if ( !decimalPart ) return integerPart;
 
-  const trimmedDecimal = decimalPart.replace( /0+$/, '' );
-  return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
+//   const trimmedDecimal = decimalPart.replace( /0+$/, '' );
+//   return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
+// }
+
+// Format USD amounts to 2 decimal places
+export function formatUsd(amount: number): string {
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Format token amounts based on decimals
+export function formatAmount(amount: bigint, decimals: number): string {
+  if (amount === 0n) return '0';
+  const value = Number(amount) / Math.pow(10, decimals);
+  return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+}
+
+export function convertUsdToTokenAmount(usdAmount: number, marketPrice: number, decimals: number): string {
+  if (marketPrice <= 0) return '0';
+  const tokenAmount = usdAmount / marketPrice;
+  return ethersv6.formatUnits(ethersv6.parseUnits(tokenAmount.toFixed(decimals), decimals), decimals);
+}
+
+export function convertTokenToUsd(tokenAmount: number, marketPrice: number): number {
+  if (marketPrice <= 0) return 0;
+  return tokenAmount * marketPrice;
 }
 
 /**

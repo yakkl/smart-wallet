@@ -238,11 +238,11 @@
   </div>
 
   <div class="my-4">
-    <PincodeModal bind:show={showPincodeModal} onVerify={handleVerifyModal} className="text-gray-600"/>
+    <PincodeModal bind:show={showPincodeModal} onVerified={handleVerifyModal} className="text-gray-600"/>
   </div>
 
   <div class="my-4">
-    <Pincode bind:show={showPincode} onVerify={handleVerify} className="text-gray-600"/>
+    <Pincode bind:show={showPincode} onVerified={handleVerify} className="text-gray-600"/>
   </div>
 
   <div class="my-4">

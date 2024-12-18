@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Pincode change
   import { onMount } from "svelte";
   import { getProfile, setProfileStorage, yakklMiscStore, profileStore, yakklCurrentlySelectedStore, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected } from '$lib/common/stores';
   import { encryptData, decryptData, digestMessage } from '$lib/common/encryption';
@@ -9,10 +10,10 @@
   interface Props {
     show?: boolean;
     className?: string;
-    onVerify?: (pincodeOld: string, pincodeNew: string) => void;
+    onVerified?: (pincodeOld: string, pincodeNew: string) => void;
   }
 
-  let { show = $bindable(false), className = "z-[999]", onVerify = () => {} }: Props = $props();
+  let { show = $bindable(false), className = "z-[999]", onVerified = () => {} }: Props = $props();
 
   let pincodeOriginal = $state("");
   let pincodeNew = $state("");
@@ -70,7 +71,7 @@
       $profileStore = await deepCopy(profile);
       setProfileStorage(profile);
 
-      onVerify(pincodeOriginal, pincodeNew);
+      onVerified(pincodeOriginal, pincodeNew);
 
       pincodeOriginal = "";
       pincodeNew = "";

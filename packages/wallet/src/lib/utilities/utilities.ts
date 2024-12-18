@@ -13,6 +13,7 @@ import { encodeJSON } from '$lib/common/misc';
 import type { BigNumberish } from '$lib/common/bignumber';
 import { yakklVersionStore } from '$lib/common/stores';
 import { Utils } from "alchemy-sdk";
+import { ethers as ethersv6 } from 'ethers-v6';
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Browser } from 'webextension-polyfill';
@@ -58,6 +59,18 @@ export function convertToBigInt( amount: string, decimals: number ): bigint {
 
   // Convert to BigInt
   return BigInt( Math.floor( convertedAmount ) ); // Use Math.floor to avoid rounding issues
+}
+
+export function formatQuantity(amount: bigint, decimals: number): string {
+  if (amount === 0n) return '0';
+  const formattedValue = ethersv6.formatUnits(amount, decimals);
+
+  // Optional: Remove trailing zeros after the decimal point
+  const [integerPart, decimalPart] = formattedValue.split('.');
+  if (!decimalPart) return integerPart;
+
+  const trimmedDecimal = decimalPart.replace(/0+$/, '');
+  return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
 }
 
 export function formatPrice( price: number ): string {

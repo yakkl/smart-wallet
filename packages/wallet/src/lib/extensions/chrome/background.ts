@@ -20,6 +20,8 @@ import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings, Yakkl
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
+import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
+import { debug_log } from '$lib/common';
 // import type { Yakkl } from '$lib/plugins/providers';
 // import { yakklPreferences } from '../../models/dataModels';
 
@@ -27,6 +29,7 @@ type RuntimePort = Runtime.Port;
 type WindowsWindow = Windows.Window;
 type AlarmsAlarm = Alarms.Alarm;
 type RuntimePlatformInfo = Runtime.PlatformInfo;
+type RuntimeSender = Runtime.MessageSender;
 
 let browser_ext: Browser | null = null;
 
@@ -60,6 +63,19 @@ function initializeBrowserExt() {
 //   console.log('Browser extension API not available');
 // }
 
+try {
+  browser_ext!.runtime.onMessage.addListener((message: any, sender: RuntimeSender, sendResponse) => {
+    if (message.type === 'ping') {
+      sendResponse({ status: 'pong' });
+      return true;
+    }
+    handleOnMessage(message, sender, sendResponse);
+    // Returning true ensures the response can be asynchronous
+    return true;
+  }); // For onetime messages
+} catch (error) {
+  console.log('background.js - onMessage error',error);
+}
 
 
 async function setIconLock(): Promise<void> {
@@ -257,11 +273,15 @@ try {
   console.log('background.js - onSuspend error',error);
 }
 
-// try {
-//   browser_ext!.runtime.onMessage.addListener(handleOnMessage); // For onetime messages
-// } catch (error) {
-//   console.log('background.js - onMessage error',error);
-// }
+try {
+  browser_ext!.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    handleOnMessage(message, sender, sendResponse);
+    // Returning true ensures the response can be asynchronous
+    return true;
+  }); // For onetime messages
+} catch (error) {
+  console.log('background.js - onMessage error',error);
+}
 
 try {
   browser_ext!.tabs.onRemoved.addListener((tabId: any) => {
@@ -318,6 +338,35 @@ async function handleOnSuspend() {
   await setIconLock();
 }
 
+async function handleOnMessage(
+  message: any,
+  sender: RuntimeSender,
+  sendResponse: (response?: any) => void
+): Promise<void> {
+  try {
+    // Handle specific message types
+    if (message.type === 'createNotification') {
+      const { notificationId, title, messageText } = message.payload;
+
+      // Perform notification creation
+      await browser_ext.notifications.create(notificationId, {
+        type: 'basic',
+        iconUrl: browser_ext.runtime.getURL('/images/logoBullLock48x48.png'),
+        title: title || 'Notification',
+        message: messageText || 'Default message.',
+      });
+
+      // Respond back to the sender
+      sendResponse({ success: true, message: 'Notification created successfully.' });
+    } else {
+      // Handle other message types
+      sendResponse({ success: false, error: 'Unknown message type.' });
+    }
+  } catch (error: any) {
+    console.log('Error handling message:', error);
+    sendResponse({ success: false, error: error.message || 'Unknown error occurred.' });
+  }
+}
 
 async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType ): Promise<void> {
   try {
@@ -344,14 +393,19 @@ async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType
     }
 
     if (details && details.reason === "update") {
+
       if (details.previousVersion !== browser_ext!.runtime.getManifest().version) {
         await initializeDatabase(true); // This will clear the db and then import again
         await setLocalObjectStorage(platform, false); //true); // Beta version to 1.0.0 will not upgrade due to complete overhaul of the extension. After 1.0.0, upgrades will be handled.
       }
+
     }
 
     // This function may be removed in the future.
     // updateVersion(VERSION); // Set the initial version
+
+    // Add default tokens
+    loadDefaultTokens();
 
     // Just a safety catch
     const count = await db.domains?.count();

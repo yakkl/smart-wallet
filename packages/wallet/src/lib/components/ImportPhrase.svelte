@@ -477,7 +477,7 @@
   }
 </script>
 
-<PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
+<PincodeVerify bind:show={showPincodeModal} onVerified={verifyPincode} />
 
 <div class="relative {className}">
   <Modal bind:show={show} onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>

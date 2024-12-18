@@ -12,7 +12,7 @@
     className?: string;
   }
 
-  let { show = $bindable(false), onContactSelect = null, className = 'z-[999]' }: Props = $props();
+  let { show = $bindable(false), onContactSelect = null, className = 'z-[899]' }: Props = $props();
 
   let showAddModal = $state(false);
   let contacts: YakklContact[] = $state([]);
@@ -56,12 +56,13 @@
 
 </script>
 
-<div class="relative {className}">
+<!-- <div class="relative {className}"> -->
   <Modal
     bind:show={show}
     title="Contact List"
     description="Select the contact you wish to send/transfer to"
     onClose={closeModal}
+    {className}
   >
     <div class="border-t border-b border-gray-200 py-4">
       <ContactList
@@ -87,7 +88,7 @@
 
       {/snippet}
   </Modal>
-</div>
+<!-- </div> -->
 
 <ContactForm
   bind:show={showAddModal}

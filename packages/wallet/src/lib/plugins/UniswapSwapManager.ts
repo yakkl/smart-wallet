@@ -460,9 +460,15 @@ export class UniswapSwapManager extends SwapManager {
     // Step 1: Get available pools
     const availablePools = await this.getAvailablePools( actualTokenIn, actualTokenOut );
     // Step 2: Proceed with the first available pool (or select a pool with the desired fee). There are cases where pools only have a single fee tier.
-    const newFee = availablePools.includes( fee ) ? fee : availablePools[ 0 ];
+    let newFee = fee;
 
-    if ( availablePools.length === 0 ) {
+    if (!availablePools || !availablePools.includes( fee )) {
+      newFee = availablePools[ 0 ];
+    }
+
+    debug_log( 'Available pools, fee, newFee', availablePools, fee, newFee );
+
+    if ( !availablePools || availablePools.length === 0 ) {
       debug_log( `No pools exist for ${ tokenIn.symbol } and ${ tokenOut.symbol }` );
       // Handle multi-hop or throw an error if no valid routes exist
       try {
@@ -499,7 +505,7 @@ export class UniswapSwapManager extends SwapManager {
       }
 
       debug_log( 'Direct pool quote amount:', quoteAmount);
-      
+
       if ( quoteAmount > 0n ) {
         return await this.constructQuoteData(
           tokenIn,
@@ -726,7 +732,7 @@ export class UniswapSwapManager extends SwapManager {
     const feeAmountInUSD = formatFeeToUSD( feeAmount, tokenOut.decimals, priceOut.price );  //feeAmountInTokenOut * priceOut.price; // Always in tokenOut (buy side)
     const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
 
-    debug_log( 'Price out:', priceOutBigInt, tokenOut.decimals, priceOut.price, ( Number( feeAmount ) * priceOut.price ) / formattedAmountOut );
+    debug_log( 'Price out:', fee, priceOutBigInt, tokenOut.decimals, priceOut.price, ( Number( feeAmount ) * priceOut.price ) / formattedAmountOut );
 
     let gasEstimateInUSD = '';
     let adjustedGasEstimate = 0n;
