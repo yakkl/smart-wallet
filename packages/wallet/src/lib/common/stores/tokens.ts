@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { SwapToken } from '$lib/common/interfaces';
 import { ADDRESSES } from '$lib/plugins/contracts/evm/constants-evm';
+import { debug_log } from '../debug-error';
 
 // Writable store to hold all tokens
 export const tokens = writable<SwapToken[]>([]);
@@ -18,7 +19,7 @@ export const sortedTokens = derived(
     );
 
     const nonPreferredTokens = $tokens.filter(
-      (token) => !$preferredTokenSymbols.includes(token.symbol)  && token.chainId === 1 
+      (token) => !$preferredTokenSymbols.includes(token.symbol)  && token.chainId === 1
     );
 
     let eth: SwapToken = {
@@ -45,7 +46,11 @@ export async function loadTokens() {
     const response = await fetch('/data/uniswap.json');
     const data = await response.json();
 
-    const loadedTokens: SwapToken[] = data.tokens.map((token: SwapToken) => ({
+    // CoinGecko has a format similar to data.tokens while Uniswap has a format similar to data (just an array of tokens)
+    // Determine the correct tokens array
+    const tokensData = data.tokens || data?.data?.tokens || data;
+
+    const loadedTokens: SwapToken[] = tokensData.map((token: SwapToken) => ({
       ...token,
       isStablecoin: ['USDC', 'USDT', 'DAI', 'BUSD'].includes(token.symbol), // Mark stablecoins
     }));
@@ -53,6 +58,6 @@ export async function loadTokens() {
     // Update the tokens store
     tokens.set(loadedTokens);
   } catch (error) {
-    console.error('Error loading tokens:', error);
+    console.log('Error loading tokens:', error);
   }
 }

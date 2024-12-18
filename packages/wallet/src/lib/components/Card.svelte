@@ -33,6 +33,7 @@
   import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 	import Accounts from './Accounts.svelte';
 	import Contacts from './Contacts.svelte';
+  import Tokens from './Tokens.svelte';
 	import Receive from './Receive.svelte';
 	import ImportPrivateKey from './ImportPrivateKey.svelte';
 
@@ -70,6 +71,7 @@
   let showAccountsModal = false;
   let showAccountImportModal = false;
   let showContacts = false;
+  let showTokens = false;
   let showRecv = false;
   let userName = $yakklUserNameStore;
 
@@ -435,6 +437,16 @@
     }
   }
 
+  async function handleToken() {
+    try {
+      showAccountImportModal = false; // ?????????
+      updateValuePriceFiat();
+      goto(PATH_WELCOME);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async function handleImport() {
     try {
       console.log('handleImport - selected');
@@ -478,6 +490,7 @@
     }
   }
 
+  // Gets the ether balance for the given address
   async function getBalance(chainId: number, address: string): Promise<bigint | null> {
     try {
       if (chainId) {
@@ -590,6 +603,8 @@
 
 <Contacts bind:show={showContacts} onContactSelect={handleContact} />
 
+<Tokens bind:show={showTokens} onTokenSelect={handleToken} />
+
 <Receive bind:show={showRecv} address={address} />
 
 <ImportPrivateKey bind:show={showAccountImportModal} onComplete={handleImport} className="text-gray-600 z-[999]"/>
@@ -686,6 +701,11 @@
         <SpeedDialButton name="Contacts" on:click={() => {showContacts = true}} class="w-16">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
             <path fill-rule="evenodd" d="M6 4.75A.75.75 0 016.75 4h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 4.75zM6 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75A.75.75 0 016 10zm0 5.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H6.75a.75.75 0 01-.75-.75zM1.99 4.75a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 15.25a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-.01zM1.99 10a1 1 0 011-1H3a1 1 0 011 1v.01a1 1 0 01-1 1h-.01a1 1 0 01-1-1V10z" clip-rule="evenodd" />
+          </svg>
+        </SpeedDialButton>
+        <SpeedDialButton name="Tokens" on:click={() => {showTokens = true}} class="w-16">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" aria-hidden="true" class="w-6 h-6" fill="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
           </svg>
         </SpeedDialButton>
         <SpeedDialButton name="Receive" on:click={() => {showRecv=true}} class="w-16">

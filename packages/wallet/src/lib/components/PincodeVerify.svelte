@@ -8,10 +8,11 @@
   interface Props {
     show?: boolean;
     className?: string;
-    onVerify?: (pincode: string) => void;
+    onRejected?: (rejection: string) => void;
+    onVerified?: (pincode: string) => void;
   }
 
-  let { show = $bindable(false), className = "z-[999]", onVerify = () => {} }: Props = $props();
+  let { show = $bindable(false), className = "z-[899]", onRejected = () => {}, onVerified = () => {} }: Props = $props();
 
   let pincode = $state("");
   let eyeOpen = $state(false);
@@ -28,23 +29,25 @@
         return;
       }
 
-      const profile: Profile | null = await getProfile() as Profile;
+      const profile: Profile | null = await getProfile();
 
       if (!profile) {
-        throw 'No profile found';
+        show = false;
+        onRejected("No profile found");
       }
 
-      if (isEncryptedData(profile.data as ProfileData)) {
+      if (isEncryptedData(profile.data)) {
         await decryptData(profile.data as unknown as EncryptedData, $yakklMiscStore).then(result => {
-          if (profile) {
-            profile.data = result as ProfileData;
-          }
+          profile.data = result as ProfileData;
         });
       }
 
+      console.log("Profile data: ", profile.data);
+
       const digestedPincode = await digestMessage(pincode);
-      if (isProfileData(profile.data as ProfileData) && (profile.data as ProfileData).pincode === digestedPincode) {
-        onVerify(digestedPincode); // Send the digested pincode and not the actual pincode
+      console.log("Digested pincode and pincode: ", digestedPincode, pincode);
+      if (isProfileData(profile.data) && profile.data.pincode === digestedPincode) {
+        onVerified(digestedPincode); // Send the digested pincode and not the actual pincode
       } else {
         alert("Invalid pincode");
       }
@@ -53,14 +56,17 @@
       show = false;
     } catch (e) {
       console.log(e);
+      onRejected("Pincode verification failed");
     } finally {
       show = false;
+      onRejected("Pincode verification failed");
     }
   }
 
   function closeModal() {
     pincode = "";
     show = false;
+    onRejected("Pincode verification failed");
   }
 
   function resetForm() {
@@ -87,8 +93,8 @@
 
 </script>
 
-<div class="relative {className}">
-  <Modal bind:show={show} title="Pincode Authorization" onClose={closeModal}>
+<!-- <div class="relative {className}"> -->
+  <Modal bind:show={show} title="Pincode Authorization" {className} onClose={closeModal}>
     <div class="p-6 text-primary-light dark:text-primary-dark">
       <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your pincode to move forward. Thank you.</p>
       <div class="relative">
@@ -121,10 +127,10 @@
         </button>
       </div>
       <div class="mt-6 flex justify-end space-x-4">
-        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={closeModal}>Cancel</button>
+        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={closeModal}>Cancel/Reject</button>
         <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={resetForm}>Reset</button>
         <button type="button" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={handleVerify}>Verify</button>
       </div>
     </div>
   </Modal>
-</div>
+<!-- </div> -->

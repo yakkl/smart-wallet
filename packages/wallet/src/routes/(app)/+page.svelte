@@ -1,7 +1,7 @@
 <script lang="ts">
   import Legal from './legal/Legal/+page.svelte';
   import { getSettings, syncStoresToStorage } from '$lib/common/stores';
-  import { PATH_LOGIN, PATH_REGISTER, type Settings } from '$lib/common';
+  import { DEFAULT_TITLE, PATH_LOGIN, PATH_REGISTER, type Settings } from '$lib/common';
   import { goto } from '$app/navigation';
 
   let yakklSettings: Settings | null = $state(null);
@@ -28,9 +28,9 @@
   fetchYakklSettings();
 </script>
 
-<!-- <svelte:head>
+<svelte:head>
   <title>{DEFAULT_TITLE}</title>
-</svelte:head> -->
+</svelte:head>
 
 {#if error}
   <code>{error.message}</code>

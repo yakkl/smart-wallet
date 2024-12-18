@@ -71,6 +71,19 @@ export interface EmergencyKitData {
   cs: string; // Checksum for the overall data
 }
 
+export interface TokenStorage {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  chainId: number;
+  balance?: BigNumberish;
+  logoURI?: string;
+  isNative?: boolean;
+  isStablecoin?: boolean;
+  description?: string;
+}
+
 export interface HasData<T> {
   data: T;
 }
@@ -83,7 +96,7 @@ export interface MetaDataParams {
   title: string;
   icon: URL;
   domain: string;
-  context: string; 
+  context: string;
   message?: string;
   transaction?: unknown;
 }
@@ -368,10 +381,11 @@ export interface SwapToken {
 };
 
 export interface TokenData extends SwapToken {
-  priceData: PriceData[];
-  volume: number;
+  priceData?: PriceData[];
+  volume?: number;
   currentPrice: number;
-  timeline: string; // Can be '24h', '7d', '30d', etc.
+  timeline?: string; // Can be '24h', '7d', '30d', etc.
+  value?: Number; // Since this would be the user's value in the token
 }
 
 
@@ -567,7 +581,7 @@ export interface YakklWatch {
   blockchain: string;
   name: string;
   tags?: string[];
-  value: BigNumberish; 
+  value: BigNumberish;
   includeInPortfolio: boolean;
   explorer?: string;
   address: string;
@@ -585,7 +599,7 @@ export interface ProfileData {
   pincode: string;
   sig?: string;
   security?: YakklSecurity;
-  value: BigNumberish; 
+  value: BigNumberish;
   accountIndex: number;
   primaryAccounts: YakklPrimaryAccount[];
   importedAccounts: YakklAccount[]; // Independent accounts - These accounts have no relation to any primary or subaccount but do use the account model
@@ -669,7 +683,7 @@ export interface ProfileShort {
 }
 
 export interface Shortcuts {
-  value: BigNumberish; // Account value 
+  value: BigNumberish; // Account value
   accountType: AccountTypeCategory; // primary, imported, sub
   accountName: string;
   smartContract: boolean;
@@ -725,7 +739,7 @@ export interface AccountData {
 export interface YakklAccount {
   id: string; // Profile id
   index: number;
-  blockchain: string; // Primary blockchain (example: Ethereum)  
+  blockchain: string; // Primary blockchain (example: Ethereum)
   smartContract: boolean; // SmartContracts do not have private keys and the price per gas unit is usually 45,000 instead of 21,000
   address: string; // Must be unique
   alias: string;
@@ -882,11 +896,11 @@ export interface SwapPriceData extends BasePriceData {
   marketPriceOut: number;       // Fiat price of tokenOut which updates in interval. It is here so that we can show the price of the tokenOut in the UI. This is only used if priceIn is not available
   marketPriceGas: number;       // Gas market price
 
-  priceImpactRatio: number;     // Price impact ratio percentage 
+  priceImpactRatio: number;     // Price impact ratio percentage
   path: string[];               // Path of tokens for the swap
   fee?: number;                 // Pool fee if used by the provider
   feeBasisPoints: number;       // Fee in basis points - constant - YAKKL_FEE_BASIS_POINTS
-  feeAmountPrice: number;       // Fee in price 
+  feeAmountPrice: number;       // Fee in price
   feeAmountInUSD?: string;      // Fee in USD formatted
   gasEstimate: BigNumberish;    // Gas estimate for the swap
   gasEstimateInUSD?: string;    // Gas estimate in USD formatted
@@ -894,7 +908,7 @@ export interface SwapPriceData extends BasePriceData {
 
   slippageTolerance?: number;        // Slippage percentage
   deadline?: number;                 // Deadline for the swap
-  
+
   sqrtPriceX96After?: BigNumberish;  // Uniswap specific - sqrtPriceX96 after the swap
   initializedTicksCrossed?: number;  // Uniswap specific - initialized ticks crossed
   poolInfo?: PoolInfo;               // Uniswap specific - Pool information

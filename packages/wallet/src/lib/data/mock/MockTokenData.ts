@@ -1,6 +1,7 @@
 
 import type { TokenData } from '$lib/common';
 
+// Mock market data for tokens
 export const ethTokenData: TokenData = {
   chainId: 1,
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -10,11 +11,11 @@ export const ethTokenData: TokenData = {
   logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
   isNative: true,
   priceData: [
-    { provider: 'coingecko', price: 2760, lastUpdated: new Date() },
-    { provider: 'coinmarketcap', price: 2775, lastUpdated: new Date() },
+    { provider: 'coingecko', price: 4250, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 4248, lastUpdated: new Date() },
   ],
   volume: 1000000,
-  currentPrice: 2750,
+  currentPrice: 4250,
   timeline: '24h',
 };
 
@@ -25,12 +26,80 @@ export const btcTokenData: TokenData = {
   symbol: 'WBTC',
   decimals: 8,
   logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png',
-  isNative: true,
+  isNative: false,
   priceData: [
-    { provider: 'coingecko', price: 60000, lastUpdated: new Date() },
-    { provider: 'coinmarketcap', price: 60100, lastUpdated: new Date() },
+    { provider: 'coingecko', price: 105000, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 105100, lastUpdated: new Date() },
   ],
-  volume: 500000,
-  currentPrice: 60500,
+  volume: 900000,
+  currentPrice: 105000,
+  timeline: '24h',
+};
+
+export const usdcTokenData: TokenData = {
+  chainId: 1,
+  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  name: 'USD Coin',
+  symbol: 'USDC',
+  decimals: 6,
+  logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+  isNative: false,
+  priceData: [
+    { provider: 'coingecko', price: 1, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 1, lastUpdated: new Date() },
+  ],
+  volume: 60000,
+  currentPrice: 1,
+  timeline: '24h',
+};
+
+export const chainTokenData: TokenData = {
+  chainId: 1,
+  address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+  name: 'Chain Link',
+  symbol: 'LINK',
+  decimals: 18,
+  logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x514910771AF9Ca656af840dff83E8264EcF986CA/logo.png',
+  isNative: false,
+  priceData: [
+    { provider: 'coingecko', price: 102, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 105, lastUpdated: new Date() },
+  ],
+  volume: 45000,
+  currentPrice: 102,
+  timeline: '24h',
+};
+
+export const pepeTokenData: TokenData = {
+  chainId: 1,
+  address: '0x6982508145454Ce325dDbE47a25d4ec3d2311933',
+  name: 'Pepe',
+  symbol: 'PEPE',
+  decimals: 18,
+  logoURI: 'https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1682922725',
+  isNative: false,
+  priceData: [
+    { provider: 'coingecko', price: 0.0000235, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 0.0000235, lastUpdated: new Date() },
+  ],
+  volume: 225000,
+  currentPrice: 0.0000235,
+  timeline: '24h',
+};
+
+export const usdtTokenData: TokenData = {
+  chainId: 1,
+  address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  name: 'Tether USD',
+  symbol: 'USDT',
+  decimals: 6,
+  logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
+  isNative: false,
+  priceData: [
+    { provider: 'coingecko', price: 0.0000235, lastUpdated: new Date() },
+    { provider: 'coinmarketcap', price: 0.0000235, lastUpdated: new Date() },
+  ],
+  volume: 225000,
+  currentPrice: 0.0000235,
   timeline: '24h',
 };

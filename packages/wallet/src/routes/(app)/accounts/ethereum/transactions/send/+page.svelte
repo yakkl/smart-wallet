@@ -128,7 +128,8 @@
 
 
   ////////////////////
-	let priorityClass = $state('border border-gray-100 ');
+
+  let priorityClass = $state('border border-gray-100 ');
 	let marketClass = $state('border-white border-2 animate-pulse ');
 	let lowClass = $state('border border-gray-100 ');
 	let unitPrice: number = $state(0);
@@ -137,7 +138,6 @@
 	let gasLimit: number = $state(21000); //BigNumberish;
 	let gasEstimateUSDNumber: number = $state();
 	let gasTotalEstimateUSDNumber: any = $state();
-
 
   let transactionState = $state<TransactionState>({
     blockchain: 'Ethereum',
@@ -217,7 +217,6 @@
   });
 
 
-
 	//////// Toast
 	let toastStatus = $state(false);
   let toastCounter = 3;
@@ -236,9 +235,6 @@
       return setTimeout(timeout, 1000);
     toastStatus = false;
   }
-
-
-
 
 	onMount(() => {
 		try {
@@ -607,7 +603,6 @@
 		}
 	}
 
-
 	async function checkValue() {
 		try {
 			if (browserSvelte) {
@@ -629,7 +624,6 @@
 			console.log(e);
 		}
 	}
-
 
 	function handleClose() {
 		try {
@@ -1085,6 +1079,7 @@
 				uiState.errorFields = false;
 			}
 	});
+
 	$effect(() => {
 		try {
 			transactionState.txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
@@ -1185,7 +1180,7 @@
 	});
 </script>
 
-<PincodeModal bind:show={uiState.showVerify} onVerify={handlePin} className="text-gray-600"/>
+<PincodeModal bind:show={uiState.showVerify} onVerified={handlePin} className="text-gray-600"/>
 
 <ErrorNoAction bind:show={uiState.error} value={uiState.errorValue} handle={handleClose}/>
 

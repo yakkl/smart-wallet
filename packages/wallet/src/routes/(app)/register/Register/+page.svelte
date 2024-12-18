@@ -11,7 +11,7 @@
   import zxcvbn from "zxcvbn";
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
-  import { PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PHRASE, PATH_LOGIN, DEFAULT_TITLE, PROVIDERS, YAKKL_INTERNAL, YAKKL_ZERO_ADDRESS, YAKKL_ZERO_ACCOUNT_NAME, VERSION, PATH_WELCOME, PATH_LOGOUT } from '$lib/common/constants';
+  import { PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_LOGIN, DEFAULT_TITLE, YAKKL_ZERO_ADDRESS, YAKKL_ZERO_ACCOUNT_NAME, VERSION, PATH_WELCOME, PATH_LOGOUT } from '$lib/common/constants';
   import { getCurrencyCode, getCurrencySymbol } from '$lib/utilities/utilities';
   import { onMount } from 'svelte';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
@@ -26,9 +26,9 @@
 	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
 	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
 	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
-	import ImportOption from '$lib/components/ImportOption.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
+	import { sendNotification } from '$lib/common/notifications';
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -320,6 +320,8 @@
 
           await setSettingsStorage(settings);
         }
+
+        sendNotification('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
 
         showRegistrationOption = true;
       }

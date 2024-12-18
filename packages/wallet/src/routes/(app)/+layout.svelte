@@ -7,6 +7,8 @@
   import Footer from '$components/Footer.svelte';
   import { setIconLock, blockContextMenu, blockWindowResize } from '$lib/utilities';
   import { onMount } from 'svelte';
+	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
+	// import Warning from '$lib/components/Warning.svelte';
 	// import { Tooltip } from 'flowbite-svelte';
   interface Props {
     children?: import('svelte').Snippet;
@@ -156,17 +158,11 @@
 	<title>{title}</title>
 </svelte:head>
 
-<div id="wrapper" class="w-[{popupWidth}px] rounded-lg flex flex-col">
-  <div class="modal" class:modal-open={error}>
-    <div class="modal-box relative">
-      <h3 class="text-lg font-bold">ERROR!</h3>
-      <p class="py-4">{errorValue}</p>
-      <div class="modal-action">
-        <button class="btn" onclick={() => error = false}>Close</button>
-      </div>
-    </div>
-  </div>
+<!-- TODO: These will become residents here using stores - later. For now, use <ErrorNoAction.../> for consistent look -->
+<ErrorNoAction bind:show={error} title="Error" value={errorValue} />
+<!-- <Warning bind:show={showWarning} className="z-[999]" value={warningValue} handle={handleClose} /> -->
 
+<div id="wrapper" class="w-[{popupWidth}px] rounded-lg flex flex-col">
   {#if legal === true}
   <Header containerWidth={popupWidth} />
   {/if}
