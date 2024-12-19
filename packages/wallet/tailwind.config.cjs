@@ -16,17 +16,17 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
   content: [
-    './src/**/*.{html,js,svelte,ts,css}', 
+    './src/**/*.{html,js,svelte,ts,css}',
     // './node_modules/tw-elements/dist/js/**/*.js',
     './node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}',
   ],
   darkMode: 'class',
-  theme: {   
-    screens: {
+	theme: {
+			screens: {
       'xs': '391px',
       ...defaultTheme.screens
-    },
-    extend: {
+		},
+		extend: {
       zIndex: {
         '100': '100'
       },
@@ -63,7 +63,7 @@ module.exports = {
         'input-text-dark': '#E5E7EB',
         'input-placeholder-light': '#9CA3AF',
         'input-placeholder-dark': '#6B7280',
-        
+
         // Borders for inputs or dividers
         'input-border-light': '#D1D5DB',
         'input-border-dark': '#4B5563',
@@ -169,9 +169,28 @@ module.exports = {
         card: "0px 1px 3px rgba(0, 0, 0, 0.12)",
         "card-2": "0px 1px 10px -2px rgba(0, 0, 0, 0.15)",
       },
-      
-      fontFamily: {
-        sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+
+			fontFamily: {
+				sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+			},
+			keyframes: {
+				"accordion-down": {
+					from: { height: "0" },
+					to: { height: "var(--bits-accordion-content-height)" },
+				},
+				"accordion-up": {
+					from: { height: "var(--bits-accordion-content-height)" },
+					to: { height: "0" },
+				},
+				"caret-blink": {
+					"0%,70%,100%": { opacity: "1" },
+					"20%,50%": { opacity: "0" },
+				},
+			},
+			animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "caret-blink": "caret-blink 1.25s ease-out infinite",
       },
 
       // typography: ({ theme }) => ({
@@ -215,6 +234,7 @@ module.exports = {
     }
 },
   plugins: [
+    require("tailwindcss-animate"),
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
     require('@tailwindcss/aspect-ratio'),
@@ -248,5 +268,7 @@ module.exports = {
       },
       "light", "dark", "corporate", "luxury", "dracula", "business",
     ],
-  }
-}
+  },
+};
+
+// export default config;

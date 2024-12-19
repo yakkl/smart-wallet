@@ -1,41 +1,28 @@
 <script lang="ts">
 	import { LinkPreview as HoverCardPrimitive } from "bits-ui";
-	import { cn, flyAndScale } from "$lib/utils.js";
-
-	type $$Props = HoverCardPrimitive.ContentProps;
-
-	interface Props {
-		class?: $$Props["class"];
-		align?: $$Props["align"];
-		sideOffset?: $$Props["sideOffset"];
-		transition?: $$Props["transition"];
-		transitionConfig?: $$Props["transitionConfig"];
-		children?: import('svelte').Snippet;
-		[key: string]: any
-	}
+	import { cn } from "$lib/utils.js";
 
 	let {
-		class: className = undefined,
+		ref = $bindable(null),
+		class: className,
 		align = "center",
 		sideOffset = 4,
-		transition = flyAndScale,
-		transitionConfig = undefined,
-		children,
-		...rest
-	}: Props = $props();
-	
+		portalProps,
+		...restProps
+	}: HoverCardPrimitive.ContentProps & {
+		portalProps?: HoverCardPrimitive.PortalProps;
+	} = $props();
 </script>
 
-<HoverCardPrimitive.Content
-	{transition}
-	{transitionConfig}
-	{sideOffset}
-	{align}
-	class={cn(
-		"bg-popover text-popover-foreground z-50 w-64 rounded-md border p-4 shadow-md outline-none",
-		className
-	)}
-	{...rest}
->
-	{@render children?.()}
-</HoverCardPrimitive.Content>
+<HoverCardPrimitive.Portal {...portalProps}>
+	<HoverCardPrimitive.Content
+		bind:ref
+		{align}
+		{sideOffset}
+		class={cn(
+			"bg-popover text-popover-foreground z-50 mt-3 w-64 rounded-md border p-4 shadow-md outline-none",
+			className
+		)}
+		{...restProps}
+	/>
+</HoverCardPrimitive.Portal>

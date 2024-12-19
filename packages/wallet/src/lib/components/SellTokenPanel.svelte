@@ -159,7 +159,7 @@
         value={$isUsdModeStore}
         labelOn="USD"
         labelOff="Token"
-        className="bg-purple-400"
+        className="bg-purple-300"
         onChange={(value) => isUsdModeStore.set(value)} />
     </div>
     <div class="flex flex-col items-end text-right">

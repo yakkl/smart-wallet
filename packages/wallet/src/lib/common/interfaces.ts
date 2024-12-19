@@ -386,6 +386,10 @@ export interface TokenData extends SwapToken {
   currentPrice: number;
   timeline?: string; // Can be '24h', '7d', '30d', etc.
   value?: Number; // Since this would be the user's value in the token
+  priceChange?: number; // Percentage change (e.g., -3.4, 0.5)
+  percentChange?: number; // Percentage change (e.g., -3.4, 0.5) // TODO: REVIST this whole interface and clean it up
+  quantity?: number;    // User's holdings
+  lineChartData?: { x: string | Date; y: number }[]; // Data for chart
 }
 
 
