@@ -15,6 +15,7 @@ YAKKL Smart Wallet is a multi-platform cryptocurrency wallet designed for seamle
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Features](#features)
+      - [Important](#important)
     - [Browser Extension Wallet](#browser-extension-wallet)
     - [Smart Contracts](#smart-contracts)
   - [Architecture](#architecture)
@@ -53,6 +54,9 @@ YAKKL Smart Wallet is a multi-platform cryptocurrency wallet designed for seamle
 Provide a brief introduction to the YAKKL Smart Wallet, its purpose, and its importance in the cryptocurrency ecosystem. Highlight its multi-platform support and focus on security.
 
 ## Features
+
+#### Important
+>With the newer shadcn-svelte we had to put //@ts-nocheck in the index.ts of alert, badge, button, toggle. Instead of having their exports in index.ts they have them in ```<script lang="ts" module>...</script>``` which causes TSC to not find them. We use TSC in the package.json script section but we do not specify certain ts file but the default of *.ts. Maybe we could change this in the future but this works well. The only thing to remember is to update those index.ts files after upgrades.
 
 ### Browser Extension Wallet
 - **Multi-Chain Support**: Describe how the wallet supports multiple blockchains (e.g., Ethereum, Polygon, etc.).

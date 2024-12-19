@@ -1,11 +1,11 @@
 <script lang="ts">
   import { browser as browserSvelte} from "$app/environment";
   import { onMount, onDestroy } from "svelte";
-  import { PATH_ACCOUNTS, PATH_SECURITY, PATH_TOKENS } from "$lib/common/constants";
-  import Back from "$components/Back.svelte";
+  import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
+  // import Back from "$components/Back.svelte";
   import ComingSoon from "$components/ComingSoon.svelte";
 	import ErrorNoAction from "$components/ErrorNoAction.svelte";
-	import Welcome from "$components/Welcome.svelte";
+	// import Welcome from "$components/Welcome.svelte";
 	import ButtonGridItem from "$components/ButtonGridItem.svelte";
 	import ButtonGrid from "$components/ButtonGrid.svelte";
 	import { routeCheckWithSettings } from '$lib/common/routes';
@@ -22,9 +22,9 @@
   import TokenViewToggle from '$lib/components/TokenViewToggle.svelte';
   import type { TokenData } from '$lib/common/interfaces';
   import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
-	import { sendNotification } from "$lib/common/notifications";
 
   // Mock token data
+  // TODO: Replace with real data, get balances
   const tokens: TokenData[] = [ethTokenData, btcTokenData, usdcTokenData, chainTokenData, pepeTokenData, usdtTokenData];
 
   let error = $state(false);

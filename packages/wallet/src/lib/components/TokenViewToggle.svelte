@@ -1,24 +1,27 @@
 <script lang="ts">
   import ViewControls from './ViewControls.svelte';
-  import TokenGrid from './TokenGrid.svelte';
-  import TokenCarousel from './TokenCarousel.svelte';
+  import TokenGridView from './TokenGridView.svelte';
+  import TokenCarouselView from './TokenCarouselView.svelte';
+  import TokenThumbnailView from './TokenThumbnailView.svelte';
   import type { TokenData } from '$lib/common/interfaces';
+	import { debug_log } from '$lib/common/debug-error';
 
   interface Props {
     tokens: TokenData[];
     title?: string;
-    onTokenClick: (token: TokenData) => void;
+    onTokenClick?: (token: TokenData) => void;
   }
 
-  let { tokens = [], title = 'Token Portfolio', onTokenClick }: Props = $props();
+  let { tokens = [], title = 'Token Portfolio', onTokenClick = (token) => {debug_log('Token clicked:', token)} }: Props = $props();
 
-  let isGridView = $state(false);
+  let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'list' | 'table' | 'news'>('grid');
   let sortedTokens = $state([...tokens]);
-  let sortBy = 'name';
+  let sortBy = $state('name');
 
-  // Sorting logic
+  // Handle sorting
   function handleSortChange(criteria: string) {
     sortBy = criteria;
+
     if (criteria === 'name') {
       sortedTokens = [...tokens].sort((a, b) => a.name.localeCompare(b.name));
     } else if (criteria === 'price') {
@@ -28,10 +31,12 @@
     }
   }
 
-  function handleToggleView() {
-    isGridView = !isGridView;
+  // Handle view changes
+  function handleViewChange(view: 'grid' | 'carousel' | 'thumbnail' | 'list' | 'table' | 'news') {
+    currentView = view;
   }
 
+  // Handle print
   function handlePrint() {
     window.print();
   }
@@ -46,18 +51,19 @@
     <!-- ViewControls -->
     <ViewControls
       onSortChange={handleSortChange}
-      onToggleView={handleToggleView}
+      onViewChange={handleViewChange}
       onPrint={handlePrint}
-      isGridView={isGridView}
     />
   </div>
 
   <!-- Views -->
-  <div class="relative h-[500px] w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
-    {#if isGridView}
-      <TokenGrid tokens={sortedTokens} onTokenClick={onTokenClick} />
-    {:else}
-      <TokenCarousel tokens={sortedTokens} onTokenClick={onTokenClick} />
+  <div class="relative w-full max-h-[500px] rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
+    {#if currentView === 'grid'}
+      <TokenGridView tokens={sortedTokens} onTokenClick={onTokenClick} />
+    {:else if currentView === 'carousel'}
+      <TokenCarouselView tokens={sortedTokens} onTokenClick={onTokenClick} />
+    {:else if currentView === 'thumbnail'}
+      <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} />
     {/if}
   </div>
 </div>

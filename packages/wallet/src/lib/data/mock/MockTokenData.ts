@@ -16,6 +16,7 @@ export const ethTokenData: TokenData = {
   ],
   volume: 1000000,
   currentPrice: 4250,
+  percentChange: 0.5,
   timeline: '24h',
 };
 
@@ -33,6 +34,7 @@ export const btcTokenData: TokenData = {
   ],
   volume: 900000,
   currentPrice: 105000,
+  percentChange: 0.5,
   timeline: '24h',
 };
 
@@ -50,6 +52,7 @@ export const usdcTokenData: TokenData = {
   ],
   volume: 60000,
   currentPrice: 1,
+  percentChange: 0,
   timeline: '24h',
 };
 
@@ -67,6 +70,7 @@ export const chainTokenData: TokenData = {
   ],
   volume: 45000,
   currentPrice: 102,
+  percentChange: -1,
   timeline: '24h',
 };
 
@@ -84,6 +88,7 @@ export const pepeTokenData: TokenData = {
   ],
   volume: 225000,
   currentPrice: 0.0000235,
+  percentChange: 4.5,
   timeline: '24h',
 };
 
@@ -101,5 +106,6 @@ export const usdtTokenData: TokenData = {
   ],
   volume: 225000,
   currentPrice: 0.0000235,
+  percentChange: 0,
   timeline: '24h',
 };

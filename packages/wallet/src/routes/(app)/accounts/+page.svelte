@@ -73,7 +73,7 @@
         if (currentlySelected.shortcuts.accountType !== 'imported') {
           goto(PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED);
         } else {
-          errorValue = 'The currently selected Wallet Account is an imported account. To create a secondary account (an account attached to a primary account) you must first select a non-imported account. Click or hover over the + circle on the card, then select "List" option, and then select a primary or secondary account from the popup list.';
+          errorValue = 'The currently selected Wallet Account is an imported account. To create a secondary account (an account attached to a primary account) you must first select a non-imported account. Click or hover over the circle with 3 dots (•••) on the card, then select "List" option, and then select a primary or secondary account from the popup list.';
           error = true;
         }
       }

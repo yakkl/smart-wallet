@@ -13,8 +13,8 @@
 	import Receive from '$lib/components/Receive.svelte';
   import TokenBox from '$lib/components/TokenBox.svelte';
   import { ethTokenData, btcTokenData } from '$lib/data/mock/MockTokenData';
-  import Profile from '$lib/components/Profile.svelte';
-  import Preferences from '$lib/components/Preferences.svelte';
+  // import Profile from '$lib/components/Profile.svelte.tmp';
+  // import Preferences from '$lib/components/Preferences.svelte.tmp';
   import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
   import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
@@ -38,8 +38,8 @@
 
   const providers = [new CoinbasePriceProvider];
 
-  let profileComponent: Profile = $state();
-  let preferencesComponent: Preferences = $state();
+  // let profileComponent: Profile = $state();
+  // let preferencesComponent: Preferences = $state();
 
   // Mock token data array
   const tokenDataArray: TokenData[] = [ethTokenData, btcTokenData];
@@ -309,11 +309,11 @@
     </div>
   </div>
 
-  <Profile bind:this={profileComponent} />
+  <!-- <Profile bind:this={profileComponent} />
 
-  <Preferences bind:this={preferencesComponent} />
+  <Preferences bind:this={preferencesComponent} /> -->
 
-  <div class="my-4 p-2 border-gray-100 border-2">
+  <!-- <div class="my-4 p-2 border-gray-100 border-2">
     <p class="text-gray-100 text-sm">Experimental Only</p>
 
     <button
@@ -327,7 +327,7 @@
       class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg mt-3 hover:bg-gray-300 transition-colors">
       Open Preferences
     </button>
-  </div>
+  </div> -->
 
 
   <button
