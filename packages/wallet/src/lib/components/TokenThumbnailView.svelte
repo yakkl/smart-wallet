@@ -87,7 +87,7 @@
   <!-- Right Fade and Arrow -->
   <div class="fade-gradient fade-gradient-right"></div>
   <button
-    class="absolute right-0 bg-gray-600 hover:bg-gray-800  text-white text-lg font-bold rounded-full w-8 h-8 flex items-center justify-center"
+    class="absolute right-0 bg-gray-600 hover:bg-gray-800 text-white text-lg font-bold rounded-full w-8 h-8 flex items-center justify-center"
     aria-label="Next"
     onclick={scrollRight}
   >

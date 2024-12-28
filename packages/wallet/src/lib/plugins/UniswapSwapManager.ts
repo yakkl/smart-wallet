@@ -5,7 +5,7 @@ import { toBigInt, YAKKL_FEE_BASIS_POINTS, YAKKL_GAS_ESTIMATE_MIN_USD, YAKKL_GAS
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { debug_log, error_log } from '$lib/common/debug-error';
 import type { ExactInputParams, ExactInputSingleParams } from '$lib/common/ISwapRouter';
-import { getToken, type TokenPair } from '$lib/common/tokens';
+// import { getToken, type TokenPair } from '$lib/common/tokens';
 // import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
 // import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
@@ -1146,29 +1146,29 @@ export class UniswapSwapManager extends SwapManager {
   //   }
   // }
 
-  async getTokenPair( pair: string ): Promise<TokenPair | PriceData> {
-    if ( !pair ) {
-      return this.returnError( `Invalid pair - ${ pair }` );
-    }
+  // async getTokenPair( pair: string ): Promise<TokenPair | PriceData> {
+  //   if ( !pair ) {
+  //     return this.returnError( `Invalid pair - ${ pair }` );
+  //   }
 
-    const [ tokenInSymbol, tokenOutSymbol ] = pair.split( '-' );
-    if ( !tokenInSymbol || !tokenOutSymbol ) {
-      return this.returnError( `Invalid pair format - ${ pair }` );
-    }
+  //   const [ tokenInSymbol, tokenOutSymbol ] = pair.split( '-' );
+  //   if ( !tokenInSymbol || !tokenOutSymbol ) {
+  //     return this.returnError( `Invalid pair format - ${ pair }` );
+  //   }
 
-    const tokenIn = this.getStandardizedToken( tokenInSymbol );
-    const tokenOut = this.getStandardizedToken( tokenOutSymbol );
+  //   const tokenIn = this.getStandardizedToken( tokenInSymbol );
+  //   const tokenOut = this.getStandardizedToken( tokenOutSymbol );
 
-    if ( !tokenIn || !tokenOut ) {
-      return this.returnError( `Token not found for ${ pair }` );
-    }
+  //   if ( !tokenIn || !tokenOut ) {
+  //     return this.returnError( `Token not found for ${ pair }` );
+  //   }
 
-    if ( tokenIn.address === tokenOut.address ) {
-      return this.getMarketPrice( `${ tokenInSymbol }-USD` );
-    }
+  //   if ( tokenIn.address === tokenOut.address ) {
+  //     return this.getMarketPrice( `${ tokenInSymbol }-USD` );
+  //   }
 
-    return { tokenIn, tokenOut };
-  }
+  //   return { tokenIn, tokenOut };
+  // }
 
   private returnError( message: string ): PriceData {
     return {
@@ -1733,11 +1733,11 @@ export class UniswapSwapManager extends SwapManager {
     }
   }
 
-  private getStandardizedToken( symbol: string ): SwapToken | null {
-    let standardizedSymbol = symbol;
-    if ( symbol === 'USD' ) standardizedSymbol = 'USDC';
-    if ( symbol === 'ETH' ) standardizedSymbol = 'WETH';
-    return getToken( standardizedSymbol, this.getChainId() );
-  }
+  // private getStandardizedToken( symbol: string ): SwapToken | null {
+  //   let standardizedSymbol = symbol;
+  //   if ( symbol === 'USD' ) standardizedSymbol = 'USDC';
+  //   if ( symbol === 'ETH' ) standardizedSymbol = 'WETH';
+  //   return getToken( standardizedSymbol, this.getChainId() );
+  // }
 
 }

@@ -14,8 +14,4 @@ declare global {
   }
 }
 
-// declare global {
-//   const browser_ext: typeof import('webextension-polyfill');
-// }
-
 export {};

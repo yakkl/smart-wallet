@@ -19,9 +19,9 @@
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  import TokenViewToggle from '$lib/components/TokenViewToggle.svelte';
   import type { TokenData } from '$lib/common/interfaces';
   import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
+	import TokenViews from "$lib/components/TokenViews.svelte";
 
   // Mock token data
   // TODO: Replace with real data, get balances
@@ -74,16 +74,12 @@
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
 
-<ErrorNoAction bind:show={error} title="Error" value={errorValue} /> <!-- TODO: Move to general layout -->
+<ErrorNoAction bind:show={error} title="Error" value={errorValue} /> <!-- TODO: Move to general layout???? -->
 
 <ComingSoon bind:show={showComingSoon} />
 
-<!-- <Back defaultClass="left-3 top-[.8rem] absolute" href='' /> -->
-
 <!-- Top band on page using the bg of wherever this is - could be component but not sure we will keep it -->
 <div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2"></div>
-
-<!-- <Welcome title1='' title2='Home' title3='' value1='' value2='' /> -->
 
 <ButtonGrid>
   <!-- titleClass="p-0" contentClass="p-0"> -->
@@ -134,4 +130,10 @@
   </ButtonGridItem> -->
 </ButtonGrid>
 
-<TokenViewToggle {tokens} />
+{#if tokens.length > 0}
+  <TokenViews {tokens} />
+{:else}
+  <div class="flex items-center justify-center w-full h-full">
+    <p class="text-lg text-gray-500">No additional tokens found</p>
+  </div>
+{/if}

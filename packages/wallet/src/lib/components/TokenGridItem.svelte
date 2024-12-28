@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { TokenData } from '$lib/common/interfaces';
+	import { getTokenChange } from '$lib/utilities/utilities';
 	import * as HoverCard from './ui/hover-card';
 
   interface Props {
@@ -11,8 +12,9 @@
 
   let { token, isLarge = false, className = 'bg-white', onClick = () => {} }: Props = $props();
 
-  // Determine percentChange color
-  const percentChangeColor = token.percentChange >= 0 ? 'text-green-500' : 'text-red-500';
+  // Determine the 24h percentChange color
+  const percentChange: number | null = getTokenChange(token.change, '24h'); // This is all we are getting here
+  const percentChangeColor = percentChange === null ? 'text-slate-900' : percentChange >= 0 ? 'text-green-500' : 'text-red-500';
 </script>
 
 <HoverCard.Root openDelay={300}>
@@ -46,7 +48,7 @@
         <p>Price: ${token.currentPrice.toLocaleString()}</p>
         <p>Value: ${token.value?.toLocaleString() ?? 'N/A'}</p>
         <p>Quantity: {token.quantity?.toLocaleString() ?? 'N/A'}</p>
-        <p>Change: <span class={percentChangeColor}>{token.percentChange}%</span></p>
+        <p>Change: <span class={percentChangeColor}>{percentChange ? percentChange : '--'}%</span></p>
       </div>
     </div>
   </HoverCard.Content>

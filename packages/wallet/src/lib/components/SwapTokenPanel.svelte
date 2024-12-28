@@ -154,7 +154,6 @@
       "
     />
     <TokenDropdown
-      {tokens}
       {disabled}
       selectedToken={type === 'sell' ? swapPriceData.tokenIn : swapPriceData.tokenOut}
       {onTokenSelect}

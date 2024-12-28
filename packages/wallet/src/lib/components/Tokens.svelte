@@ -1,50 +1,50 @@
 <script lang="ts">
-  import { setYakklTokensStorage, yakklTokensStore } from '$lib/common/stores';
-  import { type TokenStorage } from '$lib/common';
+  import { setYakklTokenDataStorage, yakklTokenDataStore } from '$lib/common/stores';
+  import { type TokenData } from '$lib/common';
   import Modal from './Modal.svelte';
   import TokenList from './TokenList.svelte';
   import TokenForm from './TokenForm.svelte';
 
   interface Props {
     show?: boolean;
-    onTokenSelect?: ((token: TokenStorage) => void) | null;
+    onTokenSelect?: ((token: TokenData) => void) | null;
     className?: string;
   }
 
   let { show = $bindable(false), onTokenSelect = null, className = 'z-[899]' }: Props = $props();
 
   let showAddModal = $state(false);
-  let tokens: TokenStorage[] = $state([]);
+  let tokens: TokenData[] = $state([]);
 
   $effect(() => {
-    tokens = $yakklTokensStore;
+    tokens = $yakklTokenDataStore;
   });
 
-  function handleTokenSelect(selectedToken: TokenStorage) {
+  function handleTokenSelect(selectedToken: TokenData) {
     if (onTokenSelect !== null) {
       onTokenSelect(selectedToken);
     }
     show = false;
   }
 
-  function handleTokenAdd(token: TokenStorage) {
-    yakklTokensStore.update((tokens) => [...tokens, token]);
-    setYakklTokensStorage($yakklTokensStore);
+  function handleTokenAdd(token: TokenData) {
+    yakklTokenDataStore.update((tokens) => [...tokens, token]);
+    setYakklTokenDataStorage($yakklTokenDataStore);
     showAddModal = false;
   }
 
-  function handleTokenDelete(deletedToken: TokenStorage) {
-    yakklTokensStore.update((tokens) => {
+  function handleTokenDelete(deletedToken: TokenData) {
+    yakklTokenDataStore.update((tokens) => {
       const updatedTokens = tokens.filter((t) => t.address !== deletedToken.address);
-      setYakklTokensStorage(updatedTokens);
+      setYakklTokenDataStorage(updatedTokens);
       return updatedTokens;
     });
   }
 
-  function handleTokenUpdate(updatedToken: TokenStorage) {
-    yakklTokensStore.update((tokens) => {
+  function handleTokenUpdate(updatedToken: TokenData) {
+    yakklTokenDataStore.update((tokens) => {
       const updatedTokens = tokens.map((t) => (t.address === updatedToken.address ? updatedToken : t));
-      setYakklTokensStorage(updatedTokens);
+      setYakklTokenDataStorage(updatedTokens);
       return updatedTokens;
     });
   }
@@ -70,7 +70,7 @@
         onTokenDelete={handleTokenDelete}
       />
 
-      {#if $yakklTokensStore.length === 0}
+      {#if $yakklTokenDataStore.length === 0}
         <div class="text-center text-md text-gray-700 dark:text-gray-400">
           No custom tokens added yet! Use the button below to add new tokens.
         </div>

@@ -7,6 +7,7 @@ export const YEAR = "2024"; // Instead of computing year since user can change d
 
 export const GAS_PER_BLOB = 131072; // 2**17
 
+export const TIMELINES = ['1h', '24h', '7d', '30d'] as const;
 export const NUM_OF_SPLASH_IMAGES = 3;
 export const SPLASH_DELAY = 3000; //milliseconds
 export const ALERT_DELAY = 3000; //milliseconds
@@ -67,7 +68,8 @@ export const STORAGE_YAKKL_ACCOUNTS = "yakklAccounts";
 export const STORAGE_YAKKL_PRIMARY_ACCOUNTS = "yakklPrimaryAccounts";
 export const STORAGE_YAKKL_CONTACTS = "yakklContacts";
 export const STORAGE_YAKKL_TOKENS = "yakklTokens";
-export const STORAGE_YAKKL_TOKENS_CUSTOM = "yakklTokensCustom";
+export const STORAGE_YAKKL_TOKENDATA = "yakklTokenData";
+export const STORAGE_YAKKL_TOKENDATA_CUSTOM = "yakklTokenDataCustom";
 export const STORAGE_YAKKL_CHATS = "yakklChats";
 export const STORAGE_YAKKL_WATCHLIST = "yakklWatchList";
 export const STORAGE_YAKKL_BLOCKEDLIST = "yakklBlockedList";

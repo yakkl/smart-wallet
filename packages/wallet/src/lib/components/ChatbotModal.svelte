@@ -7,7 +7,7 @@
   }
 
   let { show = $bindable(false) }: Props = $props();
-  
+
   let input = $state('');
   let chatbotComponent: Chatbot = $state();
 
@@ -19,15 +19,15 @@
   }
 </script>
 
-<Modal 
-  bind:show={show} 
-  title="YAKKL-GPT (preview)" 
+<Modal
+  bind:show={show}
+  title="YAKKL AI (LIMITED preview)"
   className="z-[999] w-[100%] h-[90vh] max-w-none"
 >
   <Chatbot bind:this={chatbotComponent} />
-  
+
   {#snippet footer()}
-  
+
       <div class="flex w-full items-center">
         <textarea
           bind:value={input}
@@ -44,8 +44,8 @@
         <button class="btn btn-primary rounded-r-lg h-20" onclick={sendMessage}>Send</button>
       </div>
       <p class="text-xs text-gray-500 mt-2">
-        Powered by OpenAI
+        Powered by OpenAI and/or Claude. Limited preview w/restrictions. Use with caution.
       </p>
-    
+
   {/snippet}
 </Modal>
