@@ -1,7 +1,9 @@
 <script lang="ts">
+	import ViewToggleMenu from "./ViewToggleMenu.svelte";
+
   export interface Props {
     onSortChange: (criteria: string) => void;
-    onViewChange: (view: 'grid' | 'carousel' | 'thumbnail') => void;
+    onViewChange: (view: 'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol') => void;
     onPrint?: () => void;
   }
 
@@ -14,13 +16,12 @@
   ];
 
   // Manage cycling views
-  let currentView = $state<'grid' | 'carousel' | 'thumbnail'>('grid');
-  const nextView = () => {
-    if (currentView === 'grid') currentView = 'carousel';
-    else if (currentView === 'carousel') currentView = 'thumbnail';
-    else currentView = 'grid';
+  let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol'>('grid');
+
+  function onSelect(value: string) {
+    currentView = value as 'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol';
     onViewChange(currentView);
-  };
+  }
 </script>
 
 <div class="flex items-center space-x-2 text-slate-700 bg-white/90 p-[2px] rounded-full">
@@ -50,35 +51,37 @@
   </div>
 
   <!-- Toggle View -->
-  <button
+  <ViewToggleMenu onSelect={onSelect} />
+  <!-- May want to enable icon changes below or hover show -->
+  <!-- <button
     class="hover:text-white"
     onclick={nextView}
     title="Switch View"
   >
-    {#if currentView === 'grid'}
+    {#if currentView === 'grid'} -->
       <!-- Grid Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
         <rect x="3" y="3" width="7" height="7" />
         <rect x="14" y="3" width="7" height="7" />
         <rect x="14" y="14" width="7" height="7" />
         <rect x="3" y="14" width="7" height="7" />
       </svg>
-    {:else if currentView === 'carousel'}
+    {:else if currentView === 'carousel'} -->
       <!-- Carousel Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor">
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="12" x2="16" y2="16"></line>
       </svg>
-    {:else if currentView === 'thumbnail'}
+    {:else if currentView === 'thumbnail'} -->
       <!-- Thumbnail Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor">
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor">
         <rect x="3" y="3" width="18" height="18" rx="3" />
         <line x1="3" y1="12" x2="21" y2="12" />
         <line x1="12" y1="3" x2="12" y2="21" />
       </svg>
     {/if}
-  </button>
+  </button> -->
 
   <!-- Print Button -->
   <!-- svelte-ignore a11y_consider_explicit_label -->

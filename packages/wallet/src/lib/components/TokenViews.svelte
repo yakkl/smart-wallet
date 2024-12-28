@@ -5,6 +5,10 @@
   import TokenThumbnailView from './TokenThumbnailView.svelte';
   import type { TokenData } from '$lib/common/interfaces';
 	import { debug_log } from '$lib/common/debug-error';
+	import TokenChartsView from './TokenChartsView.svelte';
+	import TokenNewsTradingView from './TokenNewsTradingView.svelte';
+	import TokenTechnicalView from './TokenTechnicalView.svelte';
+	import TokenSymbolView from './TokenSymbolView.svelte';
 
   interface Props {
     tokens: TokenData[];
@@ -14,7 +18,7 @@
 
   let { tokens = [], title = 'Token Portfolio', onTokenClick = (token) => {debug_log('Token clicked:', token)} }: Props = $props();
 
-  let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'list' | 'table' | 'news'>('grid');
+  let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol'>('grid');
   let sortedTokens = $state([...tokens]);
   let sortBy = $state('name');
 
@@ -32,7 +36,7 @@
   }
 
   // Handle view changes
-  function handleViewChange(view: 'grid' | 'carousel' | 'thumbnail' | 'list' | 'table' | 'news') {
+  function handleViewChange(view: 'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol') {
     currentView = view;
   }
 
@@ -57,11 +61,19 @@
   </div>
 
   <!-- Views -->
-  <div class="relative w-full max-h-[500px] rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
+  <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
     {#if currentView === 'grid'}
       <TokenGridView tokens={sortedTokens} onTokenClick={onTokenClick} />
     {:else if currentView === 'carousel'}
       <TokenCarouselView tokens={sortedTokens} onTokenClick={onTokenClick} />
+    {:else if currentView === 'chart'}
+      <TokenChartsView />
+    {:else if currentView === 'news'}
+      <TokenNewsTradingView />
+    {:else if currentView === 'analysis'}
+      <TokenTechnicalView symbol="COINBASE:ETHUSD"/>
+    {:else if currentView === 'symbol'}
+      <TokenSymbolView symbol="COINBASE:ETHUSD"/>
     {:else if currentView === 'thumbnail'}
       <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} />
     {/if}

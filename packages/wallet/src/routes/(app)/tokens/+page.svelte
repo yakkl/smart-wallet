@@ -217,7 +217,7 @@
   </div>
 
   <div class="my-4">
-    <RegistrationOptionModal bind:show={showRegistrationOptions} onCreate={handleCreateAccount} onImport={handleImportPrivateKey} onRestore={handleRestore} />
+    <RegistrationOptionModal bind:show={showRegistrationOptions} onCreate={handleCreateAccount} />
   </div>
 
   <div class="my-4">

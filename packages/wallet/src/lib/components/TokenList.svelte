@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { TokenStorage } from '$lib/common';
+  import type { TokenData } from '$lib/common';
   import TokenForm from './TokenForm.svelte';
   import Confirmation from './Confirmation.svelte';
   import EditControls from './EditControls.svelte';
 
   interface Props {
-    tokens?: TokenStorage[];
-    onTokenSelect?: (token: TokenStorage) => void;
-    onTokenUpdate?: (token: TokenStorage) => void;
-    onTokenDelete?: (token: TokenStorage) => void;
+    tokens?: TokenData[];
+    onTokenSelect?: (token: TokenData) => void;
+    onTokenUpdate?: (token: TokenData) => void;
+    onTokenDelete?: (token: TokenData) => void;
   }
 
   let {
@@ -18,16 +18,16 @@
     onTokenDelete = () => {}
   }: Props = $props();
 
-  let selectedToken: TokenStorage | null = $state(null);
+  let selectedToken: TokenData | null = $state(null);
   let showEditModal = $state(false);
   let showDeleteModal = $state(false);
 
-  function handleEdit(token: TokenStorage) {
+  function handleEdit(token: TokenData) {
     selectedToken = token;
     showEditModal = true;
   }
 
-  function handleDelete(token: TokenStorage) {
+  function handleDelete(token: TokenData) {
     selectedToken = token;
     showDeleteModal = true;
   }

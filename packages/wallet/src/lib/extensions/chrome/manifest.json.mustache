@@ -117,10 +117,12 @@
     }
   },
  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; frame-ancestors 'none';"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-ancestors 'none';"
   },
   "externally_connectable": {
-    "matches": ["https://yakkl.com/*"],
+    "matches": [
+      "https://yakkl.com/*"
+    ],
     "ids": ["*"]
-  }  
+  }
 }

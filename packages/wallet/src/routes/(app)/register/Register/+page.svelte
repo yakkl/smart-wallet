@@ -117,46 +117,46 @@
     await goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);
   }
 
-  function handleImport() {
-    showRegistrationOption = false;
-    showImportAccount = true;
-  }
+  // function handleImport() {
+  //   showRegistrationOption = false;
+  //   showImportAccount = true;
+  // }
 
-  function handleRestore() {
-    showRegistrationOption = false;
-    showEmergencyKit = true;
-  }
+  // function handleRestore() {
+  //   showRegistrationOption = false;
+  //   showEmergencyKit = true;
+  // }
 
-  function onCompleteImportPrivateKey(account: YakklAccount) {
-    showImportAccount = false;
-    goto(PATH_WELCOME)
-  }
+  // function onCompleteImportPrivateKey(account: YakklAccount) {
+  //   showImportAccount = false;
+  //   goto(PATH_WELCOME)
+  // }
 
-  function onCancelImportPrivateKey() {
-    showImportAccount = false;
-    showRegistrationOption = true;
-  }
+  // function onCancelImportPrivateKey() {
+  //   showImportAccount = false;
+  //   showRegistrationOption = true;
+  // }
 
-  // May want to add parameters of what changed later but not currently needed
-  function onCompleteImportPhrase() {
-    showImportPhrase = false;
-    goto(PATH_WELCOME)
-  }
+  // // May want to add parameters of what changed later but not currently needed
+  // function onCompleteImportPhrase() {
+  //   showImportPhrase = false;
+  //   goto(PATH_WELCOME)
+  // }
 
-  function onCancelImportPhrase() {
-    showImportAccount = false;
-    showRegistrationOption = true;
-  }
+  // function onCancelImportPhrase() {
+  //   showImportAccount = false;
+  //   showRegistrationOption = true;
+  // }
 
-  function onCompleteEmergenyKit(success: boolean, message: string) {
-    showEmergencyKit = false;
-    goto(PATH_WELCOME)
-  }
+  // function onCompleteEmergenyKit(success: boolean, message: string) {
+  //   showEmergencyKit = false;
+  //   goto(PATH_WELCOME)
+  // }
 
-  function onCancelEmergencyKit() {
-    showEmergencyKit = false;
-    showRegistrationOption = true;
-  }
+  // function onCancelEmergencyKit() {
+  //   showEmergencyKit = false;
+  //   showRegistrationOption = true;
+  // }
 
   function onCancelRegistrationOption() {
     showRegistrationOption = false;
@@ -165,29 +165,29 @@
     goto(PATH_LOGOUT);
   }
 
-  function onCancelImportOption() {
-    showImportOption = false;
-    showEmergencyKit = false;
-    showImportAccount = false;
-    showImportPhrase = false;
-    showRegistrationOption = true; // Go back to the registration option
-  }
+  // function onCancelImportOption() {
+  //   showImportOption = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = false;
+  //   showImportPhrase = false;
+  //   showRegistrationOption = true; // Go back to the registration option
+  // }
 
-  function onImportKey() {
-    showRegistrationOption = false;
-    showImportOption = false;
-    showImportPhrase = false;
-    showEmergencyKit = false;
-    showImportAccount = true;
-  }
+  // function onImportKey() {
+  //   showRegistrationOption = false;
+  //   showImportOption = false;
+  //   showImportPhrase = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = true;
+  // }
 
-  function onImportPhrase() {
-    showRegistrationOption = false;
-    showImportOption = false;
-    showEmergencyKit = false;
-    showImportAccount = false;
-    showImportPhrase = true;
-  }
+  // function onImportPhrase() {
+  //   showRegistrationOption = false;
+  //   showImportOption = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = false;
+  //   showImportPhrase = true;
+  // }
 
   // async function checkRegistration() {
   //   if (browserSvelte) {
@@ -422,15 +422,15 @@
 	</title>
 </svelte:head>
 
-<ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} />
+<!-- <ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} /> -->
 
-<ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  />
+<!-- <ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  /> -->
 
-<EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit} mode='import'/>
+<!-- <EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit} mode='import'/> -->
 
-<ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={handleRestore}/>
+<!-- <ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={handleRestore}/> -->
 
-<RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} onImport={handleImport} onRestore={handleRestore} />
+<RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} />
 
 <ErrorNoAction bind:show={error} value={errorValue} title="ERROR!"/>
 

@@ -1,5 +1,5 @@
-import type { TokenStorage } from '$lib/common/interfaces'; // Assume the minimal TokenStorage interface is in a file
-import { setYakklTokensStorage } from '$lib/common/stores';
+import type { TokenData } from '$lib/common/interfaces'; // Assume the minimal TokenData interface is in a file
+import { setYakklTokenDataStorage } from '$lib/common/stores';
 import defaultTokens from './defaultTokens.json';
 
 /**
@@ -8,7 +8,7 @@ import defaultTokens from './defaultTokens.json';
 export async function loadDefaultTokens(): Promise<void> {
   try {
     // Validate and transform each token from JSON
-    const tokens: TokenStorage[] = defaultTokens.map((token: any) => {
+    const tokens: TokenData[] = defaultTokens.map((token: any) => {
       if (!validateToken(token)) {
         throw new Error(`Invalid token data: ${JSON.stringify(token)}`);
       }
@@ -27,8 +27,8 @@ export async function loadDefaultTokens(): Promise<void> {
     });
 
     // Update the storage and store
-    setYakklTokensStorage(tokens);
-    console.log('Default tokens loaded successfully:', setYakklTokensStorage);
+    setYakklTokenDataStorage(tokens);
+    console.log('Default tokens loaded successfully:', setYakklTokenDataStorage);
   } catch (error) {
     console.log('Failed to load default tokens:', error);
   }

@@ -14,10 +14,12 @@ export const ethTokenData: TokenData = {
     { provider: 'coingecko', price: 4250, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 4248, lastUpdated: new Date() },
   ],
-  volume: 1000000,
+  quantity: 1000000,
   currentPrice: 4250,
-  percentChange: 0.5,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0.5,
+  }],
 };
 
 export const btcTokenData: TokenData = {
@@ -32,10 +34,12 @@ export const btcTokenData: TokenData = {
     { provider: 'coingecko', price: 105000, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 105100, lastUpdated: new Date() },
   ],
-  volume: 900000,
+  quantity: 900000,
   currentPrice: 105000,
-  percentChange: 0.5,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0.5,
+  }],
 };
 
 export const usdcTokenData: TokenData = {
@@ -50,10 +54,12 @@ export const usdcTokenData: TokenData = {
     { provider: 'coingecko', price: 1, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 1, lastUpdated: new Date() },
   ],
-  volume: 60000,
+  quantity: 60000,
   currentPrice: 1,
-  percentChange: 0,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0.5,
+  }],
 };
 
 export const chainTokenData: TokenData = {
@@ -68,10 +74,12 @@ export const chainTokenData: TokenData = {
     { provider: 'coingecko', price: 102, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 105, lastUpdated: new Date() },
   ],
-  volume: 45000,
+  quantity: 45000,
   currentPrice: 102,
-  percentChange: -1,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0.5,
+  }],
 };
 
 export const pepeTokenData: TokenData = {
@@ -86,10 +94,12 @@ export const pepeTokenData: TokenData = {
     { provider: 'coingecko', price: 0.0000235, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 0.0000235, lastUpdated: new Date() },
   ],
-  volume: 225000,
+  quantity: 225000,
   currentPrice: 0.0000235,
-  percentChange: 4.5,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0.5,
+  }],
 };
 
 export const usdtTokenData: TokenData = {
@@ -104,8 +114,10 @@ export const usdtTokenData: TokenData = {
     { provider: 'coingecko', price: 0.0000235, lastUpdated: new Date() },
     { provider: 'coinmarketcap', price: 0.0000235, lastUpdated: new Date() },
   ],
-  volume: 225000,
+  quantity: 225000,
   currentPrice: 0.0000235,
-  percentChange: 0,
-  timeline: '24h',
+  change: [{
+    timeline: '24h',
+    percentChange: 0,
+  }],
 };

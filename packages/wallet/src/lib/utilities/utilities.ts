@@ -6,9 +6,9 @@
 import { browser as browserSvelte} from "$app/environment";
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
-import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR } from "$lib/common/constants";
+import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR, TIMELINES } from "$lib/common/constants";
 import { map } from "./map";
-import { type BigNumberishLegacy } from '$lib/common';
+import { type BigNumberishLegacy, type TokenChange } from '$lib/common';
 import { encodeJSON } from '$lib/common/misc';
 import type { BigNumberish } from '$lib/common/bignumber';
 import { yakklVersionStore } from '$lib/common/stores';
@@ -20,6 +20,18 @@ import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser;
 if (browserSvelte) browser_ext = getBrowserExt();
 
+
+export function getTokenChange(
+  changeArray: TokenChange[],
+  timeline: string
+): number | null {
+  if (!TIMELINES.includes(timeline as any)) {
+    throw new Error(`Invalid timeline: ${timeline}`);
+  }
+
+  const foundChange = changeArray.find((change) => change.timeline === timeline);
+  return foundChange ? foundChange.percentChange : null;
+}
 
 export function calculateFeeAmount( tokenAmount: bigint, feeBasisPoints: number ): bigint {
   // Convert the fee basis points to an integer for calculation.

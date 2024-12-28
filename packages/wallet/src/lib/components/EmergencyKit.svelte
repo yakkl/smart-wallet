@@ -1,12 +1,12 @@
 <script lang="ts">
   //
-  // NOTE: This for the Bulk Emergency Kit. The single EmergencyKit is only for YakklAccount or yakklPrimaryAccount. 
+  // NOTE: This for the Bulk Emergency Kit. The single EmergencyKit is only for YakklAccount or yakklPrimaryAccount.
   //
 
   import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
-  import { 
-    getProfile, getPreferences, getSettings, getYakklCurrentlySelected, 
-    getYakklContacts, getYakklChats, getYakklAccounts, getYakklPrimaryAccounts, 
+  import {
+    getProfile, getPreferences, getSettings, getYakklCurrentlySelected,
+    getYakklContacts, getYakklChats, getYakklAccounts, getYakklPrimaryAccounts,
     getYakklWatchList, getYakklBlockedList, getYakklConnectedDomains, getMiscStore,
     setProfileStorage, setPreferencesStorage, setSettingsStorage, setYakklCurrentlySelectedStorage,
     setYakklContactsStorage, setYakklChatsStorage, setYakklAccountsStorage, setYakklPrimaryAccountsStorage,
@@ -17,7 +17,7 @@
   } from '$lib/common/stores';
   import type { EmergencyKitMetaData } from '$lib/common';
   import Confirmation from './Confirmation.svelte';
-	
+
   interface Props {
     mode?: 'import' | 'export';
     onComplete: (success: boolean, message: string) => void;
@@ -40,7 +40,7 @@
         metadata = await EmergencyKitManager.readBulkEmergencyKitMetadata(file);
       } catch (err) {
         error = 'Failed to read emergency kit metadata';
-        console.error(err);
+        console.log(err);
       }
     }
   }
@@ -85,7 +85,7 @@
       onComplete(true, 'Emergency kit exported successfully as ' + fileName);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to export emergency kit';
-      console.error(err);
+      console.log(err);
       onComplete(false, error);
     } finally {
       loading = false;
@@ -107,14 +107,14 @@
     try {
       const passwordOrSaltedKey = getMiscStore();
       const { newData, existingData } = await EmergencyKitManager.importBulkEmergencyKit(file!, passwordOrSaltedKey);
-      
+
       // Update local storage and Svelte stores
       await updateStorageAndStores(newData, existingData);
 
       onComplete(true, `Emergency kit imported successfully for: ${file!.name}`);
     } catch (err) {
       error = `Failed to import emergency kit for: ${file!.name}`;
-      console.error(err);
+      console.log(err);
       onComplete(false, `Failed to import emergency kit for: ${file!.name}`);
     } finally {
       loading = false;
@@ -139,6 +139,9 @@
     for (const { key, setStorage, store } of updateFunctions) {
       const data = newData[key] || existingData[key];
       if (data) {
+        if ( key === 'yakklPreferencesStore') {
+          data['version'] = existingData[key]['version']; // Keep the latest version number metadata
+        }
         await setStorage(data);
         store.set(data);
       }

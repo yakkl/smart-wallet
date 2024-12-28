@@ -2,13 +2,13 @@
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import Modal from './Modal.svelte';
-  import { debug_log, type TokenStorage } from '$lib/common';
+  import { debug_log, type TokenData } from '$lib/common';
 
   interface Props {
     show?: boolean;
-    token?: TokenStorage | null;
+    token?: TokenData | null;
     className?: string;
-    onSubmit?: (token: TokenStorage) => void;
+    onSubmit?: (token: TokenData) => void;
   }
 
   let { show = $bindable(false), token=null, className='z-[999]', onSubmit = () => {} }: Props = $props();
@@ -33,7 +33,7 @@
       chainId: yup.number().required('Please enter the chain ID'),
     }),
     onSubmit: (values) => {
-      const updatedToken: TokenStorage = {
+      const updatedToken: TokenData = {
         ...values,
         symbol: values.symbol.toUpperCase(), // Ensure symbol is always uppercase
       };

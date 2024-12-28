@@ -71,18 +71,18 @@ export interface EmergencyKitData {
   cs: string; // Checksum for the overall data
 }
 
-export interface TokenStorage {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  chainId: number;
-  balance?: BigNumberish;
-  logoURI?: string;
-  isNative?: boolean;
-  isStablecoin?: boolean;
-  description?: string;
-}
+// export interface TokenStorage {
+//   address: string;
+//   name: string;
+//   symbol: string;
+//   decimals: number;
+//   chainId: number;
+//   balance?: BigNumberish;
+//   logoURI?: string;
+//   isNative?: boolean;
+//   isStablecoin?: boolean;
+//   description?: string;
+// }
 
 export interface HasData<T> {
   data: T;
@@ -382,16 +382,18 @@ export interface SwapToken {
 
 export interface TokenData extends SwapToken {
   priceData?: PriceData[];
-  volume?: number;
-  currentPrice: number;
-  timeline?: string; // Can be '24h', '7d', '30d', etc.
+  currentPrice?: number;  // Current price of the token. Price is in PriceData but is for the provider's price
+  change?: TokenChange[] | null; // getTokenChange(timeline)
   value?: Number; // Since this would be the user's value in the token
-  priceChange?: number; // Percentage change (e.g., -3.4, 0.5)
-  percentChange?: number; // Percentage change (e.g., -3.4, 0.5) // TODO: REVIST this whole interface and clean it up
   quantity?: number;    // User's holdings
-  lineChartData?: { x: string | Date; y: number }[]; // Data for chart
+  // lineChartData?: { x: string | Date; y: number }[]; // Data for chart
 }
 
+// Currently only used for the token list and not as a stand alone data store
+export interface TokenChange {
+  timeline?: string;
+  percentChange?: number;
+}
 
 // export interface SwapTokenListTag {
 //   [key: string]: {
