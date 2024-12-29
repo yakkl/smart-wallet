@@ -1,3 +1,4 @@
+import { debug_log } from '$lib/common/debug-error';
 import type { TokenData } from '$lib/common/interfaces'; // Assume the minimal TokenData interface is in a file
 import { setYakklTokenDataStorage } from '$lib/common/stores';
 import defaultTokens from './defaultTokens.json';
@@ -22,13 +23,20 @@ export async function loadDefaultTokens(): Promise<void> {
         isStablecoin: token.isStablecoin || false,
         logoURI: token.logoURI || '',
         description: token.description || '',
-        balance: 0n,
+        balance: token.balance || 0n,
+        priceData: token.priceData || [],
+        quantity: token.quantity || 0,
+        currentPrice: token.currentPrice || 0,
+        change: token.change || [],
+        value: token.value || 0,
+        tags: token.tags || [],
+        version: token.version || '',
       };
     });
 
     // Update the storage and store
+    debug_log('Default tokens loaded successfully:', tokens);
     setYakklTokenDataStorage(tokens);
-    console.log('Default tokens loaded successfully:', setYakklTokenDataStorage);
   } catch (error) {
     console.log('Failed to load default tokens:', error);
   }
@@ -38,6 +46,7 @@ export async function loadDefaultTokens(): Promise<void> {
  * Validate token data to ensure it matches the expected structure.
  */
 function validateToken(token: any): boolean {
+  // Partial validation to ensure required fields are present
   return (
     typeof token.address === 'string' &&
     typeof token.name === 'string' &&

@@ -2,10 +2,8 @@
   import { browser as browserSvelte} from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
-  // import Back from "$components/Back.svelte";
   import ComingSoon from "$components/ComingSoon.svelte";
 	import ErrorNoAction from "$components/ErrorNoAction.svelte";
-	// import Welcome from "$components/Welcome.svelte";
 	import ButtonGridItem from "$components/ButtonGridItem.svelte";
 	import ButtonGrid from "$components/ButtonGrid.svelte";
 	import { routeCheckWithSettings } from '$lib/common/routes';
@@ -20,25 +18,60 @@
   if (browserSvelte) browser_ext = getBrowserExt();
 
   import type { TokenData } from '$lib/common/interfaces';
-  import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
+	import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
+	import { getYakklCurrentlySelectedStore, getYakklTokenDataStore, yakklCurrentlySelectedStore } from "$lib/common/stores";
 	import TokenViews from "$lib/components/TokenViews.svelte";
+  import { Wallet } from '$lib/plugins/Wallet';
+	// import { Blockchain } from "$lib/plugins/Blockchain";
+	// import { Provider } from "$lib/plugins/Provider";
+	// import { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+	import { getInstances } from "$lib/common/wallet";
+	import type { Provider } from "$lib/plugins/Provider";
+	import type { Blockchain } from "$lib/plugins/Blockchain";
+	import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+	// import { get } from "lodash";
 
+  // import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
   // Mock token data
-  // TODO: Replace with real data, get balances
-  const tokens: TokenData[] = [ethTokenData, btcTokenData, usdcTokenData, chainTokenData, pepeTokenData, usdtTokenData];
+  // const tokens: TokenData[] = [ethTokenData, btcTokenData, usdcTokenData, chainTokenData, pepeTokenData, usdtTokenData];
 
   let error = $state(false);
   let errorValue: any = $state();
   let showComingSoon = $state(false);
   let showImportOption = $state(false);
+  let tokens = $state<TokenData[]>([]);
+  let wallet: Wallet | null = null;
+  let provider: Provider | null = null;
+  let blockchain: Blockchain | null = null;
+  let tokenService: TokenService<any> | null = null;
 
-  // let showPin = false;
-  // let pinValue = "";
-
-  onMount(() => {
+  onMount(async () => {
     try {
       if (browserSvelte) {
         browser_ext.runtime.onMessage.addListener(handleOnMessage);
+        const count = getYakklTokenDataStore().length;
+        if (count === 0) await loadDefaultTokens();
+        tokens = getYakklTokenDataStore();
+
+        console.log('tokens:', tokens);
+
+        // Get balances for tokens - if any
+        const instances = await getInstances();
+        if (instances.length > 0) {
+          console.log('instances:', instances);
+
+          wallet = instances[0];
+          provider = instances[1];
+          blockchain = instances[2];
+          tokenService = instances[3];
+          if (wallet && provider && blockchain && tokenService) {
+            const currentlySelected = getYakklCurrentlySelectedStore();
+
+            console.log('currentlySelected:', currentlySelected);
+
+            tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+          }
+        }
       }
     } catch (e) {
       console.log(e);
@@ -58,9 +91,9 @@
 
   routeCheckWithSettings();
 
-  function handleComingSoon() {
-    showComingSoon = true;
-  }
+  // function handleComingSoon() {
+  //   showComingSoon = true;
+  // }
 
   function handleImports() {
     showImportOption = true;
@@ -73,9 +106,7 @@
 </script>
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
-
 <ErrorNoAction bind:show={error} title="Error" value={errorValue} /> <!-- TODO: Move to general layout???? -->
-
 <ComingSoon bind:show={showComingSoon} />
 
 <!-- Top band on page using the bg of wherever this is - could be component but not sure we will keep it -->

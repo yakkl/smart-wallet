@@ -108,10 +108,10 @@ export interface Provider {
 
   getProvider(): any | null;
   getSigner(): Signer | null;
-  getSignerNative(): any | null; 
+  getSignerNative(): any | null;
 
   setProvider( provider: any ): void; // This one sets the provider after it has been created by the wallet and/or Signer
-  setSigner( signer: Signer ): void; // This one sets the signer for the provider after it has been created by the wallet and/or Signer 
+  setSigner( signer: Signer ): void; // This one sets the signer for the provider after it has been created by the wallet and/or Signer
 
   /**
    * Sends a raw transaction.
@@ -599,14 +599,14 @@ export abstract class AbstractProvider implements Provider {
     // Convert gasPrice from Wei to Gwei
     const gasPriceGwei = EthereumBigNumber.from( gasPrice ).div( 1000000000 );
 
-    console.log( 'gasPrice in wei:', gasPrice );
+    // console.log( 'gasPrice in wei:', gasPrice );
 
-    console.log( "getFeeData lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice (in Gwei)",
-      lastBaseFeePerGas.toGwei().toString(),
-      maxFeePerGas.toGwei().toString(),
-      maxPriorityFeePerGas.toString(),
-      gasPriceGwei.toString()
-    );
+    // console.log( "getFeeData lastBaseFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasPrice (in Gwei)",
+    //   lastBaseFeePerGas.toGwei().toString(),
+    //   maxFeePerGas.toGwei().toString(),
+    //   maxPriorityFeePerGas.toString(),
+    //   gasPriceGwei.toString()
+    // );
 
     return {
       lastBaseFeePerGas: lastBaseFeePerGas.toBigInt() ?? BigInt( 0 ),
