@@ -34,7 +34,7 @@ export function upgrade(fromVersion: string, toVersion: string) {
     // }
 
     latest(toVersion);
-    console.log(`Upgraded from ${fromVersion} to ${toVersion}`); 
+    console.log(`Upgraded from ${fromVersion} to ${toVersion}`);
 
   } catch (e) {
     console.log(e);
@@ -93,14 +93,14 @@ export async function updateVersion(toVersion: string) {
   try {
     // Below did not work only because these or most are [] and not {}
     if (!toVersion) return;
-    
-    console.log('Updating version to 1:', toVersion, yakklUpdateStorage);
+
+    // console.log('Updating version to 1:', toVersion, yakklUpdateStorage);
 
     for (let index = 0; index < yakklUpdateStorage.length; index++) {
       const dataFile = yakklUpdateStorage[index].toString();
       let data: any = await getObjectFromLocalStorage(dataFile);
 
-      console.log('Updating version for 2:', dataFile, data);
+      // console.log('Updating version for 2:', dataFile, data);
 
       if (data) {
         if (Array.isArray(data)) {
@@ -116,7 +116,7 @@ export async function updateVersion(toVersion: string) {
           data.version = toVersion; // Created issue #YB-64 due to upgrade from 0.29.5 to 0.30.5 see for more details
         }
 
-        console.log('Updating version for 3:', dataFile, data);
+        // console.log('Updating version for 3:', dataFile, data);
 
         await setObjectInLocalStorage(dataFile, data);
       } else {
@@ -137,7 +137,7 @@ export async function removeBackups() {
     // removeObjectFromLocalStorage('yakklCurrentlySelectedBackup');
     // removeObjectFromLocalStorage('yakklAccountsBackup');
     // removeObjectFromLocalStorage('yakklProvidersBackup');
-    // removeObjectFromLocalStorage('yakklConnectedDomainsBackup');  
+    // removeObjectFromLocalStorage('yakklConnectedDomainsBackup');
   } catch (e) {
     console.log(e);
   }

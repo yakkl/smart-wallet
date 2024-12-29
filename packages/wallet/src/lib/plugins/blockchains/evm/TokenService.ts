@@ -1,7 +1,8 @@
 import type { AbstractBlockchain } from '$plugins/Blockchain';
-import { type BaseTransaction, type BigNumberish, type TransactionResponse } from '$lib/common';
+import { type BaseTransaction, type BigNumberish, type TokenData, type TransactionResponse } from '$lib/common';
 import { AbstractContract } from '$plugins/Contract';
 import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';  // Only ERC20 ABI is used
+import { updateTokenBalances } from '$lib/common/tokens';
 
 export class TokenService<T extends BaseTransaction> {
   private blockchain: AbstractBlockchain<T> | null = null;
@@ -46,6 +47,19 @@ export class TokenService<T extends BaseTransaction> {
     } catch (error) {
       console.log('Contract - getBalance - error', error);
       return 0n;
+    }
+  }
+
+  async updateTokenBalances( userAddress: string ): Promise<void> {
+    try {
+      if ( !userAddress ) throw new Error( 'Invalid parameters' );
+
+      // This fuction is defined in tokens.ts and updates the standard token balances and custom token balances.
+      // Since this is the only function within the method then no need for await
+      updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() || undefined );
+
+    } catch ( error ) {
+      console.log( 'Error updating token balances:', error );
     }
   }
 

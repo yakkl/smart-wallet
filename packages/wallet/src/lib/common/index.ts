@@ -14,6 +14,7 @@ export * from '$lib/plugins/EventManager';
 export * from '$lib/common/icon';
 export * from '$lib/common/bignumber';
 export * from '$lib/common/debug-error';
+export * from '$lib/common/wallet';
 // export * from './stores';
 // export * from './bignumber-ethereum';
 // export * from './routes';

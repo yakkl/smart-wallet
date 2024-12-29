@@ -382,11 +382,10 @@ export interface SwapToken {
 
 export interface TokenData extends SwapToken {
   priceData?: PriceData[];
-  currentPrice?: number;  // Current price of the token. Price is in PriceData but is for the provider's price
   change?: TokenChange[] | null; // getTokenChange(timeline)
+  currentPrice?: number;  // Current price of the token. Price is in PriceData but is for the provider's price
   value?: Number; // Since this would be the user's value in the token
   quantity?: number;    // User's holdings
-  // lineChartData?: { x: string | Date; y: number }[]; // Data for chart
 }
 
 // Currently only used for the token list and not as a stand alone data store

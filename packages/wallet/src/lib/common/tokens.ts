@@ -103,15 +103,15 @@ import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustom
 
 export async function updateTokenBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
   try {
-    updateTokenDataBalances(userAddress, provider);
+    console.log('Updating token balances - userAddress & provider:', userAddress, provider);
+    
+    await Promise.all([
+      updateTokenDataBalances(userAddress, provider),
+      updateTokenDataCustomBalances(userAddress, provider),
+      console.log('Balances updated')
+    ]);
   } catch (error) {
     console.log('Error updating token balances:', error);
-  }
-
-  try {
-    updateTokenDataCustomBalances(userAddress, provider);
-  } catch (error) {
-    console.log('Error updating token custom balances:', error);
   }
 }
 
@@ -120,7 +120,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
     const tokens = get(yakklTokenDataStore);
 
     if (!tokens || tokens.length === 0) {
-      console.warn('No tokens available to update balances');
+      console.log('No tokens available to update balances');
       return;
     }
 
@@ -128,6 +128,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
     const updatedTokens = await Promise.all(
       tokens.map(async (token) => {
         try {
+          // ETH native is handled like WETH so this is fine
           const balance = await getTokenBalance(token, userAddress, provider); // Fetch balance
           return {
             ...token,
@@ -142,6 +143,9 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 
     // Store updated token data
     await setYakklTokenDataStorage(updatedTokens);
+
+    console.log('updatedTokens:', updatedTokens);
+
   } catch (error) {
     console.log('Error updating token balances:', error);
   }
@@ -152,7 +156,7 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
     const customTokens = get(yakklTokenDataCustomStore);
 
     if (!customTokens || customTokens.length === 0) {
-      console.warn('No custom tokens available to update balances');
+      console.log('No custom tokens available to update balances');
       return;
     }
 
@@ -174,6 +178,8 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
 
     // Store updated token data
     await setYakklTokenDataCustomStorage(updatedCustomTokens);
+
+    console.log('updatedCustomTokens:', updatedCustomTokens);
   } catch (error) {
     console.log('Error updating custom token balances:', error);
   }

@@ -1,10 +1,22 @@
 [
   {
+    "name": "Ethereum",
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "symbol": "ETH",
+    "decimals": 18,
+    "chainId": 1,
+    "isNative": true,
+    "isStablecoin": false,
+    "logoURI": "../../../images/ethereum.svg"
+  },
+  {
     "name": "Wrapped Ether",
     "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "symbol": "WETH",
     "decimals": 18,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
   },
   {
@@ -13,6 +25,8 @@
     "symbol": "DAI",
     "decimals": 18,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": true,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png"
   },
   {
@@ -21,7 +35,9 @@
     "symbol": "UNI",
     "decimals": 18,
     "chainId": 1,
-    "logoURI": "ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg"
+    "isNative": false,
+    "isStablecoin": false,
+    "logoURI": "../../../images/uniswap.png"
   },
   {
     "name": "Tether USD",
@@ -29,6 +45,8 @@
     "symbol": "USDT",
     "decimals": 6,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": true,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
   },
   {
@@ -37,6 +55,8 @@
     "symbol": "USDC",
     "decimals": 6,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": true,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
   },
   {
@@ -45,6 +65,8 @@
     "symbol": "LINK",
     "decimals": 18,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x514910771AF9Ca656af840dff83E8264EcF986CA/logo.png"
   },
   {
@@ -53,6 +75,8 @@
     "symbol": "WBTC",
     "decimals": 8,
     "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png"
   },
   {
@@ -61,6 +85,8 @@
     "name": "Aave",
     "symbol": "AAVE",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110"
   },
   {
@@ -69,6 +95,8 @@
     "name": "Polygon",
     "symbol": "MATIC",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912"
   },
   {
@@ -77,6 +105,8 @@
     "name": "Shiba Inu",
     "symbol": "SHIB",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/11939/thumb/shiba.png?1622619446"
   },
   {
@@ -85,6 +115,8 @@
     "name": "Binance USD",
     "symbol": "BUSD",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/9576/thumb/BUSD.png?1568947766"
   },
   {
@@ -93,6 +125,8 @@
     "name": "Coinbase Wrapped Staked ETH",
     "symbol": "cbETH",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/27008/large/cbeth.png"
   },
   {
@@ -101,6 +135,8 @@
     "name": "Pepe",
     "symbol": "PEPE",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1682922725"
   },
   {
@@ -109,6 +145,8 @@
     "address": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
     "symbol": "ARB",
     "decimals": 18,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://arbitrum.foundation/logo.png"
   },
   {
@@ -117,6 +155,8 @@
     "name": "PayPal USD",
     "symbol": "PYUSD",
     "decimals": 6,
+    "isNative": false,
+    "isStablecoin": true,
     "logoURI": "https://assets.coingecko.com/coins/images/31212/large/PYUSD_Logo_%282%29.png?1691458314"
   },
   {
@@ -125,6 +165,8 @@
     "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
     "symbol": "cbBTC",
     "decimals": 8,
+    "isNative": false,
+    "isStablecoin": false,
     "logoURI": "https://assets.coingecko.com/coins/images/40143/standard/cbbtc.webp"
   }
 ]

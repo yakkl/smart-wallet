@@ -75,14 +75,15 @@
   onMount(async () => {
     try {
       const currentlySelected = await getYakklCurrentlySelected();
-      const yakklMiscStore = getMiscStore();
+      // const yakklMiscStore = getMiscStore();
 
       if (currentlySelected.shortcuts?.address) {
         fundingAddress = currentlySelected.shortcuts.address;
       }
+      chainId = currentlySelected.shortcuts?.chainId ?? 1;
       if (swapPriceProvider === null) {
         let wallet: Wallet | null = null;
-        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         if (wallet) {
           if (!wallet.getSigner()) {
             const accountKey = await getYakklCurrentlySelectedAccountKey();
