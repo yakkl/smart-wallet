@@ -10,7 +10,7 @@
   import { fetchGPT4Response } from '$lib/api/api-gpt.js';
   import { apiKeyFetch } from '$lib/api/apis';
   import ClipboardJS from 'clipboard';
-  import { debug_log, VERSION, type YakklChat } from '$lib/common';
+  import { VERSION, type YakklChat } from '$lib/common';
 
   let messages = $state<YakklChat[]>([]);
   let error = $state(false);
@@ -30,36 +30,32 @@
 
   onMount(async () => {
     try {
-        messages.length = 0; // Clear existing messages
+      messages.length = 0; // Clear existing messages
 
-        if ($yakklGPTKeyStore === null || $yakklGPTKeyStore === undefined) {
-            await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {
-                if (results) {
-                    $yakklGPTKeyStore = results;
-                } else {
-                    throw 'Error loading auth.';
-                }
-            });
-        }
+      if ($yakklGPTKeyStore === null || $yakklGPTKeyStore === undefined) {
+        await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {
+          if (results) {
+            $yakklGPTKeyStore = results;
+          } else {
+            throw 'Error loading auth.';
+          }
+        });
+      }
 
-        const loadedMessages = await getYakklChats();
+      const loadedMessages = await getYakklChats();
 
-        // Ensure we have an array and add messages one by one
-        if (Array.isArray(loadedMessages)) {
-            loadedMessages.forEach(msg => {
-                if (msg && typeof msg === 'object') {
-                    messages.push(msg);
-                }
-            });
-        }
-
-        // Log the messages array to verify it's populated
-        console.log('Loaded messages:', messages);
-
+      // Ensure we have an array and add messages one by one
+      if (Array.isArray(loadedMessages)) {
+        loadedMessages.forEach(msg => {
+          if (msg && typeof msg === 'object') {
+            messages.push(msg);
+          }
+        });
+      }
     } catch(e) {
-        console.log('Error in onMount:', e);
-        errorValue = 'Error loading key or chat history. ' + e;
-        error = true;
+      console.log('Error in onMount:', e);
+      errorValue = 'Error loading key or chat history. ' + e;
+      error = true;
     }
   });
 
@@ -69,31 +65,29 @@
 
   async function storeChats() {
     try {
-        // Create a clean array from the messages state
-        const messageArray = Array.isArray(messages) ? [...messages] : [];
+      // Create a clean array from the messages state
+      const messageArray = Array.isArray(messages) ? [...messages] : [];
 
-        // Ensure each message is a proper object before storing
-        const cleanMessages = messageArray.map(msg => ({
-            text: msg.text || '',
-            sender: msg.sender || '',
-            timestamp: msg.timestamp || Date.now().toString(),
-            usage: msg.usage || {},
-            id: msg.id || '',
-            version: msg.version || VERSION,
-            createDate: msg.createDate || dateString(),
-            updateDate: msg.updateDate || dateString()
-        }));
+      // Ensure each message is a proper object before storing
+      const cleanMessages = messageArray.map(msg => ({
+          text: msg.text || '',
+          sender: msg.sender || '',
+          timestamp: msg.timestamp || Date.now().toString(),
+          usage: msg.usage || {},
+          id: msg.id || '',
+          version: msg.version || VERSION,
+          createDate: msg.createDate || dateString(),
+          updateDate: msg.updateDate || dateString()
+      }));
 
-        // Update the store first
-        $yakklChatsStore = cleanMessages;
+      // Update the store first
+      $yakklChatsStore = cleanMessages;
 
-        // Then store in localStorage
-        await setYakklChatsStorage(cleanMessages);
-
-        debug_log('Chats stored successfully:', cleanMessages.length);
+      // Then store in localStorage
+      await setYakklChatsStorage(cleanMessages);
     } catch (e) {
-        console.error('Error storing chats:', e);
-        throw e; // Rethrow if you want to handle it in the calling function
+      console.error('Error storing chats:', e);
+      throw e; // Rethrow if you want to handle it in the calling function
     }
   }
 
@@ -103,52 +97,50 @@
     let response = null;
     let dateNow = dateString();
 
-    debug_log('Sending message:', input);
-
     try {
-        if (!$yakklConnectionStore) {
-            throw 'Warning. Your Internet connection appears to be down. Try again later.';
-        }
+      if (!$yakklConnectionStore) {
+          throw 'Warning. Your Internet connection appears to be down. Try again later.';
+      }
 
-        $yakklGPTRunningStore = true;
+      $yakklGPTRunningStore = true;
 
-        const newUserMessage = {
-            text: input,
-            sender: 'user',
-            timestamp: Date.now().toString(),
-            usage: {},
-            id: '',
-            version: VERSION,
-            createDate: dateNow,
-            updateDate: dateNow
-        };
+      const newUserMessage = {
+        text: input,
+        sender: 'user',
+        timestamp: Date.now().toString(),
+        usage: {},
+        id: '',
+        version: VERSION,
+        createDate: dateNow,
+        updateDate: dateNow
+      };
 
-        messages.push(newUserMessage);
+      messages.push(newUserMessage);
 
-        response = await fetchGPT4Response(input);
+      response = await fetchGPT4Response(input);
 
-        let formattedResponse = response?.content?.replace(/[\n]+/g, '<br/><br/>');
+      let formattedResponse = response?.content?.replace(/[\n]+/g, '<br/><br/>');
 
-        const newBotMessage = {
-            text: formattedResponse ? formattedResponse : '',
-            sender: 'yak',
-            timestamp: Date.now().toString(),
-            usage: response?.usage,
-            id: '',
-            version: VERSION,
-            createDate: dateNow,
-            updateDate: dateNow
-        };
+      const newBotMessage = {
+        text: formattedResponse ? formattedResponse : '',
+        sender: 'yak',
+        timestamp: Date.now().toString(),
+        usage: response?.usage,
+        id: '',
+        version: VERSION,
+        createDate: dateNow,
+        updateDate: dateNow
+      };
 
-        messages.push(newBotMessage);
+      messages.push(newBotMessage);
 
-        $yakklChatsStore = [...messages];
-        await storeChats();
+      $yakklChatsStore = [...messages];
+      await storeChats();
     } catch(e: any) {
-        errorValue = `An error occurred: ${e?.message || e}`;
-        error = true;
+      errorValue = `An error occurred: ${e?.message || e}`;
+      error = true;
     } finally {
-        $yakklGPTRunningStore = false;
+      $yakklGPTRunningStore = false;
     }
   }
 

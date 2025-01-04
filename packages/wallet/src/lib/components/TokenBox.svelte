@@ -16,9 +16,9 @@
     // Fetch historical price data based on the token and timeline
     // For simplicity, we'll mock the data here
     chartData = [
-      { x: new Date('2023-05-01'), y: token.currentPrice - 100 },
-      { x: new Date('2023-05-02'), y: token.currentPrice - 50 },
-      { x: new Date('2023-05-03'), y: token.currentPrice },
+      { x: new Date('2023-05-01'), y: token.price.price - 100 },
+      { x: new Date('2023-05-02'), y: token.price.price - 50 },
+      { x: new Date('2023-05-03'), y: token.price.price },
     ];
   });
 </script>
@@ -35,6 +35,6 @@
     <div class="w-full h-24 mb-4">
       <LineChart data={chartData} />
     </div>
-    <div class="text-lg font-bold">{token.currentPrice}</div>
+    <div class="text-lg font-bold">{token.price.price}</div>
   </div>
 {/if}

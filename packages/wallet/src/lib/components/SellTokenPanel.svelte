@@ -5,7 +5,7 @@
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
   import { debounce } from 'lodash-es';
   import { ethers as ethersv6 } from 'ethers-v6';
-  import { convertTokenToUsd, convertUsdToTokenAmount, debug_log, toBigInt } from '$lib/common';
+  import { convertTokenToUsd, convertUsdToTokenAmount, toBigInt } from '$lib/common';
   import ToggleSwitch from './ToggleSwitch.svelte';
   import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
 
@@ -48,8 +48,6 @@
       ? convertTokenToUsd(Number(tokenAmount), $swapPriceDataStore.marketPriceIn)
       : 0;
 
-    debug_log('SELL - usdAmount, tokenAmount, marketPriceIn', usdAmount, tokenAmount, $swapPriceDataStore.marketPriceIn);
-
     formattedAmount = $isUsdModeStore ? usdAmount.toFixed(2) : tokenAmount;
     userInput = '';
   });
@@ -63,8 +61,6 @@
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
-
-    debug_log('SELL - User input 1:', value);
 
     // Allow only valid numbers
     value = value.replace(/[^0-9.]/g, '');
@@ -83,12 +79,7 @@
       }
     }
 
-    debug_log('SELL - User input 2:', value);
-
     userInput = value;
-
-    debug_log('SELL - User input 3:', value, userInput);
-
     if (value === '' || value === '.') {
       formattedAmount = '';
       debouncedAmountChange('');
@@ -96,17 +87,14 @@
       formattedAmount = value;
 
       if ($isUsdModeStore) {
-        debug_log('SELL - Converting USD to token amount...');
         const marketPrice = $swapPriceDataStore.marketPriceIn || 0;
         if (marketPrice > 0) {
           const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenIn.decimals);
           debouncedAmountChange(tokenAmount.toString());
         } else {
-          debug_log('Market price unavailable for conversion.');
           debouncedAmountChange('');
         }
       } else {
-        debug_log('SELL - Token amount:', value);
         debouncedAmountChange(value);
       }
     }

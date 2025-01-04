@@ -20,26 +20,6 @@
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
   },
   {
-    "name": "Dai Stablecoin",
-    "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    "symbol": "DAI",
-    "decimals": 18,
-    "chainId": 1,
-    "isNative": false,
-    "isStablecoin": true,
-    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png"
-  },
-  {
-    "name": "Uniswap",
-    "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-    "symbol": "UNI",
-    "decimals": 18,
-    "chainId": 1,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "../../../images/uniswap.png"
-  },
-  {
     "name": "Tether USD",
     "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     "symbol": "USDT",
@@ -78,95 +58,5 @@
     "isNative": false,
     "isStablecoin": false,
     "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png"
-  },
-  {
-    "chainId": 1,
-    "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-    "name": "Aave",
-    "symbol": "AAVE",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110"
-  },
-  {
-    "chainId": 1,
-    "address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
-    "name": "Polygon",
-    "symbol": "MATIC",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912"
-  },
-  {
-    "chainId": 1,
-    "address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
-    "name": "Shiba Inu",
-    "symbol": "SHIB",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/11939/thumb/shiba.png?1622619446"
-  },
-  {
-    "chainId": 1,
-    "address": "0x4Fabb145d64652a948d72533023f6E7A623C7C53",
-    "name": "Binance USD",
-    "symbol": "BUSD",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/9576/thumb/BUSD.png?1568947766"
-  },
-  {
-    "chainId": 1,
-    "address": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
-    "name": "Coinbase Wrapped Staked ETH",
-    "symbol": "cbETH",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/27008/large/cbeth.png"
-  },
-  {
-    "chainId": 1,
-    "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
-    "name": "Pepe",
-    "symbol": "PEPE",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1682922725"
-  },
-  {
-    "chainId": 1,
-    "name": "Arbitrum",
-    "address": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
-    "symbol": "ARB",
-    "decimals": 18,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://arbitrum.foundation/logo.png"
-  },
-  {
-    "chainId": 1,
-    "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
-    "name": "PayPal USD",
-    "symbol": "PYUSD",
-    "decimals": 6,
-    "isNative": false,
-    "isStablecoin": true,
-    "logoURI": "https://assets.coingecko.com/coins/images/31212/large/PYUSD_Logo_%282%29.png?1691458314"
-  },
-  {
-    "chainId": 1,
-    "name": "Coinbase Wrapped BTC",
-    "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-    "symbol": "cbBTC",
-    "decimals": 8,
-    "isNative": false,
-    "isStablecoin": false,
-    "logoURI": "https://assets.coingecko.com/coins/images/40143/standard/cbbtc.webp"
   }
 ]

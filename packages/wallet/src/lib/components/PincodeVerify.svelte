@@ -42,10 +42,7 @@
         });
       }
 
-      console.log("Profile data: ", profile.data);
-
       const digestedPincode = await digestMessage(pincode);
-      console.log("Digested pincode and pincode: ", digestedPincode, pincode);
       if (isProfileData(profile.data) && profile.data.pincode === digestedPincode) {
         onVerified(digestedPincode); // Send the digested pincode and not the actual pincode
       } else {

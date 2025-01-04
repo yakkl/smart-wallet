@@ -1,5 +1,4 @@
 export function color(opacity: string = "1") {
-  console.log("color");
 	return () => `hsl(var(--primary) / ${opacity})`;
 }
 

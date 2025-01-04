@@ -2,7 +2,6 @@
 import { goto } from '$app/navigation';
 import { PATH_LOCK } from './constants';
 import type { Runtime } from 'webextension-polyfill';  // Correct Type Import
-import { debug_log } from './debug-error';
 
 // Centralized message handler function
 export function handleOnMessage(

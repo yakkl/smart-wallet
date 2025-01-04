@@ -112,7 +112,6 @@ export abstract class Token implements IToken {
       privateKey
     );
   }
-
 }
 
 // Concrete implementation of Token

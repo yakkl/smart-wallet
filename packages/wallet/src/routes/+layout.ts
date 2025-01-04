@@ -5,18 +5,20 @@
 
 export const prerender = true;
 
-import { yakklSettingsStore } from "$lib/common/stores";
+// import { yakklSettingsStore } from "$lib/common/stores";
 import {browser as browserSvelte} from '$app/environment';
-import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
+// import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
 import { setIconLock } from '$lib/utilities/utilities.js';
 import { YAKKL_INTERNAL } from "$lib/common/constants";
 import { wait } from "$lib/common/utils";
-import type { Settings } from '$lib/common/interfaces';
-
+// import type { Settings } from '$lib/common/interfaces';
 
 import type { Browser, Runtime } from 'webextension-polyfill';
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+import type { Settings } from '$lib/common/interfaces';
+import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
 import { dateString } from '$lib/common/datetime';
+// import { dateString } from '$lib/common/datetime';
 
 let browser_ext: Browser;
 if (browserSvelte) {
@@ -26,17 +28,20 @@ if (browserSvelte) {
 type RuntimePort = Runtime.Port;
 let port: RuntimePort | undefined = undefined;
 
-async function initializeExtension() {  try {
-    if (browserSvelte) {   
-      // Don't add a listener if already exists - For tracking storage changes
-      // if (browser_ext.storage.local.onChanged.hasListener(storageChange) === false) {
-      //   browser_ext.storage.local.onChanged.addListener(storageChange);
-      // }
-      
+async function initializeExtension() {
+  try {
+    if (browserSvelte) {
       port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
       if (port) {
-        port.onDisconnect.addListener((event: any) => {
-          setIconLock();
+        port.onDisconnect.addListener(async (event: any) => {
+          await setIconLock();
+          const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
+          if (yakklSettings) {
+            yakklSettings.isLocked = true;
+            yakklSettings.isLockedHow = 'port_disconnect';
+            yakklSettings.updateDate = dateString();
+            await setObjectInLocalStorage('settings', yakklSettings);
+          }
           port = undefined;
           if (event?.error) {
             console.log(event.error?.message);
@@ -47,41 +52,48 @@ async function initializeExtension() {  try {
         wait(1000).then();
         port = browser_ext.runtime.connect({name: YAKKL_INTERNAL}); // Can look at being more efficient later here!
         if (port) {
-          port.onDisconnect.addListener((event: any) => {
-            setIconLock();
+          port.onDisconnect.addListener(async (event: any) => {
+            await setIconLock();
+            const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
+            if (yakklSettings) {
+              yakklSettings.isLocked = true;
+              yakklSettings.isLockedHow = 'port_disconnect';
+              yakklSettings.updateDate = dateString();
+              await setObjectInLocalStorage('settings', yakklSettings);
+            }
             port = undefined;
             if (event?.error) {
               console.log(event.error?.message);
             }
           });
-        } else { 
+        } else {
           console.log('Internal port was unable to connect and is exiting...');
           browser_ext.runtime.reload(); // This is here to try and fix the issue of the port not connecting
         }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      window.addEventListener('beforeunload', async function () { 
-        try {
-          if (port) {
-            port.postMessage('close');
-            port.disconnect();
-          }        
-          setIconLock();
+      // window.addEventListener('beforeunload', async function () {
+      //   try {
+      //     if (port) {
+      //       port.postMessage('close');
+      //       port.disconnect();
+      //     }
+      //     setIconLock();
 
-          const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-          yakklSettings.isLocked = true;
-          yakklSettings.isLockedHow = 'window_exit';
-          yakklSettings.updateDate = dateString();
-          yakklSettingsStore.set(yakklSettings);
-          await setObjectInLocalStorage('settings', yakklSettings);
+      //     const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
+      //     yakklSettings.isLocked = true;
+      //     yakklSettings.isLockedHow = 'window_exit';
+      //     yakklSettings.updateDate = dateString();
+      //     yakklSettingsStore.set(yakklSettings);
+      //     await setObjectInLocalStorage('settings', yakklSettings);
 
-        } catch (e) {
-          console.log(e);          
-        } finally {
-          setIconLock();
-        }
-      });                    
+      //   } catch (e) {
+      //     console.log(e);
+      //   } finally {
+      //     setIconLock();
+      //   }
+      // });
     }
   } catch(e) {
     console.log(e);

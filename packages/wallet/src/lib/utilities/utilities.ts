@@ -25,6 +25,10 @@ export function getTokenChange(
   changeArray: TokenChange[],
   timeline: string
 ): number | null {
+  if (!changeArray) {
+    return null;
+  }
+
   if (!TIMELINES.includes(timeline as any)) {
     throw new Error(`Invalid timeline: ${timeline}`);
   }
@@ -64,7 +68,6 @@ export function convertToBigInt( amount: string, decimals: number ): bigint {
 
   // Parse the string amount to a float
   const parsedAmount = parseFloat( amount );
-
   // Multiply by 10^decimals to get the integer representation
   const factor = 10 ** decimals;
   const convertedAmount = parsedAmount * factor;
@@ -164,7 +167,6 @@ incrementProperty(profile, 'subIndex', 5, -1);  // Attempts to increment by 5, n
 console.log(profile.subIndex); // Should print 15
 **/
 
-
 // Decrements a property on an object safely. If ensureNonNegative is true, the property will not be decremented below 0.
 export function decrementProperty<T extends object, K extends keyof T>(obj: T, property: K, decrementValue: number = 1, ensureNonNegative: boolean = true): void {
   decrementValue = Math.abs(decrementValue); // Ensure decrementValue is always positive
@@ -178,7 +180,6 @@ export function decrementProperty<T extends object, K extends keyof T>(obj: T, p
     obj[property] = ensureNonNegative ? 0 as any : (-decrementValue as any);
   }
 }
-
 
 /** Example usage for decrementProperty
  ecrementProperty(profile, 'subIndex');  // Decrements by 1 by default
@@ -227,7 +228,6 @@ export function setDefinedProperty<T extends object, K extends keyof T>(
   }
 }
 
-
 export function blockContextMenu() {
   // Blocks the context menu from popping up
   window.addEventListener("contextmenu", function (e) {
@@ -264,13 +264,11 @@ export function blockWindowResize(width: number, height: number) {
   });
 }
 
-
 export function extractFQDN(url: string) {
   if (!url) return undefined;
   const parsedUrl = new URL(url);
   return parsedUrl.hostname;
 }
-
 
 export function checkUpgrade() {
   try {
@@ -286,7 +284,6 @@ export function checkUpgrade() {
     return false;
   }
 }
-
 
 // Move these
 // TODO: May want to cycle through Networks and Network.types - Don't forget to add Polygon and others here!!
@@ -330,7 +327,6 @@ export function getNetworkInfo(chainId: number) {
   return {blockchain, type, explorer};
 }
 
-
 // TODO: May want to cycle through Networks and Network.types - Don't forget to add Polygon and others here!!
 export function getChainId(type: string) {
   let chainId=1;
@@ -346,7 +342,6 @@ export function getChainId(type: string) {
 
   return chainId;
 }
-
 
 // Not using now...
 // export async function getCreateProviders(key: string) {
@@ -377,7 +372,6 @@ export function getChainId(type: string) {
 //   }
 // }
 
-
 export async function createHash(val: string) {
   return await crypto.subtle
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -392,7 +386,6 @@ export async function createHash(val: string) {
       return hexes.join('');
     });
 }
-
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
 // Do not use this for objects that have functions or circular references.
@@ -409,17 +402,13 @@ export function deepCopy<T>(obj: T) {
   // }
 }
 
-
-
 export function formatValue(blockchain: string, value: any): string {
   if (blockchain.toLowerCase() === 'ethereum') {
     return formatEther(value);
   }
-
   // Maybe use a switch statement later when the other blockchains are added
   return value; // fallback to
 }
-
 
 export function formatEther(wei: BigNumberish): string {
   if (wei) {
@@ -428,7 +417,6 @@ export function formatEther(wei: BigNumberish): string {
     return '0.0';
   }
 }
-
 
 // Convert to wei
 export function parseUnits(value: string, type: BigNumberishLegacy): BigNumberish {
@@ -447,7 +435,6 @@ export function parseEther(ether: string): BigNumberish {
 export function formatUnits(value: BigNumberish, type: BigNumberish) {
   return Utils.formatUnits(value as bigint | string, type as bigint | string);  // TODO: Watch this
 }
-
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getSymbol(blockchain: string): string {
@@ -469,12 +456,8 @@ export function getSymbol(blockchain: string): string {
   return symbol;
 }
 
-
 // Return the currency symbol based on the locale and currency code
 export const getCurrencySymbol = (locale: string, currency: any) => (0).toLocaleString(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\d/g, '').trim();
-
-
-
 
 export function truncate(val: string, len=20, suffix='...'){
     if (val.length > len) {
@@ -483,12 +466,10 @@ export function truncate(val: string, len=20, suffix='...'){
     return val;
 }
 
-
 // Returns an array of words
 export function splitWords(str: string, delimiter = ' '): string[] {
   return str.split(delimiter);
 }
-
 
 // Opens a tab in the browser
 export function handleOpenInTab(url: string): void {
@@ -496,8 +477,6 @@ export function handleOpenInTab(url: string): void {
     browser_ext.tabs.create({url: url});
   }
 }
-
-
 
 export async function isOnline(url=window.location.origin) {
   let value = false;
@@ -520,7 +499,6 @@ export async function isOnline(url=window.location.origin) {
   return value;
 }
 
-
 export function changeBackground(id: string, image: { src: string; }) {
   try {
     // document.getElementById().innerHTML="";
@@ -533,7 +511,6 @@ export function changeBackground(id: string, image: { src: string; }) {
     console.log(e);
   }
 }
-
 
 export function timeoutClipboard(seconds: number) {
   try {
@@ -548,7 +525,6 @@ export function timeoutClipboard(seconds: number) {
   }
 }
 
-
 export async function setIconLock() {
   try {
     if (browserSvelte) {
@@ -559,7 +535,6 @@ export async function setIconLock() {
   }
 }
 
-
 export async function setIconUnlock() {
   try {
     if (browserSvelte) {
@@ -569,7 +544,6 @@ export async function setIconUnlock() {
     console.log(e);
   }
 }
-
 
 export function getPlatform() {
   const { navigator } = window;
@@ -587,7 +561,6 @@ export function getPlatform() {
   return PLATFORM_TYPES.CHROME;
 };
 
-
 export function getCurrencyCode(locale: string) {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -604,7 +577,6 @@ export function getCurrencyCode(locale: string) {
     return null;
   }
 }
-
 
 // Not exported
 const getCountryCode = function(localeString: string) {
@@ -624,7 +596,6 @@ const getCountryCode = function(localeString: string) {
   }
 }
 
-
 // TODO: hex.substr... is deprecated
 export function hexToString(str1: string, Ox = true)
 {
@@ -643,7 +614,6 @@ export function hexToString(str1: string, Ox = true)
   }
 }
 
-
 export function hexToBigInt(str1: string) {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -655,16 +625,12 @@ export function hexToBigInt(str1: string) {
   }
 }
 
-
 export function autoscroll(node: HTMLElement) {
   function scrollToBottom() {
     node.scrollTop = node.scrollHeight;
   }
-
   const observer = new MutationObserver(scrollToBottom);
-
   observer.observe(node, { childList: true });
-
   return {
     destroy() {
       observer.disconnect();

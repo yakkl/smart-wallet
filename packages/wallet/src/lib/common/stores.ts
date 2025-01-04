@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import {
 	yakklSettings,
 	profile,
@@ -37,7 +37,6 @@ import {
   // STORAGE_YAKKL_TOKENS_CUSTOM,
   STORAGE_YAKKL_TOKENDATA,
   STORAGE_YAKKL_TOKENDATA_CUSTOM,
-  STORAGE_YAKKL_TOKENS
 } from '$lib/common/constants';
 
 import { encryptData, decryptData } from '$lib/common/encryption';
@@ -620,18 +619,18 @@ export async function getYakklContacts(): Promise<YakklContact[]> {
   }
 }
 
-export async function getYakklTokens(): Promise<TokenData[]> {
-  try {
-    const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENS);
-		if (typeof value === 'string') {
-      // Handle the case where value is a string, which shouldn't happen in this context
-      throw new Error('Unexpected string value received from local storage');
-    }
-    return value || []; // Return an empty array or provide a default value if necessary
-  } catch (error) {
-    throw error;
-  }
-}
+// export async function getYakklTokens(): Promise<TokenData[]> {
+//   try {
+//     const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENS);
+// 		if (typeof value === 'string') {
+//       // Handle the case where value is a string, which shouldn't happen in this context
+//       throw new Error('Unexpected string value received from local storage');
+//     }
+//     return value || []; // Return an empty array or provide a default value if necessary
+//   } catch (error) {
+//     throw error;
+//   }
+// }
 
 export async function getYakklTokenData(): Promise<TokenData[]> {
   try {

@@ -7,7 +7,6 @@
   const confirmTransaction = async () => {
     try {
       const result = await sendTransaction($transaction);
-      console.log('Transaction successful:', result);
       onClose();
     } catch (error) {
       console.error('Transaction failed:', error);

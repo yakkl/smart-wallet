@@ -2,7 +2,7 @@
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import Modal from './Modal.svelte';
-  import { debug_log, type TokenData } from '$lib/common';
+  import { type TokenData } from '$lib/common';
 
   interface Props {
     show?: boolean;
@@ -17,10 +17,12 @@
     initialValues: {
       address: '',
       name: '',
+      alias: '',
       symbol: '',
       decimals: 18,
       chainId: 1,
       logoURI: '',
+      customDefault: 'custom',
       isNative: false, // These are optional fields for later use
       isStablecoin: false, // These are optional fields for later use
       description: '', // These are optional fields for later use
@@ -28,13 +30,16 @@
     validationSchema: yup.object().shape({
       address: yup.string().required('Please enter a token address'),
       name: yup.string().required('Please enter a token name'),
+      alias: yup.string().optional(),
       symbol: yup.string().required('Please enter a token symbol'),
       decimals: yup.number().required('Please enter the token decimals'),
       chainId: yup.number().required('Please enter the chain ID'),
+      logoURI: yup.string().optional(),
     }),
     onSubmit: (values) => {
       const updatedToken: TokenData = {
         ...values,
+        customDefault: 'custom', // Ensure customDefault is always 'custom'
         symbol: values.symbol.toUpperCase(), // Ensure symbol is always uppercase
       };
       onSubmit(updatedToken);
@@ -46,10 +51,12 @@
     updateInitialValues({
       address: '',
       name: '',
+      alias: '',
       symbol: '',
       decimals: 18,
       chainId: 1,
       logoURI: '',
+      customDefault: 'custom',
       isNative: false, // These are optional fields for later use
       isStablecoin: false, // These are optional fields for later use
       description: '', // These are optional fields for later use
@@ -61,10 +68,12 @@
       updateInitialValues({
         address: token.address,
         name: token.name,
+        alias: token.alias || '',
         symbol: token.symbol,
         decimals: token.decimals,
-        chainId: token.chainId,
+        chainId: token.chainId || 1,
         logoURI: token.logoURI || '',
+        customDefault: 'custom',
         isNative: token.isNative || false,
         isStablecoin: token.isStablecoin || false,
         description: token.description || '',
@@ -92,8 +101,16 @@
     </div>
 
     <div>
-      <label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Symbol <span class="text-red-500">*</span></label>
-      <input type="text" id="alias" required placeholder="Enter the symbol used such as WETH" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.symbol} onchange={handleChange} />
+      <label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alias</label>
+      <input type="text" id="alias" required placeholder="Enter an alias like an ENS (optional)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} onchange={handleChange} />
+      {#if $errors.alias}
+        <p class="mt-2 text-sm text-red-600">{$errors.alias}</p>
+      {/if}
+    </div>
+
+    <div>
+      <label for="symbol" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Symbol <span class="text-red-500">*</span></label>
+      <input type="text" id="symbol" required placeholder="Enter the token symbol" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focusring:indigo-500 sm:text-sm text-gray-800" bind:value={$form.symbol} onchange={handleChange} />
       {#if $errors.symbol}
         <p class="mt-2 text-sm text-red-600">{$errors.symbol}</p>
       {/if}
@@ -116,8 +133,8 @@
     </div>
 
     <div>
-      <label for="logo" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Logo URI</label>
-      <input type="text" id="logo" placeholder="Enter the URL (https://...) for the logo" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.logoURI} onchange={handleChange} />
+      <label for="logoURI" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Logo URI</label>
+      <input type="text" id="logoURI" placeholder="Enter the URL (https://...) for the logo" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.logoURI} onchange={handleChange} />
       {#if $errors.logoURI}
         <p class="mt-2 text-sm text-red-600">{$errors.logoURI}</p>
       {/if}
