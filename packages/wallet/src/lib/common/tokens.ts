@@ -1,7 +1,8 @@
 import type { TokenData } from './interfaces';
-import { get, derived } from 'svelte/store';
+import { get } from 'svelte/store';
 import { ethers } from 'ethers-v6';
 import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage } from '$lib/common/stores';
+
 
 // type TokenKey = string;
 
@@ -70,13 +71,25 @@ import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustom
 // }
 
   // Helper function to get balance for a token
-  export async function getTokenBalance(token: TokenData, userAddress: string, provider: ethers.Provider): Promise<string | undefined> {
+
+  export async function getTokenBalance(
+    token: TokenData,
+    userAddress: string,
+    provider: ethers.Provider
+  ): Promise<string | undefined> {
     try {
       if (!ethers.isAddress(token.address)) {
-        console.log(`Invalid token address: ${token.address}`);
+        // console.log(`Invalid token address: ${token.address}`);
         return undefined;
       }
 
+      // Handle native tokens (like ETH)
+      if (token.isNative) {
+        const balance = await provider.getBalance(userAddress);
+        return ethers.formatUnits(balance, 18); // Assumes 18 decimals for native tokens
+      }
+
+      // ERC-20 Token
       const tokenContract = new ethers.Contract(
         token.address,
         [
@@ -86,10 +99,16 @@ import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustom
         provider
       );
 
-      const balance = await tokenContract.balanceOf(userAddress);
-      const decimals = await tokenContract.decimals();
+      // Validate the token supports balanceOf and decimals
+      try {
+        const balance = await tokenContract.balanceOf(userAddress);
+        const decimals = await tokenContract.decimals();
 
-      return ethers.formatUnits(balance, decimals);
+        return ethers.formatUnits(balance, decimals);
+      } catch {
+        console.log('The contract does not implement balanceOf or it reverted.');
+        return undefined;
+      }
     } catch (error) {
       console.log(`Failed to get balance for token: ${token.name}`, error);
       return undefined;
@@ -103,12 +122,9 @@ import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustom
 
 export async function updateTokenBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
   try {
-    console.log('Updating token balances - userAddress & provider:', userAddress, provider);
-    
     await Promise.all([
       updateTokenDataBalances(userAddress, provider),
       updateTokenDataCustomBalances(userAddress, provider),
-      console.log('Balances updated')
     ]);
   } catch (error) {
     console.log('Error updating token balances:', error);
@@ -143,9 +159,6 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 
     // Store updated token data
     await setYakklTokenDataStorage(updatedTokens);
-
-    console.log('updatedTokens:', updatedTokens);
-
   } catch (error) {
     console.log('Error updating token balances:', error);
   }
@@ -154,9 +167,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 export async function updateTokenDataCustomBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
   try {
     const customTokens = get(yakklTokenDataCustomStore);
-
     if (!customTokens || customTokens.length === 0) {
-      console.log('No custom tokens available to update balances');
       return;
     }
 
@@ -178,24 +189,48 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
 
     // Store updated token data
     await setYakklTokenDataCustomStorage(updatedCustomTokens);
-
-    console.log('updatedCustomTokens:', updatedCustomTokens);
   } catch (error) {
     console.log('Error updating custom token balances:', error);
   }
 }
 
-export async function combineTokensAndStore() {
-  try {
-    const yakklTokenStore = derived(
-      [yakklTokenDataStore, yakklTokenDataCustomStore],
-      ([$yakklTokenDataStore, $yakklTokenDataCustomStore]) => [
-        ...$yakklTokenDataStore,
-        ...$yakklTokenDataCustomStore
-      ]
-    );
-    return yakklTokenStore;
-  } catch (error) {
-    console.log('Error combining token data:', error);
-  }
-}
+// {
+//     "chainId": 1,
+//     "address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
+//     "name": "Shiba Inu",
+//     "symbol": "SHIB",
+//     "decimals": 18,
+//     "isNative": false,
+//     "isStablecoin": false,
+//     "logoURI": "https://assets.coingecko.com/coins/images/11939/thumb/shiba.png?1622619446"
+// },
+// {
+//     "chainId": 1,
+//     "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+//     "name": "Pepe",
+//     "symbol": "PEPE",
+//     "decimals": 18,
+//     "isNative": false,
+//     "isStablecoin": false,
+//     "logoURI": "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1682922725"
+//   },
+//   {
+//     "chainId": 1,
+//     "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
+//     "name": "PayPal USD",
+//     "symbol": "PYUSD",
+//     "decimals": 6,
+//     "isNative": false,
+//     "isStablecoin": true,
+//     "logoURI": "https://assets.coingecko.com/coins/images/31212/large/PYUSD_Logo_%282%29.png?1691458314"
+//   },
+//   {
+//     "chainId": 1,
+//     "name": "Coinbase Wrapped BTC",
+//     "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+//     "symbol": "cbBTC",
+//     "decimals": 8,
+//     "isNative": false,
+//     "isStablecoin": false,
+//     "logoURI": "https://assets.coingecko.com/coins/images/40143/standard/cbbtc.webp"
+//   }

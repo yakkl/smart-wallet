@@ -28,8 +28,10 @@
   }
 
   function handleTokenAdd(token: TokenData) {
-    yakklTokenDataStore.update((tokens) => [...tokens, token]);
-    setYakklTokenDataStorage($yakklTokenDataStore);
+    if (token?.customDefault === 'custom') { // If not custom by chance then don't add
+      yakklTokenDataStore.update((tokens) => [...tokens, token]);
+      setYakklTokenDataStorage($yakklTokenDataStore);
+    }
     showAddModal = false;
   }
 

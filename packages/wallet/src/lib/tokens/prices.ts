@@ -24,9 +24,7 @@ const priceManager = new PriceManager([
   // Add other providers with their weights...
 ]);
 
-// This file will be going away soon. It is only here for reference. The new code is in the plugins folder.
-
-// TODO: If we want to randomly check prices then we need a more abstract function that randomly chooses from the different exchanges or aggregators
+// The new code is in the plugins folder.
 export async function checkPricesCB() {
   try {
     // if (pricingIntervalID) {
@@ -44,7 +42,7 @@ export async function checkPricesCB() {
       // }
     // }
   } catch (e) {
-    console.log(`checkPricesCB: ${e}`);    
+    console.log(`checkPricesCB: ${e}`);
   }
 }
 

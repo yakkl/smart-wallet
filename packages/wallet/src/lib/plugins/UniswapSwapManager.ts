@@ -356,15 +356,12 @@ export class UniswapSwapManager extends SwapManager {
     try {
       let quoteAmount: ethersv5.BigNumber;
 
-      debug_log( 'Multi-hop quote params:', multiHopParams );
       // Returns a single value for the quote instead of a tuple of values
       if ( isExactIn ) {
         quoteAmount = await quoterContract.callStatic.quoteExactInput( multiHopParams.path, amountInOrOut );
       } else {
         quoteAmount = await quoterContract.callStatic.quoteExactOutput( multiHopParams.path, amountInOrOut );
       }
-
-      debug_log( 'Multi-hop quote amount:', quoteAmount );
 
       if ( quoteAmount.gt( 0 ) ) {
         const gasEstimate = await this.getGasEstimateForSwap( tokenInAddress, tokenOutAddress, amountInOrOut.toBigInt(), fundingAddress, fee );
@@ -466,10 +463,7 @@ export class UniswapSwapManager extends SwapManager {
       newFee = availablePools[ 0 ];
     }
 
-    debug_log( 'Available pools, fee, newFee', availablePools, fee, newFee );
-
     if ( !availablePools || availablePools.length === 0 ) {
-      debug_log( `No pools exist for ${ tokenIn.symbol } and ${ tokenOut.symbol }` );
       // Handle multi-hop or throw an error if no valid routes exist
       try {
         return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
@@ -504,8 +498,6 @@ export class UniswapSwapManager extends SwapManager {
           await quoterContract.quoteExactOutputSingle.staticCall( params );
       }
 
-      debug_log( 'Direct pool quote amount:', quoteAmount);
-
       if ( quoteAmount > 0n ) {
         return await this.constructQuoteData(
           tokenIn,
@@ -536,7 +528,7 @@ export class UniswapSwapManager extends SwapManager {
 
   // WIP - Not yet implemented
   async estimateSwapGas( swapRouterAddress: string, swapParams: SwapParams ): Promise<bigint> {
-    debug_log( 'Estimating gas for swap:', swapParams );
+    // debug_log( 'Estimating gas for swap:', swapParams );
     return 0n;
   }
 
@@ -732,8 +724,6 @@ export class UniswapSwapManager extends SwapManager {
     const feeAmountInUSD = formatFeeToUSD( feeAmount, tokenOut.decimals, priceOut.price );  //feeAmountInTokenOut * priceOut.price; // Always in tokenOut (buy side)
     const priceOutBigInt = BigInt( Math.round( priceOut.price * 10 ** tokenOut.decimals ) );
 
-    debug_log( 'Price out:', fee, priceOutBigInt, tokenOut.decimals, priceOut.price, ( Number( feeAmount ) * priceOut.price ) / formattedAmountOut );
-
     let gasEstimateInUSD = '';
     let adjustedGasEstimate = 0n;
 
@@ -881,8 +871,6 @@ export class UniswapSwapManager extends SwapManager {
       // Convert to bigint
       const gasEstimateBigInt = gasEstimate.toBigInt(); // Convert BigNumber to BigInt
       const adjustedGasEstimate = ( gasEstimateBigInt * ( 10000n + YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS ) ) / 10000n;
-
-      debug_log( 'getGasEstimateForSwap:', { gasEstimate, gasEstimateBigInt, adjustedGasEstimate } );
 
       return adjustedGasEstimate;
     } catch ( error ) {
@@ -1319,7 +1307,7 @@ export class UniswapSwapManager extends SwapManager {
   async checkAllowance( token: Token, fundingAddress: string ): Promise<bigint> {
     try {
       if ( !token || token.isNative || !fundingAddress || !this.providerNative ) {
-        debug_log( 'Token, provider, or swap manager not initialized', { token, fundingAddress } );
+        // debug_log( 'Token, provider, or swap manager not initialized', { token, fundingAddress } );
         return 0n;
       }
 
@@ -1400,16 +1388,13 @@ export class UniswapSwapManager extends SwapManager {
         throw new Error( 'Token approval transaction failed' );
       }
 
-      // Log the receipt, which includes gas used
-      debug_log( 'ApproveToken: transaction receipt: ========================================>>>>>>>>>>>>>>>', receipt );
-
       // Check if the approval was successful (true or false)
       if ( receipt.logs.length > 0 ) {
         const eventFragment = tokenContract.interface.getEvent( 'Approval' );
         const log = receipt.logs.find( ( log: { topics: string[]; } ) => log.topics[ 0 ] === eventFragment?.topicHash );
-        if ( log ) {
-          debug_log( 'Approval event detected: ***************************', log );
-        }
+        // if ( log ) {
+        //   debug_log( 'Approval event detected: ***************************', log );
+        // }
       }
 
       return EthersConverter.ethersTransactionReceiptToTransactionReceipt(receipt);
@@ -1438,9 +1423,6 @@ export class UniswapSwapManager extends SwapManager {
       if ( !quote || quote.error ) throw new Error( quote && quote.error ? quote.error : 'Failed to get quote for excute swap' );
 
       const minOut = ( toBigInt( quote.amountOut ) * BigInt( 1000 - Math.floor( slippage * 10 ) ) ) / 1000n;
-
-      debug_log( 'executeSwap Quote:', quote );
-
       let tx;
       if ( quote.multiHop ) {
         // No fee required for multi-hop swaps (encoded in path)
@@ -1473,8 +1455,6 @@ export class UniswapSwapManager extends SwapManager {
       tx.maxPriorityFeePerGas = toBigInt( maxPriorityFeePerGas );
       tx.maxFeePerGas = toBigInt( maxFeePerGas );
 
-      debug_log( 'executeSwap Transaction:===============>', tx );
-
       return await this.provider.sendTransaction( tx );
     } catch ( error ) {
       error_log( 'Error executing swap:', error );
@@ -1497,8 +1477,6 @@ export class UniswapSwapManager extends SwapManager {
 
       // Distribute the fee via transaction/transfer and wait for the fee transaction receipt
       const feeReceipt = await this.distributeFee( params.tokenOut, params.feeAmount, params.feeRecipient, params.gasLimit, params.maxPriorityFeePerGas, params.maxFeePerGas );
-
-      debug_log( 'Swap transaction WITH FEE:', { tx, swapReceipt, feeReceipt } );
 
       // Return both receipts as an array, as expected by the function return type
       return [ swapReceipt, feeReceipt ];
@@ -1556,35 +1534,17 @@ export class UniswapSwapManager extends SwapManager {
           type: 2,
         };
 
-        debug_log( 'Distributing fee via direct transaction:', txRequest );
-
         const tx = await this.provider.sendTransaction( txRequest ); // sendTransaction and not transfer since it's a native transaction
-
-        debug_log( 'Fee distribution transaction:', tx );
-
         const receipt = await tx.wait();
 
         try {
           const gasUsed = toBigInt( receipt.gasUsed ) || 0n;
-
-          debug_log( 'DF - Gas used:', gasUsed.toString() );
-
           const cummulativeGasUsed = receipt.cumulativeGasUsed ? toBigInt( receipt.cumulativeGasUsed.toString() ) : 0n;
-
-          debug_log( 'DF - Cumulative gas used:', cummulativeGasUsed.toString() );
-
           const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
-
-          debug_log( 'DF - Effective gas price:', effectiveGasPrice.toString() );
-
           const gasCost = gasUsed * effectiveGasPrice;
-
-          debug_log( 'DF - Gas cost:', gasCost, 'Gas used:', gasUsed.toString(), 'Cumulative gas used:', cummulativeGasUsed.toString(), 'Effective gas price:', effectiveGasPrice.toString() );
         } catch ( error ) {
           error_log( 'Error calculating gas cost (informational-transaction):', error );
         }
-
-        debug_log( 'Fee distribution receipt (transaction):', receipt );
         return receipt;
 
       } catch ( error ) {
@@ -1612,33 +1572,19 @@ export class UniswapSwapManager extends SwapManager {
 
       // Wait for the transaction to be mined
       const receipt = await tx.wait();
-      debug_log( 'Fee distribution receipt (transfer):', receipt );
-
       // May want to do something with the receipt here...
 
       // Use the gas spends that come back and calculate actual gas cost for transaction
       try {
         const gasUsed = toBigInt( receipt.gasUsed ) || 0n;
-
-        debug_log( 'DFERC - Gas used:', gasUsed.toString() );
-
         const cummulativeGasUsed = toBigInt( receipt.cumulativeGasUsed.toString() ) || 0n;
-
-        debug_log( 'DFERC - Cumulative gas used:', cummulativeGasUsed.toString() );
-
         const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
-
-        debug_log( 'DFERC - Effective gas price:', effectiveGasPrice.toString() );
-
         const gasCost = gasUsed * effectiveGasPrice;
-
-        debug_log( 'DFERC - Gas cost:', gasCost, 'Gas used:', gasUsed.toString(), 'Cumulative gas used:', cummulativeGasUsed.toString(), 'Effective gas price:', effectiveGasPrice.toString() );
       } catch ( error ) {
         error_log( 'Error calculating gas cost (informational-transfer):', error );
       }
 
       return receipt;
-
     } catch ( error ) {
       error_log( 'Fee distribution failed (transfer):', error );
       throw error;
@@ -1675,8 +1621,6 @@ export class UniswapSwapManager extends SwapManager {
         } );
       }
 
-      debug_log( 'WrapETH transaction:', tx );
-
       const receipt = await tx.wait();
       return await EthersConverter.ethersTransactionReceiptToTransactionReceipt( receipt );
     } catch ( error ) {
@@ -1702,7 +1646,6 @@ export class UniswapSwapManager extends SwapManager {
 
       const tx = await wethContract.withdraw( amount );
       const receiptTrans = await tx.wait();
-      debug_log( 'UnwrapWETH transaction:', receiptTrans );
 
       if ( !receiptTrans || receiptTrans.status !== 1 ) {
         throw new Error( 'Failed to withdraw WETH' );
@@ -1717,8 +1660,6 @@ export class UniswapSwapManager extends SwapManager {
         } );
 
         const receipt = await txTransfer.wait();
-        debug_log( 'UnwrapWETH transfer transaction:', receipt );
-
         if ( !receipt || receipt.status !== 1 ) {
           throw new Error( 'Failed to transfer ETH to recipient' );
         }

@@ -4,19 +4,19 @@
   import TokenCarouselView from './TokenCarouselView.svelte';
   import TokenThumbnailView from './TokenThumbnailView.svelte';
   import type { TokenData } from '$lib/common/interfaces';
-	import { debug_log } from '$lib/common/debug-error';
 	import TokenChartsView from './TokenChartsView.svelte';
 	import TokenNewsTradingView from './TokenNewsTradingView.svelte';
 	import TokenTechnicalView from './TokenTechnicalView.svelte';
 	import TokenSymbolView from './TokenSymbolView.svelte';
+	import { combinedTokenStore } from '$lib/common/derivedStores';
 
   interface Props {
-    tokens: TokenData[];
+    tokens?: TokenData[];
     title?: string;
     onTokenClick?: (token: TokenData) => void;
   }
 
-  let { tokens = [], title = 'Token Portfolio', onTokenClick = (token) => {debug_log('Token clicked:', token)} }: Props = $props();
+  let { tokens = $combinedTokenStore, title = 'Token Portfolio', onTokenClick = (token) => {} }: Props = $props();
 
   let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol'>('grid');
   let sortedTokens = $state([...tokens]);
@@ -29,9 +29,9 @@
     if (criteria === 'name') {
       sortedTokens = [...tokens].sort((a, b) => a.name.localeCompare(b.name));
     } else if (criteria === 'price') {
-      sortedTokens = [...tokens].sort((a, b) => b.currentPrice - a.currentPrice);
+      sortedTokens = [...tokens].sort((a, b) => b?.price?.price ?? 0 - a?.price?.price ?? 0);
     } else if (criteria === 'value') {
-      sortedTokens = [...tokens].sort((a, b) => (Number(b.value) ?? 0) - (Number(a.value) ?? 0));
+      sortedTokens = [...tokens].sort((a, b) => (Number(b?.value ?? 0) ?? 0) - (Number(a?.value ?? 0) ?? 0));
     }
   }
 
@@ -42,7 +42,7 @@
 
   // Handle print
   function handlePrint() {
-    window.print();
+    window.print(); // Simply prints the sceen. Needs to have the content in a print-friendly format
   }
 </script>
 
@@ -64,8 +64,8 @@
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
     {#if currentView === 'grid'}
       <TokenGridView tokens={sortedTokens} onTokenClick={onTokenClick} />
-    {:else if currentView === 'carousel'}
-      <TokenCarouselView tokens={sortedTokens} onTokenClick={onTokenClick} />
+    <!-- {:else if currentView === 'carousel'}
+      <TokenCarouselView tokens={sortedTokens} onTokenClick={onTokenClick} /> -->
     {:else if currentView === 'chart'}
       <TokenChartsView />
     {:else if currentView === 'news'}
@@ -74,8 +74,8 @@
       <TokenTechnicalView symbol="COINBASE:ETHUSD"/>
     {:else if currentView === 'symbol'}
       <TokenSymbolView symbol="COINBASE:ETHUSD"/>
-    {:else if currentView === 'thumbnail'}
-      <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} />
+    <!-- {:else if currentView === 'thumbnail'}
+      <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} /> -->
     {/if}
   </div>
 </div>

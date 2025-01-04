@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { TokenChange, TokenData } from '$lib/common/interfaces';
+  import type { TokenData } from '$lib/common/interfaces';
 	import { getTokenChange } from '$lib/utilities';
 	import * as HoverCard from './ui/hover-card';
+  import { formatPrice, formatQuantity } from '$lib/utilities';
 
   export interface Props {
     token: TokenData;
@@ -11,9 +12,23 @@
 
   let { token, className = 'w-[169px] h-[68px] border-r border-gray-400', onClick = () => {} }: Props = $props();
 
+  let price = $state(0);
+  // let priceFormatted = $state('');
+  let value = $state(0);
+  let valueFormatted = $state('');
+  let balance = $state(token?.balance);
+
   // Determine the 24h percentChange color
   const percentChange: number | null = getTokenChange(token.change, '24h'); // This is all we are getting here
   const percentChangeColor = percentChange === null ? 'text-slate-900' : percentChange >= 0 ? 'text-green-500' : 'text-red-500';
+
+  $effect(() => {
+    balance = token?.balance;
+    price = token?.price?.price ?? 0;
+    // priceFormatted = formatPrice(price);
+    value = balance ? Number(balance) * price : 0;
+    valueFormatted = formatPrice(value);
+  });
 </script>
 
 <HoverCard.Root openDelay={300}>
@@ -28,7 +43,7 @@
         <span class="text-slate-900 font-semibold leading-6">{token.symbol}</span>
       </div>
       <div class="w-[120px] h-[28px] text-xl text-slate-900 font-bold leading-7">
-        ${token.currentPrice.toLocaleString()}
+        ${price}
       </div>
       <div class={`flex items-center gap-1 ${percentChangeColor}`}>
         {#if percentChange > 0}
@@ -53,9 +68,9 @@
           <img src={token.logoURI} alt={token.symbol} class="w-8 h-8" />
           <span class="font-semibold leading-6">{token.name} - {token.symbol}</span>
         </p>
-        <p>Price: ${token.currentPrice.toLocaleString()}</p>
-        <p>Value: ${token.value?.toLocaleString() ?? 'N/A'}</p>
-        <p>Quantity: {token.quantity?.toLocaleString() ?? 'N/A'}</p>
+        <p>Price: ${price}</p>
+        <p>Value: {valueFormatted}</p>
+        <p>Quantity: {balance}</p>
         <p>Change: <span class={percentChangeColor}>{percentChange ? percentChange : '--'}%</span></p>
       </div>
     </div>

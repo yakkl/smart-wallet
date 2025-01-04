@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // EthereumGasProvider.ts
 
-import { debug_log } from '$lib/common';
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 // import { ETH_BASE_UNISWAP_GAS_UNITS } from '$lib/common/constants';
@@ -374,14 +373,8 @@ export class EthereumGasProvider implements GasProvider {
 
     // Convert gas price from gwei to ETH (1 gwei = 10^-9 ETH)
     const gasPriceInEth = gasPriceInGwei * 1e-9;
-
-    debug_log( 'gasEstimate, gasPriceGwei, gasPriceInEth, ethPriceInUsd :==>>', { gasEstimate, gasPriceInGwei, gasPriceInEth, ethPriceInUsd } );
-
     // Calculate the gas cost in ETH
     const gasEstimateInEth = Number(gasEstimate) * gasPriceInEth;  // May want to stay as bigint
-
-    debug_log( 'gasEstimateInEth :==>>', gasEstimateInEth );
-
     // Calculate the gas cost in USD
     const gasEstimateInUsd = gasEstimateInEth * ethPriceInUsd;
 

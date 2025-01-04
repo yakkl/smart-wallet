@@ -84,7 +84,7 @@
 
     const isValid = blockchain.isAddress(faddress);
     if (!isValid) {
-      debug_log(`Address ${faddress} is not a valid address. A valid address is required.`);
+      // debug_log(`Address ${faddress} is not a valid address. A valid address is required.`);
       return false;
     }
 

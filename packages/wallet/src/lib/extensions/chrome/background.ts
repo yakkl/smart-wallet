@@ -21,7 +21,7 @@ import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings, Yakkl
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
 import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
-import { debug_log } from '$lib/common';
+import { dateString } from '$lib/common/datetime';
 // import type { Yakkl } from '$lib/plugins/providers';
 // import { yakklPreferences } from '../../models/dataModels';
 
@@ -335,7 +335,18 @@ async function handleRequest(method: string, params: any) {
 
 // Supposed to fire when extension is about to close but...
 async function handleOnSuspend() {
-  await setIconLock();
+  try {
+    await setIconLock();
+    const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
+    if (yakklSettings) {
+      yakklSettings.isLocked = true;
+      yakklSettings.isLockedHow = 'background_unload';
+      yakklSettings.updateDate = dateString();
+      await setObjectInLocalStorage('settings', yakklSettings);
+    }
+  } catch (error) {
+    console.log('Error during runtime.onSuspend:', error);
+  }
 }
 
 async function handleOnMessage(
@@ -467,6 +478,13 @@ async function onDisconnectListener(port: RuntimePort): Promise<void> {
     if (port) {
       if (port.name === "yakkl") {
         await setIconLock();
+        const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
+        if (yakklSettings) {
+          yakklSettings.isLocked = true;
+          yakklSettings.isLockedHow = 'background_unload';
+          yakklSettings.updateDate = dateString();
+          await setObjectInLocalStorage('settings', yakklSettings);
+        }
       }
       port.onDisconnect.removeListener(onDisconnectListener);
       if (mainPort === port) {

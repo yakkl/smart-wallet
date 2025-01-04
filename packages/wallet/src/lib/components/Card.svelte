@@ -4,29 +4,27 @@
   import { browser as browserSvelte } from '$app/environment';
   // import { createForm } from "svelte-forms-lib";
   // import * as yup from 'yup';
-  import { Modal, Button, SpeedDial, SpeedDialButton } from 'flowbite-svelte';
+  import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
   import {
-    setSettings, getProfile, getSettings, yakklVersionStore, yakklPricingStore, yakklUserNameStore,
+    yakklPricingStore,
     getYakklPrimaryAccounts, setYakklCurrentlySelectedStorage,
-    setProfileStorage, getYakklCurrentlySelected, getMiscStore,
-    yakklCurrentlySelectedStore, yakklAccountsStore, yakklContactsStore
+    getYakklCurrentlySelected, getMiscStore,
+    yakklCurrentlySelectedStore, yakklAccountsStore
   } from '$lib/common/stores';
   import {PATH_WELCOME, YAKKL_ZERO_ADDRESS, PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
   import ClipboardJS from 'clipboard';
   import QR from '$lib/components/QR.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import { truncate, handleOpenInTab, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
+  import { truncate, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices, getPricesCoinbase, checkPricesCB } from '$lib/tokens/prices';
+  import { startCheckPrices, stopCheckPrices, checkPricesCB } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import { AccountTypeCategory, NetworkType, RegistrationType, getInstances, isEncryptedData,
-    type CurrentlySelectedData, type Network, type Profile, type ProfileData,
-    type Settings, type YakklAccount, type YakklCurrentlySelected,
+    type CurrentlySelectedData, type Network, type YakklAccount, type YakklCurrentlySelected,
     type YakklPrimaryAccount } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';
   import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';
-  import WalletManager from '$lib/plugins/WalletManager';
   import { Wallet } from '$lib/plugins/Wallet';
   import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 	import Accounts from './Accounts.svelte';
@@ -37,7 +35,6 @@
 	import type { Blockchain } from '$lib/plugins/Blockchain';
 	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
 	import type { Provider } from '$lib/plugins/Provider';
-	import { run } from 'svelte/legacy';
 
   interface Props {
     id?: string;
@@ -131,16 +128,20 @@
   }
 
   $effect(() => {
-    // TODO: Redo this ASAP since upgraded to svelte 5
     try {
       currentlySelected = $yakklCurrentlySelectedStore;
       assetPriceValue = $yakklPricingStore?.price ?? 0n;
-      // assetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
       chainId = currentlySelected.shortcuts.network.chainId ?? 1;
       networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
       shortcutsValue = EthereumBigNumber.from(currentlySelected.shortcuts.value ?? 0n);
     } catch (e) {
       console.log(e);
+    }
+  });
+
+  $effect(() => {
+    if (assetPriceValue) {
+      assetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
     }
   });
 
@@ -168,23 +169,22 @@
 
           const instances = await getInstances();
           if (instances.length > 0) {
-            console.log('instances:', instances);
-
             wallet = instances[0];
             provider = instances[1];
             blockchain = instances[2];
             tokenService = instances[3];
 
-            // if (wallet && provider && blockchain && tokenService) {
-            //   tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
-            // }
+            if (wallet && provider && blockchain && tokenService) {
+              tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+            }
           }
 
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
           $yakklCurrentlySelectedStore.shortcuts.value = val ?? 0n;
 
-          if (currentlySelected.shortcuts.value) updateValuePriceFiat();
           clipboard = new ClipboardJS('.clip');
+          if (currentlySelected.shortcuts.value) updateValuePriceFiat();
+
           // updateUpgradeButton();
           startPricingChecks();
         }
@@ -265,12 +265,7 @@
       if (currentlySelected.shortcuts.address) {
         startPricingChecks(); // Start the price checks if not already started else it will just return
         if (!$yakklPricingStore?.price) {
-
           checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
-          // getPricesCoinbase('eth-usd').then(results => {
-          //   console.log('Price results:>>>>>>>>>>>>>>>>>>>>>', results);
-          //   $yakklPricingStore = { provider: checkPricesProvider, id: '-1', pair: 'ETH/USD', price: results.price };
-          // });
         }
 
         // Convert the value to EthereumBigNumber
@@ -444,9 +439,9 @@
         showAccountsModal = false;
         updateValuePriceFiat();
 
-        // if (wallet && provider && blockchain && tokenService) {
-        //   tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
-        // }
+        if (wallet && provider && blockchain && tokenService) {
+          tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+        }
 
         goto(PATH_WELCOME);
       }
@@ -788,7 +783,7 @@
                     {#if network.type === NetworkType.MAINNET}
                     LIVE-{network.name}
                     {:else}
-                    Test-{network.name}
+                    Testnet-{network.name}
                     {/if}
                   </div>
                 </li>

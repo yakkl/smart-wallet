@@ -1,5 +1,4 @@
-import { debug_log } from '$lib/common/debug-error';
-import type { TokenData } from '$lib/common/interfaces'; // Assume the minimal TokenData interface is in a file
+import type { TokenData, MarketPriceData } from '$lib/common/interfaces'; // Assume the minimal TokenData interface is in a file
 import { setYakklTokenDataStorage } from '$lib/common/stores';
 import defaultTokens from './defaultTokens.json';
 
@@ -24,18 +23,26 @@ export async function loadDefaultTokens(): Promise<void> {
         logoURI: token.logoURI || '',
         description: token.description || '',
         balance: token.balance || 0n,
-        priceData: token.priceData || [],
         quantity: token.quantity || 0,
-        currentPrice: token.currentPrice || 0,
+        price: token.price || {
+          price: token.price?.price || 0,
+          isNative: token.price?.isNative || false,
+          provider: token.price?.provider || '',
+          lastUpdated: token.price?.lastUpdated || 0,
+          chainId: token.price?.chainId || 0,
+          currency: token.price?.currency || '',
+          status: token.price?.status || '',
+          message: token.price?.message || '',
+        } as MarketPriceData,
         change: token.change || [],
         value: token.value || 0,
         tags: token.tags || [],
         version: token.version || '',
+        customDefault: 'default',
       };
     });
 
     // Update the storage and store
-    debug_log('Default tokens loaded successfully:', tokens);
     setYakklTokenDataStorage(tokens);
   } catch (error) {
     console.log('Failed to load default tokens:', error);

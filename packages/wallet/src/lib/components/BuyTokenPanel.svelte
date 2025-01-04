@@ -5,7 +5,7 @@
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
   import { debounce } from 'lodash-es';
   import { ethers as ethersv6 } from 'ethers-v6';
-  import { convertTokenToUsd, convertUsdToTokenAmount, debug_log, toBigInt } from '$lib/common';
+  import { convertTokenToUsd, convertUsdToTokenAmount, toBigInt } from '$lib/common';
   import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
 
   interface Props {
@@ -45,8 +45,6 @@
     const usdAmount = $swapPriceDataStore.marketPriceOut > 0
       ? convertTokenToUsd(Number(tokenAmount), $swapPriceDataStore.marketPriceOut)
       : 0;
-
-    debug_log('BUY - usdAmount, tokenAmount, marketPriceOut', usdAmount, tokenAmount, $swapPriceDataStore.marketPriceOut);
 
     const displayAmount = $isUsdModeStore ? usdAmount.toFixed(2) : tokenAmount;
 
@@ -102,19 +100,15 @@
 
       if ($isUsdModeStore) {
         // Convert USD value to token quantity
-        debug_log('BUY - Converting USD to token quantity...');
         const marketPrice = $swapPriceDataStore.marketPriceOut || 0;
         if (marketPrice > 0) {
           const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenOut.decimals);
-          debug_log('BUY - Token quantity:', {tokenAmount, marketPrice, value});
           debouncedAmountChange(tokenAmount.toString());
         } else {
-          debug_log('BUT - Market price not available for tokenOut conversion.');
           debouncedAmountChange('');
         }
       } else {
         // Pass the token quantity directly
-        debug_log('BUY - Token quantity:', value);
         debouncedAmountChange(value);
       }
     }

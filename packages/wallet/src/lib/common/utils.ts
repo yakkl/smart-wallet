@@ -1,6 +1,6 @@
 /* eslint-disable no-debugger */
 // import browser from 'webextension-polyfill';
-import { debug_log, type ErrorBody, type ParsedError } from '$lib/common';
+import { type ErrorBody, type ParsedError } from '$lib/common';
 // import { Utils } from "alchemy-sdk";
 
 import { AccountTypeCategory } from '$lib/common/types';

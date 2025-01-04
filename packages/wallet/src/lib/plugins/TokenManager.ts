@@ -38,7 +38,7 @@ export class TokenManager {
   }
 
   public addToken(token: Token) {
-    const key = `${token.chainId}-${token.address}`;
+    const key = `${token.chainId}-${token.address}`; // This is now incorrect - maybe??
     this.tokens.set(key, token);
     this.saveTokens();
   }

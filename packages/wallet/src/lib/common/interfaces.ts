@@ -381,11 +381,13 @@ export interface SwapToken {
 };
 
 export interface TokenData extends SwapToken {
-  priceData?: PriceData[];
   change?: TokenChange[] | null; // getTokenChange(timeline)
-  currentPrice?: number;  // Current price of the token. Price is in PriceData but is for the provider's price
-  value?: Number; // Since this would be the user's value in the token
+  price?: MarketPriceData | null;  // Current price of the token. Price is in PriceData but is for the provider's price
+  value?: number; // Since this would be the user's value in the token
   quantity?: number;    // User's holdings
+  formattedValue?: string; // Formatted value for display
+  alias?: string; // Alias for the token
+  customDefault?: 'custom' | 'default'; // If 'custom' then it's a custom token and if 'default' then it's a default token
 }
 
 // Currently only used for the token list and not as a stand alone data store

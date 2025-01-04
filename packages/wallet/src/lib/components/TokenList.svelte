@@ -23,17 +23,21 @@
   let showDeleteModal = $state(false);
 
   function handleEdit(token: TokenData) {
-    selectedToken = token;
-    showEditModal = true;
+    if (token?.customDefault === 'custom') {
+      selectedToken = token;
+      showEditModal = true;
+    }
   }
 
   function handleDelete(token: TokenData) {
-    selectedToken = token;
-    showDeleteModal = true;
+    if (token?.customDefault === 'custom') {
+      selectedToken = token;
+      showDeleteModal = true;
+    }
   }
 
   function confirmDelete() {
-    if (selectedToken) {
+    if (selectedToken && selectedToken?.customDefault === 'custom') {
       onTokenDelete(selectedToken);
       showDeleteModal = false;
       selectedToken = null;
@@ -60,10 +64,12 @@
           <!-- <p class="text-xs text-gray-500">{token.balance || 0}</p> -->
         </div>
       </button>
+      {#if token?.customDefault === 'custom'} <!-- Only show controls if custom -->
       <EditControls
         onEdit={() => handleEdit(token)}
         onDelete={() => handleDelete(token)}
       />
+      {/if}
     </li>
   {/each}
 </ul>

@@ -723,8 +723,6 @@
       // Use a gas price API or provider method
       const feeData = await provider.getFeeData();
 
-      debug_log('Current gas prices (feeData): ====================================>>>>>>>>>>>>>>>>>>>>>>>>', feeData);
-
       return {
         maxFeePerGas: toBigInt(feeData.maxFeePerGas),
         maxPriorityFeePerGas: toBigInt(feeData.maxPriorityFeePerGas)
@@ -813,7 +811,6 @@
 		try {
 			let profile: Profile | null = await verifyWithPin(pincode, pincodeVerified);
       if (profile === null) {
-        debug_log('Profile was not found.');
         throw 'Profile was not found.';
       }
 
@@ -940,9 +937,6 @@
         if (($swapStateStore.tokenIn?.isStablecoin || $swapStateStore.tokenOut?.isStablecoin) && swapManagerName.includes('uniswap')) {
           $swapStateStore.poolFee = 500;
         }
-
-        debug_log('Pool Fee:', $swapStateStore.poolFee);
-
         updateSwapPriceData({ fee: $swapStateStore.poolFee });
       }}
     />

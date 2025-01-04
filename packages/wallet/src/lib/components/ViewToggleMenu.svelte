@@ -19,9 +19,9 @@
     <DropdownMenu.Group>
       <DropdownMenu.GroupHeading>Views</DropdownMenu.GroupHeading>
       <DropdownMenu.Separator />
-        <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('carousel')} textValue="carousel">
+        <!-- <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('carousel')} textValue="carousel">
           Carousel
-        </DropdownMenu.Item>
+        </DropdownMenu.Item> -->
         <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('chart')} textValue="chart">
           Chart
         </DropdownMenu.Item>
@@ -37,9 +37,9 @@
         <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('analysis')} textValue="analysis">
           Technical Analysis
         </DropdownMenu.Item>
-        <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('thumbnail')} textValue="thumbnail">
+        <!-- <DropdownMenu.Item closeOnSelect={true} onclick={() => onSelect('thumbnail')} textValue="thumbnail">
           Thumbnail
-        </DropdownMenu.Item>
+        </DropdownMenu.Item> -->
     </DropdownMenu.Group>
   </DropdownMenu.Content>
 </DropdownMenu.Root>

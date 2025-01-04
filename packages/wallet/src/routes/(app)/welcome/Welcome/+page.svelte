@@ -13,6 +13,7 @@
 	import type { Browser } from 'webextension-polyfill';
 	import { setIconLock } from '$lib/utilities';
 	import Import from '$lib/components/Import.svelte';
+  import { yakklTokenDataStore, yakklTokenDataCustomStore } from "$lib/common/stores";
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -29,7 +30,7 @@
 	import type { Provider } from "$lib/plugins/Provider";
 	import type { Blockchain } from "$lib/plugins/Blockchain";
 	import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
-	// import { get } from "lodash";
+  import { combinedTokenStore } from "$lib/common/derivedStores";
 
   // import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
   // Mock token data
@@ -45,30 +46,25 @@
   let blockchain: Blockchain | null = null;
   let tokenService: TokenService<any> | null = null;
 
+  $effect(() => {
+    tokens = $combinedTokenStore; // Managed in $lib/common/tokens.ts
+  });
+
   onMount(async () => {
     try {
       if (browserSvelte) {
         browser_ext.runtime.onMessage.addListener(handleOnMessage);
-        const count = getYakklTokenDataStore().length;
-        if (count === 0) await loadDefaultTokens();
-        tokens = getYakklTokenDataStore();
-
-        console.log('tokens:', tokens);
+        // await loadDefaultTokens(); // Force a fresh reload of tokens since these are managed by YAKKL
 
         // Get balances for tokens - if any
         const instances = await getInstances();
         if (instances.length > 0) {
-          console.log('instances:', instances);
-
           wallet = instances[0];
           provider = instances[1];
           blockchain = instances[2];
           tokenService = instances[3];
           if (wallet && provider && blockchain && tokenService) {
             const currentlySelected = getYakklCurrentlySelectedStore();
-
-            console.log('currentlySelected:', currentlySelected);
-
             tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
           }
         }
@@ -106,7 +102,7 @@
 </script>
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
-<ErrorNoAction bind:show={error} title="Error" value={errorValue} /> <!-- TODO: Move to general layout???? -->
+<ErrorNoAction bind:show={error} title="Error" value={errorValue} />
 <ComingSoon bind:show={showComingSoon} />
 
 <!-- Top band on page using the bg of wherever this is - could be component but not sure we will keep it -->
@@ -161,8 +157,8 @@
   </ButtonGridItem> -->
 </ButtonGrid>
 
-{#if tokens.length > 0}
-  <TokenViews {tokens} />
+{#if $combinedTokenStore.length > 0}
+  <TokenViews tokens={$combinedTokenStore} />
 {:else}
   <div class="flex items-center justify-center w-full h-full">
     <p class="text-lg text-gray-500">No additional tokens found</p>
