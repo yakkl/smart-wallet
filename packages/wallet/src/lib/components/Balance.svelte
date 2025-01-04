@@ -1,18 +1,30 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { BigNumberish, BlockTag } from '$lib/common';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
 	import type { Provider } from '$lib/plugins';
 
-  export let symbol: string;
-  export let address: string | null = null;
-  export let blockTag: BlockTag | 'latest' = 'latest';
-  export let units: number | string = 18;
-  export let provider: Provider;
-  export let className: string = '';
-  export let balanceText: string = 'Balance: ';
+  interface Props {
+    symbol: string;
+    address?: string | null;
+    blockTag?: BlockTag | 'latest';
+    units?: number | string;
+    provider: Provider;
+    className?: string;
+    balanceText?: string;
+  }
 
-  let balance: BigNumberish = 0n;
+  let {
+    symbol,
+    address = null,
+    blockTag = 'latest',
+    units = 18,
+    provider,
+    className = '',
+    balanceText = 'Balance: '
+  }: Props = $props();
+
+  let balance: BigNumberish = $state(0n);
 
   onMount(async () => {
     if (!address || !provider) {
@@ -23,6 +35,6 @@
 </script>
 
 <span class="text-gray-500 {className}">
-  {balanceText}{ethers.formatUnits(balance ? balance.toString() : '0', units)} {symbol.toUpperCase()}
+  {balanceText}{ethersv6.formatUnits(balance ? balance.toString() : '0', units)} {symbol.toUpperCase()}
 </span>
 

@@ -9,23 +9,23 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	// import Confirm from '$lib/components/Confirm.svelte';
 	import Failed from '$lib/components/Failed.svelte';
-   
+
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  
+
   type RuntimePort = Runtime.Port | undefined;
 
-  let showConfirm = false;
+  let showConfirm = $state(false);
   let showSuccess = false;
-  let showFailure = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showFailure = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   // let requestData: any;
   // let method: string;
   let requestId: string | null = null;
@@ -103,7 +103,7 @@
     if (event.data.method === 'reject') {
       handleReject();
     }
-    
+
     } catch(e) {
       console.error(e);
     }
@@ -115,14 +115,14 @@
       if (browserSvelte) {
         port = browser_ext.runtime.connect({name: YAKKL_DAPP});
         if (port) {
-          port.onMessage.addListener(onMessageListener); 
+          port.onMessage.addListener(onMessageListener);
           port.postMessage({method: 'get_params', id: requestId}); // request is not currently used but we may want to later
         }
         let img = document.getElementById('dappImageId') as HTMLImageElement;
-        if (img) { 
+        if (img) {
           img.onerror = function() {
-            this.onerror = null; 
-            this.src = WEB3_SVG_DATA; 
+            this.onerror = null;
+            this.src = WEB3_SVG_DATA;
           };
         }
       }
@@ -157,12 +157,12 @@
 
       if (port) {
       //console.log('handleReject:port still valid ', method, requestId);
-        port.postMessage({id: requestId, method: 'error', response: {type: 'YAKKL_RESPONSE', data: {name: 'ProviderRpcError', code: 4001, message: 'User rejected the request.'}}}); 
+        port.postMessage({id: requestId, method: 'error', response: {type: 'YAKKL_RESPONSE', data: {name: 'ProviderRpcError', code: 4001, message: 'User rejected the request.'}}});
       }
       // If requestId is not valid then use 0 since we are bailing out anyway
       // May want to think about putting a slight tick to make sure all queues get flushed
       //goto(PATH_LOGOUT); // May want to do something else if they are already logged in!
-      if (browserSvelte) { 
+      if (browserSvelte) {
         if (port) {
           port.disconnect();
           port.onMessage.removeListener(onMessageListener);
@@ -212,8 +212,8 @@
     <h3 class="text-lg font-bold">Connect to {domain}</h3>
     <p class="py-4">This will connect <span class="font-bold">{domain}</span> to YAKKL®! Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleIsLocked}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleIsLocked}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -247,7 +247,7 @@
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
@@ -261,23 +261,23 @@
 
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
-      <button 
-        on:click|preventDefault={handleReject}
+      <button
+        onclick={handleReject}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
       </button>
-      
-      <button 
+
+      <button
         type="submit"
         id="recover"
-        on:click|preventDefault={handleApprove}
+        onclick={handleApprove}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve
       </button>
     </div>
-  </div>   
+  </div>
 </div>
 
 <Copyright />

@@ -30,6 +30,14 @@
 		}
 	],
 	"rules": {
-		"svelte/no-invalid-html-attribute": "off"
+    "svelte/non-reactive-update": "off",
+		"svelte/no-invalid-html-attribute": "off",
+		"jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
+    "jsx-a11y/aria-role": "off",
+    "jsx-a11y/aria-props": "off",
+    "jsx-a11y/aria-proptypes": "off",
+    "jsx-a11y/aria-unsupported-elements": "off"
 	}
 }

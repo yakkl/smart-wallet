@@ -4,13 +4,17 @@
   import { getSettings } from '$lib/common/stores';
   import { onMount } from 'svelte';
   
-  export let registeredType: string | null = null;
+  interface Props {
+    registeredType?: string | null;
+  }
+
+  let { registeredType = null }: Props = $props();
   
   /**
    * The registered type retrieved from Yakkl settings.
    * @type {string}
    */
-  let registered: string;
+  let registered: string = $state();
   
   onMount(async () => {
     getSettings().then(async (result) => {

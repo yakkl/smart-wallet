@@ -33,7 +33,7 @@ async function monitorEvents(contractAddress: string) {
             decodedEvent.args.forEach((arg, i) => {
                 console.log(`  Arg ${i}: ${arg}`);
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log("Error decoding log:", error.message);
         }
     });
@@ -44,7 +44,7 @@ async function monitorEvents(contractAddress: string) {
 // Check for command-line arguments
 const contractAddress = process.argv[2];
 if (!contractAddress) {
-    console.error("Please provide a contract address as an argument.");
+    console.log("Please provide a contract address as an argument.");
     process.exit(1);
 }
 

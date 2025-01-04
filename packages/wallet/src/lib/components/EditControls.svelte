@@ -1,17 +1,28 @@
 <!-- EditControls.svelte -->
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import { Edit2Icon, TrashIcon, ClipboardIcon } from 'svelte-feather-icons';
   import { fade } from 'svelte/transition';
 
-  export let onEdit: () => void = () => {};
-  export let onDelete: () => void = () => {};
-  export let onCopy: () => void = () => {};
-  export let controls: string[] = ['copy', 'edit', 'delete'];
+  interface Props {
+    onEdit?: () => void;
+    onDelete?: () => void;
+    onCopy?: () => void;
+    controls?: string[];
+  }
 
-  let copied = false;
-  let edited = false;
-  let deleted = false;
-  let hoverText = '';
+  let {
+    onEdit = () => {},
+    onDelete = () => {},
+    onCopy = () => {},
+    controls = ['copy', 'edit', 'delete']
+  }: Props = $props();
+
+  let copied = $state(false);
+  let edited = $state(false);
+  let deleted = $state(false);
+  let hoverText = $state('');
 
   function handleCopy() {
     onCopy();
@@ -50,9 +61,9 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      on:click|stopPropagation={handleCopy}
-      on:mouseenter={() => showHoverText('Copy')}
-      on:mouseleave={() => (hoverText = '')}
+      onclick={stopPropagation(handleCopy)}
+      onmouseenter={() => showHoverText('Copy')}
+      onmouseleave={() => (hoverText = '')}
     >
       {#if copied}
         <div class="text-green-500" transition:fade={{ duration: 200 }}>
@@ -75,9 +86,9 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      on:click|stopPropagation={handleEdit}
-      on:mouseenter={() => showHoverText('Edit')}
-      on:mouseleave={() => (hoverText = '')}
+      onclick={stopPropagation(handleEdit)}
+      onmouseenter={() => showHoverText('Edit')}
+      onmouseleave={() => (hoverText = '')}
     >
       {#if edited}
         <div class="text-blue-500" transition:fade={{ duration: 200 }}>
@@ -100,9 +111,9 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      on:click|stopPropagation={handleDelete}
-      on:mouseenter={() => showHoverText('Delete')}
-      on:mouseleave={() => (hoverText = '')}
+      onclick={stopPropagation(handleDelete)}
+      onmouseenter={() => showHoverText('Delete')}
+      onmouseleave={() => (hoverText = '')}
     >
       {#if deleted}
         <div class="text-red-500" transition:fade={{ duration: 200 }}>

@@ -26,10 +26,10 @@ export class CoingeckoPriceProvider implements PriceProvider {
       }
 
       const json = await fetchJson( {
-        url: `https://api.coingecko.com/api/v3/simple/price?ids=${ name }&include_last_updated_at=true&vs_currencies=${ currencySymbol }`,
+        url: `https://pro-api.coingecko.com/api/v3/simple/price?ids=${ name }&include_last_updated_at=true&vs_currencies=${ currencySymbol }`,
         headers: {
           'Accept': 'application/json',
-          'x-cg-demo-api-key': this.getAPIKey()
+          'x-cg-pro-api-key': this.getAPIKey()
         }
       } );
       const priceData = json[ name.toLowerCase() ];

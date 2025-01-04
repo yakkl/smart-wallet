@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
@@ -5,19 +6,87 @@
 import { browser as browserSvelte} from "$app/environment";
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
-import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL } from "$lib/common/constants";
+import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR, TIMELINES } from "$lib/common/constants";
 import { map } from "./map";
-import { type BigNumberishLegacy } from '$lib/common';
+import { type BigNumberishLegacy, type TokenChange } from '$lib/common';
 import { encodeJSON } from '$lib/common/misc';
 import type { BigNumberish } from '$lib/common/bignumber';
 import { yakklVersionStore } from '$lib/common/stores';
 import { Utils } from "alchemy-sdk";
+import { ethers as ethersv6 } from 'ethers-v6';
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Browser } from 'webextension-polyfill';
-let browser_ext: Browser; 
+let browser_ext: Browser;
 if (browserSvelte) browser_ext = getBrowserExt();
 
+
+export function getTokenChange(
+  changeArray: TokenChange[],
+  timeline: string
+): number | null {
+  if (!changeArray) {
+    return null;
+  }
+
+  if (!TIMELINES.includes(timeline as any)) {
+    throw new Error(`Invalid timeline: ${timeline}`);
+  }
+
+  const foundChange = changeArray.find((change) => change.timeline === timeline);
+  return foundChange ? foundChange.percentChange : null;
+}
+
+export function calculateFeeAmount( tokenAmount: bigint, feeBasisPoints: number ): bigint {
+  // Convert the fee basis points to an integer for calculation.
+  const feeBasisPointsInt = BigInt( Math.round( feeBasisPoints * 100 ) );
+  // Multiply token amount by fee basis points and divide by the divisor to get the fee.
+  const feeAmount = ( tokenAmount * feeBasisPointsInt ) / BigInt( YAKKL_FEE_BASIS_POINTS_DIVISOR * 100 );
+  return feeAmount;
+}
+
+export function formatFeeToUSD( feeAmount: bigint, tokenDecimals: number, marketPrice: number ): string {
+  // Normalize the fee amount by token decimals.
+  const normalizedFeeAmount = Number( feeAmount ) / Math.pow( 10, tokenDecimals );
+  // Calculate the fee in USD.
+  const feeValueUSD = normalizedFeeAmount * marketPrice;
+  // Format the fee value in USD.
+  return feeValueUSD.toLocaleString( 'en-US', { style: 'currency', currency: 'USD' } );
+}
+
+export function calculateFeeBasisPointsPercent( feeBasisPoints: number ): string {
+  const value = `${ ( feeBasisPoints / 100 ).toFixed( 4 ) }%`;
+  return value;
+}
+
+// decimal values like .04
+// Can use ethersv6.parseUnits('0.04', 18) to convert to wei
+export function convertToBigInt( amount: string, decimals: number ): bigint {
+  if ( !amount || parseFloat( amount ) <= 0 ) {
+    throw new Error( 'Invalid approval amount' );
+  }
+
+  // Parse the string amount to a float
+  const parsedAmount = parseFloat( amount );
+  // Multiply by 10^decimals to get the integer representation
+  const factor = 10 ** decimals;
+  const convertedAmount = parsedAmount * factor;
+
+  // Convert to BigInt
+  return BigInt( Math.floor( convertedAmount ) ); // Use Math.floor to avoid rounding issues
+}
+
+export function formatQuantity(amount: bigint, decimals: number): string {
+  if (amount === 0n) return '0';
+  const formattedValue = ethersv6.formatUnits(amount, decimals);
+
+  // Optional: Remove trailing zeros after the decimal point
+  const [integerPart, decimalPart] = formattedValue.split('.');
+  if (!decimalPart) return integerPart;
+
+  const trimmedDecimal = decimalPart.replace(/0+$/, '');
+  return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
+}
 
 export function formatPrice( price: number ): string {
   try {
@@ -97,7 +166,6 @@ console.log(profile.subIndex); // Should print 10
 incrementProperty(profile, 'subIndex', 5, -1);  // Attempts to increment by 5, no max value limit
 console.log(profile.subIndex); // Should print 15
 **/
- 
 
 // Decrements a property on an object safely. If ensureNonNegative is true, the property will not be decremented below 0.
 export function decrementProperty<T extends object, K extends keyof T>(obj: T, property: K, decrementValue: number = 1, ensureNonNegative: boolean = true): void {
@@ -113,7 +181,6 @@ export function decrementProperty<T extends object, K extends keyof T>(obj: T, p
   }
 }
 
-
 /** Example usage for decrementProperty
  ecrementProperty(profile, 'subIndex');  // Decrements by 1 by default
 console.log(profile.subIndex); // Should print 14
@@ -127,7 +194,7 @@ console.log(profile.subIndex); // Should print 7
 // Decrementing without ensuring non-negative value
 decrementProperty(profile, 'subIndex', 10, false);  // Decrements by 10, allows negative value
 console.log(profile.subIndex); // Should print -3
-**/ 
+**/
 
 // Ensures that the object has all the properties from the defaults object, and sets them to the default value if they are missing.
 export function ensureDefaults<T extends object>(obj: T, defaults: Partial<T>): T {
@@ -161,7 +228,6 @@ export function setDefinedProperty<T extends object, K extends keyof T>(
   }
 }
 
-
 export function blockContextMenu() {
   // Blocks the context menu from popping up
   window.addEventListener("contextmenu", function (e) {
@@ -189,7 +255,7 @@ export function blockContextMenu() {
     if((e.ctrlKey || e.altKey) && e.code == "KeyU") { //keyCode == 85) {
         return false;
     }
-  }    
+  }
 }
 
 export function blockWindowResize(width: number, height: number) {
@@ -198,29 +264,26 @@ export function blockWindowResize(width: number, height: number) {
   });
 }
 
-
 export function extractFQDN(url: string) {
   if (!url) return undefined;
   const parsedUrl = new URL(url);
   return parsedUrl.hostname;
 }
 
-
 export function checkUpgrade() {
-  try {      
+  try {
     const yakklVersion = get(yakklVersionStore);
     if (yakklVersion) {
       const key = yakklVersion.substring(DEFAULT_UPGRADE_LABEL.length).trim().toUpperCase();
-      if (key) { 
+      if (key) {
         return true;
       }
     }
     return false;
-  } catch (e) {
+  } catch (e: any) {
     return false;
   }
 }
-
 
 // Move these
 // TODO: May want to cycle through Networks and Network.types - Don't forget to add Polygon and others here!!
@@ -264,7 +327,6 @@ export function getNetworkInfo(chainId: number) {
   return {blockchain, type, explorer};
 }
 
-
 // TODO: May want to cycle through Networks and Network.types - Don't forget to add Polygon and others here!!
 export function getChainId(type: string) {
   let chainId=1;
@@ -281,10 +343,9 @@ export function getChainId(type: string) {
   return chainId;
 }
 
-
 // Not using now...
 // export async function getCreateProviders(key: string) {
-//   try {  
+//   try {
 //     const yakklProviders = [];
 //     const yakklProv = [];
 
@@ -311,7 +372,6 @@ export function getChainId(type: string) {
 //   }
 // }
 
-
 export async function createHash(val: string) {
   return await crypto.subtle
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -322,11 +382,10 @@ export async function createHash(val: string) {
         view = new DataView(h);
       for (let i = 0; i < view.byteLength; i += 4)
         hexes.push(('00000000' + view.getUint32(i).toString(16)).slice(-8));
-      
+
       return hexes.join('');
     });
 }
-
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
 // Do not use this for objects that have functions or circular references.
@@ -340,20 +399,16 @@ export function deepCopy<T>(obj: T) {
   //   return JSON.parse(encodeJSON(obj)) as T;
   // } else {
   //   return cloneDeep(obj);
-  // }  
+  // }
 }
-
-
 
 export function formatValue(blockchain: string, value: any): string {
   if (blockchain.toLowerCase() === 'ethereum') {
     return formatEther(value);
   }
-
   // Maybe use a switch statement later when the other blockchains are added
-  return value; // fallback to 
+  return value; // fallback to
 }
-
 
 export function formatEther(wei: BigNumberish): string {
   if (wei) {
@@ -363,9 +418,8 @@ export function formatEther(wei: BigNumberish): string {
   }
 }
 
-
 // Convert to wei
-export function parseUnits(value: string, type: BigNumberishLegacy): BigNumberish {    
+export function parseUnits(value: string, type: BigNumberishLegacy): BigNumberish {
   return Utils.parseUnits(value, type).toBigInt(); // May want to use ethers v6.x instead of Alchemy's ethers v5.x. BN.js is no longer used in ethers v6.x
 }
 
@@ -382,7 +436,6 @@ export function formatUnits(value: BigNumberish, type: BigNumberish) {
   return Utils.formatUnits(value as bigint | string, type as bigint | string);  // TODO: Watch this
 }
 
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getSymbol(blockchain: string): string {
   let symbol = '';
@@ -394,7 +447,7 @@ export function getSymbol(blockchain: string): string {
   //     if (network.name.toLowerCase() === blockchain.toLowerCase()) {
   //         symbol = network.symbol;
   //         break;
-  //     }  
+  //     }
   //  }
   } catch(e) {
     console.log(e);
@@ -403,26 +456,20 @@ export function getSymbol(blockchain: string): string {
   return symbol;
 }
 
-
 // Return the currency symbol based on the locale and currency code
 export const getCurrencySymbol = (locale: string, currency: any) => (0).toLocaleString(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\d/g, '').trim();
 
-
-
-
-export function truncate(val: string, len=20, suffix='...'){    
+export function truncate(val: string, len=20, suffix='...'){
     if (val.length > len) {
         return (val.substring(0, len) + suffix);
     }
     return val;
 }
 
-
 // Returns an array of words
 export function splitWords(str: string, delimiter = ' '): string[] {
   return str.split(delimiter);
 }
-
 
 // Opens a tab in the browser
 export function handleOpenInTab(url: string): void {
@@ -430,8 +477,6 @@ export function handleOpenInTab(url: string): void {
     browser_ext.tabs.create({url: url});
   }
 }
-
-
 
 export async function isOnline(url=window.location.origin) {
   let value = false;
@@ -449,11 +494,10 @@ export async function isOnline(url=window.location.origin) {
   } catch (e) {
     console.log(e);
     value = false;
-  } 
+  }
 
   return value;
 }
-
 
 export function changeBackground(id: string, image: { src: string; }) {
   try {
@@ -468,7 +512,6 @@ export function changeBackground(id: string, image: { src: string; }) {
   }
 }
 
-
 export function timeoutClipboard(seconds: number) {
   try {
     if (browserSvelte) {
@@ -482,9 +525,8 @@ export function timeoutClipboard(seconds: number) {
   }
 }
 
-
 export async function setIconLock() {
-  try {  
+  try {
     if (browserSvelte) {
       await browser_ext.action.setIcon({path: {16: "/images/logoBullLock16x16.png", 32: "/images/logoBullLock32x32.png", 48: "/images/logoBullLock48x48.png", 128: "/images/logoBullLock128x128.png"}});
     }
@@ -493,17 +535,15 @@ export async function setIconLock() {
   }
 }
 
-
 export async function setIconUnlock() {
   try {
     if (browserSvelte) {
       await browser_ext.action.setIcon({path: {16: "/images/logoBull16x16.png", 32: "/images/logoBull32x32.png", 48: "/images/logoBull48x48.png", 128: "/images/logoBull128x128.png"}});
-    }  
+    }
   } catch (e) {
     console.log(e);
   }
 }
-
 
 export function getPlatform() {
   const { navigator } = window;
@@ -521,7 +561,6 @@ export function getPlatform() {
   return PLATFORM_TYPES.CHROME;
 };
 
-
 export function getCurrencyCode(locale: string) {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -538,7 +577,6 @@ export function getCurrencyCode(locale: string) {
     return null;
   }
 }
-
 
 // Not exported
 const getCountryCode = function(localeString: string) {
@@ -558,12 +596,11 @@ const getCountryCode = function(localeString: string) {
   }
 }
 
-
 // TODO: hex.substr... is deprecated
 export function hexToString(str1: string, Ox = true)
 {
   try {
-    const hex  = Ox ? str1.toString().slice(2) : str1.toString(); // If 0x prefix then remove it 
+    const hex  = Ox ? str1.toString().slice(2) : str1.toString(); // If 0x prefix then remove it
     let str = '';
     for (let n = 0; n < hex.length; n += 2) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -577,7 +614,6 @@ export function hexToString(str1: string, Ox = true)
   }
 }
 
-
 export function hexToBigInt(str1: string) {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -589,16 +625,12 @@ export function hexToBigInt(str1: string) {
   }
 }
 
-
 export function autoscroll(node: HTMLElement) {
   function scrollToBottom() {
     node.scrollTop = node.scrollHeight;
   }
-
   const observer = new MutationObserver(scrollToBottom);
-
   observer.observe(node, { childList: true });
-
   return {
     destroy() {
       observer.disconnect();

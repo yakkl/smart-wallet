@@ -1,28 +1,45 @@
-
 import adapter from 'sveltekit-adapter-chrome-extension';
-import { sveltePreprocess } from 'svelte-preprocess'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://github.com/sveltejs/svelte-preprocess
-	// for more information about preprocessors
-	preprocess: sveltePreprocess(),
-	onwarn: (warning, handler) => {
-    if (warning.code.startsWith('a11y-')) {
-      return;
-    }
-    handler(warning);
-  },
+	// extensions: [ '.svelte' ],
+
+	preprocess: vitePreprocess( { script: true } ),
+
+	onwarn: ( warning, handler ) => {
+		if ( warning.code.startsWith( 'a11y-' ) ) {
+			return;
+		}
+		handler( warning );
+	},
+
 	kit: {
-		adapter: adapter ({
-			// default options are shown
+		adapter: adapter( {
+			// Default options
 			pages: 'build',
 			assets: 'build',
 			fallback: null,
-			precompress: false
-		}),
+			precompress: false,
+		} ),
+
+		alias: {
+			'@yakkl/uniswap-alpha-router-service': '../uniswap-alpha-router-service/src',
+		},
+
+    prerender: {
+      handleHttpError: ({ status, path, referrer, referenceType }) => {
+        console.warn(`Prerendering error: ${status} on ${path}`);
+        if (status === 500 && path === '/accounts') {
+          // Ignore the error or log it
+          return;
+        }
+        throw new Error(`${status} on ${path}`);
+      },
+    },
+
 		appDir: 'app',
-	}
+	},
 };
 
 export default config;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ProviderFactory.ts
 import type { Provider } from '$plugins/Provider';
 import { Alchemy } from '$plugins/providers/network/alchemy/Alchemy';
@@ -14,11 +15,12 @@ interface ProviderOptions {
 class ProviderFactory {
   static createProvider(options: ProviderOptions): Provider {
     const { name, apiKey, chainId } = options;
-    let provider;
+    let provider: any;
 
     switch (name) {
       case 'Alchemy':
-        provider = new Alchemy({ apiKey, chainId }); // Pass the options to the Alchemy constructor
+        provider = new Alchemy( { apiKey, chainId } ); // Pass the options to the Alchemy constructor
+        provider.initializeProvider(); // Initialize the provider
         return provider;
       // Add cases for other providers
       default:

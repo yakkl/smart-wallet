@@ -13,42 +13,42 @@
   import type { Wallet } from '$lib/plugins/Wallet';
 
   let wallet: Wallet;
-  
+
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import { verify } from '$lib/common/security';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   type RuntimePort = Runtime.Port | undefined;
 
   let currentlySelected: YakklCurrentlySelected;
 
-  let showConfirm = false;
-  let showSuccess = false;
-  let showFailure = false;
-  let showSpinner = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showConfirm = $state(false);
+  let showSuccess = $state(false);
+  let showFailure = $state(false);
+  let showSpinner = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
   let chainId: number;
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   let requestData: any;
   let method: string;
   let requestId = $yakklDappConnectRequestStore;
-  let userName: string;
-  let password: string;
+  let userName: string = $state();
+  let password: string = $state();
   let message;  // This gets passed letting the user know what the intent is
   let context;
   let smartContract = false;
-  let jsonKeys: (keyof TransactionRequest)[]=[];
+  let jsonKeys: (keyof TransactionRequest)[]=$state([]);
   // let txTransactions = [];
   let tx: TransactionResponse; // returned transaction
   let txGasLimitIncrease = 0;
   let gasLimit: BigNumberish = 0n;
 
-  let transaction: TransactionRequest; 
+  let transaction: TransactionRequest = $state();
   // = {  // EIP-1559
   //   from: '', // Hex
   //   to: '', // Hex
@@ -61,7 +61,7 @@
   //   nonce: -1,  // Lets the provider set the nonce
   // };
 
-  let transactionValue: TransactionRequest; // Used to display on UI
+  let transactionValue: TransactionRequest = $state(); // Used to display on UI
   let addressApproved = false;
   let addressToCheck = '';
 
@@ -106,7 +106,7 @@
                 // for (const item of jsonKeys) {
                  //console.log('Transaction key pair', item);
                   // if (item !== 'from' && item !== 'to' && item !== 'data' && item !== 'result') {
-                    // if (isHexString(transactionValue[item])) {                    
+                    // if (isHexString(transactionValue[item])) {
                     // }
                   // }
                 // };
@@ -210,7 +210,7 @@ async function handleApprove() {
     const accountFound = accounts.find(element => { element.address === accountFrom});
     if (!accountFound) bail();
 
-    const account = accountFound as YakklAccount; 
+    const account = accountFound as YakklAccount;
     if (isEncryptedData(account.data)) {
       await decryptData(account.data, $yakklMiscStore).then(result => {
         account.data = result as AccountData;
@@ -236,9 +236,9 @@ async function handleApprove() {
     } else {
       gasLimit = smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS;
       txGasLimitIncrease = 0;
-    }    
+    }
 
-    if (currentlySelected?.shortcuts?.gasLimit) 
+    if (currentlySelected?.shortcuts?.gasLimit)
       gasLimit = currentlySelected?.shortcuts?.gasLimit;
     // May want to do the same as we did in send transaction on increasing gasLimit if the data field contains data OR should we let the dApp specify the gasLimit?
 
@@ -330,8 +330,8 @@ function handleConfirm() {
         placeholder="Password" autocomplete="off" bind:value="{password}" required />
     </div>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleApprove}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleApprove}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -341,7 +341,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Transaction for {domain} - Success!</h3>
     <p class="py-4">Success! The transaction you approved has been submitted to the BLOCKCHAIN! YAKKL® only assisted in helping you sign the transaction with your private key. The Source of Truth for this transaction is the {domain} DAPP! Click close.</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleClose}>Close</button>
+      <button class="btn" onclick={handleClose}>Close</button>
     </div>
   </div>
 </div>
@@ -351,7 +351,7 @@ function handleConfirm() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Close</button>
+      <button class="btn" onclick={handleReject}>Close</button>
     </div>
   </div>
 </div>
@@ -374,15 +374,15 @@ function handleConfirm() {
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
       </div>
     </div>
   </div>
-</div>  
-{:then _}   
+</div>
+{:then _}
 <div class="w-[96%] text-center justify-center m-2 flex flex-col absolute top-[225px]">
   <!-- <Beta /> -->
   <div class="text-primary-content text-2xl font-bold flex flex-col">
@@ -401,7 +401,7 @@ function handleConfirm() {
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
@@ -423,17 +423,17 @@ function handleConfirm() {
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
       {#if !showSpinner}
-      <button 
-        on:click|preventDefault={handleReject}
+      <button
+        onclick={handleReject}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
       </button>
-      
-      <button 
+
+      <button
         type="submit"
         id="recover"
-        on:click|preventDefault={handleConfirm}
+        onclick={handleConfirm}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve

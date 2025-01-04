@@ -1,11 +1,62 @@
 [
   {
-    "address": "0x...",
-    "name": "YAKKL Token",
-    "symbol": "YAKKL",
+    "name": "Ethereum",
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "symbol": "ETH",
     "decimals": 18,
-    "logoURI": "https://...",
-    "description": "YAKKL is our native token...",
-    "chainId": 1
+    "chainId": 1,
+    "isNative": true,
+    "isStablecoin": false,
+    "logoURI": "../../../images/ethereum.svg"
+  },
+  {
+    "name": "Wrapped Ether",
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "symbol": "WETH",
+    "decimals": 18,
+    "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+  },
+  {
+    "name": "Tether USD",
+    "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "symbol": "USDT",
+    "decimals": 6,
+    "chainId": 1,
+    "isNative": false,
+    "isStablecoin": true,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+  },
+  {
+    "name": "USDCoin",
+    "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "symbol": "USDC",
+    "decimals": 6,
+    "chainId": 1,
+    "isNative": false,
+    "isStablecoin": true,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
+  },
+  {
+    "name": "ChainLink Token",
+    "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+    "symbol": "LINK",
+    "decimals": 18,
+    "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x514910771AF9Ca656af840dff83E8264EcF986CA/logo.png"
+  },
+  {
+    "name": "Wrapped BTC",
+    "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "symbol": "WBTC",
+    "decimals": 8,
+    "chainId": 1,
+    "isNative": false,
+    "isStablecoin": false,
+    "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png"
   }
 ]

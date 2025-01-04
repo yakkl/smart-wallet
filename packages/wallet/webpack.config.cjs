@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -38,13 +39,13 @@ module.exports = {
         test: /\.ts$/,
         exclude: [
           path.resolve(__dirname, 'node_modules'),
-          path.resolve(__dirname, '../../node_modules')
+          path.resolve(__dirname, '../../node_modules'),
+          path.resolve(__dirname, '../uniswap-alpha-router-service/node_modules')
         ],
         use: [
           {
             loader: 'ts-loader',
             options: {
-              transpileOnly: false,
               configFile: path.resolve(__dirname, 'tsconfig.json'),
               compilerOptions: {
                 module: 'esnext',
@@ -58,12 +59,13 @@ module.exports = {
   resolve: {
     modules: [
       path.resolve(__dirname, 'src'),
-      path.resolve(__dirname, '../../node_modules'), // Add this to resolve from root node_modules
-      'node_modules'
+      'node_modules',
+      // path.resolve(__dirname, '../../node_modules') // Add this to resolve from root node_modules
     ],
-    extensions: ['.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      'webextension-polyfill': path.resolve(__dirname, '../../node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
+      'process/browser': require.resolve( 'process/browser' ),
+      'webextension-polyfill': path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
       '$lib': path.resolve(__dirname, 'src/lib'),
       '$lib/common': path.resolve(__dirname, 'src/lib/common'),
       '$plugins': path.resolve(__dirname, 'src/lib/plugins'),
@@ -72,7 +74,9 @@ module.exports = {
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
-      vm: require.resolve('vm-browserify')
+      vm: require.resolve( 'vm-browserify' ),
+      process: require.resolve( 'process/browser' ),
+      events: require.resolve( 'events/' ),
     },
   },
   plugins: [
@@ -83,8 +87,8 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { 
-          from: path.resolve(__dirname, '../../node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
+        {
+          from: path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
           to: path.resolve(__dirname, 'static/ext/browser-polyfill.min.js')
         },
       ],

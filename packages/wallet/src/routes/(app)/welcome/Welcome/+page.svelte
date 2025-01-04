@@ -1,36 +1,73 @@
 <script lang="ts">
   import { browser as browserSvelte} from "$app/environment";
   import { onMount, onDestroy } from "svelte";
-  import { goto } from "$app/navigation";
-  import { PATH_ACCOUNTS, PATH_LOCK, PATH_SECURITY, PATH_TOKENS } from "$lib/common/constants";
-  import Back from "$components/Back.svelte";
+  import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
   import ComingSoon from "$components/ComingSoon.svelte";
 	import ErrorNoAction from "$components/ErrorNoAction.svelte";
-	import Welcome from "$components/Welcome.svelte";
 	import ButtonGridItem from "$components/ButtonGridItem.svelte";
 	import ButtonGrid from "$components/ButtonGrid.svelte";
 	import { routeCheckWithSettings } from '$lib/common/routes';
+  import { handleOnMessage } from '$lib/common/handlers';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
 	import { setIconLock } from '$lib/utilities';
 	import Import from '$lib/components/Import.svelte';
+  import { yakklTokenDataStore, yakklTokenDataCustomStore } from "$lib/common/stores";
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  let error = false;
-  let errorValue: any;
-  let showComingSoon = false;
-  let showImportOption = false;
+  import type { TokenData } from '$lib/common/interfaces';
+	import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
+	import { getYakklCurrentlySelectedStore, getYakklTokenDataStore, yakklCurrentlySelectedStore } from "$lib/common/stores";
+	import TokenViews from "$lib/components/TokenViews.svelte";
+  import { Wallet } from '$lib/plugins/Wallet';
+	// import { Blockchain } from "$lib/plugins/Blockchain";
+	// import { Provider } from "$lib/plugins/Provider";
+	// import { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+	import { getInstances } from "$lib/common/wallet";
+	import type { Provider } from "$lib/plugins/Provider";
+	import type { Blockchain } from "$lib/plugins/Blockchain";
+	import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+  import { combinedTokenStore } from "$lib/common/derivedStores";
 
-  // let showPin = false;
-  // let pinValue = "";
+  // import { ethTokenData, btcTokenData, chainTokenData, usdcTokenData, pepeTokenData, usdtTokenData } from '$lib/data/mock/MockTokenData';
+  // Mock token data
+  // const tokens: TokenData[] = [ethTokenData, btcTokenData, usdcTokenData, chainTokenData, pepeTokenData, usdtTokenData];
 
-  onMount(() => {
+  let error = $state(false);
+  let errorValue: any = $state();
+  let showComingSoon = $state(false);
+  let showImportOption = $state(false);
+  let tokens = $state<TokenData[]>([]);
+  let wallet: Wallet | null = null;
+  let provider: Provider | null = null;
+  let blockchain: Blockchain | null = null;
+  let tokenService: TokenService<any> | null = null;
+
+  $effect(() => {
+    tokens = $combinedTokenStore; // Managed in $lib/common/tokens.ts
+  });
+
+  onMount(async () => {
     try {
       if (browserSvelte) {
         browser_ext.runtime.onMessage.addListener(handleOnMessage);
+        // await loadDefaultTokens(); // Force a fresh reload of tokens since these are managed by YAKKL
+
+        // Get balances for tokens - if any
+        const instances = await getInstances();
+        if (instances.length > 0) {
+          wallet = instances[0];
+          provider = instances[1];
+          blockchain = instances[2];
+          tokenService = instances[3];
+          if (wallet && provider && blockchain && tokenService) {
+            const currentlySelected = getYakklCurrentlySelectedStore();
+            tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+          }
+        }
       }
     } catch (e) {
       console.log(e);
@@ -48,29 +85,11 @@
     }
   });
 
-  /**
-	 * @param {{ method: any; }} request
-	 * @param {any} sender
-	 */
-  function handleOnMessage(request: any, sender: any) {
-    if (browserSvelte) {
-      try {
-        switch(request.method) {
-          case 'yak_lockdown':
-            goto(PATH_LOCK);
-            break;
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  }
-
   routeCheckWithSettings();
 
-  function handleComingSoon() {
-    showComingSoon = true;
-  } 
+  // function handleComingSoon() {
+  //   showComingSoon = true;
+  // }
 
   function handleImports() {
     showImportOption = true;
@@ -83,24 +102,18 @@
 </script>
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
-
-<ErrorNoAction bind:show={error} bind:value={errorValue} />
-
+<ErrorNoAction bind:show={error} title="Error" value={errorValue} />
 <ComingSoon bind:show={showComingSoon} />
-
-<Back defaultClass="left-3 top-[.8rem] absolute" href='' />
 
 <!-- Top band on page using the bg of wherever this is - could be component but not sure we will keep it -->
 <div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2"></div>
-
-<Welcome title1='' title2='Home' title3='' value1='' value2='' />
 
 <ButtonGrid>
   <!-- titleClass="p-0" contentClass="p-0"> -->
   <ButtonGridItem path={PATH_ACCOUNTS} title="Wallet Accounts" >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 -mb-2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
-    </svg>            
+    </svg>
   </ButtonGridItem>
 
   <ButtonGridItem path={PATH_SECURITY} title="Security">
@@ -136,10 +149,18 @@
     </svg>
   </ButtonGridItem>
 
-  <ButtonGridItem path={PATH_TOKENS} title="Token Testing">
+  <!-- <ButtonGridItem path={PATH_TOKENS} title="Token Testing">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 mb-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
-  </ButtonGridItem>
+  </ButtonGridItem> -->
 </ButtonGrid>
+
+{#if $combinedTokenStore.length > 0}
+  <TokenViews tokens={$combinedTokenStore} />
+{:else}
+  <div class="flex items-center justify-center w-full h-full">
+    <p class="text-lg text-gray-500">No additional tokens found</p>
+  </div>
+{/if}

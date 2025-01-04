@@ -12,14 +12,14 @@
   import ClipboardJS from 'clipboard';
   import { VERSION, type YakklChat } from '$lib/common';
 
-  let messages: YakklChat[] = [];
-  let error = false;
-  let errorValue = 'An error has occurred. Please try again.';
+  let messages = $state<YakklChat[]>([]);
+  let error = $state(false);
+  let errorValue = $state('An error has occurred. Please try again.');
   let clipboard;
-  let showClearWarning = false;
+  let showClearWarning = $state(false);
 
   $yakklGPTRunningStore = false;
-  
+
   if (browserSvelte) {
     try {
       clipboard = new ClipboardJS('.clip');
@@ -30,8 +30,10 @@
 
   onMount(async () => {
     try {
+      messages.length = 0; // Clear existing messages
+
       if ($yakklGPTKeyStore === null || $yakklGPTKeyStore === undefined) {
-        await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {          
+        await apiKeyFetch(import.meta.env.VITE_GPT_API_KEY_BACKEND_URL, import.meta.env.VITE_GPT_API_KEY_BACKEND).then((results: any) => {
           if (results) {
             $yakklGPTKeyStore = results;
           } else {
@@ -40,8 +42,18 @@
         });
       }
 
-      messages = await getYakklChats();
+      const loadedMessages = await getYakklChats();
+
+      // Ensure we have an array and add messages one by one
+      if (Array.isArray(loadedMessages)) {
+        loadedMessages.forEach(msg => {
+          if (msg && typeof msg === 'object') {
+            messages.push(msg);
+          }
+        });
+      }
     } catch(e) {
+      console.log('Error in onMount:', e);
       errorValue = 'Error loading key or chat history. ' + e;
       error = true;
     }
@@ -53,9 +65,29 @@
 
   async function storeChats() {
     try {
-      await setYakklChatsStorage(messages);  
+      // Create a clean array from the messages state
+      const messageArray = Array.isArray(messages) ? [...messages] : [];
+
+      // Ensure each message is a proper object before storing
+      const cleanMessages = messageArray.map(msg => ({
+          text: msg.text || '',
+          sender: msg.sender || '',
+          timestamp: msg.timestamp || Date.now().toString(),
+          usage: msg.usage || {},
+          id: msg.id || '',
+          version: msg.version || VERSION,
+          createDate: msg.createDate || dateString(),
+          updateDate: msg.updateDate || dateString()
+      }));
+
+      // Update the store first
+      $yakklChatsStore = cleanMessages;
+
+      // Then store in localStorage
+      await setYakklChatsStorage(cleanMessages);
     } catch (e) {
-      console.log(e);
+      console.error('Error storing chats:', e);
+      throw e; // Rethrow if you want to handle it in the calling function
     }
   }
 
@@ -67,37 +99,42 @@
 
     try {
       if (!$yakklConnectionStore) {
-        throw 'Warning. Your Internet connection appears to be down. Try again later.';
+          throw 'Warning. Your Internet connection appears to be down. Try again later.';
       }
 
       $yakklGPTRunningStore = true;
 
-      messages = [...messages, {
-        text: input, 
-        sender: 'user', 
-        timestamp: Date.now().toString(), 
+      const newUserMessage = {
+        text: input,
+        sender: 'user',
+        timestamp: Date.now().toString(),
         usage: {},
         id: '',
         version: VERSION,
         createDate: dateNow,
         updateDate: dateNow
-      }];
+      };
+
+      messages.push(newUserMessage);
 
       response = await fetchGPT4Response(input);
-      
+
       let formattedResponse = response?.content?.replace(/[\n]+/g, '<br/><br/>');
-      messages = [...messages, {
-        text: formattedResponse ? formattedResponse : '', 
-        sender: 'yak', 
-        timestamp: Date.now().toString(), 
+
+      const newBotMessage = {
+        text: formattedResponse ? formattedResponse : '',
+        sender: 'yak',
+        timestamp: Date.now().toString(),
         usage: response?.usage,
         id: '',
         version: VERSION,
         createDate: dateNow,
         updateDate: dateNow
-      }];
-      
-      $yakklChatsStore = messages;
+      };
+
+      messages.push(newBotMessage);
+
+      $yakklChatsStore = [...messages];
       await storeChats();
     } catch(e: any) {
       errorValue = `An error occurred: ${e?.message || e}`;
@@ -109,13 +146,13 @@
 
   async function clearMessages() {
     try {
-      messages = [];
-      $yakklChatsStore = messages;
-      await setYakklChatsStorage(messages);
-      showClearWarning = false;
+        messages.length = 0; // This clears the array while maintaining reactivity
+        $yakklChatsStore = [];
+        await setYakklChatsStorage([]);
+        showClearWarning = false;
     } catch (e) {
-      errorValue = 'Error clearing messages. ' + e;
-      error = true;
+        errorValue = 'Error clearing messages. ' + e;
+        error = true;
     }
   }
 
@@ -126,24 +163,27 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <ErrorNoAction bind:show={error} bind:value={errorValue} title="ERROR!" />
+  <ErrorNoAction bind:show={error} value={errorValue} title="ERROR!" />
 
   <div class="grid grid-cols-2 gap-4 mb-4 px-2">
-    <button class="btn btn-sm btn-outline w-full" on:click={handlePrint}>
+    <button class="btn btn-sm btn-outline w-full" onclick={handlePrint}>
       Print conversation
     </button>
-    <button class="btn btn-sm btn-outline btn-error w-full" on:click={() => showClearWarning = true}>
+    <button class="btn btn-sm btn-outline btn-error w-full" onclick={() => showClearWarning = true}>
       Clear messages
     </button>
-    <button 
-      class="btn btn-sm btn-primary col-span-2 w-full" 
-      on:click={() => handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=yakkl_gpt&utm_content=knowledge_base&utm_term=extension')}
+    <button
+      class="btn btn-sm btn-primary col-span-2 w-full"
+      onclick={() => handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=yakkl_gpt&utm_content=knowledge_base&utm_term=extension')}
     >
-      YAKKL® Knowledge base 
+      YAKKL® Knowledge base
     </button>
   </div>
 
   <div class="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-lg border border-gray-300" use:autoscroll>
+    {#if messages}
+    <pre class="hidden">{JSON.stringify(messages, null, 2)}</pre>
+    <!-- Your existing each block -->
     {#each messages as message, i (i)}
       <div class="mb-4 flex {message.sender === 'user' ? 'justify-end' : 'justify-start'}">
         <div class="flex items-start max-w-[70%]">
@@ -162,6 +202,7 @@
         </div>
       </div>
     {/each}
+    {/if}
     {#if $yakklGPTRunningStore}
       <div class="flex justify-center items-center">
         <Spinner color="purple" size={8}/>
@@ -176,8 +217,8 @@
       <h3 class="text-lg font-bold mb-4">Clear all messages?</h3>
       <p class="mb-4">Are you sure you want to clear all messages? This action cannot be undone.</p>
       <div class="flex justify-end">
-        <button class="btn btn-sm btn-outline mr-2" on:click={() => showClearWarning = false}>Cancel</button>
-        <button class="btn btn-sm btn-error" on:click={clearMessages}>Clear</button>
+        <button class="btn btn-sm btn-outline mr-2" onclick={() => showClearWarning = false}>Cancel</button>
+        <button class="btn btn-sm btn-error" onclick={clearMessages}>Clear</button>
       </div>
     </div>
   </div>

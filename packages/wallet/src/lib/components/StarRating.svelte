@@ -1,7 +1,12 @@
 <script lang="ts">
   import { handleOpenInTab } from '$lib/utilities/utilities';
   import { Popover } from 'flowbite-svelte';
-  
+  interface Props {
+    [key: string]: any
+  }
+
+  let { ...rest }: Props = $props();
+
   async function handleShare(event: MouseEvent): Promise<any> {
     const id = (event.currentTarget as HTMLElement).dataset.id;
     if (!id) {
@@ -44,9 +49,9 @@
 </Popover>
 
 <!-- Share -->
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-interactive-supports-focus -->
-<div id="share" role="button" on:click|preventDefault={handleShare} {...$$restProps}> 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_interactive_supports_focus -->
+<div id="share" role="button" onclick={handleShare} {...rest}>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7  fill-gray-100 hover:fill-gray-400">
     <path fill-rule="evenodd" d="M15.75 4.5a3 3 0 11.825 2.066l-8.421 4.679a3.002 3.002 0 010 1.51l8.421 4.679a3 3 0 11-.729 1.31l-8.421-4.678a3 3 0 110-4.132l8.421-4.679a3 3 0 01-.096-.755z" clip-rule="evenodd" />
   </svg>

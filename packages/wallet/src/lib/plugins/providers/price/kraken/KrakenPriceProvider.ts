@@ -5,7 +5,7 @@ export class KrakenPriceProvider implements PriceProvider {
   getAPIKey(): string {
     return '';  //import.meta.env.VITE_KRAKEN_API_KEY_PROD
   }
-  
+
   getName() {
     return 'Kraken';
   }
@@ -43,13 +43,19 @@ export class KrakenPriceProvider implements PriceProvider {
     if ( !token || !symbol ) {
       throw new Error( `Invalid pair - ${ pair }` );
     }
-    if ( token === 'WETH' ) {
-      token = 'ETH';
-      pair = `${ token }-${ symbol }`;
-    }
-    if ( token === 'WBTC' ) {
-      token = 'BTC';
-      pair = `${ token }-${ symbol }`;
+    switch ( token ) {
+      case 'ETH':
+        pair = 'ETHUSDC';
+        break;
+      case 'WETH':
+        pair = 'ETHWETH';
+        break;
+      case 'WBTC':
+        pair = 'WBTCUSD';
+        break;
+      case 'PEPE':
+        pair = 'PEPEUSD';
+        break;
     }
     return pair.replace( '-', '' );
   }

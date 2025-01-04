@@ -2,10 +2,15 @@
   import { fade } from "svelte/transition";
   import { onMount } from "svelte";
 
-  let popupActive = false;
+  let popupActive = $state(false);
   let loadedAt: Date | null = null;
 
-  export let storageKey = "popup.fired";
+  interface Props {
+    storageKey?: string;
+    children?: import('svelte').Snippet;
+  }
+
+  let { storageKey = "popup.fired", children }: Props = $props();
 
 
   onMount(() => {
@@ -55,7 +60,7 @@
 
 
 
-<svelte:body on:mouseleave={handleMouseLeave} />
+<svelte:body onmouseleave={handleMouseLeave} />
 
 
 
@@ -65,14 +70,14 @@
 
   justify-center items-center">
 
-      <slot />
+      {@render children?.()}
 
 
       <!-- Pin to top right corner -->
 
       <div class="absolute top-6 right-6 h-16 w-16">
 
-          <button class="btn !btn-circle btn-outline" on:click={hidePopup}>
+          <button class="btn !btn-circle btn-outline" onclick={hidePopup}>
 
               <!-- Heroicons close button -->
 

@@ -1,0 +1,51 @@
+{
+  "extends": "./.svelte-kit/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "$lib": ["src/lib"],
+      "$lib/*": ["src/lib/*"],
+      "$plugins": ["src/lib/plugins"],
+      "$plugins/*": ["src/lib/plugins/*"],
+      "$components": ["src/lib/components"],
+      "$components/*": ["src/lib/components/*"],
+      "@yakkl/*": ["./packages/*/src"]
+    },
+    "verbatimModuleSyntax": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "types": [
+      "svelte",
+      "webextension-polyfill",
+      "vite/client",
+      "node",
+      "@sveltejs/kit"
+    ]
+  },
+  "include": [
+    "src",
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte",
+    "src/lib/browser-polyfill.d.ts",
+    "src/**/*.svelte"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "../../node_modules",
+    "node_modules",
+    "dist",
+    "build"
+  ]
+}

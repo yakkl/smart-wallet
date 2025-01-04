@@ -1,22 +1,22 @@
-import { ethers } from 'ethers';
-import type { 
-  EVMTransactionRequest, 
-  TransactionResponse, 
-  TransactionReceipt, 
+import { ethers as ethersv6 } from 'ethers-v6';
+import type {
+  EVMTransactionRequest,
+  TransactionResponse,
+  TransactionReceipt,
   Log,
-  BigNumberish, 
+  BigNumberish,
   TransactionRequest,
   AccessList,
 } from '$lib/common';
 
 export class EthersConverter {
   static toEthersHex(value: BigNumberish | null | undefined): string | null | undefined {
-    if (value === null || value === undefined) return value;
+    if (value === null || value === undefined) return null;
     if (typeof value === 'string' && value.startsWith('0x')) return value;
     return '0x' + BigInt(value.toString()).toString(16);
   }
 
-  static transactionToEthersTransaction(transaction: EVMTransactionRequest): ethers.TransactionRequest {
+  static transactionToEthersTransaction(transaction: EVMTransactionRequest): ethersv6.TransactionRequest {
     return {
       to: transaction.to ?? undefined,
       from: transaction.from ?? undefined,
@@ -34,7 +34,7 @@ export class EthersConverter {
     };
   }
 
-  static async ethersTransactionResponseToTransactionResponse(tx: ethers.TransactionResponse): Promise<TransactionResponse> {
+  static async ethersTransactionResponseToTransactionResponse(tx: ethersv6.TransactionResponse): Promise<TransactionResponse> {
     return {
       hash: tx.hash,
       to: tx.to ?? '',
@@ -62,8 +62,8 @@ export class EthersConverter {
       }
     };
   }
-  
-  static async ethersTransactionReceiptToTransactionReceipt(receipt: ethers.TransactionReceipt): Promise<TransactionReceipt> {
+
+  static async ethersTransactionReceiptToTransactionReceipt(receipt: ethersv6.TransactionReceipt): Promise<TransactionReceipt> {
     return {
       to: receipt.to ?? '',
       from: receipt.from,
@@ -85,7 +85,7 @@ export class EthersConverter {
     };
   }
 
-  static ethersLogToLog( log: ethers.Log ): Log {
+  static ethersLogToLog( log: ethersv6.Log ): Log {
     return {
       blockNumber: log.blockNumber,
       blockHash: log.blockHash,
@@ -99,7 +99,7 @@ export class EthersConverter {
     };
   }
 
-  static ethersTransactionRequestToTransactionRequest( tx: ethers.TransactionRequest ): TransactionRequest | null {
+  static ethersTransactionRequestToTransactionRequest( tx: ethersv6.TransactionRequest ): TransactionRequest | null {
     try {
       if ( !tx ) return null;
       return {
@@ -123,9 +123,9 @@ export class EthersConverter {
     }
   }
 
-  private static convertAccessList(accessList: ethers.AccessListish | null | undefined): AccessList | undefined {
+  private static convertAccessList(accessList: ethersv6.AccessListish | null | undefined): AccessList | undefined {
     if (!accessList) return undefined;
-    
+
     if (Array.isArray(accessList)) {
       return accessList.map(item => {
         if (Array.isArray(item)) {
@@ -143,14 +143,14 @@ export class EthersConverter {
         }
       });
     }
-    
+
     // Handle { address: storageKeys[] } format
     return Object.entries(accessList).map(([address, storageKeys]) => ({
       address,
       storageKeys
     }));
   }
-    
+
 }
 
 // Example usage:

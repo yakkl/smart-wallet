@@ -1,9 +1,13 @@
 <script lang="ts">
-  export let text = "";
-  export let typingSpeed = 50;
+  interface Props {
+    text?: string;
+    typingSpeed?: number;
+  }
 
-  let visibleText = "";
-  let typing = false;
+  let { text = "", typingSpeed = 50 }: Props = $props();
+
+  let visibleText = $state("");
+  let typing = $state(false);
 
   async function type() {
     if (!typing) {
@@ -17,7 +21,9 @@
     }
   }
 
-  $: text, type();
+  $effect(() => {
+    type();
+  });
 </script>
 
 <div class="typing-effect">

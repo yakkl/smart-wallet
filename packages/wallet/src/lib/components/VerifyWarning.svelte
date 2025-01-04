@@ -1,10 +1,14 @@
 <script lang="ts">
 import { Button, Modal } from "flowbite-svelte";
 
-export let warning = false;
-export let verifyMessage = 'Are you sure?';
-export let accept = () => {};
-// export let cancel = () => {};
+	interface Props {
+		warning?: boolean;
+		verifyMessage?: string;
+		accept?: any; // export let cancel = () => {};
+	}
+
+	let { warning = $bindable(false), verifyMessage = 'Are you sure?', accept = () => {} }: Props = $props();
+
 
 
 </script>

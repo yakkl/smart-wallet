@@ -1,32 +1,31 @@
 {
   "name": "yakkl-smart-wallet",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "dev:wallet": "npm run dev:chrome -w wallet",
-    "build:wallet": "npm run build:chrome -w wallet",
-    "preview:wallet": "npm run preview -w wallet",
-    "test:wallet": "npm run test -w wallet",
-    "build:wallet:chrome": "npm run build:chrome -w wallet",
-    "build:wallet:chrome:manifest": "npm run build:chrome:manifest -w wallet",
-    "build:wallet:constants": "npm run build:constants -w wallet",
-    "build:wallet:variables": "npm run build:variables -w wallet",
-    "build:wallet:clean": "npm run build:clean -w wallet",
-    "build:wallet:tsc": "npm run build:tsc -w wallet",
-    "build:wallet:debug": "npm run build:debug -w wallet",
-    "package:wallet": "npm run package -w wallet",
-    "chrome_store_zip:wallet": "npm run chrome_store_zip -w wallet",
-    "firefox_store_zip:wallet": "npm run firefox_store_zip -w wallet",
-    "check:wallet": "npm run check -w wallet",
-    "check:watch:wallet": "npm run check:watch -w wallet",
-    "lint:wallet": "npm run lint -w wallet",
-    "format:wallet": "npm run format -w wallet",
-    "build:contracts": "npm run build -w contracts",
-    "test:contracts": "npm run test -w contracts"
+    "dev:wallet": "pnpm run build:router && pnpm -F wallet run dev:chrome",
+    "build:wallet": "pnpm run build:router && pnpm -F wallet run build:chrome",
+    "preview:wallet": "pnpm -F wallet run preview",
+    "test:wallet": "pnpm -F wallet run test",
+    "build:wallet:chrome": "pnpm -F wallet run build:chrome",
+    "build:wallet:chrome:manifest": "pnpm -F wallet run build:chrome:manifest",
+    "build:wallet:constants": "pnpm -F wallet run build:constants",
+    "build:wallet:variables": "pnpm -F wallet run build:variables",
+    "build:wallet:clean": "pnpm -F wallet run build:clean",
+    "build:wallet:tsc": "pnpm -F wallet run build:tsc",
+    "build:wallet:debug": "pnpm -F wallet run build:debug",
+    "build:router": "pnpm -F @yakkl/uniswap-alpha-router-service run build",
+    "predev:wallet": "pnpm run build:router",
+    "package:wallet": "pnpm -F wallet run package",
+    "chrome_store_zip:wallet": "pnpm -F wallet run chrome_store_zip",
+    "firefox_store_zip:wallet": "pnpm -F wallet run firefox_store_zip",
+    "check:wallet": "pnpm -F wallet run check",
+    "check:watch:wallet": "pnpm -F wallet run check:watch",
+    "lint:wallet": "pnpm -F wallet run lint",
+    "format:wallet": "pnpm -F wallet run format",
+    "build:contracts": "pnpm -F contracts run build",
+    "test:contracts": "pnpm -F contracts run test"
   },
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
   "keywords": [
@@ -37,19 +36,17 @@
   ],
   "author": "YAKKL",
   "devDependencies": {
-    "install": "^0.13.0",
-    "jsbi": "^4.3.0",
     "npm": "^10.8.2",
     "svelte-feather-icons": "^4.1.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts-upgradeable": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.6",
-    "@uniswap/v3-periphery": "^1.4.4",
-    "chart.js": "^4.4.4",
-    "google-auth-library": "^9.14.1",
+    "@openzeppelin/contracts": "^5.1.0",
+    "@openzeppelin/contracts-upgradeable": "^5.1.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "chart.js": "^4.4.6",
+    "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "svelte-chartjs": "^3.1.5"
-  }
+    "jsonwebtoken": "^9.0.2"
+  },
+  "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"
 }

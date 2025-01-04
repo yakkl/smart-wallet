@@ -1,7 +1,8 @@
 import type { AbstractBlockchain } from '$plugins/Blockchain';
-import { debug_log, type BaseTransaction, type BigNumberish, type TransactionResponse } from '$lib/common';
+import { type BaseTransaction, type BigNumberish, type TokenData, type TransactionResponse } from '$lib/common';
 import { AbstractContract } from '$plugins/Contract';
 import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';  // Only ERC20 ABI is used
+import { updateTokenBalances } from '$lib/common/tokens';
 
 export class TokenService<T extends BaseTransaction> {
   private blockchain: AbstractBlockchain<T> | null = null;
@@ -12,7 +13,7 @@ export class TokenService<T extends BaseTransaction> {
 
   private getTokenContract( tokenAddress: string ): AbstractContract | null{
     if ( !tokenAddress ) return null; // Want a graceful way to handle this instead of throwing an error
-    return this.blockchain ? this.blockchain.createContract(tokenAddress, ABIs.ERC20) : null;
+    return this.blockchain ? this.blockchain.createContract( tokenAddress, ABIs.ERC20 ) : null; //, this.blockchain?.getProvider()?.getProviderEthers() || undefined) : null;
   }
 
   async getTokenInfo( tokenAddress: string ) {
@@ -20,8 +21,6 @@ export class TokenService<T extends BaseTransaction> {
     try {
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
-    
-      debug_log( 'getTokenInfo - contract', contract );
 
       const [ name, symbol, decimals, totalSupply ] = await Promise.all( [
         contract.call( 'name' ),
@@ -40,12 +39,10 @@ export class TokenService<T extends BaseTransaction> {
   async getBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
       if ( !tokenAddress || !userAddress ) return 0n; // Want a graceful way to handle this instead of throwing an error
-      // Could check tokenAddress to see if it 'ethers.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
+      // Could check tokenAddress to see if it 'ethersv6.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return 0n;
 
-      debug_log( 'TokenService.getBalance - contract, tokenAddress, userAddress', contract, tokenAddress, userAddress );
-      
       return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);
@@ -53,12 +50,23 @@ export class TokenService<T extends BaseTransaction> {
     }
   }
 
+  async updateTokenBalances( userAddress: string ): Promise<void> {
+    try {
+      if ( !userAddress ) throw new Error( 'Invalid parameters' );
+      // This fuction is defined in tokens.ts and updates the standard token balances and custom token balances.
+      // Since this is the only function within the method then no need for await
+      updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() || undefined );
+    } catch ( error ) {
+      console.log( 'Error updating token balances:', error );
+    }
+  }
+
   async transfer( tokenAddress: string, toAddress: string, amount: BigNumberish ): Promise<TransactionResponse> {
     try {
-      if ( !tokenAddress || !toAddress || !amount ) throw new Error( 'Invalid parameters' ); 
+      if ( !tokenAddress || !toAddress || !amount ) throw new Error( 'Invalid parameters' );
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) throw new Error( 'Invalid contract' );
-    
+
       const gasEstimate = await contract.estimateGas( 'transfer', toAddress, amount );
       const tx = await contract.populateTransaction( 'transfer', toAddress, amount );
       if ( !tx ) throw new Error( 'Invalid transaction' );

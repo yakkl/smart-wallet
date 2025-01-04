@@ -1,4 +1,4 @@
-// import { ethers } from "ethers";
+// import { ethers as ethersv6 } from 'ethers-v6';
 // import EthCrypto from 'eth-crypto';
 import { Wallet } from "alchemy-sdk";
 

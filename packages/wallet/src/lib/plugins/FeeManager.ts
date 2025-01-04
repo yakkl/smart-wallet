@@ -35,14 +35,16 @@ export class BaseFeeManager implements FeeManager {
       throw new Error('No gas providers available');
     }
 
-    const estimates = await Promise.all(
-      Array.from( this.providers.values() ).map( provider => {
-        return provider.getGasEstimate( transaction ).catch( error => {
+    const estimates: GasEstimate[] = await Promise.all(
+      Array.from( this.providers.values() ).map( async ( provider ): Promise<GasEstimate | null> => {
+        return provider.getGasEstimate( transaction ).catch( ( error: unknown ): GasEstimate | null => {
           console.error( `Failed to get gas estimate from ${ provider.getName() }:`, error );
-          return null;
+          return null; // Explicitly return `null` for failed estimates
         } );
       } )
-    ).then( estimates => estimates.filter( estimate => estimate !== null ) );
+    ).then( ( estimates: ( GasEstimate | null )[] ): GasEstimate[] => {
+      return estimates.filter( ( estimate ): estimate is GasEstimate => estimate !== null );
+    } );
 
     // console.log('Gas estimates:', estimates);
 

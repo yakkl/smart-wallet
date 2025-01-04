@@ -2,7 +2,7 @@
 
 // dataModels.ts - this is the default data that is used when the user first installs the app. Some of this data will be updated and some may seem out of date. If so, then please file an issue so we can address it. The customer data will override this data.
 
-// yakklSettings 
+// yakklSettings
 // `autoLockTimer` is in seconds as integers (e.g., 0 - on idle, 1 - 1 second, ..., 3600 - 1 hour, etc.)
 
 // NOTE: 'id' should be unique value for the given group of data. Crypto uuidv4 can be used so that if we move to a central DB then it will be unique.
@@ -12,7 +12,7 @@ export const prerender = false;
 import { dateString } from '$lib/common/datetime';
 import type { Preferences, YakklWatch, YakklSecurity, YakklBlocked, YakklRegisteredData, Profile, YakklChat, YakklCurrentlySelected, YakklAccount, YakklPrimaryAccount, YakklConnectedDomain, YakklContact, YakklNFT, CurrentlySelectedData, AccountData, PrimaryAccountData, ProfileData, Settings } from '$lib/common/interfaces';
 
-import {   
+import {
   SystemTheme,
   AccountTypeCategory,
   RegistrationType,
@@ -55,7 +55,7 @@ import {
 // TBD - We may need to have a secret security option that is not open sourced so that we can rotate keys or have multi-signature smart countracts
 // This advanced security could be charged for and we double encrypt and backup on our closed servers via vpn
 // Maybe we have a minimum of $2 USD per month with variable price up to $10 or $20 USD depending on actual usage that covers all costs
-// TBD - Institional version could have an IIoT devices with an embedded TPM chip and certificate that would be able to communicate 
+// TBD - Institional version could have an IIoT devices with an embedded TPM chip and certificate that would be able to communicate
 // over VPN with our systems. Would can then work with the institutions security team on protecting all assets
 
 // Default non-ecrypted data which is safe to be in memory (same as currentlySelected data)
@@ -71,7 +71,7 @@ export let yakklWalletProviders = ['Alchemy'];
 
 
 // Preferences - User specified and defaults
-export let yakklPreferences: Preferences = {
+export const yakklPreferences: Preferences = {
   id: '',
   idleDelayInterval: 60, // System default of 1 minute - this is in seconds
   showTestNetworks: true,
@@ -148,7 +148,7 @@ export let yakklSettings: Settings = {
   transactions: {
     retry: {
       enabled: true,
-      howManyAttempts: 3, 
+      howManyAttempts: 3,
       seconds: 30,  // Retry in 30 seconds
       baseFeeIncrease: .1, // percentages
       priorityFeeIncrease: .1, // percentages
@@ -229,7 +229,7 @@ export let yakklChat: YakklChat = {
   id: '',
   text: '',
   sender: '',
-  timestamp: '', 
+  timestamp: '',
   version: VERSION,
   createDate: dateString(),
   updateDate: dateString(),
@@ -285,7 +285,7 @@ export let yakklCurrentlySelected: YakklCurrentlySelected = {
       explorer: 'https://etherscan.io',
       decimals: 18,
     }, // The current network for the given account
-    
+
     // Legacy - May remove
     blockchain: 'Ethereum',  // So we don't have to hit yakklNetwork every time - Also, make sure to name the background card to this blockchain in lowercase
     type: 'Mainnet',  // whatever type that was selected from the network type collection
@@ -313,7 +313,7 @@ export let yakklCurrentlySelected: YakklCurrentlySelected = {
 
 export let yakklPrimaryAccount: YakklPrimaryAccount = {
   id: '',  // Profile id
-  name: YAKKL_ZERO_ACCOUNT_NAME,  // account name, address, and keys are here for convenience - they are also in the yakklAccount record 
+  name: YAKKL_ZERO_ACCOUNT_NAME,  // account name, address, and keys are here for convenience - they are also in the yakklAccount record
   address: YAKKL_ZERO_ADDRESS,
   value: 0n,
   index: 0,  // for primary path account index
@@ -476,7 +476,7 @@ export const yakklStoredObjects = [
   { key: "yakklBlockedList", value: yakklBlockedList },
   { key: "yakklWatchList", value: sampleWatch },
 ];
-  
+
 
 // Below to be removed at a later date.
 
@@ -485,7 +485,7 @@ export const yakklStoredObjects = [
 // export let defaultYakklAssets = [
 //   {
 //     name: 'Ethereum', // This should be unique when combined with 'class'
-//     class: 'Token',   // Asset class such as 'Tokens', 'NFTs', 'RWA', ... 
+//     class: 'Token',   // Asset class such as 'Tokens', 'NFTs', 'RWA', ...
 //     subClass: '',  // Mainly applies to RWA such as deeds, titles, ...
 //     description: 'Ethereum crypto',
 //     status: 'enabled',
@@ -529,7 +529,7 @@ export const yakklStoredObjects = [
 //   {network: "Ethereum", type: "mainnet", release: "Production", name: "mainnet", chainId: "0x1", symbol: "ETH", urlRPC: "https://mainnet.infura.io/v3/", explorer: "https://etherscan.io"},
 //   {network: "Ethereum", type: "testnet", release: "Test", name: "Sepolia", chainId: "0xaa36a7", symbol: "ETH", urlRPC: "https://sepolia.infura.io/v3/", explorer: "https://etherscan.io"}
 // ];
-  
+
 
 // export let yakklProvider: YakklProvider = {
 //   provider: 'Infura',   // If name is 'yakkl' then yakkl cloud is the provider and we're going direct to the given blockchains
@@ -569,7 +569,7 @@ export const yakklStoredObjects = [
 //       protocols: [
 //         {type: 'https', url: '{{blockchain}}.infura.io/v3/{{key}}'},
 //         {type: 'wss', url: '{{blockchain}}.infura.io/ws/v3/{{key}}'}
-//         ] 
+//         ]
 //       },
 //     version: '', // Travels with the data for upgrades
 //   },
@@ -583,7 +583,7 @@ export const yakklStoredObjects = [
 //   symbol: 'ETH',
 //   card: 'ethereum-background.png',
 //   icon: '/images/ethereum.svg',
-//   decimals: 18, 
+//   decimals: 18,
 //   types: [
 //     {type: 'mainnet', release: 'Production', name: 'Mainnet', chainId: 1},
 //     {type: 'testnet', release: 'Test', name: 'Sepolia', chainId: 11155111},
@@ -641,7 +641,7 @@ export const yakklStoredObjects = [
 
 
 // export let yakklAssetKey: YakklAssetKey = {
-//   name: 'Ethereum',  // Default 
+//   name: 'Ethereum',  // Default
 //   class: 'Token',    // Default
 //   subClass: '',  // Only applies to RWAs
 //   version: '',
@@ -650,61 +650,61 @@ export const yakklStoredObjects = [
 
 // export let yakklAssetKeys: YakklAssetKey[] = [
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "Token",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "NFT",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "RWA",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Polygon", 
+//     name: "Polygon",
 //     class: "Token",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Polygon", 
+//     name: "Polygon",
 //     class: "NFT",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Polygon", 
+//     name: "Polygon",
 //     class: "RWA",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Bitcoin", 
+//     name: "Bitcoin",
 //     class: "Token",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Optimism", 
+//     name: "Optimism",
 //     class: "Token",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Optimism", 
+//     name: "Optimism",
 //     class: "NFT",
 //     subClass: "",
 //     version: '',
 //   },
 //   {
-//     name: "Optimism", 
+//     name: "Optimism",
 //     class: "RWA",
 //     subClass: "",
 //     version: '',
@@ -714,7 +714,7 @@ export const yakklStoredObjects = [
 
 // export let yakklAsset: YakklAsset = {
 //   name: 'Ethereum', // This should be unique when combined with 'class'
-//   class: 'Token',   // Asset class such as 'Tokens', 'NFTs', 'RWA', ... 
+//   class: 'Token',   // Asset class such as 'Tokens', 'NFTs', 'RWA', ...
 //   subClass: '',  // Mainly applies to RWA such as deeds, titles, ...
 //   description: 'Ethereum crypto',
 //   status: 'enabled',
@@ -740,22 +740,22 @@ export const yakklStoredObjects = [
 // Examples of assets
 // export let yakklAssets: YakklAsset[] = [
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "Token",
-//     subClass: "", 
+//     subClass: "",
 //     description: "Ethereum crypto",
 //     status: "enabled",
 //     card: "ethereum-background.png",
 //     icon: "/images/ethereum.svg",
 //     symbol: "ETH",
-//     decimals: 18, 
+//     decimals: 18,
 //     network: {
-//       name: "Ethereum", 
+//       name: "Ethereum",
 //       symbol: "ETH",
 //       icon: "/images/ethereum.svg",
 //       rpcUrls: [],
 //       types: [
-//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"}, 
+//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"},
 //         {type: "testnet", release: "Test", name: "Sepolia", chainId: "0xaa36a7"}
 //       ],
 //       explorer: "https://etherscan.io",
@@ -763,22 +763,22 @@ export const yakklStoredObjects = [
 //     version: '',
 //   },
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "NFT",
-//     subClass: "", 
+//     subClass: "",
 //     description: "Ethereum NFT",
 //     status: "enabled",
 //     card: "ethereum-background.png",
 //     icon: "/images/ethereum.svg",
 //     symbol: "ETH",
-//     decimals: 18, 
+//     decimals: 18,
 //     network: {
-//       name: "Ethereum", 
+//       name: "Ethereum",
 //       symbol: "ETH",
 //       icon: "/images/ethereum.svg",
 //       rpcUrls: [],
 //       types: [
-//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"}, 
+//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"},
 //         {type: "testnet", release: "Test", name: "Sepolia", chainId: "0xaa36a7"}
 //       ],
 //       explorer: "https://etherscan.io",
@@ -786,22 +786,22 @@ export const yakklStoredObjects = [
 //     version: '',
 //   },
 //   {
-//     name: "Ethereum", 
+//     name: "Ethereum",
 //     class: "RWA",
-//     subClass: "", 
+//     subClass: "",
 //     description: "Ethereum RWA (Real World Asset)",
 //     status: "enabled",
 //     icon: "/images/ethereum.svg",
 //     card: "ethereum-background.png",
 //     symbol: "ETH",
-//     decimals: 18, 
+//     decimals: 18,
 //     network: {
-//       name: "Ethereum", 
+//       name: "Ethereum",
 //       symbol: "ETH",
 //       icon: "/images/ethereum.svg",
 //       rpcUrls: [],
 //       types: [
-//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"}, 
+//         {type: "mainnet", release: "Production", name: "Mainnet", chainId: "0x1"},
 //         {type: "testnet", release: "Test", name: "Sepolia", chainId: "0xaa36a7"}
 //       ],
 //       explorer: "https://etherscan.io",
@@ -836,16 +836,16 @@ export const yakklStoredObjects = [
 //   idConfirmed: false,
 //   idDocsVerified: false,
 //   documents: [],  // {id: 'userId', type: 'passport', fileName: '', created: '', expires: '', updated: '', store: ''}
-//   taxId: '', 
-//   taxCountry: '', 
+//   taxId: '',
+//   taxCountry: '',
 //   proofOfAddress: false,
-//   primaryPhone: {    
+//   primaryPhone: {
 //     country: '',
 //     number: '',
 //     type: '',
 //     sms: false  // true/false
 //   },
-//   primaryAddress: {  
+//   primaryAddress: {
 //     add1: '',
 //     add2: '',
 //     city: '',
@@ -858,7 +858,7 @@ export const yakklStoredObjects = [
 
 
 /////////////////////////
-// IMPORTANT: EVERYWHERE there is 'id': in the data. Wait to install initial default data UNTIL AFTER the registration so that 
+// IMPORTANT: EVERYWHERE there is 'id': in the data. Wait to install initial default data UNTIL AFTER the registration so that
 //  we have a valid unique ID
 /////////////////////////
 
@@ -876,7 +876,7 @@ export const yakklStoredObjects = [
 //     }, // currently the only one but it can easily be multi-profile
 //     email: '', // added in 0.33.4
 //     registered: yakklRegisteredData,  // This will unlock certain features - This value can be '' or 'Standard', 'Premium', 'Ultra', 'Enterprise'
-//     kyc: yakklKYC, // KYC (institution) - not currently used 
+//     kyc: yakklKYC, // KYC (institution) - not currently used
 //     digest: '',
 //     pincode: '', // Encrypted pincode
 //     sig: '',
@@ -997,7 +997,7 @@ export const yakklStoredObjects = [
 // 'rotationDate' - The date of next required password change. IMPORTANT - data will be encrypted off of new password
 // 'passKey' - Additional security code (i.e., pin code or phrase)
 // 'passKeyHints' - Array of objects {question: "", answer: ""}. The user can create their own questions but must have a minimum of 3
-// 'mfaType' - If MFA is used above then the valid type of communication of the secondary authtentication. 
+// 'mfaType' - If MFA is used above then the valid type of communication of the secondary authtentication.
 //      SMS - Text message a code
 //      KEY - Key device such as secure key connected via USB (similar to hardware wallets)
 //      APP - Authentication app such as Google Authenticator or Microsoft Authenticator
@@ -1007,16 +1007,16 @@ export const yakklStoredObjects = [
 //// 'featureVersion' - 'open' is default representing opensource version and 'advanced' is for advanced paid features
 // 'installDate' - The original date the user installed YAKKL. If they removed it and installed it again later then the later date
 // 'acceptDate' - Date the user clicked on accept for user data cookie like info
-// 'upgradeDate' - Date the user upgraded 
+// 'upgradeDate' - Date the user upgraded
 
 // Default - User related data that must be encrypted
 // Password is used as part of the encryption key. The encrypted version is maintained
 // if the user uses the "backup" option this can help BUT we may need to maintain a hashed
-// version 
+// version
 
 
 // Singles or lists above... (already exported above)
-// profile 
+// profile
 // yakklSettings
 // yakklPreferences
 // yakklSecurity

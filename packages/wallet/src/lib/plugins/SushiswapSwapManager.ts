@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // SushiSwapManager.ts
 import type { AbstractBlockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
 import { SwapManager } from './SwapManager';
-import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest, SwapToken } from '$lib/common/interfaces';
+import type { BaseTransaction, SwapPriceData, TransactionResponse, SwapParams, PoolInfoData, TransactionRequest, SwapToken, TransactionReceipt } from '$lib/common/interfaces';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import { YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
 import type { AbstractContract } from '$plugins/Contract';
 import type { Token } from '$plugins/Token';
 import { EVMToken } from './tokens/evm/EVMToken';
 import { ADDRESSES } from './contracts/evm/constants-evm';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 const SUSHISWAP_ROUTER_ABI = [
   'function getAmountsOut(uint amountIn, address[] memory path) public view returns (uint[] memory amounts)',
@@ -29,6 +30,17 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
   ) {
     super( blockchain, provider, initialFeeBasisPoints );
     this.router = blockchain.createContract( routerAddress, SUSHISWAP_ROUTER_ABI );
+  }
+
+  async estimateSwapGas(swapRouterAddress: string, swapParams: SwapParams): Promise<bigint> {
+    return 0n;
+  }
+
+  approveToken( token: Token, amount: string ): Promise<TransactionReceipt> {
+    throw new Error( 'Method not implemented.' );
+  }
+  checkAllowance( token: Token, fundingAddress: string ): Promise<bigint> {
+    throw new Error( 'Method not implemented.' );
   }
 
   async fetchTokenList(): Promise<SwapToken[]> {
@@ -55,12 +67,12 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const path = [ tokenIn.address, tokenOut.address ];
     const pairAddress = await this.getPairAddress( tokenIn.address, tokenOut.address );
 
-    return pairAddress !== ethers.ZeroAddress;
+    return pairAddress !== ethersv6.ZeroAddress;
   }
-  
+
   getRouterAddress(): string | null {
     if ( !this.router ) return null;
-    return this.router.address;
+    return ''; //this.router.address;
   }
 
   private async getWETHToken(): Promise<Token> {
@@ -191,7 +203,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     // Get pair address from SushiSwap factory
     const pairAddress = await this.getPairAddress( actualTokenA.address, actualTokenB.address );
 
-    if ( pairAddress === ethers.ZeroAddress ) {
+    if ( pairAddress === ethersv6.ZeroAddress ) {
       throw new Error( 'Pool does not exist' );
     }
 
@@ -260,7 +272,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
 
       const gasEstimate = await this.provider.estimateGas( {
         from: await signer.getAddress(),
-        to: this.router.address,
+        to: '',//this.router.address,
         data,
         value: tokenIn.isNative ? amountIn : 0,
         chainId: this.provider.getChainId()
@@ -270,7 +282,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     }
 
     return {
-      to: this.router.address,
+      to: '',//this.router.address,
       data,
       value: tokenIn.isNative ? amountIn : 0,
       from: await this.provider.getSigner()!.getAddress(),
@@ -306,8 +318,8 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     const priceA = await this.getTokenUSDPrice( tokenA );
     const priceB = await this.getTokenUSDPrice( tokenB );
 
-    const valueA = Number( ethers.formatUnits( reserveA.toString(), tokenA.decimals ) ) * priceA;
-    const valueB = Number( ethers.formatUnits( reserveB.toString(), tokenB.decimals ) ) * priceB;
+    const valueA = Number( ethersv6.formatUnits( reserveA.toString(), tokenA.decimals ) ) * priceA;
+    const valueB = Number( ethersv6.formatUnits( reserveB.toString(), tokenB.decimals ) ) * priceB;
 
     return valueA + valueB;
   }
@@ -341,28 +353,39 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
     );
   }
 
-  async distributeFeeManually(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async executeFullSwap( params: SwapParams ): Promise<[ TransactionReceipt, TransactionReceipt ]> {
+    throw new Error( "Method not implemented." );
+  }
+
+  async distributeFee(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tokenOut: Token,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     feeAmount: BigNumberish,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeRecipient: string
-  ): Promise<TransactionResponse> {
+    feeRecipient: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    gasLimit: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    maxPriorityFeePerGas: BigNumberish,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    maxFeePerGas: BigNumberish
+  ): Promise<TransactionReceipt> {
     throw new Error("Method not implemented.");
   }
 
-  async distributeFeeThroughSmartContract(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    tokenOut: Token,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeAmount: BigNumberish,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    feeRecipient: string
-  ): Promise<TransactionResponse> {
-    throw new Error("Method not implemented.");
-    
-  }
+  // async distributeFeeThroughSmartContract(
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   tokenOut: Token,
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   feeAmount: BigNumberish,
+  //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   feeRecipient: string
+  // ): Promise<TransactionResponse> {
+  //   throw new Error("Method not implemented.");
+
+  // }
 }
 
 
@@ -412,7 +435,7 @@ export class SushiSwapManager<T extends BaseTransaction> extends SwapManager {
 //     if( !tokenIn || !tokenOut || !amountIn ) {
 //       throw new Error( 'Invalid token or amount' );
 //     }
-    
+
 //     const path = [ tokenIn.address, tokenOut.address ];
 //     const amounts = await this.router.call( 'getAmountsOut', amountIn, path );
 //     const amountOut = amounts[ 1 ];

@@ -15,13 +15,17 @@
   import CommingSoon from '$lib/components/ComingSoon.svelte';
 	import { onMount } from 'svelte';
 
-  export let id = "header";
-  export let containerWidth = DEFAULT_POPUP_WIDTH; // Default but IS changed via properties on <Header ...>
+  interface Props {
+    id?: string;
+    containerWidth?: any; // Default but IS changed via properties on <Header ...>
+  }
+
+  let { id = "header", containerWidth = DEFAULT_POPUP_WIDTH }: Props = $props();
 
   let currentlySelected: YakklCurrentlySelected;
-  let yakklMiscStore: string | null = getMiscStore();
-  let showComingSoon = false;
-  let showInfo = false;
+  let yakklMiscStore: string | null = $state(getMiscStore());
+  let showComingSoon = $state(false);
+  let showInfo = $state(false);
 
   let address: string;
   let imageSRC: string;
@@ -57,7 +61,7 @@
     } catch (error) {
       console.log(error);
     }
-  } 
+  }
 
 </script>
 
@@ -69,10 +73,11 @@
   <!-- id="{id}" -->
   <nav id="{id}" class="print:hidden visible relative top-0 navbar navbar-expand-sm py-0 flex items-center w-full justify-between">
 
+    <!-- svelte-ignore a11y_consider_explicit_label -->
     <a data-bs-toggle="offcanvas" href="#offcanvasSystemSettings" role="button" aria-controls="offcanvasSystemSettings">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100 hover:fill-gray-500">
         <path fill-rule="evenodd" d="M3 5.25a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 5.25zm0 4.5A.75.75 0 013.75 9h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9.75zm0 4.5a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4.5a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
-      </svg>    
+      </svg>
     </a>
 
     <div class="flex justify-center py-1 ">
@@ -80,12 +85,12 @@
         <div class="relative">
           <button
             class="px-6 py-2 backdrop-opacity-10 backdrop-invert bg-white/50 text-purple-900 font-bold text-xs uppercase underline leading-tight rounded-full shadow-md hover:bg-white/90 hover:shadow-lg transition duration-150 ease-in-out flex items-center whitespace-nowrap"
-            on:click|preventDefault={handleUniversity}
+            onclick={handleUniversity}
             aria-expanded="false"
             id="yakkluni">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-4 h-4 mr-2 stroke-purple-900">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
-            </svg>  
+            </svg>
             <span id="yakklU">YAKKL® University</span>
           </button>
         </div>
@@ -98,8 +103,8 @@
       <!-- Can add an avatar here ---- <img id="avatar" src="{imageSRC}" class="rounded-full mr-2 w-8 ring-offset-1 ring-2 " alt="Avatar" /> -->
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-8 h-8 font-bold stroke-gray-100 hover:stroke-gray-500">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-      </svg>  
-    </a>    
+      </svg>
+    </a>
   </nav>
 
 </ImageBar>
@@ -132,11 +137,11 @@
       <hr class="my-1">
 
       <div class="min-w-60 shadow-md flex-grow" id="sidenavSecSettings">
-        <ul class="relative px-1">            
+        <ul class="relative px-1">
           <li class="relative" data-bs-dismiss="offcanvas" >
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
-            <div role="button" on:click={() => goto(PATH_LOCK)} 
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <div role="button" onclick={() => goto(PATH_LOCK)}
               class="flex items-center text-sm py-4 px-6 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded text-base-content hover:text-base-300 hover:bg-primary-100/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24"
@@ -185,28 +190,28 @@
         <!-- <div class="pt-1 pb-1 px-3">
           <div class="flex items-center">
             <div class="shrink-0">
-              <img 
+              <img
                 src="{imageSRC}" class="rounded-full w-6 mr-2 ring-offset-1 ring-1" alt="Avatar">
             </div>
           </div>
         </div> -->
         <ul class="relative px-1">
           <!-- <li class="relative" data-bs-dismiss="offcanvas" > -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
-            <!-- <div role="button" on:click={() => goto(PATH_WELCOME)} 
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <!-- <div role="button" on:click={() => goto(PATH_WELCOME)}
               class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-primary hover:bg-base-100/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
-              </svg>                
+              </svg>
               <span>Theme</span>
             </div>
           </li> -->
 
           <!-- <li class="relative" data-bs-dismiss="offcanvas" > -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
             <!-- <div role="button" on:click={() => {showComingSoon = true}}
               class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
@@ -220,9 +225,9 @@
           </li> -->
 
           <li class="relative" data-bs-dismiss="offcanvas" >
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
-            <div role="button" on:click={() => goto(PATH_EXPORT)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden hover:text-base-300 hover:bg-primary/50 text-ellipsis whitespace-nowrap rounded  transition duration-300 ease-in-out"
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <div role="button" onclick={() => goto(PATH_EXPORT)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden hover:text-base-300 hover:bg-primary/50 text-ellipsis whitespace-nowrap rounded  transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -231,9 +236,9 @@
             </div>
           </li>
           <li class="relative" data-bs-dismiss="offcanvas" >
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
-            <div role="button" on:click={() => goto(PATH_IMPORT_PRIVATEKEY)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out"
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <div role="button" onclick={() => goto(PATH_IMPORT_PRIVATEKEY)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -243,8 +248,8 @@
           </li>
           <!-- <li class="relative" data-bs-dismiss="offcanvas" > -->
             <!-- <a class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-primary hover:bg-base-100/50 transition duration-300 ease-in-out" href="/" data-mdb-ripple="true" data-mdb-ripple-color="primary"> -->
-              <!-- svelte-ignore a11y-interactive-supports-focus -->
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y_interactive_supports_focus -->
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
               <!-- <div role="button" on:click={() => goto(PATH_ACCOUNTS)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-primary hover:bg-base-100/50 transition duration-300 ease-in-out"
                 data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24"
@@ -262,9 +267,9 @@
 
         <ul class="relative px-1">
           <li class="relative" data-bs-dismiss="offcanvas" >
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-interactive-supports-focus -->
-            <div role="button" on:click={() => goto(PATH_LOGOUT)} class="flex items-center text-sm py-4 px-6 h-10 text-base-content text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out" data-mdb-ripple="true" data-mdb-ripple-color="primary">
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_interactive_supports_focus -->
+            <div role="button" onclick={() => goto(PATH_LOGOUT)} class="flex items-center text-sm py-4 px-6 h-10 text-base-content text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out" data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>

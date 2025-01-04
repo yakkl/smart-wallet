@@ -3,17 +3,17 @@
   import { page } from '$app/stores';
   import { YAKKL_DAPP } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
-  
+
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  
+
   type RuntimePort = Runtime.Port | undefined;
 
   let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
-  let message: string;
+  let message: string = $state();
   let method: string;
   let port: RuntimePort;
   let requestId: string;
@@ -58,7 +58,7 @@
 
 function handleReject() {
   try {
-    if (port) port.postMessage({method: method, response: {type: 'error', data: {code: 4001, message: 'User rejected the request. User issue!'}}, requestData: ''}); 
+    if (port) port.postMessage({method: method, response: {type: 'error', data: {code: 4001, message: 'User rejected the request. User issue!'}}, requestData: ''});
     // If we call logout then the default process would be to update currentlyselected and we don't want any changes from dapp related activities. We could send an indicator and bypass
     if (browserSvelte) {
       browser_ext.action.setIcon({path: "/images/logoBullLock48x48.png"}); // Just incase login changed it
@@ -94,15 +94,15 @@ function handleReject() {
 
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
-      <button 
+      <button
         type="submit"
-        on:click|preventDefault={() => handleReject()}
+        onclick={() => handleReject()}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Close">
         Close
-      </button>      
+      </button>
     </div>
-  </div>   
-  
+  </div>
+
 </div>
 

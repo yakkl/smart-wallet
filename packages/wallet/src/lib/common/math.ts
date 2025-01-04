@@ -6,7 +6,9 @@
 import { makeError } from '$lib/common/errors';
 import { addHexPrefix, hexlify, isBytesLike, stripHexPrefix } from '$lib/common/misc';
 import type { BytesLike, } from '$lib/common/types';
-import type { BigNumberish, Numeric } from '$lib/common/bignumber';
+import { BigNumber, type BigNumberish, type Numeric } from '$lib/common/bignumber';
+import { number } from 'yup';
+import { debug_log } from './debug-error';
 
 // TODO: Some of the things in this file are not used in the project. Remove them if they are not needed or out of date.
 
@@ -515,6 +517,9 @@ export function getBigInt(value: BigNumberish, name?: string): bigint {
         if (value[0] === "-" && value[1] !== "-") {
           return -BigInt(value.substring(1));
         }
+        if (value === "0" || value === "0.0" || value === "0.00") {
+          return 0n;
+        }
         return BigInt(value);
       default:
         throw new Error("invalid BigNumberish value");
@@ -565,7 +570,7 @@ export function getUint(value: BigNumberish, name?: string): bigint {
  * @param {BigNumberish | Uint8Array} value - The value to convert
  * @returns {bigint} The converted BigInt
  */
-export function toBigInt(value: BigNumberish | Uint8Array): bigint {
+export function toBigInt(value: BigNumberish | Uint8Array, decimals?: number): bigint {
   if (value instanceof Uint8Array) {
     let result = "0x0";
     for (const v of value) {
@@ -575,7 +580,71 @@ export function toBigInt(value: BigNumberish | Uint8Array): bigint {
     return BigInt(result);
   }
 
+  if (typeof value === 'number') {
+    if (decimals !== undefined) return numberToBigInt(value, decimals);
+    // debug_log("Decimals must be specified for a number input.");
+  }
+
+  if (typeof value === 'string') {
+    if (decimals !== undefined) return stringToBigInt(value, decimals);
+    //debug_log("Decimals must be specified for a string input.");
+  }
+
   return getBigInt(value);
+}
+
+export function stringToBigInt(value: string, decimals: number = 18): bigint {
+  if (!value || isNaN(Number(value))) {
+    debug_log(`Invalid input: "${value}" is not a valid number string.`);
+    return 0n;
+  }
+
+  // Split into integer and fractional parts
+  const [integerPart, fractionalPart = ""] = value.split(".");
+
+  // Ensure fractional part doesn't exceed the specified decimals
+  const paddedFractional = fractionalPart.padEnd(decimals, "0").slice(0, decimals);
+
+  // Combine integer and fractional parts
+  const combined = integerPart + paddedFractional;
+
+  return BigInt(combined);
+}
+
+export function numberToBigInt(value: number, decimals: number = 18): bigint {
+  if (isNaN(value) || decimals < 0) {
+    debug_log('Invalid input: amount must be a number, and decimals must be non-negative');
+    return 0n;
+  }
+  const scale = Math.pow(10, decimals); // Scale factor
+  const scaledValue = Math.round(value * scale); // Scale and round
+  return BigInt(scaledValue);
+}
+
+// Safe conversion to bigint with comprehensive type handling
+export function safeConvertToBigInt( value: BigNumberish | null | undefined ): bigint | undefined {
+  try {
+    // Handle null or undefined
+    if ( value === null || value === undefined ) return undefined;
+
+    // Check if value is already a bigint
+    if ( typeof value === 'bigint' ) return value;
+
+    // Handle BigNumber type
+    if ( value instanceof BigNumber ) {
+      return BigInt( value.toString() );
+    }
+
+    // Handle object with _hex property (ethers BigNumber-like)
+    if ( typeof value === 'object' && value !== null && '_hex' in value ) {
+      return BigInt( ( value as { _hex: string; } )._hex );
+    }
+
+    // Try to convert using existing toBigInt
+    return toBigInt( value );
+  } catch {
+    return 0n;
+  }
 }
 
 /**

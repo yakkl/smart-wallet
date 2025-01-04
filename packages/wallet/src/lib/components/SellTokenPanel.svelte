@@ -3,157 +3,157 @@
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
-  import { ethers } from 'ethers';
   import { debounce } from 'lodash-es';
-  import { toBigInt } from '$lib/common';
+  import { ethers as ethersv6 } from 'ethers-v6';
+  import { convertTokenToUsd, convertUsdToTokenAmount, toBigInt } from '$lib/common';
+  import ToggleSwitch from './ToggleSwitch.svelte';
+  import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
 
-  // Component props
-  export let tokens: SwapToken[] = [];
-  export let disabled = false;
-  export let insufficientBalance = false;
-  export let balance = '0';
-  export let resetValues = false;
-  export let swapPriceDataStore: Writable<SwapPriceData>;
-  export let onTokenSelect: (token: SwapToken) => void;
-  export let onAmountChange: (amount: string) => void;
-
-  // Reactive store value
-  let swapPriceData: SwapPriceData;
-  $: { 
-    swapPriceData = $swapPriceDataStore;
+  interface Props {
+    disabled?: boolean;
+    resetValues?: boolean;
+    insufficientBalance?: boolean;
+    balance?: string;
+    swapPriceDataStore: Writable<SwapPriceData>;
+    onTokenSelect: (token: SwapToken) => void;
+    onAmountChange: (amount: string) => void;
   }
 
-  // Input state management
-  let userInput = ''; // Temporary user input
-  let formattedAmount = ''; // Formatted display amount
+  let {
+    disabled = false,
+    resetValues = $bindable(false),
+    insufficientBalance = false,
+    balance = '0',
+    swapPriceDataStore,
+    onTokenSelect,
+    onAmountChange,
+  }: Props = $props();
 
-  // Reset handling
-  $: {
+  let userInput = $state('');
+  let formattedAmount = $state('');
+
+  // Ensure resetValues resets inputs
+  $effect(() => {
     if (resetValues) {
       userInput = '';
       formattedAmount = '';
       resetValues = false;
     }
-  }
+  });
 
-  // Amount formatting from store updates
-  $: {
-    if (!userInput && toBigInt(swapPriceData.amountIn) > 0n) {
-      formattedAmount = formatAmount(
-        toBigInt(swapPriceData.amountIn),
-        swapPriceData.tokenIn.decimals
-      );
-    } else {
-      formattedAmount = userInput;
-    }
-  }
+  // Calculate formattedAmount dynamically
+  $effect(() => {
+    const tokenAmount = ethersv6.formatUnits(toBigInt($swapPriceDataStore.amountIn), $swapPriceDataStore.tokenIn.decimals);
+    const usdAmount = $swapPriceDataStore.marketPriceIn > 0
+      ? convertTokenToUsd(Number(tokenAmount), $swapPriceDataStore.marketPriceIn)
+      : 0;
 
-  // Amount formatting utility
-  function formatAmount(amount: bigint, decimals: number): string {
-    if (amount === 0n) return '';
-    
-    const formattedValue = ethers.formatUnits(amount, decimals);
-    
-    // Remove trailing zeros after decimal point
-    const [integerPart, decimalPart] = formattedValue.split('.');
-    if (!decimalPart) return integerPart;
-    
-    const trimmedDecimal = decimalPart.replace(/0+$/, '');
-    return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
-  }
+    formattedAmount = $isUsdModeStore ? usdAmount.toFixed(2) : tokenAmount;
+    userInput = '';
+  });
 
   // Debounced amount change handler
   const debouncedAmountChange = debounce((value: string) => {
     onAmountChange(value);
   }, 300);
 
-  // Input handling
+  // Handle user input changes
   function handleAmountInput(event: Event) {
     const input = event.target as HTMLInputElement;
     let value = input.value;
-  
-    // Sanitize input
+
+    // Allow only valid numbers
     value = value.replace(/[^0-9.]/g, '');
-    
-    // Ensure only one decimal point
+
+    // Handle decimals
     const parts = value.split('.');
-    if (parts.length > 2) {
-      value = `${parts[0]}.${parts.slice(1).join('')}`;
-    }
-    
-    // Limit to 6 decimal places
-    if (parts[1] && parts[1].length > 6) {
-      value = `${parts[0]}.${parts[1].slice(0, 6)}`;
+    if (parts.length > 2) value = `${parts[0]}.${parts.slice(1).join('')}`;
+
+    // Limit decimal precision
+    if ($isUsdModeStore && parts[1]?.length > 2) {
+      value = `${parts[0]}.${parts[1].slice(0, 2)}`;
+    } else if (!$isUsdModeStore) {
+      const tokenDecimals = $swapPriceDataStore.tokenIn.decimals || 18;
+      if (parts[1]?.length > tokenDecimals) {
+        value = `${parts[0]}.${parts[1].slice(0, tokenDecimals)}`;
+      }
     }
 
     userInput = value;
-    
-    // Clear if empty
     if (value === '' || value === '.') {
-      userInput = '';
       formattedAmount = '';
-      onAmountChange('');
-      return;
-    }
-    
-    userInput = value;
-    formattedAmount = value; 
+      debouncedAmountChange('');
+    } else {
+      formattedAmount = value;
 
-    // Trigger change only for meaningful input
-    debouncedAmountChange(value);
+      if ($isUsdModeStore) {
+        const marketPrice = $swapPriceDataStore.marketPriceIn || 0;
+        if (marketPrice > 0) {
+          const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenIn.decimals);
+          debouncedAmountChange(tokenAmount.toString());
+        } else {
+          debouncedAmountChange('');
+        }
+      } else {
+        debouncedAmountChange(value);
+      }
+    }
   }
 
-  // Blur handler
   function handleBlur() {
-    // Only clear if the input is actually empty
-    if (!userInput || userInput === '' || userInput === '.') {
+    if (!userInput || userInput === '.') {
       userInput = '';
-      // Only clear formattedAmount if there's no valid stored amount
-      if (!formattedAmount || formattedAmount === '0') {
-        formattedAmount = '';
-      }
+      formattedAmount = '';
     } else {
-      // If there was user input, store it as formatted amount
       formattedAmount = userInput;
     }
   }
 </script>
 
-<div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800 
+<div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800
   {disabled ? ' opacity-50 pointer-events-none' : ''}">
   <div class="flex justify-between items-center">
     <input
       type="text"
       placeholder="0"
       value={userInput || formattedAmount}
-      on:input={handleAmountInput}
-      on:blur={handleBlur}
+      oninput={handleAmountInput}
+      onblur={handleBlur}
       disabled={disabled}
       class="
-        bg-transparent 
-        text-3xl 
-        font-bold 
-        w-1/2 
-        mr-4 
-        focus:outline-none 
-        focus:border-b-2 
+        bg-transparent
+        text-3xl
+        font-bold
+        w-1/2
+        mr-4
+        focus:outline-none
+        focus:border-b-2
         focus:border-blue-500
-        {insufficientBalance 
-          ? 'text-red-500 dark:text-red-400 ' 
+        {insufficientBalance
+          ? 'text-red-500 dark:text-red-400 '
           : 'text-black dark:text-white '}
         {disabled ? 'cursor-not-allowed' : ''}
       "
     />
-    <TokenDropdown 
-      {tokens}
+    <TokenDropdown
       disabled={disabled}
-      selectedToken={swapPriceData.tokenIn}
-      onTokenSelect={onTokenSelect} 
+      selectedToken={$swapPriceDataStore.tokenIn}
+      onTokenSelect={onTokenSelect}
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">
-    <SwapTokenPrice {swapPriceDataStore} type="sell" />
-    <span>Balance: {balance}</span>
+    <div class="flex items-center">
+      <ToggleSwitch
+        value={$isUsdModeStore}
+        labelOn="USD"
+        labelOff="Token"
+        className="bg-purple-300"
+        onChange={(value) => isUsdModeStore.set(value)} />
+    </div>
+    <div class="flex flex-col items-end text-right">
+      <SwapTokenPrice {swapPriceDataStore} type="sell" />
+      <span>Balance: {balance}</span>
+    </div>
   </div>
   {#if insufficientBalance}
     <div class="text-red-500 dark:text-red-400 text-sm mt-1">
@@ -161,3 +161,4 @@
     </div>
   {/if}
 </div>
+

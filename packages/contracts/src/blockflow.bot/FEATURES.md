@@ -1,3 +1,5 @@
+# Features
+
 ## YAKKL.sol Features Review
 
 Based on our previous discussions and the modifications we've made to the YAKKL contract, let's review what has been implemented and what might still be missing:
@@ -32,13 +34,13 @@ Potential Additions or Improvements:
 
 Here's a quick checklist to ensure everything is in place:
 
- - [ ] All roles are correctly defined and assigned
- - [ ] Minting controls are working as intended
- - [ ] Fee calculation and distribution are correctly implemented in FeeManager
- - [ ] Vesting mechanism is thoroughly tested with various scenarios
- - [ ] Blacklist and whitelist functionalities are working correctly
- - [ ] Rate limiting is properly implemented and tested
- - [ ] All security measures (pausable, reentrancy guard, etc.) are in place
- - [ ] All necessary events are emitted for important state changes
+- [ ] All roles are correctly defined and assigned
+- [ ] Minting controls are working as intended
+- [ ] Fee calculation and distribution are correctly implemented in FeeManager
+- [ ] Vesting mechanism is thoroughly tested with various scenarios
+- [ ] Blacklist and whitelist functionalities are working correctly
+- [ ] Rate limiting is properly implemented and tested
+- [ ] All security measures (pausable, reentrancy guard, etc.) are in place
+- [ ] All necessary events are emitted for important state changes
 
 To fully confirm that everything suggested has been implemented, it would be good to do a line-by-line review of the final contract and run comprehensive tests covering all functionalities. If you have any specific areas you'd like to double-check or expand upon, please let me know, and I'd be happy to help further refine the contract.

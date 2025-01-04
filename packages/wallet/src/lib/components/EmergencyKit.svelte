@@ -1,12 +1,12 @@
 <script lang="ts">
   //
-  // NOTE: This for the Bulk Emergency Kit. The single EmergencyKit is only for YakklAccount or yakklPrimaryAccount. 
+  // NOTE: This for the Bulk Emergency Kit. The single EmergencyKit is only for YakklAccount or yakklPrimaryAccount.
   //
 
   import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
-  import { 
-    getProfile, getPreferences, getSettings, getYakklCurrentlySelected, 
-    getYakklContacts, getYakklChats, getYakklAccounts, getYakklPrimaryAccounts, 
+  import {
+    getProfile, getPreferences, getSettings, getYakklCurrentlySelected,
+    getYakklContacts, getYakklChats, getYakklAccounts, getYakklPrimaryAccounts,
     getYakklWatchList, getYakklBlockedList, getYakklConnectedDomains, getMiscStore,
     setProfileStorage, setPreferencesStorage, setSettingsStorage, setYakklCurrentlySelectedStorage,
     setYakklContactsStorage, setYakklChatsStorage, setYakklAccountsStorage, setYakklPrimaryAccountsStorage,
@@ -17,16 +17,20 @@
   } from '$lib/common/stores';
   import type { EmergencyKitMetaData } from '$lib/common';
   import Confirmation from './Confirmation.svelte';
-	
-  export let mode: 'import' | 'export' = 'export';
-  export let onComplete: (success: boolean, message: string) => void;
-  export let onCancel: () => void = () => {};
 
-  let file: File | null = null; // File name to export to or import from
-  let metadata: EmergencyKitMetaData | null = null;
-  let loading = false;
-  let error = '';
-  let showConfirmation = false;
+  interface Props {
+    mode?: 'import' | 'export';
+    onComplete: (success: boolean, message: string) => void;
+    onCancel?: () => void;
+  }
+
+  let { mode = 'export', onComplete, onCancel = () => {} }: Props = $props();
+
+  let file: File | null = $state(null); // File name to export to or import from
+  let metadata: EmergencyKitMetaData | null = $state(null);
+  let loading = $state(false);
+  let error = $state('');
+  let showConfirmation = $state(false);
 
   async function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -36,7 +40,7 @@
         metadata = await EmergencyKitManager.readBulkEmergencyKitMetadata(file);
       } catch (err) {
         error = 'Failed to read emergency kit metadata';
-        console.error(err);
+        console.log(err);
       }
     }
   }
@@ -81,7 +85,7 @@
       onComplete(true, 'Emergency kit exported successfully as ' + fileName);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to export emergency kit';
-      console.error(err);
+      console.log(err);
       onComplete(false, error);
     } finally {
       loading = false;
@@ -103,14 +107,14 @@
     try {
       const passwordOrSaltedKey = getMiscStore();
       const { newData, existingData } = await EmergencyKitManager.importBulkEmergencyKit(file!, passwordOrSaltedKey);
-      
+
       // Update local storage and Svelte stores
       await updateStorageAndStores(newData, existingData);
 
       onComplete(true, `Emergency kit imported successfully for: ${file!.name}`);
     } catch (err) {
       error = `Failed to import emergency kit for: ${file!.name}`;
-      console.error(err);
+      console.log(err);
       onComplete(false, `Failed to import emergency kit for: ${file!.name}`);
     } finally {
       loading = false;
@@ -135,6 +139,9 @@
     for (const { key, setStorage, store } of updateFunctions) {
       const data = newData[key] || existingData[key];
       if (data) {
+        if ( key === 'yakklPreferencesStore') {
+          data['version'] = existingData[key]['version']; // Keep the latest version number metadata
+        }
         await setStorage(data);
         store.set(data);
       }
@@ -147,13 +154,13 @@
   <h2 class="text-2xl font-bold mb-4">{mode === 'export' ? 'Export' : 'Import'} Emergency Kit</h2>
 
   {#if mode === 'export'}
-    <button on:click={handleExport} class="bg-blue-500 text-white px-4 py-2 rounded" disabled={loading}>
+    <button onclick={handleExport} class="bg-blue-500 text-white px-4 py-2 rounded" disabled={loading}>
       {loading ? 'Exporting...' : 'Export Emergency Kit'}
     </button>
   {:else}
     <div class="mb-4">
       <label for="importFile" class="block mb-2">Select File to Import:</label>
-      <input type="file" id="importFile" on:change={handleFileSelect} accept=".json" class="w-full p-2 border rounded" />
+      <input type="file" id="importFile" onchange={handleFileSelect} accept=".json" class="w-full p-2 border rounded" />
     </div>
     {#if metadata}
       <div class="mb-4">
@@ -165,10 +172,10 @@
         <p>Files: {metadata.files}</p>
       </div>
     {/if}
-    <button on:click={handleImport} class="bg-green-500 text-white px-4 py-2 rounded" disabled={loading || !file}>
+    <button onclick={handleImport} class="bg-green-500 text-white px-4 py-2 rounded" disabled={loading || !file}>
       {loading ? 'Importing...' : 'Import'}
     </button>
-    <button on:click={onCancel} class="bg-red-400 text-white px-4 py-2 rounded" >
+    <button onclick={onCancel} class="bg-red-400 text-white px-4 py-2 rounded" >
       Cancel
     </button>
   {/if}

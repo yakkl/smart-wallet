@@ -1,7 +1,7 @@
 <!-- ImportPhrase.svelte -->
 <script lang="ts">
   import { browser as browserSvelte } from '$app/environment';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import { onMount } from 'svelte';
@@ -16,17 +16,26 @@
   import PincodeVerify from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
 
-  export let show = false;
-  export let className = 'text-gray-600 z-[999]';
-  export let onComplete: () => void = () => {showPincodeModal = false; show = false;}; // May want to add parameters to show what imported but not currently needed
-  export let onCancel: () => void = () => {showPincodeModal = false; show = false;};
+  interface Props {
+    show?: boolean;
+    className?: string;
+    onComplete?: () => void; // May want to add parameters to show what imported but not currently needed
+    onCancel?: () => void;
+  }
+
+  let {
+    show = $bindable(false),
+    className = 'text-gray-600 z-[999]',
+    onComplete = () => {showPincodeModal = false; show = false;},
+    onCancel = $bindable(() => {showPincodeModal = false; show = false;})
+  }: Props = $props();
 
   let currentlySelected: YakklCurrentlySelected;
-  let error = '';
+  let error = $state('');
   let elements: NodeListOf<HTMLInputElement>;
-  let selected = '24';
-  let subAccounts = true;
-  let showPincodeModal = false;
+  let selected = $state('24');
+  let subAccounts = $state(true);
+  let showPincodeModal = $state(false);
   let index = 0;
 
   async function processSecretPhraseRecovery(secretPhrase: string) {
@@ -44,7 +53,7 @@
             const dPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/${derivedIndex}`;
 
             const randomMnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
-            const ethWallet = ethers.HDNodeWallet.fromPhrase(randomMnemonic, dPath);
+            const ethWallet = ethersv6.HDNodeWallet.fromPhrase(randomMnemonic, dPath);
             const wallet = getWallet(ethWallet.privateKey);
 
             const balance = await wallet.getBalance();
@@ -153,8 +162,8 @@
         index = (profile.data as ProfileData).accountIndex ?? 0;
         let derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/0`;
 
-        const mnemonicObject = ethers.Mnemonic.fromPhrase(mnemonic);
-        const ethWallet = ethers.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
+        const mnemonicObject = ethersv6.Mnemonic.fromPhrase(mnemonic);
+        const ethWallet = ethersv6.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
 
         if (!ethWallet) {
           throw "The Ethereum Wallet (Portfolio Account) was not able to be created. Please try again.";
@@ -437,21 +446,25 @@
     });
   }
 
+  // Custom paste logic - Always becareful with custom paste logic and make sure not to do it on global basis unless that is desired.
   function handlePaste(e: ClipboardEvent) {
-    e.preventDefault();
-    if (e.clipboardData) {
-      const data = e.clipboardData.getData('Text');
-      const words = data.split(' ');
+    const data = e.clipboardData?.getData('Text');
+    const words = data?.split(' ');
+
+    if (words && words.length > 1) {
+      // If multiple words are being pasted, prevent default and handle custom logic
+      e.preventDefault();
       const nodes = document.querySelectorAll<HTMLInputElement>('[data-id]');
       nodes.forEach((node, index) => {
         node.value = words[index] || '';
       });
     }
+    // Otherwise, let the default paste behavior happen
   }
 
   onMount(() => {
     hideShowWords();
-    document.addEventListener('paste', handlePaste);
+    // document.addEventListener('paste', handlePaste);
   });
 
   function handleSubaccounts() {
@@ -464,20 +477,20 @@
   }
 </script>
 
-<PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
+<PincodeVerify bind:show={showPincodeModal} onVerified={verifyPincode} />
 
 <div class="relative {className}">
-  <Modal bind:show={show} bind:onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>
+  <Modal bind:show={show} onCancel={onCancel} title="Import - Secret Recovery Phrase" className={className}>
     <div class="p-6 text-gray-700 dark:text-gray-200">
       <p class="text-sm text-red-500 mb-4">
         Please be careful! <strong>This Secret Recovery Phrase is important!</strong>
         A bad actor could take the content of your wallet if they have access to your Private Key or Secret Recovery Phrase!
         This process will restore all of the accounts that were created by YAKKL only! If you imported existing private keys from another wallet then you will need to do so again.
       </p>
-      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+      <form onsubmit={handleSubmit} class="space-y-4">
         <div>
           <label for="words" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Secret Recovery Phrase Length</label>
-          <select id="words" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={selected} on:change={hideShowWords}>
+          <select id="words" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" bind:value={selected} onchange={hideShowWords}>
             <option value="12">12 Word Secret Phrase</option>
             <option value="15">15 Word Secret Phrase</option>
             <option value="18">18 Word Secret Phrase</option>
@@ -486,29 +499,29 @@
           </select>
         </div>
         <div>
-          <!-- svelte-ignore a11y-label-has-associated-control -->
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Secret Recovery Phrase Words</label>
           <div class="mt-1 grid grid-cols-2 gap-2">
             {#each Array(parseInt(selected)) as _, index (index)}
               <div class="flex items-center">
                 <span class="w-8 text-sm text-gray-700 dark:text-gray-200">{index + 1}.</span>
-                <input type="password" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" data-id={index + 1} aria-label={`Word ${index + 1}`} on:paste={handlePaste} />
+                <input type="password" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" data-id={index + 1} aria-label={`Word ${index + 1}`} onpaste={handlePaste} />
               </div>
             {/each}
           </div>
         </div>
         <div class="flex items-center">
-          <input type="checkbox" id="showWords" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" on:click={toggleWordsVisibility} />
+          <input type="checkbox" id="showWords" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick={toggleWordsVisibility} />
           <label for="showWords" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Show Secret Recovery Phrase Words</label>
         </div>
         <div class="flex items-center">
-          <input type="checkbox" id="subaccounts" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={subAccounts} on:change={handleSubaccounts} />
+          <input type="checkbox" id="subaccounts" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" bind:checked={subAccounts} onchange={handleSubaccounts} />
           <label for="subaccounts" class="ml-2 block text-sm text-gray-700 dark:text-gray-200">Recover Subportfolio Accounts</label>
         </div>
         <div class="pt-5">
           <div class="flex justify-end space-x-4">
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={onCancel}>Cancel</button>
-            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" on:click={resetForm}>Reset</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={onCancel}>Cancel</button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick={resetForm}>Reset</button>
             <button type="submit" class="rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Import</button>
           </div>
         </div>

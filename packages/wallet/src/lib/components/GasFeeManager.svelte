@@ -7,12 +7,12 @@
   import { Line } from 'svelte-chartjs';
 
   // TODO: Implement the GasFeeManager component to pick from ranges of gas fees
-  
-  let gasEstimate: GasEstimate;
-  let historicalData: HistoricalGasData[];
-  let predictions: GasPrediction[];
-  let customGasPrice: bigint;
-  let customPriorityFee: bigint;
+
+  let gasEstimate: GasEstimate = $state();
+  let historicalData: HistoricalGasData[] = $state();
+  let predictions: GasPrediction[] = $state();
+  let customGasPrice: bigint = $state();
+  let customPriorityFee: bigint = $state();
 
   onMount(async () => {
     await updateGasEstimate();
@@ -45,7 +45,7 @@
     }
   }
 
-  $: chartData = {
+  let chartData = $derived({
   labels: [...historicalData, ...predictions].map(d => new Date(d.timestamp * 1000).toLocaleString()),
   datasets: [
     {
@@ -61,22 +61,22 @@
       tension: 0.1
     }
   ]
-};
+});
 </script>
 
 <div>
   <h2>Gas Fee Manager</h2>
-  <button on:click={updateGasEstimate}>Refresh Gas Estimate</button>
-  
+  <button onclick={updateGasEstimate}>Refresh Gas Estimate</button>
+
   {#if gasEstimate}
   <p>Estimated Gas Limit: {BigNumber.from(gasEstimate.gasLimit).toString()}</p>
   <p>Base Fee: {BigNumber.from(gasEstimate.feeEstimate.baseFee).toString()}</p>
   <p>Priority Fee: {BigNumber.from(gasEstimate.feeEstimate.priorityFee).toString()}</p>
   <p>Total Fee: {BigNumber.from(gasEstimate.feeEstimate.totalFee).toString()}</p>
- 
+
     <input type="number" bind:value={customGasPrice} placeholder="Custom Gas Price" />
     <input type="number" bind:value={customPriorityFee} placeholder="Custom Priority Fee" />
-    <button on:click={applyCustomGasFees}>Apply Custom Fees</button>
+    <button onclick={applyCustomGasFees}>Apply Custom Fees</button>
   {/if}
 
   <h3>Historical and Predicted Gas Fees</h3>

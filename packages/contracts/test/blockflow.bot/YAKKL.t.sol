@@ -103,8 +103,8 @@ contract YAKKLTreasuryTest is Test {
 
     function testAddLiquidity() public {
         uint256 tokenAmount = 1000 * 10**18;
-        uint256 ethAmount = 1 ether;
-        uint24 poolFee = 3000; // 0.3%
+        // uint256 ethAmount = 1 ether;
+        // uint24 poolFee = 3000; // 0.3%
         address pool = address(0x7); // Mock pool address
 
         treasury.addApprovedPool(pool);

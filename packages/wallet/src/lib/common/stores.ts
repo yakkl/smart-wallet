@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import {
 	yakklSettings,
 	profile,
@@ -32,7 +32,11 @@ import {
 	STORAGE_YAKKL_CONNECTED_DOMAINS,
 	STORAGE_YAKKL_CHATS,
 	STORAGE_YAKKL_WALLET_BLOCKCHAINS,
-	STORAGE_YAKKL_WALLET_PROVIDERS
+	STORAGE_YAKKL_WALLET_PROVIDERS,
+  // STORAGE_YAKKL_TOKENS,
+  // STORAGE_YAKKL_TOKENS_CUSTOM,
+  STORAGE_YAKKL_TOKENDATA,
+  STORAGE_YAKKL_TOKENDATA_CUSTOM,
 } from '$lib/common/constants';
 
 import { encryptData, decryptData } from '$lib/common/encryption';
@@ -56,9 +60,10 @@ import type {
 	YakklChat,
 	GasTransStore,
 	ContractData,
+  // TokenStorage,
+  TokenData,
 	// PriceData
 } from '$lib/common/interfaces';
-
 
 import type { Wallet } from '$plugins/Wallet';
 
@@ -128,7 +133,7 @@ export async function verifyEncryption<T extends HasData<any>>(value: T | T[]): 
 // ---------------------------------
 // Svelte memory stores
 
-export const yakklPreferencesStore = writable(yakklPreferences);
+export const yakklPreferencesStore = writable<Preferences>(yakklPreferences);
 export const yakklSettingsStore = writable(yakklSettings);
 export const profileStore = writable(profile);
 export const yakklCurrentlySelectedStore = writable<YakklCurrentlySelected | null>(yakklCurrentlySelected);
@@ -149,6 +154,10 @@ export const yakklContactStore = writable<YakklContact | null>(undefined); // Th
 export const yakklAccountStore = writable<YakklAccount>(undefined); // The single selcted account from the yakklAccountsStore list
 export const yakklWalletProvidersStore = writable<string[]>([]);
 export const yakklWalletBlockchainsStore = writable<string[]>( [] );
+// export const yakklTokenStore = writable<TokenData[]>( [] ); // This is the official list of tokens that we check to see if the user has any positions in
+export const yakklTokenDataStore = writable<TokenData[]>([]);
+export const yakklTokenDataCustomStore = writable<TokenData[]>([]);
+
 // export const yakklPriceStore = writable<PriceData | null>( null );
 
 
@@ -208,6 +217,15 @@ export function storageChange(changes: any) {
 		if (changes.yakklBlockedList) {
 			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
 		}
+    if (changes.yakklTokenDataCustom) {
+			setYakklTokenDataCustomStore(changes.yakklTokenDataCustom.newValue);
+		}
+    if (changes.yakklTokenData) {
+			setYakklTokenDataStore(changes.yakklTokenData.newValue);
+		}
+    // if (changes.yakklTokens) {
+		// 	setYakklTokenStore(changes.yakklTokens.newValue);
+		// }
 	} catch (error) {
 		console.log(error);
 	}
@@ -225,6 +243,9 @@ export async function syncStoresToStorage() {
 		setYakklPrimaryAccountsStore(await getYakklPrimaryAccounts());
 		setYakklContactsStore(await getYakklContacts());
 		setYakklChatsStore(await getYakklChats());
+    // setYakklTokenStore(await getYakklTokens());
+    setYakklTokenDataStore(await getYakklTokenData());
+    setYakklTokenDataCustomStore(await getYakklTokenDataCustom());
 		setYakklConnectedDomainsStore(await getYakklConnectedDomains());
 	} catch (error) {
 		console.log(error);
@@ -282,6 +303,16 @@ export function getYakklPrimaryAccountsStore() {
 
 export function getYakklContactsStore() {
 	const store = get(yakklContactsStore);
+	return store;
+}
+
+// export function getYakklTokenStore() {
+// 	const store = get(yakklTokenStore);
+// 	return store;
+// }
+
+export function getYakklTokenDataStore() {
+	const store = get(yakklTokenDataStore);
 	return store;
 }
 
@@ -420,6 +451,24 @@ export function setYakklBlockedListStore(values: YakklBlocked[]) {
 export function setYakklContactsStore(values: YakklContact[]) {
 	const store = get(yakklContactsStore);
 	yakklContactsStore.set(values);
+	return store;
+}
+
+// export function setYakklTokenStore(values: TokenData[]) {
+// 	const store = get(yakklTokenStore);
+// 	yakklTokenStore.set(values);
+// 	return store;
+// }
+
+export function setYakklTokenDataStore(values: TokenData[]) {
+	const store = get(yakklTokenDataStore);
+	yakklTokenDataStore.set(values);
+	return store;
+}
+
+export function setYakklTokenDataCustomStore(values: TokenData[]) {
+	const store = get(yakklTokenDataCustomStore);
+	yakklTokenDataCustomStore.set(values);
 	return store;
 }
 
@@ -570,18 +619,60 @@ export async function getYakklContacts(): Promise<YakklContact[]> {
   }
 }
 
-export async function getYakklChats(): Promise<YakklChat[]> {
+// export async function getYakklTokens(): Promise<TokenData[]> {
+//   try {
+//     const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENS);
+// 		if (typeof value === 'string') {
+//       // Handle the case where value is a string, which shouldn't happen in this context
+//       throw new Error('Unexpected string value received from local storage');
+//     }
+//     return value || []; // Return an empty array or provide a default value if necessary
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+
+export async function getYakklTokenData(): Promise<TokenData[]> {
   try {
-    let value = await getObjectFromLocalStorage<YakklChat[]>(STORAGE_YAKKL_CHATS);
+    const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENDATA);
 		if (typeof value === 'string') {
       // Handle the case where value is a string, which shouldn't happen in this context
-			value = [];
-			setYakklChatsStorage(value);
-      // throw new Error('Unexpected string value received from local storage');
+      throw new Error('Unexpected string value received from local storage');
     }
     return value || []; // Return an empty array or provide a default value if necessary
   } catch (error) {
     throw error;
+  }
+}
+
+export async function getYakklTokenDataCustom(): Promise<TokenData[]> {
+  try {
+    const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENDATA_CUSTOM);
+		if (typeof value === 'string') {
+      // Handle the case where value is a string, which shouldn't happen in this context
+      throw new Error('Unexpected string value received from local storage');
+    }
+    return value || []; // Return an empty array or provide a default value if necessary
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getYakklChats(): Promise<YakklChat[]> {
+  try {
+    let value = await getObjectFromLocalStorage<YakklChat[]>(STORAGE_YAKKL_CHATS);
+    if (typeof value === 'string') {
+      value = [];
+      setYakklChatsStorage(value);
+    }
+    // Convert object to array if necessary
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      value = Object.values(value);
+    }
+    return value || [];
+  } catch (error) {
+    console.error('Error in getYakklChats:', error);
+    return [];
   }
 }
 
@@ -744,8 +835,38 @@ export async function getYakklPrimaryAccounts(): Promise<YakklPrimaryAccount[]> 
 // Call these storage functions when you need to update both persistent and memory stores
 export async function setYakklContactsStorage(values: YakklContact[]) {
 	try {
-		yakklContactsStore.set(values);
-		const returnValue = await setObjectInLocalStorage('yakklContacts', values);
+		yakklContactsStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklContacts', values );
+		return returnValue;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+// export async function setYakklTokenStorage(values: TokenData[]) {
+// 	try {
+// 		yakklTokenStore.set( values );
+// 		const returnValue = await setObjectInLocalStorage( 'yakklTokens', values );
+// 		return returnValue;
+// 	} catch (error) {
+// 		console.log(error);
+// 	}
+// }
+
+export async function setYakklTokenDataStorage(values: TokenData[]) {
+	try {
+		yakklTokenDataStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklTokenData', values );
+		return returnValue;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+export async function setYakklTokenDataCustomStorage(values: TokenData[]) {
+	try {
+		yakklTokenDataCustomStore.set( values );
+		const returnValue = await setObjectInLocalStorage( 'yakklTokenDataCustom', values );
 		return returnValue;
 	} catch (error) {
 		console.log(error);
@@ -823,7 +944,7 @@ export async function setProfileStorage(values: Profile) {
 	} catch (error) {
 		console.log(error);
     throw new Error("Error in setProfileStorage: " + error);
-    
+
   }
 }
 
@@ -887,5 +1008,26 @@ export async function setYakklPrimaryAccountsStorage(values: YakklPrimaryAccount
 		return returnValue;
 	} catch (error) {
 		console.log(error);
+	}
+}
+
+export async function updateYakklTokenData(updater: (token: TokenData) => TokenData) {
+	try {
+		// Get the current token data from the store
+		const currentData = get(yakklTokenDataStore);
+
+		// Update the token data using the updater function
+		const updatedData = currentData.map((token) => updater(token));
+
+		// Update the store
+		yakklTokenDataStore.set(updatedData);
+
+		// Persist the updated data in local storage
+		const returnValue = await setObjectInLocalStorage('yakklTokenData', updatedData);
+
+		return returnValue;
+	} catch (error) {
+		console.error('Error updating token data:', error);
+		throw error;
 	}
 }

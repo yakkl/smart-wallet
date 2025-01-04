@@ -1,7 +1,7 @@
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 // // UniswapPriceProvider.ts
 // import { debug_log } from '$lib/common/debug';
-// import { ethers } from 'ethers';
+// import { ethers as ethersv6 } from 'ethers-v6';
 // import type { MarketPriceData, PoolInfoData, PriceData, SwapPriceProvider, PriceProvider, SwapPriceData, SwapToken } from '$lib/common/interfaces';
 // import { ADDRESSES } from '$plugins/contracts/evm/constants-evm';
 // import type { Provider } from '$plugins/Provider';
@@ -20,10 +20,10 @@
 // export class UniswapSwapPriceProvider implements SwapPriceProvider {
 //   private providerYakkl: Provider;
 //   private nativePriceProvider: PriceProvider;
-//   private provider: ethers.JsonRpcProvider | undefined;
-//   private factory: ethers.Contract | undefined;
-//   private quoter: ethers.Contract | undefined;
-//   // private pool: ethers.Contract | undefined;
+//   private provider: ethersv6.JsonRpcProvider | undefined;
+//   private factory: ethersv6.Contract | undefined;
+//   private quoter: ethersv6.Contract | undefined;
+//   // private pool: ethersv6.Contract | undefined;
 //   private feeBasisPoints: number;
 
 //   // private initialized: boolean = false;
@@ -46,10 +46,10 @@
 //       }
 
 //       const url = await this.providerYakkl.getProviderURL();
-//       this.provider = new ethers.JsonRpcProvider( url );
+//       this.provider = new ethersv6.JsonRpcProvider( url );
 
-//       this.factory = new ethers.Contract( ADDRESSES.UNISWAP_FACTORY, IUniswapV3FactoryABI.abi, this.provider );
-//       this.quoter = new ethers.Contract( ADDRESSES.UNISWAP_V3_QUOTER, IQuoterV2ABI.abi, this.provider );
+//       this.factory = new ethersv6.Contract( ADDRESSES.UNISWAP_FACTORY, IUniswapV3FactoryABI.abi, this.provider );
+//       this.quoter = new ethersv6.Contract( ADDRESSES.UNISWAP_V3_QUOTER, IQuoterV2ABI.abi, this.provider );
 
 //       // this.initialized = true;
 //     } catch ( error ) {
@@ -125,7 +125,7 @@
   //     }
 
   //     // const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
-  //     // if ( poolAddress === ethers.ZeroAddress ) {
+  //     // if ( poolAddress === ethersv6.ZeroAddress ) {
   //     //   throw new Error( 'Pool does not exist for tier' );
   //     // }
 
@@ -157,7 +157,7 @@
 
   //     debug_log( 'UniswapPriceProvider - getSwapPriceOut - quoteAmount:', quoteAmount, 'sqrtPriceX96After:', sqrtPriceX96After, 'updated price after:', updatedPrice, 'initializedTicksCrossed:', initializedTicksCrossed, 'gasEstimate:', gasEstimate );
 
-      
+
 
 
   //     const priceIn = await this.getMarketPrice( `${ tokenIn.symbol }-USD` );
@@ -171,7 +171,7 @@
 
   //     debug_log( 'UniswapPriceProvider - getSwapPriceOut (end) - priceIn:', priceIn.price, 'priceOut:', priceOut.price );
 
-      
+
 
 
   //     if ( amountOut === 0n ) {
@@ -205,12 +205,12 @@
 
   //     const fAmount = formatEther( feeAmount );
 
-  //     const amountOutDecimal = Number( ethers.formatUnits( amountOutWithFee, tokenOut.decimals ) );
-  //     const amountInDecimal = Number( ethers.formatUnits( amountInBigInt!.toString(), tokenIn.decimals ) );
+  //     const amountOutDecimal = Number( ethersv6.formatUnits( amountOutWithFee, tokenOut.decimals ) );
+  //     const amountInDecimal = Number( ethersv6.formatUnits( amountInBigInt!.toString(), tokenIn.decimals ) );
 
   //     debug_log( 'UniswapPriceProvider - getSwapPriceOut - amountInDecimal:', amountInDecimal, 'amountOutDecimal:', amountOutDecimal );
 
-      
+
 
 
   //     const poolData = this.getPoolInfo( tokenIn, tokenOut, fee );
@@ -222,7 +222,7 @@
 
   //     const priceImpact = ( ( Number( amountOut ) - Number( amountOutWithFee ) ) / Number( amountOut ) ) * 100;
 
-      
+
 
 
   //     debug_log( 'UniswapPriceProvider - getSwapPriceOut - priceImpact:', priceImpact );
@@ -297,7 +297,7 @@
   //     }
 
   //     // const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
-  //     // if ( poolAddress === ethers.ZeroAddress ) {
+  //     // if ( poolAddress === ethersv6.ZeroAddress ) {
   //     //   throw new Error( 'Pool does not exist for tier' );
   //     // }
 
@@ -322,7 +322,7 @@
   //     [ quoteAmount, sqrtPriceX96After, initializedTicksCrossed, gasEstimate ] = await this.quoter.quoteExactOutputSingle.staticCall(params);
 
   //     debug_log( 'UniswapPriceProvider - getSwapPriceIn - quoteAmount:', quoteAmount, 'sqrtPriceX96After:', sqrtPriceX96After, 'initializedTicksCrossed:', initializedTicksCrossed, 'gasEstimate:', gasEstimate );
-      
+
   //     amountIn = quoteAmount;
   //     if ( amountIn === 0n ) {
   //       return {
@@ -350,8 +350,8 @@
   //     priceIn.price = priceOut.price / Number( amountOut ); // Adjust to ratio amount from uniswap to market price of tokenIn
   //     debug_log( 'UniswapPriceProvider - getSwapPriceIn - priceIn:', priceIn.price, 'priceOut:', priceOut.price );
 
-  //     const amountInDecimal = Number( ethers.formatUnits( amountIn, tokenIn.decimals ) );
-  //     const amountOutDecimal = Number( ethers.formatUnits( amountOutBigInt, tokenOut.decimals ) );
+  //     const amountInDecimal = Number( ethersv6.formatUnits( amountIn, tokenIn.decimals ) );
+  //     const amountOutDecimal = Number( ethersv6.formatUnits( amountOutBigInt, tokenOut.decimals ) );
   //     // const price = 0;
 
   //     // Calculate price impact (simplified, you might want to implement a more sophisticated calculation)
@@ -384,7 +384,7 @@
   // }
 
 
-  
+
   // Old way
 //   sqrtPriceX96ToPrice( sqrtPriceX96: bigint, token0Decimals: number, token1Decimals: number ): number {
 //     const price = Number( sqrtPriceX96 ) / 2 ** 96;
@@ -420,14 +420,14 @@
 
 //     try {
 //       const poolAddress = await this.factory.getPool( tokenIn.address, tokenOut.address, fee );
-//       if ( !poolAddress || poolAddress === ethers.ZeroAddress ) {
+//       if ( !poolAddress || poolAddress === ethersv6.ZeroAddress ) {
 //         throw new Error( 'Pool does not exist' );
 //       }
 
 //       const tokenA = convertToUniswapToken( tokenIn );
 //       const tokenB = convertToUniswapToken( tokenOut );
 
-//       const poolContract = new ethers.Contract( poolAddress, IUniswapV3PoolABI.abi, this.provider );
+//       const poolContract = new ethersv6.Contract( poolAddress, IUniswapV3PoolABI.abi, this.provider );
 //       if ( !poolContract ) throw new Error( 'Pool contract not found' );
 
 //       const [ slot0, liquidity, token0Address, token1Address, tickSpacing, poolFee, tickBitmap, ticks ] = await Promise.all( [
@@ -464,7 +464,7 @@
 
 //       debug_log( 'Token0:', token0 );
 //       debug_log( 'Token1:', token1 );
-      
+
 //       // Ensure tick is within valid range
 //       const minTick = BigInt( TickMath.MIN_TICK );
 //       const maxTick = BigInt( TickMath.MAX_TICK );
@@ -541,13 +541,13 @@
 //       debug_log( 'Token1 amount:', token1Amt );
 
 
-      
+
 //       // Calculate reserves
 //       const token0Reserve = parseFloat(
-//         ethers.formatUnits( liquidity.toString(), token0.decimals )
+//         ethersv6.formatUnits( liquidity.toString(), token0.decimals )
 //       );
 //       const token1Reserve = parseFloat(
-//         ethers.formatUnits( liquidity.toString(), token1.decimals )
+//         ethersv6.formatUnits( liquidity.toString(), token1.decimals )
 //       );
 
 //       debug_log( 'Token0 reserve:', token0Reserve );
@@ -630,8 +630,8 @@
 //         token1Price = '0';
 //       }
 
-//       const token0Reserves = ethers.formatUnits( token0Amount.toString(), tokenIn.decimals );
-//       const token1Reserves = ethers.formatUnits( token1Amount.toString(), tokenOut.decimals );
+//       const token0Reserves = ethersv6.formatUnits( token0Amount.toString(), tokenIn.decimals );
+//       const token1Reserves = ethersv6.formatUnits( token1Amount.toString(), tokenOut.decimals );
 
 //       debug_log( 'token0Reserves:', token0Reserves );
 //       debug_log( 'token1Reserves:', token1Reserves );
@@ -643,7 +643,7 @@
 //       debug_log( 'TVL:', tvl );
 
 //       debug_log( '\n\nUniswapPriceProvider - getPoolInfo: >>>>>>>>>>>>>>>>>>>>>>>>>>>> POOL END <<<<<<<<<<<<<<<<<<<<<<<<\n\n' );
-      
+
 //       return {
 //         provider: this.getName(),
 //         lastUpdated: new Date(),

@@ -5,24 +5,24 @@
   import { yakklConnectedDomainsStore, getSettings, yakklDappConnectRequestStore } from '$lib/common/stores';
   import { PATH_LOGIN, YAKKL_DAPP, PATH_DAPP_ACCOUNTS } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
-  
+
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Settings } from '$lib/common';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  
+
   type RuntimePort = Runtime.Port | undefined;
 
-  let showConfirm = false;
+  let showConfirm = $state(false);
   let showSuccess = false;
-  let showFailure = false;
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let showFailure = $state(false);
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
-  let domain: string;
-  let domainLogo: string;
-  let domainTitle: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
+  let domainTitle: string = $state();
   let requestData: any;
   let method: string;
   let requestId: string | null;
@@ -121,7 +121,7 @@ function handleReject() {
     showFailure = false;
     showSuccess = false;
 
-    if (port) port.postMessage({method: method, response: {type: 'error', data: {code: 4001, message: 'User rejected the request.'}}, requestData: requestData}); 
+    if (port) port.postMessage({method: method, response: {type: 'error', data: {code: 4001, message: 'User rejected the request.'}}, requestData: requestData});
     // If requestId is not valid then use 0 since we are bailing out anyway
     // May want to think about putting a slight tick to make sure all queues get flushed
     //goto(PATH_LOGOUT); // May want to do something else if they are already logged in!
@@ -147,8 +147,8 @@ function handleApprove() {
     <h3 class="text-lg font-bold">Connect to {domain}</h3>
     <p class="py-4">This will connect <span class="font-bold">{domain}</span> to YAKKL®! Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Reject</button>
-      <button class="btn" on:click={handleIsLocked}>Yes, Approved</button>
+      <button class="btn" onclick={handleReject}>Reject</button>
+      <button class="btn" onclick={handleIsLocked}>Yes, Approved</button>
     </div>
   </div>
 </div>
@@ -159,7 +159,7 @@ function handleApprove() {
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={handleReject}>Close</button>
+      <button class="btn" onclick={handleReject}>Close</button>
     </div>
   </div>
 </div>
@@ -182,7 +182,7 @@ function handleApprove() {
       <div class="animate-pulse flex flex-row">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-gray-100">
           <path fill-rule="evenodd" d="M15.97 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.22-3.22H7.5a.75.75 0 010-1.5h11.69l-3.22-3.22a.75.75 0 010-1.06zm-7.94 9a.75.75 0 010 1.06l-3.22 3.22H16.5a.75.75 0 010 1.5H4.81l3.22 3.22a.75.75 0 11-1.06 1.06l-4.5-4.5a.75.75 0 010-1.06l4.5-4.5a.75.75 0 011.06 0z" clip-rule="evenodd" />
-        </svg>        
+        </svg>
       </div>
       <div class="flex flex-row w-10 h-10">
         <img src="/images/logoBullFav48x48.png" alt="yakkl logo" />
@@ -196,24 +196,24 @@ function handleApprove() {
 
   <div class="my-4">
     <div class="flex space-x-2 justify-center">
-      <button 
-        on:click|preventDefault={handleReject}
+      <button
+        onclick={handleReject}
         class="btn-sm btn-accent uppercase rounded-full"
         aria-label="Cancel">
         Reject
       </button>
-      
-      <button 
+
+      <button
         type="submit"
         id="recover"
-        on:click|preventDefault={handleApprove}
+        onclick={handleApprove}
         class="btn-sm btn-primary uppercase rounded-full ml-2"
         aria-label="Confirm">
         Approve
       </button>
     </div>
-  </div>   
-  
+  </div>
+
 </div>
 
 

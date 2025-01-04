@@ -1,11 +1,21 @@
 <script lang="ts">
-  export let title1 = "WELCOME"
-  export let title2 = 'Back';
-  export let title3 = 'YAKKL® Smart Wallet';
-  export let value1 = 'A smart wallet how you expect one to be!';
-  export let value2 = 'Simple, Secure, Fast, and Powerful';
+  interface Props {
+    title1?: string;
+    title2?: string;
+    title3?: string;
+    value1?: string;
+    value2?: string; // Calling this function will cause the modal to be shown and the caller should bind:show to a variable and pass it in.
+  }
 
-  // Calling this function will cause the modal to be shown and the caller should bind:show to a variable and pass it in.
+  let {
+    title1 = "WELCOME",
+    title2 = 'Back',
+    title3 = 'YAKKL® Smart Wallet',
+    value1 = 'A smart wallet how you expect one to be!',
+    value2 = 'Simple, Secure, Fast, and Powerful'
+  }: Props = $props();
+
+  
 </script>
 
 <div class="relative text-center mb-4">

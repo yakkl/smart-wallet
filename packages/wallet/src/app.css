@@ -1,119 +1,80 @@
+/* @import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities'; */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* The following was from shadcn-svelte. We had to disable it for ours to work correctly. This means some default values have to be over written by us */
+/* @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+	--sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 240 4.9% 83.9%;
+	--sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
 @layer base {
-}
-
-@layer components {
-    /* .td-toc :where(a) {
-      @apply block font-light pb-1;
-    }
-
-    .btn {
-      @apply rounded-lg align-middle text-center block;
-    }
-
-    .btn-primary {
-      @apply py-2 px-4 font-normal bg-primary-500 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-opacity-75;
-    }
-
-    .btn-primary.disabled {
-      @apply opacity-50;
-    }
-
-    .btn-secondary {
-      @apply py-2 px-4 font-normal bg-secondary-500 text-white font-semibold rounded-lg shadow-md hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-secondary-400 focus:ring-opacity-75;
-    }
-
-    .btn-seconday.disabled {
-      @apply opacity-50;
-    }
-
-    .d-flex {
-      @apply flex;
-    } 
-
-    .justify-content-between {
-      @apply justify-between;
-    }
-
-    .align-items-center {
-      @apply pl-0 list-none items-center;
-    }
-
-    .prose :where(table):not(:where([class~="not-prose"] *)) {
-      @apply sm:px-6 lg:px-8 align-middle shadow overflow-hidden border-b border-gray-200 sm:rounded-lg;
-    }
-
-    .prose :where(thead th):not(:where([class~="not-prose"] *)) {
-      @apply bg-primary-200 ml-1 px-1 py-3 text-left text-xs font-medium text-primary-500 uppercase tracking-wider;
-    }
-
-    .prose :where(tbody tr):not(:where([class~="not-prose"] *)) {
-      @apply ml-1 px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-900;
-    }
-
-    .prose :where(tbody tr:nth-child(even)):not(:where([class~="not-prose"] *)) {
-      @apply bg-primary-50;
-    }
-    
-    .prose :where(tbody tr:nth-child(odd)):not(:where([class~="not-prose"] *)) {
-      @apply bg-white;
-    }
-
-    .prose :where(tbody td):not(:where([class~="not-prose"] *)) {
-      @apply pl-1;
-    }
-
-    .prose :where(thead th:first-child):not(:where([class~="not-prose"] *)) {
-      @apply pl-1;
-    }
-        
-    .prose :where(tbody td:first-child):not(:where([class~="not-prose"] *)) {
-      @pply pl-1;
-    }     
-
-    .prose :where(thead th:last-child):not(:where([class~="not-prose"] *)) {
-      @apply pr-2;
-    }
-        
-    .prose :where(tbody td:last-child):not(:where([class~="not-prose"] *)) {
-      @apply pr-2;
-    }     
-
-    .breadcrumb-item {
-      @apply text-primary-500;
-    }
-
-    .breadcrumb-item::before {
-      @apply pl-1;
-    } */
-}
-
-@layer utilities {
-    /* .btn {
-      @apply pointer-events-auto;
-    }
-
-    .btn.disabled {
-      @apply pointer-events-none;
-    } */
-
-}
-
-/* test */
-/* .theme-elegant {
-  --color-primary: 192 178 131;
-  --color-secondary: 220 208 192;
-} */
-
-/* .form-select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-  padding-right: 2.5rem;
-  -webkit-print-color-adjust: exact;
-          color-adjust: exact;
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 } */

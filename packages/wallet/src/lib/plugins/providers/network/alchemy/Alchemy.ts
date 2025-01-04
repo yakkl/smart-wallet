@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { type BlockTag as CustomBlockTag, type BigNumberish, type Deferrable, type Listener, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter as CustomFilter, type Log as CustomLog, type EventType, BigNumber } from '$lib/common';
+import { type BlockTag as CustomBlockTag, type BigNumberish, type Deferrable, type TransactionResponse, type TransactionRequest, type Block, type BlockWithTransactions, type TransactionReceipt, type Filter as CustomFilter, type Log as CustomLog, BigNumber, type FeeData, error_log } from '$lib/common';
 import eventManager from '$plugins/EventManager';
-import { AbstractProvider, type Provider } from '$plugins/Provider';
+import { AbstractProvider } from '$plugins/Provider';
 import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings, type Filter as AlchemyFilter, type Log as AlchemyLog, type BlockTag as AlchemyBlockTag } from "alchemy-sdk";
 import type { Signer } from '$lib/plugins/Signer';
 import { EthersConverter } from '$lib/plugins/utilities/EthersConverter';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 interface AlchemyOptions {
   apiKey?: string | null;
@@ -16,7 +17,6 @@ interface AlchemyOptions {
   chainId?: number;
 }
 
-
 /**
  * Alchemy provider class implementing the Provider interface.
  */
@@ -25,15 +25,16 @@ export class Alchemy extends AbstractProvider {
   private alchemy: AlchemyAPI | null = null;
 
   constructor(options: AlchemyOptions = {}) {
-    super('Alchemy', options.blockchains || ['Ethereum', 'Solana', 'Optimism', 'Polygon', 'Base', 'Arbitrum', 'Avalanche', 'Celo'], 
-          options.chainIds || [1, 10, 69, 137, 80001, 42161, 421611, 11155111], 
-          options.blockchain || 'Ethereum', 
-          options.chainId || 1);
+    super('Alchemy', options.blockchains || ['Ethereum', 'Solana', 'Optimism', 'Polygon', 'Base', 'Arbitrum', 'Avalanche', 'Celo'],
+      options.chainIds || [1, 10, 69, 137, 80001, 42161, 421611, 11155111],
+      options.blockchain || 'Ethereum',
+      options.chainId || 1,
+      null
+    );
     this.chainId = options.chainId || 1;
     this.alchemy = null;
-    this.setChainId(this.chainId);
+    this.setChainId( this.chainId );
   }
-
 
   /**
    * Connects to the specified blockchain.
@@ -57,17 +58,44 @@ export class Alchemy extends AbstractProvider {
       // Optionally, you can call any cleanup methods if the API provides them
       this.alchemy = null;
     }
-    this.alchemy = new AlchemyAPI(this.config);
+    this.alchemy = new AlchemyAPI( this.config );
     return this.alchemy;
   }
 
   async getProviderURL() {
-    const provider = await this.alchemy?.config.getProvider();
+    await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+    if ( !this.alchemy ) {
+      throw new Error( "No Alchemy set" );
+    }
+    const provider = await this.alchemy.config.getProvider();
     if (provider) {
       return provider.connection.url;
     } else {
       return '';
     }
+  }
+
+  async initializeProvider() {
+    if ( this.provider ) {
+      return this.provider;
+    }
+
+    const url = await this.getProviderURL();
+    if ( !url ) {
+      throw new Error( "No URL set" );
+    }
+
+    this.provider = new ethersv6.JsonRpcProvider( url );
+    return this.provider;
+  }
+
+  // Returns the ethers v6 provider
+
+  getProvider(): ethersv6.JsonRpcProvider | null {
+    if ( !this.provider ) {
+      return null;
+    }
+    return this.provider as ethersv6.JsonRpcProvider;
   }
 
   /**
@@ -80,13 +108,16 @@ export class Alchemy extends AbstractProvider {
 
   async call(transaction: Deferrable<TransactionRequest>, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
       const resolvedBlockTag = await blockTag;
-      
+
       const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
-      const result = await this.alchemy!.core.call(ethersTransaction as any, resolvedBlockTag as any);
-  
+      const result = await this.alchemy.core.call(ethersTransaction as any, resolvedBlockTag as any);
+
       eventManager.emit('call', { transaction: resolvedTransaction, blockTag: resolvedBlockTag, result });
       return result;
     } catch (error) {
@@ -94,15 +125,18 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   async estimateGas(transaction: Deferrable<TransactionRequest>): Promise<bigint> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const resolvedTransaction = await this.resolveDeferredTransaction(transaction);
-      
+
       const ethersTransaction = EthersConverter.transactionToEthersTransaction(resolvedTransaction);
-      const gasEstimate = await this.alchemy!.core.estimateGas(ethersTransaction as any);
-  
+      const gasEstimate = await this.alchemy.core.estimateGas(ethersTransaction as any);
+
       eventManager.emit('estimateGas', { transaction: resolvedTransaction, gasEstimate });
       return BigInt(gasEstimate.toString());
     } catch (error) {
@@ -110,20 +144,25 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   // Helper method to resolve deferred transaction properties
-  private async resolveDeferredTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
-    const resolved: Partial<TransactionRequest> = {};
-    for (const [key, value] of Object.entries(transaction)) {
-      if (value instanceof Promise) {
-        resolved[key as keyof TransactionRequest] = await value as any;
+  private async resolveDeferredTransaction( transaction: Deferrable<TransactionRequest> ): Promise<TransactionRequest> {
+    // Use Record<string, any> to collect the resolved values
+    const resolved: Record<string, any> = {};
+
+    for ( const [ key, value ] of Object.entries( transaction ) ) {
+      // If the value is a promise, await it
+      if ( value instanceof Promise ) {
+        resolved[ key ] = await value;
       } else {
-        resolved[key as keyof TransactionRequest] = value as any;
+        resolved[ key ] = value;
       }
     }
+
+    // Cast the final resolved object to TransactionRequest
     return resolved as TransactionRequest;
   }
-  
+
   /**
    * Gets the current block number.
    * @returns A promise that resolves with the current block number.
@@ -131,7 +170,10 @@ export class Alchemy extends AbstractProvider {
   async getBlockNumber(): Promise<number> {
     try {
       await this.getAlchemy(); // Ensure the provider is connected
-      const blockNumber = await this.alchemy!.core.getBlockNumber();
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const blockNumber = await this.alchemy.core.getBlockNumber();
       eventManager.emit('blockNumber', { blockNumber });
       return blockNumber;
     } catch (error) {
@@ -147,11 +189,29 @@ export class Alchemy extends AbstractProvider {
   async getGasPrice(): Promise<bigint> {
     try {
       await this.getAlchemy(); // Ensure the provider is connected
-      const price = await this.alchemy!.core.getGasPrice();
-      eventManager.emit('gasPrice', { price: price.toBigInt() }); 
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const price = await this.alchemy.core.getGasPrice();
+      eventManager.emit('gasPrice', { price: price.toBigInt() });
       return price.toBigInt(); // as unknown as bigint;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getGasPrice', error });
+      throw error;
+    }
+  }
+
+  async getFeeData(): Promise<FeeData> {
+    try {
+      await this.getAlchemy(); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const feeData = await this.alchemy.core.getFeeData();
+      eventManager.emit('feeData', { feeData });
+      return feeData as unknown as FeeData;
+    } catch (error) {
+      eventManager.emit('error', { provider: this.name, method: 'getFeeData', error });
       throw error;
     }
   }
@@ -164,10 +224,13 @@ export class Alchemy extends AbstractProvider {
    */
   async getBalance(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<bigint> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const address: string = addressOrName as string;
       const blockTagish = BigNumber.from(await blockTag).toHex();
-      const balance = await this.alchemy!.core.getBalance(addressOrName, blockTagish);
+      const balance = await this.alchemy.core.getBalance(addressOrName, blockTagish);
       eventManager.emit('balanceFetched', { address, balance });
       return balance.toBigInt(); // as unknown as bigint;
     } catch (error) {
@@ -177,7 +240,6 @@ export class Alchemy extends AbstractProvider {
     }
   }
 
-
   /**
    * Gets the code at an address.
    * @param addressOrName - The address or ENS name to get the code for.
@@ -186,16 +248,18 @@ export class Alchemy extends AbstractProvider {
    */
   async getCode(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const blockTagish = BigNumber.from(await blockTag).toHex();
-      const code = await this.alchemy!.core.getCode(addressOrName, blockTagish);
-      return Promise.resolve(code);
+      const code = await this.alchemy.core.getCode(addressOrName, blockTagish);
+      return code;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getCode', error });
       throw error;
     }
   }
-
 
   /**
    * Gets the storage at a position.
@@ -207,14 +271,16 @@ export class Alchemy extends AbstractProvider {
   async getStorageAt(addressOrName: string, position: BigNumberish, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<string> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const resolvedBlockTag = await blockTag;
-      
-      const storage = await this.alchemy!.core.getStorageAt(
+      const storage = await this.alchemy.core.getStorageAt(
         addressOrName,
         EthersConverter.toEthersHex(position) as string || '0x0',
         resolvedBlockTag as any
       );
-  
+
       eventManager.emit('getStorageAt', { addressOrName, position, blockTag: resolvedBlockTag, storage });
       return storage;
     } catch (error) {
@@ -223,7 +289,6 @@ export class Alchemy extends AbstractProvider {
     }
   }
 
-  
   /**
    * Sends a raw transaction.
    * @param signedTransaction - The signed transaction to send.
@@ -232,8 +297,11 @@ export class Alchemy extends AbstractProvider {
   async sendRawTransaction(signedTransaction: string): Promise<TransactionResponse> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const response = await this.alchemy!.transact.sendTransaction(signedTransaction);
-      
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const response = await this.alchemy.transact.sendTransaction(signedTransaction);
+
       eventManager.emit('sendRawTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
@@ -250,18 +318,25 @@ export class Alchemy extends AbstractProvider {
   async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       if (transaction.nonce === undefined || transaction.nonce < 0) {
         transaction.nonce = await this.alchemy!.core.getTransactionCount(transaction.from);
       }
-
-      // Test gas estimate:
-      // const gasEstimate = await this.alchemy!.core.estimateGas({to: transaction.to, value: transaction.value?.valueOf() as bigint, data: transaction.data});
-
-      // Test gas price:
-      // const gasPrice = await this.alchemy!.core.getGasPrice();
-
-      const signedTransaction = await this.signer!.signTransaction(transaction);
-      const response = await this.alchemy!.transact.sendTransaction(signedTransaction);
+      if ( !this.signer ) {
+        const signer = this.getSigner();
+        if (signer) {
+          this.setSigner( signer );
+        } else {
+          throw new Error('No signer set');
+        }
+      }
+      if ( !this.signer ) {
+        throw new Error( 'No signer set' );
+      }
+      const signedTransaction = await this.signer.signTransaction(transaction);
+      const response = await this.alchemy.transact.sendTransaction(signedTransaction);
       eventManager.emit('sendTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
@@ -270,8 +345,6 @@ export class Alchemy extends AbstractProvider {
     }
   }
 
-
-
   /**
    * Gets a block by its hash or block tag.
    * @param blockHashOrBlockTag - The block hash or block tag to get the block for.
@@ -279,9 +352,12 @@ export class Alchemy extends AbstractProvider {
    */
   async getBlock(blockHashOrBlockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<Block> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const blockTagish = BigNumber.from(await blockHashOrBlockTag).toHex();
-      const block = await this.alchemy!.core.getBlock(blockTagish);
+      const block = await this.alchemy.core.getBlock(blockTagish);
       eventManager.emit('block', { blockTagish, block });
       return block as unknown as Block;
     } catch (error) {
@@ -297,9 +373,12 @@ export class Alchemy extends AbstractProvider {
    */
   async getBlockWithTransactions(blockHashOrBlockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<BlockWithTransactions> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const blockTagish = BigNumber.from(await blockHashOrBlockTag).toHex();
-      const block = await this.alchemy!.core.getBlockWithTransactions(blockTagish);
+      const block = await this.alchemy.core.getBlockWithTransactions(blockTagish);
       eventManager.emit('blockWithTransactions', { blockTagish, block });
       return block as unknown as BlockWithTransactions;
     } catch (error) {
@@ -315,9 +394,12 @@ export class Alchemy extends AbstractProvider {
    */
   async getTransaction(transactionHash: string): Promise<TransactionResponse> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const trans = await this.alchemy!.core.getTransaction(transactionHash);
-      return Promise.resolve(trans as unknown as TransactionResponse);
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const trans = await this.alchemy.core.getTransaction(transactionHash);
+      return trans as unknown as TransactionResponse;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getTransaction', error });
       throw error;
@@ -332,10 +414,13 @@ export class Alchemy extends AbstractProvider {
    */
   async getTransactionCount(addressOrName: string, blockTag: CustomBlockTag | Promise<CustomBlockTag> = 'latest'): Promise<number> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
       const blockTagish = BigNumber.from(await blockTag).toHex();
-      const count = await this.alchemy!.core.getTransactionCount(addressOrName, blockTagish);
-      return Promise.resolve(count as unknown as number);
+      const count = await this.alchemy.core.getTransactionCount(addressOrName, blockTagish);
+      return count as unknown as number;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getTransactionCount', error });
       throw error;
@@ -349,9 +434,12 @@ export class Alchemy extends AbstractProvider {
    */
   async getTransactionHistory(transactionHash: string): Promise<TransactionResponse> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const trans = await this.alchemy!.core.getTransaction(transactionHash);
-      return Promise.resolve(trans as unknown as TransactionResponse);
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const trans = await this.alchemy.core.getTransaction( transactionHash );
+      return trans as unknown as TransactionResponse;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getTransactionHistory', error });
       throw error;
@@ -365,9 +453,12 @@ export class Alchemy extends AbstractProvider {
    */
   async getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const receipt = await this.alchemy!.core.getTransactionReceipt(transactionHash);
-      return Promise.resolve(receipt as unknown as TransactionReceipt);
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const receipt = await this.alchemy.core.getTransactionReceipt(transactionHash);
+      return receipt as unknown as TransactionReceipt;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getTransactionReceipt', error });
       throw error;
@@ -382,26 +473,27 @@ export class Alchemy extends AbstractProvider {
   async getLogs(filter: CustomFilter): Promise<CustomLog[]> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+
       // Convert your custom Filter type to Alchemy Filter type
       const alchemyFilter: AlchemyFilter = {
         address: filter.address,
         topics: filter.topics
       };
-  
+
       if (filter.fromBlock) {
         alchemyFilter.fromBlock = this.convertToAlchemyBlockTag(filter.fromBlock);
       }
-  
       if (filter.toBlock) {
         alchemyFilter.toBlock = this.convertToAlchemyBlockTag(filter.toBlock);
       }
-  
-      const logs = await this.alchemy!.core.getLogs(alchemyFilter);
-  
+
+      const logs = await this.alchemy.core.getLogs(alchemyFilter)
       // Convert Alchemy logs to your custom Log type
       const convertedLogs: CustomLog[] = logs.map(log => this.convertAlchemyLogToCustomLog(log));
-  
+
       eventManager.emit('getLogs', { filter, logs: convertedLogs });
       return convertedLogs;
     } catch (error) {
@@ -409,7 +501,7 @@ export class Alchemy extends AbstractProvider {
       throw error;
     }
   }
-  
+
   // Helper method to convert custom BlockTag to Alchemy BlockTag
   private convertToAlchemyBlockTag(blockTag: CustomBlockTag): AlchemyBlockTag {
     if (typeof blockTag === 'string') {
@@ -424,7 +516,7 @@ export class Alchemy extends AbstractProvider {
     }
     throw new Error(`Invalid block tag: ${blockTag}`);
   }
-  
+
   // Helper method to convert Alchemy Log to custom Log
   private convertAlchemyLogToCustomLog(log: AlchemyLog): CustomLog {
     return {
@@ -447,8 +539,11 @@ export class Alchemy extends AbstractProvider {
    */
   async resolveName(name: string): Promise<string | null> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const address = await this.alchemy!.core.resolveName(name);
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const address = await this.alchemy.core.resolveName(name);
       eventManager.emit('resolveName', { name, address });
       return address;
     } catch (error) {
@@ -465,9 +560,10 @@ export class Alchemy extends AbstractProvider {
   async lookupAddress(address: string): Promise<string | null> {
     try {
       await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      
-      const name = await this.alchemy!.core.lookupAddress(address);
-  
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const name = await this.alchemy.core.lookupAddress(address);
       eventManager.emit('lookupAddress', { address, name });
       return name;
     } catch (error) {
@@ -484,8 +580,11 @@ export class Alchemy extends AbstractProvider {
    */
   async request(method: string, params: any[]): Promise<any> {
     try {
-      await this.getAlchemy(this.chainId); // Ensure the provider is connected
-      const result = await this.alchemy!.core.send(method, params);
+      await this.getAlchemy( this.chainId ); // Ensure the provider is connected
+      if ( !this.alchemy ) {
+        throw new Error( "No Alchemy set" );
+      }
+      const result = await this.alchemy.core.send(method, params);
       eventManager.emit('requestMade', { provider: this.name, method, params, result });
       return result;
     } catch (error) {
@@ -509,7 +608,10 @@ export class Alchemy extends AbstractProvider {
   //   }
   // }
 
-  setSigner(signer: Signer): void {
+  setSigner( signer: Signer ): void {
+    if ( !signer ) {
+      throw new Error( "Invalid signer" );
+    }
     this.signer = signer;
   }
 
@@ -520,11 +622,11 @@ export class Alchemy extends AbstractProvider {
     this.chainId = chainId;
   }
 
-  // Example if needing to override eventManager 
+  // Example if needing to override eventManager
   // on(eventName: EventType, listener: Listener): Provider {
     // Custom logic here
     // return super.on(eventName, listener);
-  // } 
+  // }
 }
 
 /**
@@ -533,7 +635,7 @@ export class Alchemy extends AbstractProvider {
  * @param kval - Optional API key value.
  * @returns The Alchemy settings.
  */
-function getConfig(chainId: number, kval = undefined): AlchemySettings | undefined {
+function getConfig(chainId: number, kval: any = undefined): AlchemySettings | undefined {
   try {
     let api = kval ?? import.meta.env.VITE_ALCHEMY_API_KEY_PROD;  // Set defaults
     let network = AlchemyNetwork.ETH_MAINNET;

@@ -1,5 +1,7 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
-  import { getYakklContacts, setYakklContactsStorage, yakklCurrentlySelectedStore, yakklContactsStore, yakklMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
+  import { getYakklContacts, setYakklContactsStorage, yakklMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import { dateString } from '$lib/common/datetime';
@@ -7,13 +9,14 @@
   import { decryptAndSetData } from '$lib/common/gets';
   import { setDefinedProperty } from '$lib/common/gets';
   import { Dropdown, DropdownItem, Button, Helper } from 'flowbite-svelte';
-  import * as Icon from 'flowbite-svelte-icons';
+  // import * as Icon from 'flowbite-svelte-icons';
+  import ChevronDoubleUpOutline from '$lib/components/ChevronDoubleUpOutline.svelte';
   import Back from '$lib/components/Back.svelte';
   import type { YakklContact, YakklCurrentlySelected } from '$lib/common';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
   import { isEthereum } from '$lib/plugins/BlockchainGuards';
-  
+
   let wallet: Wallet;
 
   let currentlySelected: YakklCurrentlySelected;
@@ -75,7 +78,7 @@
     address = faddress;
     alias = falias;
     note = fnote;
-    
+
     let resolvedAddr = null;
     const blockchain = wallet.getBlockchain();
 
@@ -85,7 +88,7 @@
 
     if (resolvedAddr) {
       address = resolvedAddr;
-    } 
+    }
 
     if (!blockchain.isAddress(address)) {
       errorValue = `Address ${address} is not a valid address. A valid toAddress is required.`;
@@ -102,7 +105,7 @@
     alias = $form.alias = '';
     note = $form.note = '';
   }
-  
+
   function handleClick(idx: number) {
     if (contacts) {
       index = idx;
@@ -117,7 +120,7 @@
 
   async function handleUpdate() {
     try {
-      if (index >= 0) {        
+      if (index >= 0) {
         if (await verifyContact($form.name, $form.address, $form.alias, $form.note)) {
           contacts[index].name = name;
           contacts[index].address = address;
@@ -231,7 +234,7 @@
   <hr class="mb-0.5 mt-0.5" />
 
   <div class="justify-center mb-4 mt-2">
-    <Button>Contact List<Icon.ChevronDoubleUpOutline name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button>
+    <Button>Contact List<ChevronDoubleUpOutline name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button>
     <Dropdown class="overflow-y-auto px-3 pb-3 text-sm h-44" bind:open={dropdownOpen}>
       <div slot="header" class="p-3">
         Contact List
@@ -294,7 +297,7 @@
           placeholder="Note"
           autocomplete="off"
           bind:value={$form.note}
-          on:change={handleChange}/>
+          on:change={handleChange}></textarea>
         {#if $errors.note}
           <small class="text-red-600 font-bold animate-pulse">{$errors.note}</small>
         {/if}

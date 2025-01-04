@@ -1,12 +1,12 @@
 /* eslint-disable no-debugger */
-// // import browser from 'webextension-polyfill';
-import type { ErrorBody, ParsedError } from '$lib/common';
+// import browser from 'webextension-polyfill';
+import { type ErrorBody, type ParsedError } from '$lib/common';
 // import { Utils } from "alchemy-sdk";
 
 import { AccountTypeCategory } from '$lib/common/types';
 import type { YakklAccount } from '$lib/common/interfaces';
 import { getYakklAccounts } from '$lib/common/stores';
-import { ethers } from 'ethers';
+import { ethers as ethersv6 } from 'ethers-v6';
 
 export async function checkAccountRegistration(): Promise<boolean> {
   try {
@@ -16,8 +16,8 @@ export async function checkAccountRegistration(): Promise<boolean> {
       return false;
     }
 
-    const hasPrimaryOrImported = accounts.some(account => 
-      account.accountType === AccountTypeCategory.PRIMARY || 
+    const hasPrimaryOrImported = accounts.some(account =>
+      account.accountType === AccountTypeCategory.PRIMARY ||
       account.accountType === AccountTypeCategory.IMPORTED
     );
 
@@ -103,15 +103,38 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
 }
 
 // Optional: Format amount back to a string with proper decimal handling
-export function formatAmount( amount: bigint, decimals: number ): string {
-  const formattedAmount = ethers.formatUnits( amount, decimals );
+// export function formatAmount( amount: bigint, decimals: number ): string {
+//   const formattedAmount = ethersv6.formatUnits( amount, decimals );
 
-  // Remove trailing zeros after decimal point
-  const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
-  if ( !decimalPart ) return integerPart;
+//   // Remove trailing zeros after decimal point
+//   const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
+//   if ( !decimalPart ) return integerPart;
 
-  const trimmedDecimal = decimalPart.replace( /0+$/, '' );
-  return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
+//   const trimmedDecimal = decimalPart.replace( /0+$/, '' );
+//   return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
+// }
+
+// Format USD amounts to 2 decimal places
+export function formatUsd(amount: number): string {
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Format token amounts based on decimals
+export function formatAmount(amount: bigint, decimals: number): string {
+  if (amount === 0n) return '0';
+  const value = Number(amount) / Math.pow(10, decimals);
+  return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+}
+
+export function convertUsdToTokenAmount(usdAmount: number, marketPrice: number, decimals: number): string {
+  if (marketPrice <= 0) return '0';
+  const tokenAmount = usdAmount / marketPrice;
+  return ethersv6.formatUnits(ethersv6.parseUnits(tokenAmount.toFixed(decimals), decimals), decimals);
+}
+
+export function convertTokenToUsd(tokenAmount: number, marketPrice: number): number {
+  if (marketPrice <= 0) return 0;
+  return tokenAmount * marketPrice;
 }
 
 /**
@@ -123,7 +146,7 @@ export function formatAmount( amount: bigint, decimals: number ): string {
 interface TypewriterOptions {
   speed?: number;
 }
-  
+
 export function typewriter(node: HTMLElement, { speed = 1 }: TypewriterOptions) {
   if (node.childNodes.length !== 1 || node.childNodes[0].nodeType !== Node.TEXT_NODE) {
     throw new Error(`This transition only works on elements with a single text node child`);
@@ -173,21 +196,21 @@ export const wait = (time: number | undefined) =>
 export function parseErrorMessageFromJSON(errorMessage: string): ParsedError {
   try {
     const parsedError: ErrorBody = JSON.parse(errorMessage);
-    
+
     if (parsedError.body) {
       const body: ErrorBody = JSON.parse(parsedError.body);
       return body.error ?? null;
     }
-    
+
     if (parsedError.reason) {
       return parsedError.reason;
     }
-    
+
     return parsedError;
   } catch (error) {
     console.log('Failed to parse errorMessage, body or error:', error);
   }
-  
+
   return null;
 }
 // Used for the 'data' field in the transaction

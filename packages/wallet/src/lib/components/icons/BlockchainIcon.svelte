@@ -1,10 +1,15 @@
 <script lang="ts">
   import { SvelteComponent } from 'svelte';
   
-  export let icon: typeof SvelteComponent | null = null;
-  export let className: string = '';
+  interface Props {
+    icon?: typeof SvelteComponent | null;
+    className?: string;
+  }
+
+  let { icon = null, className = '' }: Props = $props();
 </script>
 
 {#if icon}
-  <svelte:component this={icon} class={className} />
+  {@const SvelteComponent_1 = icon}
+  <SvelteComponent_1 class={className} />
 {/if}

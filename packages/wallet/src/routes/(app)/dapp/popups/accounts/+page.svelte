@@ -10,40 +10,40 @@
   import { wait } from '$lib/common/utils';
 	import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 	import type { AccountAddress, ConnectedDomainAddress, YakklAccount, YakklConnectedDomain, YakklCurrentlySelected } from '$lib/common';
-  
+
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import { dateString } from '$lib/common/datetime';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
-  
+
   type RuntimePort = Runtime.Port | undefined;
 
   let currentlySelected: YakklCurrentlySelected;
   let yakklAccountsStore: YakklAccount[] = [];
   let yakklConnectedDomainsStore: YakklConnectedDomain[] = [];
 
-  let searchTerm = '';
+  let searchTerm = $state('');
   let addresses: Map<string, ConnectedDomainAddress> = new Map();  // Complete list
-  let filteredAddresses: Map<string, ConnectedDomainAddress> = new Map();  // Filtered list
+  let filteredAddresses: Map<string, ConnectedDomainAddress> = $state(new Map());  // Filtered list
   let accounts: AccountAddress [] = [];
   let accountNumber = 0; // Number of accounts
-  let accountsPicked = 0;
-  let showConfirm = false;
-  let showSuccess = false;
-  let showFailure = false;
-  let showWarning = false;
-  let showProgress = false;
-  let warningValue = 'No accounts were selected. Access to YAKKL® is denied.';
-  let errorValue = 'No domain/site name was found. Access to YAKKL® is denied.';
+  let accountsPicked = $state(0);
+  let showConfirm = $state(false);
+  let showSuccess = $state(false);
+  let showFailure = $state(false);
+  let showWarning = $state(false);
+  let showProgress = $state(false);
+  let warningValue = $state('No accounts were selected. Access to YAKKL® is denied.');
+  let errorValue = $state('No domain/site name was found. Access to YAKKL® is denied.');
   let port: RuntimePort;
-  let domain: string;
-  let domainLogo: string;
+  let domain: string = $state();
+  let domainLogo: string = $state();
   let domainTitle: string;
   let requestId: string | null;
   let requestData: any;
   let pass = false;
-  let filteredAddressesArray: ConnectedDomainAddress[];
+  let filteredAddressesArray: ConnectedDomainAddress[] = $state();
 
   if (browserSvelte) {
     try {
@@ -52,7 +52,7 @@
 
       if ($navigating) {
         if ($navigating?.from?.url?.pathname) {
-          if ($navigating.from.url.pathname.includes('dapp/popups/approve') || 
+          if ($navigating.from.url.pathname.includes('dapp/popups/approve') ||
             $navigating.from.url.pathname.includes('login/Login')) {
             pass = true;
           }
@@ -100,9 +100,9 @@
           if (currentlySelected.shortcuts.blockchain === account.blockchain) {
             // Could use a variable of type ConnectedDomainAddress and push that instead but this is easier
             addresses.set(account.address, {
-              address: account.address, 
-              name: account.name, 
-              alias: account.alias, 
+              address: account.address,
+              name: account.name,
+              alias: account.alias,
               blockchain: currentlySelected.shortcuts.blockchain,
               chainId: currentlySelected.shortcuts.chainId as number,
               checked: false,
@@ -124,14 +124,14 @@
   // })();
 
 
-  $: {
+  $effect(() => {
     try {
       filteredAddresses = addresses.has(searchTerm) ? addresses : new Map([...addresses].filter(([k, v]) => v.name.toLowerCase().includes(searchTerm.toLowerCase())));
       filteredAddressesArray = Array.from(filteredAddresses.values());
     } catch(e) {
       console.log(e);
     }
-  }
+  });
 
   onMount(async () => {
     try {
@@ -144,7 +144,7 @@
           port.onMessage.addListener(async (event: any) => {
             requestData = event.data;
 
-            if (event.method === 'get_params') { 
+            if (event.method === 'get_params') {
               domainTitle = requestData?.data?.metaDataParams?.title ?? '';
               domain = requestData?.data?.metaDataParams?.domain ?? '';
               domainLogo = requestData?.data?.metaDataParams?.icon ?? '/images/logoBullLock48x48.png';
@@ -187,7 +187,7 @@
 
                       // let counter = 0;
                       // let index = 0;
-                      
+
                       // for (const address of element.addresses) {
                       //   let itemElem: ConnectedDomainAddress | undefined;
                       //   counter++;
@@ -195,7 +195,7 @@
                       //   if (counter > accountNumber) {
                       //     return; // circuit breaker
                       //   }
-                        
+
                       //   itemElem = addresses.get(address.address);
                       //   if (itemElem) {
                       //     index++;
@@ -212,12 +212,12 @@
               }
             }
          });
-          port.postMessage({method: 'get_params', id: requestId}); 
+          port.postMessage({method: 'get_params', id: requestId});
         }
       }
     } catch(e) {
       console.log(e);
-    } 
+    }
   });
 
 
@@ -255,7 +255,7 @@
         if (index >= 0) {
           accounts.splice(index,1);
           return;
-        } 
+        }
       }
 
       if (item.checked === true) {
@@ -296,11 +296,11 @@
   //       addresses.clear();
   //       // select them all...
   //       for (const [index, account] of accountsStore.entries()) {
-  //         if (currentlySelected.shortcuts.blockchain === account.blockchain) {           
+  //         if (currentlySelected.shortcuts.blockchain === account.blockchain) {
   //           addresses.set(account.address, {
-	// 								address: account.address, 
-  //                 name: account.name, 
-  //                 alias: account.alias, 
+	// 								address: account.address,
+  //                 name: account.name,
+  //                 alias: account.alias,
 	// 								blockchain: currentlySelected.shortcuts.blockchain,
 	// 								chainId: currentlySelected.shortcuts.chainId,
   //                 checked: true,
@@ -310,23 +310,23 @@
 
   //           (document.getElementById("cb" + index.toString()) as HTMLInputElement).checked = true;
   //         }
-  //       };      
+  //       };
   //     } else {
   //       // unselect them all...
   //       addresses.clear();
   //       for (const [index, account] of accountsStore.entries()) {
   //         if (currentlySelected.shortcuts.blockchain === account.blockchain) {
   //           addresses.set(account.address, {
-	// 								address: account.address, 
-  //                 name: account.name, 
-  //                 alias: account.alias, 
+	// 								address: account.address,
+  //                 name: account.name,
+  //                 alias: account.alias,
 	// 								blockchain: currentlySelected.shortcuts.blockchain,
 	// 								chainId: currentlySelected.shortcuts.chainId,
   //                 checked: false,
 	// 							}); // Only add if not already there for a given blockchain
   //           (document.getElementById("cb" + index.toString()) as HTMLInputElement).checked = false;
   //         }
-  //       };      
+  //       };
   //       accounts.length = 0;
   //     }
   //   } catch(e) {
@@ -357,7 +357,7 @@
       if (yakklAccountsStore.length === 0) {
         throw 'No accounts are present.';
       }
-      
+
       showProgress = true;
 
       if (yakklConnectedDomainsStore) {
@@ -378,7 +378,7 @@
             return true;
           }
         });
-        
+
         if (!domainFound) {
           addDomain = true;
         } else {
@@ -423,7 +423,7 @@
 
       // Update storage and stores
       yakklConnectedDomainsStore = deepCopy(domains);
-      await setYakklConnectedDomainsStorage(domains);    
+      await setYakklConnectedDomainsStorage(domains);
 
       let yakklAccounts: YakklAccount[] = [];
       yakklAccounts = deepCopy(yakklAccountsStore);
@@ -446,9 +446,9 @@
           sendAccounts.push(item.address);
       }
 
-      let yakklCurrentlySelected = await getYakklCurrentlySelected();    
+      let yakklCurrentlySelected = await getYakklCurrentlySelected();
       let chainId = yakklCurrentlySelected.shortcuts.chainId;
-      
+
       if (port)
         port.postMessage({id: requestId, method: 'eth_requestAccounts', type: 'YAKKL_RESPONSE', chainId: chainId, result: sendAccounts});
 
@@ -477,7 +477,7 @@
       resetValuesExcept(''); // Reset all values
 
       if (port) {
-        port.postMessage({id: requestId, method: 'eth_requestAccounts', response: {type: 'error', data: {name: 'ProviderRPCError', code: 4001, message: 'User rejected the request.'}}}); 
+        port.postMessage({id: requestId, method: 'eth_requestAccounts', response: {type: 'error', data: {name: 'ProviderRPCError', code: 4001, message: 'User rejected the request.'}}});
       }
 
     } catch(e) {
@@ -486,7 +486,7 @@
       // If requestId is not valid then use 0 since we are bailing out anyway
       // May want to think about putting a slight tick to make sure all queues get flushed
       //goto(PATH_LOGOUT); // May want to do something else if they are already logged in!
-      if (browserSvelte) { 
+      if (browserSvelte) {
         await close();
       }
     }
@@ -515,45 +515,45 @@ async function close() {
 
 <div class="modal" class:modal-open={showConfirm}>
   <div class="modal-box relative">
-    
+
     <h3 class="text-lg font-bold">Connect to {domain}</h3>
     <p class="py-4">This will connect <span class="font-bold">{domain}</span> to {accountsPicked}  of your addresses! Do you wish to continue?</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=>showConfirm = false}>Cancel</button>
-      <button class="btn" on:click={handleProcess}>Yes</button>
+      <button class="btn" onclick={()=>showConfirm = false}>Cancel</button>
+      <button class="btn" onclick={handleProcess}>Yes</button>
     </div>
   </div>
 </div>
 
 <div class="modal" class:modal-open={showSuccess}>
   <div class="modal-box relative">
-    
+
     <h3 class="text-lg font-bold">Success!</h3>
     <p class="py-4"><span class="font-bold">{domain}</span> is now connected to YAKKL®</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=> window.close()}>Close</button> 
+      <button class="btn" onclick={()=> window.close()}>Close</button>
     </div>
   </div>
 </div>
 
 <div class="modal" class:modal-open={showFailure}>
   <div class="modal-box relative">
-    
+
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{errorValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={()=> window.close()}>Close</button>
+      <button class="btn" onclick={()=> window.close()}>Close</button>
     </div>
   </div>
 </div>
 
 <div class="modal" class:modal-open={showWarning}>
   <div class="modal-box relative">
-    
+
     <h3 class="text-lg font-bold">Failed!</h3>
     <p class="py-4">{warningValue}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => showWarning=false}>OK</button>
+      <button class="btn" onclick={() => showWarning=false}>OK</button>
     </div>
   </div>
 </div>
@@ -579,7 +579,7 @@ async function close() {
   </div>
 
 </div>
-{:then _} 
+{:then _}
 <div class="w-[96%] text-center justify-center m-2 flex flex-col">
   <div class="justify-center">
     <div class="rounded-badge inline-flex w-fit p-2 bg-secondary text-base-content font-semibold">
@@ -602,10 +602,10 @@ async function close() {
 </div>
 
 <div class="mx-4 mb-2 overflow-scroll max-h-[700px]">
-  <TableSearch placeholder="Search by address name" hoverable={true} bind:inputValue={searchTerm} shadow>
+  <TableSearch placeholder="Search by address name" hoverable={true} bind:inputValue={searchTerm} > <!-- shadow> -->
     <TableHead>
       <TableHeadCell>
-        
+
         <!-- <Checkbox on:click={handleToggleAll}/> -->
 
       </TableHeadCell>
@@ -615,7 +615,7 @@ async function close() {
       {#each filteredAddressesArray as item, i}
         <TableBodyRow>
           <!-- ; (item.checked === true) ? 'checked' : '' -->
-          <TableBodyCell><Checkbox id=cb{i} on:click={(e) => {handleAccount(item, e); (item.checked === true) ? 'checked' : '' }}/></TableBodyCell>
+          <TableBodyCell><Checkbox id="cb{i}" on:click={(e) => {handleAccount(item, e); (item.checked === true) ? 'checked' : '' }}/></TableBodyCell>
           <TableBodyCell>
             {truncate(item.name, 20)} - {truncate(item.address, 6) + item.address.substring(item.address.length - 4)}
             {#if item?.alias?.length > 0}
@@ -630,23 +630,23 @@ async function close() {
 
 <div class="my-4">
   <div class="flex space-x-2 justify-center">
-    <button 
-      on:click|preventDefault={handleReject}
+    <button
+      onclick={handleReject}
       class="btn-sm btn-accent uppercase rounded-full"
       aria-label="Cancel">
       Reject
     </button>
-    
-    <button 
+
+    <button
       type="submit"
       id="recover"
-      on:click|preventDefault={handleConfirm}
+      onclick={handleConfirm}
       class="btn-sm btn-primary uppercase rounded-full ml-2"
       aria-label="Confirm">
       Approve
     </button>
   </div>
-</div>   
+</div>
 
 {/await}
 

@@ -17,7 +17,7 @@
 	import { RegistrationType, checkAccountRegistration, isEncryptedData, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { dateString } from '$lib/common/datetime';
 	import { verify } from '$lib/common/security';
-  
+
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
 	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
@@ -25,7 +25,8 @@
 	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
-  let browser_ext: Browser; 
+
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
   // let wallet: Wallet;
@@ -34,21 +35,21 @@
   let yakklMiscStore: string;
   let yakklPrimaryAccountsStore: YakklPrimaryAccount[];
 
-  let error = false;
-  let errorValue: any; 
-  let registeredType: string;
+  let error = $state(false);
+  let errorValue: any = $state();
+  let registeredType: string = $state();
   let redirect = PATH_WELCOME;
   let requestId: string = '';
-  let showProgress = false;
+  let showProgress = $state(false);
   let pweyeOpen = false;
   let pweyeOpenId: HTMLButtonElement;
   let pweyeClosedId: HTMLButtonElement;
 
-  let showRegistrationOption = false;
-  let showEmergencyKit = false;
-  let showImportOption = false;
-  let showImportAccount = false;
-  let showImportPhrase = false;
+  let showRegistrationOption = $state(false);
+  let showEmergencyKit = $state(false);
+  let showImportOption = $state(false);
+  let showImportAccount = $state(false);
+  let showImportPhrase = $state(false);
 
   if (browserSvelte) {
     requestId = $page.url.searchParams.get('requestId') as string;
@@ -57,7 +58,7 @@
       redirect = PATH_DAPP_ACCOUNTS + '.html?requestId=' + requestId;
     }
   }
-  
+
   $yakklVersionStore = ''; // This will get set AFTER user validation
 
   onMount(async () => {
@@ -72,7 +73,7 @@
         // wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected  ? currentlySelected.shortcuts.chainId ?? 1 : 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         // console.log('onMount: wallet', wallet);
 
-        pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement; 
+        pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement;
         pweyeClosedId = document.getElementById("pweye-closed") as HTMLButtonElement;
         pweyeOpenId.setAttribute('tabindex', '-1');
         pweyeClosedId.setAttribute('tabindex', '-1');
@@ -91,20 +92,20 @@
           // Sets the default of 60 seconds but can be changed by setting the properties to another integer.
           browser_ext.idle.setDetectionInterval(yakklPreferences.idleDelayInterval); // System idle time is 2 minutes. This adds 1 minute to that. If any movement or activity is detected then it resets.
         }
-        
+
         const yakklSettings = await getSettings();
         if (yakklSettings) {
           registeredType = yakklSettings.registeredType as string;
           // if (!checkUpgrade()) { // The checkUpgrade is not valid until after user is validated
-          if (registeredType !== RegistrationType.PREMIER) {
+          if (registeredType !== RegistrationType.PRO) {
             registeredType = RegistrationType.STANDARD;
           }
-          
+
           // PROMO - BETA
           let promoDate = new Date('2025-01-01T00:00:00');  // TODO: May want to remove this altogether later...
           let date = new Date();
           if (date < promoDate) {
-            registeredType = RegistrationType.PREMIER;
+            registeredType = RegistrationType.PRO;
           }
           ////
 
@@ -121,7 +122,6 @@
     }
   });
 
-  
   const { form, errors, handleSubmit } = createForm({
     initialValues: { userName: "", password: "" },
     onSubmit: async data => {
@@ -135,34 +135,32 @@
     }
   });
 
-
   async function login(userName: string, password: string): Promise<void> {
     if (browserSvelte) {
       try {
         showProgress = true;
 
-        let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password); 
+        let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
         if (!profile) {
           throw `User [ ${userName} ] was not found OR password is not correct OR no primary account was not found. Please try again or register if not already registered`;
         } else {
-
           if (!yakklMiscStore) yakklMiscStore = getMiscStore(); // This should be set by the verify function
           if (!yakklMiscStore) {
             throw `User [ ${userName} ] was not found OR password is not correct. Please try again or register if not already registered`;
-          } 
+          }
           $yakklUserNameStore = userName;
 
           if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected();
-          
+
           currentlySelected.shortcuts.isLocked = false;
           // May can wait until the welcome page card to make any blockchain calls...
           // if (currentlySelected.shortcuts.address && wallet) {
           //   let result = await wallet.getBalance(currentlySelected.shortcuts.address);
-          //   if (result) {              
+          //   if (result) {
           //     if ((currentlySelected.data as CurrentlySelectedData)?.account?.value) (currentlySelected.data as CurrentlySelectedData).account.value = result;
           //     if (currentlySelected.shortcuts?.value) currentlySelected.shortcuts.value = result;
           //   }
-          // }          
+          // }
           if (!isEncryptedData(currentlySelected.data)) {
             encryptData(currentlySelected.data, yakklMiscStore).then(result => {
               currentlySelected.data = result;
@@ -178,8 +176,8 @@
           }
           if ((profile.data as ProfileData).registered?.key) {
             let key = (profile.data as ProfileData).registered.key;
-            if (key !== null || key !== '' && (profile.data as ProfileData).registered.type === RegistrationType.PREMIER) {
-              $yakklVersionStore = RegistrationType.PREMIER; // Add this later... + ' - ' + key;
+            if (key !== null || key !== '' && (profile.data as ProfileData).registered.type === RegistrationType.PRO) {
+              $yakklVersionStore = RegistrationType.PRO; // Add this later... + ' - ' + key;
             } else {
               $yakklVersionStore = RegistrationType.STANDARD;
               (profile.data as ProfileData).registered.key = '';
@@ -230,7 +228,7 @@
           }
 
           yakklPrimaryAccountsStore = await getYakklPrimaryAccounts();
-          
+
           if (redirect !== PATH_WELCOME) {
             // Must be a dapp
             if (requestId) { // Don't want to truely unlock with dapps
@@ -259,7 +257,6 @@
     }
   }
 
-
   function toggleVisability(id="password", type="text") {
     let x = document.getElementById(id) as HTMLInputElement;
     if (x.type === "password") {
@@ -268,7 +265,6 @@
       x.type = "password";
     }
   }
-
 
   function togglePasswordVisability() {
     toggleVisability("password", "text");
@@ -292,7 +288,7 @@
       });
     }
   }
-  
+
   function onCompleteImportPrivateKey(account: YakklAccount) {
     showImportAccount = false;
     goto(PATH_WELCOME)
@@ -319,7 +315,7 @@
     showImportAccount = false;
     goto(PATH_LOGOUT);
   }
-  
+
   function onCancelImportOption() {
     showImportOption = false;
     showEmergencyKit = false;
@@ -354,7 +350,11 @@
     showImportAccount = false;
     showRegistrationOption = true;
   }
-  
+
+  // Here as a reference for ErrorNoAction
+  function handleCustomAction() {
+    errorValue = '';
+  }
 </script>
 
 <svelte:head>
@@ -374,7 +374,7 @@
 
 <ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." />
 
-<ErrorNoAction bind:show={error} title="ERROR!" bind:value={errorValue} />
+<ErrorNoAction bind:show={error} title="ERROR!" value={errorValue} handle={handleCustomAction} />
 
 <Popover class="text-sm z-10 w-60" triggeredBy="#register" placement="top">
   <h3 class="font-semibold">If NOT registered</h3>
@@ -411,17 +411,20 @@
 
 <!-- relative bg-gradient-to-b from-indigo-700 to-indigo-500/15 m-1 ml-2 mr-2 dark:bg-gray-900 rounded-t-xl overflow-hidden -->
 <div class="relative h-[98vh] text-base-content">
-  
+
   <main class="px-4 text-center">
 
     <Welcome />
 
     <div class="mt-5">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-interactive-supports-focus -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
       <!-- <div id="register" role="button" on:click={() => goto("/register/Register.html")} class="text-md uppercase underline font-bold">Click if NOT registered</div> -->
-      
-      <form on:submit|preventDefault={handleSubmit}>
+
+      <form onsubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(e);
+      }}>
 
         <div class="mt-5 flex flex-row">
           <div class="form-control w-[22rem]">
@@ -436,7 +439,7 @@
           <svg id="nam-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-2 fill-gray-300">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
           </svg>
-          
+
         </div>
 
         <div class="mt-5 flex flex-row">
@@ -444,19 +447,19 @@
             <input id="password" type="password"
               class="input input-bordered input-primary w-full mt-2"
               placeholder="Password" autocomplete="off" bind:value="{$form.password}" required />
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <svg id="pweye-closed" on:click={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-12 z-10 mt-5 cursor-pointer">
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <svg id="pweye-closed" onclick={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-12 z-10 mt-5 cursor-pointer">
               <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
               <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0115.75 12zM12.53 15.713l-4.243-4.244a3.75 3.75 0 004.243 4.243z" />
               <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 00-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 016.75 12z" />
             </svg>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <svg id="pweye-open" on:click={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-12 z-10 mt-5 cursor-pointer">
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <svg id="pweye-open" onclick={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-12 z-10 mt-5 cursor-pointer">
               <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
               <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
-            </svg>  
+            </svg>
           </div>
           <svg id="pwd-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
@@ -475,45 +478,45 @@
               <span>Unlock</span>
             </div>
           </button>
-          <button type="button" on:click={onCancelRegistrationOption}
+          <button type="button" onclick={onCancelRegistrationOption}
             class="btn btn-secondary w-64 rounded-full mt-3 text-white">
             <div class="inline-flex items-center align-middle">
               <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6 mx-2">
                 <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
                 <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
-              </svg> 
+              </svg>
               <span>Exit/Logout</span>
             </div>
           </button>
         </div>
       </form>
-      
+
     </div>
 
-    <!-- {#if registeredType !== 'Premier'}
+    <!-- {#if registeredType !== 'Pro'}
     <div id="upgrade" class="w-full mt-10">
       <div class="card bg-base-100 shadow-xl image-full animate-pulse">
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
-          <h2 class="card-title self-center">UPGRADE TO PREMIER!</h2>
-          <p>It appears you have not upgraded to the Premier version. Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p>
+          <h2 class="card-title self-center">UPGRADE TO PRO!</h2>
+          <p>It appears you have not upgraded to the Pro version. Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p>
         </div>
-      </div>      
+      </div>
     </div>
     {:else} -->
     <div id="upgrade" class="w-full mt-14">
       <div class="card bg-base-100 shadow-xl image-full animate-pulse">
         <figure><img src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
         <div class="card-body">
-          <h2 class="card-title self-center">PREMIER!</h2>
-          <p>Welcome to our Premier version. We have a lot of additional features waiting on you. We're also working hard on advanced features to make your digital asset experience a dream! We also need your suggestions! Enjoy!</p>
+          <h2 class="card-title self-center">PRO!</h2>
+          <p>Welcome to our Pro version. We have a lot of additional features waiting on you. We're also working hard on advanced features to make your digital asset experience a dream! We also need your suggestions! Enjoy!</p>
         </div>
-      </div>      
+      </div>
     </div>
     <!-- {/if} -->
 
     <Copyright registeredType={registeredType} />
-    
+
   </main>
 </div>
 

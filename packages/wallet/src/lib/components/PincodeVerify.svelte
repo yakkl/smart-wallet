@@ -5,12 +5,17 @@
   import type { EncryptedData, ProfileData, Profile } from '$lib/common';
   import Modal from './Modal.svelte';
 
-  export let show = false;
-  export let className = "z-[999]";
-  export let onVerify: (pincode: string) => void = () => {};
+  interface Props {
+    show?: boolean;
+    className?: string;
+    onRejected?: (rejection: string) => void;
+    onVerified?: (pincode: string) => void;
+  }
 
-  let pincode = "";
-  let eyeOpen = false;
+  let { show = $bindable(false), className = "z-[899]", onRejected = () => {}, onVerified = () => {} }: Props = $props();
+
+  let pincode = $state("");
+  let eyeOpen = $state(false);
 
   onMount(() => {
     pincode = "";
@@ -24,23 +29,22 @@
         return;
       }
 
-      const profile: Profile | null = await getProfile() as Profile;
+      const profile: Profile | null = await getProfile();
 
       if (!profile) {
-        throw 'No profile found';
+        show = false;
+        onRejected("No profile found");
       }
 
-      if (isEncryptedData(profile.data as ProfileData)) {
+      if (isEncryptedData(profile.data)) {
         await decryptData(profile.data as unknown as EncryptedData, $yakklMiscStore).then(result => {
-          if (profile) {
-            profile.data = result as ProfileData;
-          }
+          profile.data = result as ProfileData;
         });
       }
 
       const digestedPincode = await digestMessage(pincode);
-      if (isProfileData(profile.data as ProfileData) && (profile.data as ProfileData).pincode === digestedPincode) {
-        onVerify(digestedPincode); // Send the digested pincode and not the actual pincode
+      if (isProfileData(profile.data) && profile.data.pincode === digestedPincode) {
+        onVerified(digestedPincode); // Send the digested pincode and not the actual pincode
       } else {
         alert("Invalid pincode");
       }
@@ -49,14 +53,17 @@
       show = false;
     } catch (e) {
       console.log(e);
+      onRejected("Pincode verification failed");
     } finally {
       show = false;
+      onRejected("Pincode verification failed");
     }
   }
 
   function closeModal() {
     pincode = "";
     show = false;
+    onRejected("Pincode verification failed");
   }
 
   function resetForm() {
@@ -83,8 +90,8 @@
 
 </script>
 
-<div class="relative {className}">
-  <Modal bind:show={show} title="Pincode Authorization" on:close={closeModal}>
+<!-- <div class="relative {className}"> -->
+  <Modal bind:show={show} title="Pincode Authorization" {className} onClose={closeModal}>
     <div class="p-6 text-primary-light dark:text-primary-dark">
       <p class="mb-4 text-secondary-light dark:text-secondary-dark">Please verify your pincode to move forward. Thank you.</p>
       <div class="relative">
@@ -101,7 +108,7 @@
           bind:value={pincode}
           required
         />
-        <button type="button" class="absolute top-1/2 right-3 transform -translate-y-1/2 focus:outline-none" on:click={togglePinVisibility}>
+        <button type="button" class="absolute top-1/2 right-3 transform -translate-y-1/2 focus:outline-none" onclick={togglePinVisibility}>
           {#if eyeOpen}
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-gray-500">
               <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
@@ -117,10 +124,10 @@
         </button>
       </div>
       <div class="mt-6 flex justify-end space-x-4">
-        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" on:click={closeModal}>Cancel</button>
-        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" on:click={resetForm}>Reset</button>
-        <button type="button" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" on:click={handleVerify}>Verify</button>
+        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={closeModal}>Cancel/Reject</button>
+        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={resetForm}>Reset</button>
+        <button type="button" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick={handleVerify}>Verify</button>
       </div>
     </div>
   </Modal>
-</div>
+<!-- </div> -->

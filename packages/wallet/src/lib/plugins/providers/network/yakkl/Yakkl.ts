@@ -4,6 +4,9 @@ import type { Network, BlockTag, BigNumberish, TransactionResponse, Deferrable, 
 import { AbstractProvider, type Provider } from '$plugins/Provider';
 
 export class Yakkl extends AbstractProvider {
+  initializeProvider(): Promise<any | null> {
+    throw new Error( 'Method not implemented.' );
+  }
   sendTransaction( transaction: TransactionRequest ): Promise<TransactionResponse> {
     throw new Error( 'Method not implemented.' );
   }
@@ -14,6 +17,9 @@ export class Yakkl extends AbstractProvider {
     throw new Error( 'Method not implemented.' );
   }
   getProviderURL(): Promise<string> {
+    throw new Error( 'Method not implemented.' );
+  }
+  getProviderEthers(): any {
     throw new Error( 'Method not implemented.' );
   }
   getNetwork(): Promise<Network> {

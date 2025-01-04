@@ -1,10 +1,17 @@
-## YAKKL Contracts
+
+# YAKKL Contracts
 
 This is the smart contract repository for the YAKKL project. The contracts are written in Solidity and tested using the Foundry testing framework.
 
 We use remappings.txt instead of adding them to the foundry.toml file. Also, do not attempt to add comments but follow the format of the file.
 
 .env.example shows example environment variables that can be used in the project. Rename to .env and fill in the values.
+
+## Setup Environment
+
+1. Follow the instructions from Foundry: `https://book.getfoundry.sh/`
+
+2. Read the README.md file in the /code/README.md (code) directory. It goes through the setup of the project showing the examples.
 
 ### Contracts
 
@@ -13,11 +20,12 @@ Contracts are located in the src directory. Each contract is in its own file and
 Contract scripts are located in the scripts directory. These scripts are used to deploy the contracts to the blockchain.
 
 ## SwapRouter.sol
-### swapExactETHForTokens:
 
-This function is used to swap ETH for tokens. 
+### swapExactETHForTokens
 
-### swapExactTokensForTokens:
+This function is used to swap ETH for tokens.
+
+### swapExactTokensForTokens
 
 The swapExactTokensForTokens function is used when you want to swap a specific amount of one ERC20 token for another ERC20 token. This function is useful in several scenarios:
 
@@ -31,6 +39,7 @@ The swapExactTokensForTokens function is used when you want to swap a specific a
 8. Automated Trading Strategies: Bots or automated systems might use this function to execute trading strategies involving multiple ERC20 tokens.
 
 Example of how to call from typescript:
+
 ```typescript
 // Assume 'tokenIn' and 'tokenOut' are the addresses of the ERC20 tokens
 // 'amountIn' is the amount of tokenIn to swap
@@ -59,30 +68,29 @@ await tx.wait();
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-
 Foundry consists of:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
+- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
+- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
+- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
 ## Documentation
 
-https://book.getfoundry.sh/
+<https://book.getfoundry.sh/>
 
 ## Usage
 
 ### Build
 
 ```shell
-$ forge build
+forge build
 ```
 
 ### Test
 
 ```shell
-$ forge test
+forge test
 ```
 
 ### Debug
@@ -102,37 +110,37 @@ Here are some ways to use them:
 ### Format
 
 ```shell
-$ forge fmt
+forge fmt
 ```
 
 ### Gas Snapshots
 
 ```shell
-$ forge snapshot
+forge snapshot
 ```
 
 ### Anvil
 
 ```shell
-$ anvil
+anvil
 ```
 
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
 
 ### Cast
 
 ```shell
-$ cast <subcommand>
+cast <subcommand>
 ```
 
 ### Help
 
 ```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+forge --help
+anvil --help
+cast --help
 ```

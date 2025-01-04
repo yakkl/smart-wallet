@@ -1,0 +1,127 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import * as yup from 'yup';
+  //import * as Sheet from "$lib/components/ui/sheet";
+  //import { Button } from "$lib/components/ui/button";
+  //import { Input } from "$lib/components/ui/input";
+  //import { Label } from "$lib/components/ui/label";
+  import { profileStore, yakklPreferencesStore } from '$lib/common/stores';
+  import type { Profile, ProfileData } from '$lib/common/interfaces';
+  // import type { BuilderReturn } from '@melt-ui/svelte';
+
+  let profile: Profile = $state();
+  let profileData: ProfileData = $state();
+
+  onMount(() => {
+    const unsubscribe = profileStore.subscribe(value => {
+      profile = value;
+      if (profile.data instanceof Promise) {
+        profile.data.then(data => {
+          profileData = data;
+        });
+      } else if (typeof profile.data === 'object' && !('data' in profile.data)) {
+        profileData = profile.data as ProfileData;
+      }
+    });
+
+    return unsubscribe;
+  });
+
+  const profileSchema = yup.object().shape({
+    userName: yup.string().required('Username is required').min(3, 'Username must be at least 3 characters'),
+    name: yup.object().shape({
+      prefix: yup.string(),
+      first: yup.string().required('First name is required'),
+      middle: yup.string(),
+      last: yup.string().required('Last name is required'),
+      suffix: yup.string(),
+    }),
+    email: yup.string().email('Invalid email address').required('Email is required'),
+  });
+
+  let errors: { [key: string]: string } = $state({});
+
+  async function validateForm() {
+    try {
+      await profileSchema.validate({
+        userName: profile.userName,
+        name: profileData.name,
+        email: profileData.email,
+      }, { abortEarly: false });
+      errors = {};
+      return true;
+    } catch (error) {
+      if (error instanceof yup.ValidationError) {
+        errors = error.inner.reduce((acc, err) => {
+          if (err.path) {
+            acc[err.path] = err.message;
+          }
+          return acc;
+        }, {} as { [key: string]: string });
+      }
+      return false;
+    }
+  }
+
+  async function handleSubmit() {
+    if (await validateForm()) {
+      profile.preferences = $yakklPreferencesStore;
+      profileStore.set(profile);
+      console.log('Profile saved:', profile);
+    }
+  }
+
+  let open = $state(false);
+
+  export function openProfile() {
+    open = true;
+  }
+</script>
+
+<Sheet.Root bind:open>
+  <Sheet.Content side="right" class="w-[400px] sm:w-[540px] bg-white dark:bg-gray-800">
+    <Sheet.Header>
+      <Sheet.Title>Edit Profile</Sheet.Title>
+      <Sheet.Description>
+        Make changes to your profile here. Click save when you're done.
+      </Sheet.Description>
+    </Sheet.Header>
+    <div class="grid gap-4 py-4">
+      <div class="grid grid-cols-4 items-center gap-4">
+        <Label for="userName" class="text-right">Username</Label>
+        <Input id="userName" bind:value={profile.userName} class="col-span-3" />
+        {#if errors.userName}
+          <p class="text-red-500 text-sm col-start-2 col-span-3">{errors.userName}</p>
+        {/if}
+      </div>
+      <div class="grid grid-cols-4 items-center gap-4">
+        <Label for="firstName" class="text-right">First Name</Label>
+        <Input id="firstName" bind:value={profileData.name.first} class="col-span-3" />
+        {#if errors['name.first']}
+          <p class="text-red-500 text-sm col-start-2 col-span-3">{errors['name.first']}</p>
+        {/if}
+      </div>
+      <div class="grid grid-cols-4 items-center gap-4">
+        <Label for="lastName" class="text-right">Last Name</Label>
+        <Input id="lastName" bind:value={profileData.name.last} class="col-span-3" />
+        {#if errors['name.last']}
+          <p class="text-red-500 text-sm col-start-2 col-span-3">{errors['name.last']}</p>
+        {/if}
+      </div>
+      <div class="grid grid-cols-4 items-center gap-4">
+        <Label for="email" class="text-right">Email</Label>
+        <Input id="email" type="email" bind:value={profileData.email} class="col-span-3" />
+        {#if errors.email}
+          <p class="text-red-500 text-sm col-start-2 col-span-3">{errors.email}</p>
+        {/if}
+      </div>
+    </div>
+    <Sheet.Footer>
+      <Sheet.Close let:builder>
+        <Button {builder} type="submit" on:click={handleSubmit}>
+          Save changes
+        </Button>
+      </Sheet.Close>
+    </Sheet.Footer>
+  </Sheet.Content>
+</Sheet.Root>

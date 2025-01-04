@@ -206,7 +206,7 @@ export class EmergencyKitManager {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
-  
+
   static async createBulkEmergencyKit(
     preferences: Preferences,
     settings: Settings,
@@ -254,8 +254,8 @@ export class EmergencyKitManager {
       files: ['yakklPreferencesStore', 'yakklSettingsStore', 'profileStore', 'yakklCurrentlySelectedStore', 'yakklContactsStore', 'yakklChatsStore', 'yakklAccountsStore', 'yakklPrimaryAccountsStore', 'yakklWatchListStore', 'yakklBlockedListStore', 'yakklConnectedDomainsStore']
     };
 
-    profileData = null;    
-    
+    profileData = null;
+
     const bulkEmergencyKit: BulkEmergencyKitData = {
       meta,
       data: encryptedData,
@@ -269,95 +269,120 @@ export class EmergencyKitManager {
     newData: any,
     existingData: any
   }> {
-    let fileContent: string;
+    try {
+      let fileContent: string;
 
-    if (typeof source === 'string' && typeof window === 'undefined') {
-      // Node.js environment
-      const fs = await import('fs');
-      const { promisify } = await import('util');
-      const readFile = promisify(fs.readFile);
-      fileContent = await readFile(source, 'utf-8');
-    } else if (source instanceof File) {
-      // Browser environment
-      fileContent = await source.text();
-    } else {
-      throw new Error('Unsupported source type');
-    }
-
-    const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
-
-    // Verify the overall checksum
-    const calculatedCS = await this.createHash(JSON.stringify(bulkEmergencyKit.meta) + JSON.stringify(bulkEmergencyKit.data));
-    if (calculatedCS !== bulkEmergencyKit.cs) {
-      throw new Error('Data integrity check failed');
-    }
-
-    const newData: any = {};
-    const existingData: any = {};
-
-    for (const [key, encryptedValue] of Object.entries(bulkEmergencyKit.data)) {
-      const decryptedData = await this.decryptWithChecksumVerification(encryptedValue, passwordOrSaltedKey);
-      
-      // Check if data already exists (you'll need to implement this check based on your data structure)
-      const dataExists = await this.checkDataExists(key, decryptedData);
-
-      if (dataExists) {
-        existingData[key] = decryptedData;
+      if (typeof source === 'string' && typeof window === 'undefined') {
+        // Node.js environment
+        const fs = await import('fs');
+        const { promisify } = await import('util');
+        const readFile = promisify(fs.readFile);
+        fileContent = await readFile(source, 'utf-8');
+      } else if (source instanceof File) {
+        // Browser environment
+        fileContent = await source.text();
       } else {
-        newData[key] = decryptedData;
+        throw new Error('Unsupported source type');
       }
-    }
 
-    return { newData, existingData };
+      const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
+
+      // Verify the overall checksum
+      const calculatedCS = await this.createHash(JSON.stringify(bulkEmergencyKit.meta) + JSON.stringify(bulkEmergencyKit.data));
+      if (calculatedCS !== bulkEmergencyKit.cs) {
+        throw new Error('Data integrity check failed');
+      }
+
+      const newData: any = {};
+      const existingData: any = {};
+
+      for (const [key, encryptedValue] of Object.entries(bulkEmergencyKit.data)) {
+        const decryptedData = await this.decryptWithChecksumVerification(encryptedValue, passwordOrSaltedKey);
+
+        // Check if data already exists (you'll need to implement this check based on your data structure)
+        const dataExists = await this.checkDataExists(key, decryptedData); // Currently a placeholder
+
+        if (dataExists) {
+          existingData[key] = decryptedData;
+        } else {
+          newData[key] = decryptedData;
+        }
+      }
+
+      return { newData, existingData };
+    } catch (error) {
+      console.log('Error importing bulk emergency kit:', error);
+      throw error;
+    }
   }
 
   static async downloadBulkEmergencyKit(bulkEmergencyKit: BulkEmergencyKitData): Promise<string> {
-    if (typeof window !== 'undefined' && window.document) {
-      const fileName = `bulk-emergency-kit-${bulkEmergencyKit.meta.id}-${bulkEmergencyKit.meta.createDate}.json`;
-      // Browser environment
-      this.downloadObjectAsJson(bulkEmergencyKit, fileName);
-      return fileName;
-    } else {
-      throw new Error('Download not supported in this environment');
+    try {
+      if (typeof window !== 'undefined' && window.document) {
+        const fileName = `bulk-emergency-kit-${bulkEmergencyKit.meta.id}-${bulkEmergencyKit.meta.createDate}.json`;
+        // Browser environment
+        this.downloadObjectAsJson(bulkEmergencyKit, fileName);
+        return fileName;
+      } else {
+        throw new Error('Download not supported in this environment');
+      }
+    } catch (error) {
+      console.log('Error downloading bulk emergency kit:', error);
+      throw error;
     }
   }
 
   static async readBulkEmergencyKitMetadata(source: File | string): Promise<EmergencyKitMetaData> {
-    let fileContent: string;
+    try {
+      let fileContent: string;
 
-    if (typeof source === 'string' && typeof window === 'undefined') {
-      // Node.js environment
-      const fs = await import('fs');
-      const { promisify } = await import('util');
-      const readFile = promisify(fs.readFile);
-      fileContent = await readFile(source, 'utf-8');
-    } else if (source instanceof File) {
-      // Browser environment
-      fileContent = await source.text();
-    } else {
-      throw new Error('Unsupported source type');
+      if (typeof source === 'string' && typeof window === 'undefined') {
+        // Node.js environment
+        const fs = await import('fs');
+        const { promisify } = await import('util');
+        const readFile = promisify(fs.readFile);
+        fileContent = await readFile(source, 'utf-8');
+      } else if (source instanceof File) {
+        // Browser environment
+        fileContent = await source.text();
+      } else {
+        throw new Error('Unsupported source type');
+      }
+
+      const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
+      return bulkEmergencyKit.meta;
+    } catch (error) {
+      console.log('Error reading bulk emergency kit metadata:', error);
+      throw error;
     }
-
-    const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
-    return bulkEmergencyKit.meta;
   }
 
   private static async encryptWithChecksum(data: any, passwordOrSaltedKey: string | SaltedKey): Promise<EncryptedData> {
-    const jsonString = JSON.stringify(data);
-    const checksum = await this.createHash(jsonString);
-    const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
-    return encryptedData;
+    try {
+      const jsonString = JSON.stringify(data);
+      const checksum = await this.createHash(jsonString);
+      const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
+      return encryptedData;
+    } catch (error) {
+      console.log('Error encrypting data:', error);
+      throw error;
+    }
   }
 
   private static async decryptWithChecksumVerification(encryptedData: EncryptedData, passwordOrSaltedKey: string | SaltedKey): Promise<any> {
-    const decryptedData = await decryptData<{ cs: string, data: any }>(encryptedData, passwordOrSaltedKey);
-    const calculatedChecksum = await this.createHash(JSON.stringify(decryptedData.data));
-    
-    if (calculatedChecksum !== decryptedData.cs) {
-      throw new Error('Data integrity check failed');
-    }
+    try {
+      const decryptedData = await decryptData<{ cs: string, data: any }>(encryptedData, passwordOrSaltedKey);
+      const calculatedChecksum = await this.createHash(JSON.stringify(decryptedData.data));
 
-    return decryptedData.data;
+      if (calculatedChecksum !== decryptedData.cs) {
+        throw new Error('Data integrity check failed');
+      }
+
+      return decryptedData.data;
+    } catch (error) {
+      console.log('Error decrypting data:', error);
+      throw error;
+    }
   }
 
   private static async checkDataExists(key: string, data: any): Promise<boolean> {

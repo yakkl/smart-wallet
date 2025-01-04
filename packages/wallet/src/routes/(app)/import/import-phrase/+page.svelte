@@ -1,6 +1,8 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
   import { browser as browserSvelte} from '$app/environment';
-  import { ethers } from 'ethers';
+  import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from "svelte-forms-lib";
   import * as yup from 'yup';
   import {onMount} from 'svelte';
@@ -9,7 +11,8 @@
   import { getWallet } from '$lib/utilities/ethereum';
   // import { getTransactionCount, setProvider } from '$lib/plugins/networks/ethereum/providers';
   import { deepCopy, getSymbol } from '$lib/utilities';
-  import { Confetti } from "svelte-confetti";
+  // import { Confetti } from "svelte-confetti";
+  import { confetti } from '@neoconfetti/svelte';
   import { setSettingsStorage, getSettings, yakklMiscStore, setProfileStorage, setYakklCurrentlySelectedStorage, setYakklPrimaryAccountsStorage, getYakklPrimaryAccounts, getYakklAccounts,  setYakklAccountsStorage, getProfile } from '$lib/common/stores';
   import { encryptData, decryptData } from '$lib/common/encryption';
   import { DEFAULT_DERIVED_PATH_ETH, PATH_WELCOME, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, YAKKL_ZERO_ADDRESS } from '$lib/common/constants';
@@ -19,7 +22,7 @@
 	import { dateString } from '$lib/common/datetime';
 
   let currentlySelected: YakklCurrentlySelected;
-  
+
   let error = false;
   let errorValue: any;
   // let msgType = 'ERROR! - ';
@@ -49,7 +52,7 @@
 
   // TODO: May want to call not recreate the creation of the account!!
 
-  async function createPortfolioAccount(mnemonic=null) {
+  async function createPortfolioAccount(mnemonic='') {
     try {
       if ( browserSvelte ) {
         let id: string = '';
@@ -97,47 +100,47 @@
         if (!profile.data || !$yakklMiscStore) {
           throw 'Profile data does not appear to be encrypted. Please register or re-register. Thank you.';
         }
-        
+
         if (isEncryptedData(profile.data)) {
           await decryptData(profile.data, $yakklMiscStore).then(result => {
             profile.data = result as ProfileData;
           });
         }
 
-        (profile.data as ProfileData).meta = {};        
+        (profile.data as ProfileData).meta = {};
         preferences = profile.preferences;
 
         let index = (profile.data as ProfileData).accountIndex ?? 0;
         derivedPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/0`;
-        
+
         let entropy;
 
         if (!mnemonic) {
           // Use this instead of createRandom to create 24 words instead of 12 - 32 words= 24 words and 16 words= 12 words
 
           // v6.0.0+
-          let words= ethers.randomBytes(!preferences ? 32 : (!preferences.words? 32 : preferences.words));
-          let randomMnemonic = ethers.Mnemonic.fromEntropy(words);
-          ethWallet = ethers.HDNodeWallet.fromMnemonic(randomMnemonic, derivedPath); //ethers.Wallet.fromPhrase(randomMnemonic.phrase);    
+          let words= ethersv6.randomBytes(!preferences ? 32 : (!preferences.words? 32 : preferences.words));
+          let randomMnemonic = ethersv6.Mnemonic.fromEntropy(words);
+          ethWallet = ethersv6.HDNodeWallet.fromMnemonic(randomMnemonic, derivedPath); //ethersv6.Wallet.fromPhrase(randomMnemonic.phrase);
 
-          // entropy = ethers.randomBytes(!preferences ? 32 : (!preferences.words? 32 : preferences.bytes));
-          // let randomMnemonic = ethers.HDNode.entropyToMnemonic(entropy);
+          // entropy = ethersv6.randomBytes(!preferences ? 32 : (!preferences.words? 32 : preferences.bytes));
+          // let randomMnemonic = ethersv6.HDNode.entropyToMnemonic(entropy);
           // mnemonicObject = randomMnemonic;
-          // ethWallet = ethers.Wallet.fromMnemonic(randomMnemonic, derivedPath);       
+          // ethWallet = ethersv6.Wallet.fromMnemonic(randomMnemonic, derivedPath);
         } else {
           // v6.0.0+
-          const mnemonicObject = ethers.Mnemonic.fromPhrase(mnemonic);
-          ethWallet = ethers.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
+          const mnemonicObject = ethersv6.Mnemonic.fromPhrase(mnemonic);
+          ethWallet = ethersv6.HDNodeWallet.fromMnemonic(mnemonicObject, derivedPath);
 
-          // entropy = ethers.HDNode.mnemonicToEntropy(mnemonic);
-          // ethWallet = ethers.Wallet.fromMnemonic(mnemonic, derivedPath);
+          // entropy = ethersv6.HDNode.mnemonicToEntropy(mnemonic);
+          // ethWallet = ethersv6.Wallet.fromMnemonic(mnemonic, derivedPath);
         }
 
         if ( !ethWallet ) {
           throw "The Ethereum Wallet (Portfolio Account) was not able to be created. Please try again.";
-        } 
+        }
 
-        let currentDate = dateString();                          
+        let currentDate = dateString();
         displayDate = new Date(currentDate);
 
         (profile.data as ProfileData).accountIndex = index+1;  // PortfolioAccount index for path
@@ -160,21 +163,21 @@
             privateKey: ethWallet.privateKey,
             publicKey: ethWallet.publicKey,
             publicKeyUncompressed: ethWallet.publicKey,//ethWallet.signingKey.publicKey,
-            path: ethWallet.path ? ethWallet.path : derivedPath,     
+            path: ethWallet.path ? ethWallet.path : derivedPath,
             pathIndex: index,
             fingerPrint: ethWallet.fingerprint,
             parentFingerPrint: ethWallet.parentFingerprint,
             chainCode: ethWallet.chainCode,
             assignedTo: [],    // Who are the parties that have responsibility for this account
           },
-          value: 0n, 
+          value: 0n,
           class: "Default",  // This is only used for enterprise like environments. It can be used for departments like 'Finance', 'Accounting', '<whatever>'
           level: 'L1',
           isSigner: true,
           avatar: '', // Default is identityicon but can be changed to user/account avatar
           tags: [currentlySelected!.shortcuts.network.blockchain, 'primary'],
           includeInPortfolio: true,   // This only applys to the value in this primary account and not any of the derived accounts from this primary account
-          connectedDomains: [], 
+          connectedDomains: [],
           createDate: currentDate,
           updateDate: currentDate,
           version: '',
@@ -217,14 +220,14 @@
         });
 
         yakklPrimaryAccountEnc.account = yakklAccount;
-        
+
         await encryptData(yakklAccount.data, $yakklMiscStore).then(result => {
           yakklPrimaryAccountEnc.account.data = result;
         });
 
         let yakklPrimaryAccounts: YakklPrimaryAccount[] = [];
         let primaryAccountsStorage = await getYakklPrimaryAccounts();
-        
+
         if (primaryAccountsStorage?.length > 0) {
           yakklPrimaryAccounts = primaryAccountsStorage;
         }
@@ -239,7 +242,7 @@
 
         let yakklAccounts: any[] = [];
         let accountsStorage = await getYakklAccounts();
-      
+
         if (accountsStorage?.length > 0) {
           yakklAccounts = accountsStorage;
         }
@@ -277,7 +280,7 @@
 
           // Originally had this due to have .preferences set as ? (undefined)
           // setDefinedProperty<PreferencesShort, keyof PreferencesShort>(yakklCurrentlySelected.preferences, 'currency', preferences.currency);
-            
+
           yakklCurrentlySelected!.shortcuts.blockchain = yakklAccount.blockchain;
           yakklCurrentlySelected!.shortcuts.symbol = getSymbol(yakklAccount.blockchain);
           yakklCurrentlySelected!.shortcuts.isLocked = false;
@@ -303,16 +306,16 @@
           // Create subAccounts if enabled
           if (subAccounts) {
             let derivedIndex = 0;
-            
+
             while (true) {
               const dPath = `${DEFAULT_DERIVED_PATH_ETH}${index}'/0/${derivedIndex}}`;
-              
+
               // v6.0.0+
-              // const ethWallet = ethers.HDNodeWallet.fromMnemonic(mnemonicObject, dPath);
+              // const ethWallet = ethersv6.HDNodeWallet.fromMnemonic(mnemonicObject, dPath);
 
               // It will throw an error if the mnemonic is not valid
               const randomMnemonic = (yakklPrimaryAccount.data as PrimaryAccountData).mnemonic as string;
-              const ethWallet = ethers.HDNodeWallet.fromPhrase(randomMnemonic, derivedPath); 
+              const ethWallet = ethersv6.HDNodeWallet.fromPhrase(randomMnemonic, derivedPath);
               const wallet = getWallet(ethWallet.privateKey);
 
 
@@ -355,14 +358,14 @@
                   chainCode: ethWallet.chainCode,
                   assignedTo: [],    // Who are the parties that have responsibility for this account
                 },
-                value: 0n, 
+                value: 0n,
                 class: "Default",  // This is only used for enterprise like environments. It can be used for departments like 'Finance', 'Accounting', '<whatever>'
                 level: 'L1',
                 isSigner: true,
                 avatar: '', // Default is identityicon but can be changed to user/account avatar
                 tags: [currentlySelected!.shortcuts.network.blockchain, 'sub'],
                 includeInPortfolio: true,   // This only applys to the value in this primary account and not any of the derived accounts from this primary account
-                connectedDomains: [], 
+                connectedDomains: [],
                 createDate: currentDate,
                 updateDate: currentDate,
                 version: '',
@@ -403,9 +406,9 @@
 
 
   // const { form, errors, state, isValid, handleChange, handleSubmit } = createForm({
-  //   initialValues: { 
+  //   initialValues: {
   //     userName: "",
-  //     password: "", 
+  //     password: "",
   //     confirmPassword: "",
   //     secretPhrase: ""
   //   },
@@ -445,9 +448,9 @@
   // });
 
   const { form, errors, state, isValid, handleChange, handleSubmit } = createForm<FormData>({
-    initialValues: { 
+    initialValues: {
       userName: "",
-      password: "", 
+      password: "",
       confirmPassword: "",
       secretPhrase: ""
     },
@@ -605,7 +608,7 @@
     try {
       hideShowWords();
       // This applies to the whole page which may not be ideal but works if only pasting the SRP
-      // TBD - may want to look at which field the paste event originated from and go from there instad of 
+      // TBD - may want to look at which field the paste event originated from and go from there instad of
       // overriding the entire list on each paste.
       document.addEventListener("paste", function (e: ClipboardEvent) {
         // Check if clipboard data exists
@@ -669,10 +672,11 @@
 </script>
 
 {#if showConfetti}
-<Confetti />
+<!-- <Confetti /> -->
+<div use:confetti></div>
 {/if}
 
-<ErrorNoAction bind:show={error} bind:value={errorValue} />
+<ErrorNoAction bind:show={error} value={errorValue} />
 
 <!-- <div class="modal" class:modal-open={error}>
   <div class="modal-box relative">
@@ -683,10 +687,10 @@
     </div>
   </div>
 </div> -->
-  
+
 <Cancel defaultClass="absolute right-3 top-3" />
 
-<div class="flex flex-col h-full w-full relative justify-center left-0 z-5 text-base-content bg-base-100"> 
+<div class="flex flex-col h-full w-full relative justify-center left-0 z-5 text-base-content bg-base-100">
     <div class="">
         <span class="block w-full px-1 text-xl font-extrabold border-none text-center">Import - Secret Recovery Phrase</span>
     </div>
@@ -694,7 +698,7 @@
     <hr class="mb-3"/>
 
     <p class="ml-5 mr-5 p-2 text-small border-2 border-red-200 bg-red-50 text-red-900 rounded-md" aria-label="Private Key warning">
-        Please be careful! <strong>This Secret Recovery Phrase is important!</strong>. 
+        Please be careful! <strong>This Secret Recovery Phrase is important!</strong>.
         A bad actor could take the content of your wallet if they have access to your Private Key or Secret Recovery Phrase!
         This process will restore all of the accounts that were created by YAKKL only! If you imported existing private keys from another wallet then you will need to do so again.
     </p>
@@ -740,7 +744,7 @@
                       autocomplete="off"
                       bind:value={$form.alias}
                       on:change="{handleChange}"
-                    /> -->          
+                    /> -->
                     <div class="flex ml-1">
                         <div>
                           <div class="form-check">
@@ -777,8 +781,8 @@
                     {#each  Array(24) as _, index (index)}
                     <div class="flex space-x-2 mb-3">
                         <span id="word_text_{index+1}" class="inline-block w-[5%] h-[35px] pt-1 text-md justify-center text-base-content">{index+1}.</span>
-                        <input 
-                            type="password" 
+                        <input
+                            type="password"
                             class="input input-bordered input-primary w-full"
                             id="word_{index+1}"
                             data-id="{index+1}"
@@ -794,12 +798,12 @@
                     <div class="flex space-x-2 justify-center">
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <!-- svelte-ignore a11y-interactive-supports-focus -->
-                        <button on:click|preventDefault={handleCancel} 
+                        <button on:click|preventDefault={handleCancel}
                             aria-label="Cancel"
                             class="btn-sm btn-accent uppercase rounded-full">
                             Cancel
                         </button>
-                        <button 
+                        <button
                             type="submit"
                             id="recover"
                             on:click="{handleSubmit}"
@@ -808,12 +812,12 @@
                             Recover
                         </button>
                     </div>
-                </div>   
-            </form>            
+                </div>
+            </form>
         </div>
 
     </div>
-   
+
 </div>
 
-  
+

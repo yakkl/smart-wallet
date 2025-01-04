@@ -1,9 +1,19 @@
 <script lang="ts">
-  export let show = false;
-  export let title = 'SUCCESS!';
-  export let content = 'Great News - Success.'
-  export let handleConfirm = () => {show=false};
-  export let confirmText = 'Close';
+  interface Props {
+    show?: boolean;
+    title?: string;
+    content?: string;
+    handleConfirm?: any;
+    confirmText?: string;
+  }
+
+  let {
+    show = $bindable(false),
+    title = 'SUCCESS!',
+    content = 'Great News - Success.',
+    handleConfirm = () => {show=false},
+    confirmText = 'Close'
+  }: Props = $props();
   
 </script>
 
@@ -12,7 +22,7 @@
     <h3 class="text-lg font-bold">{title}</h3>
     <p class="py-4">{content}</p>
     <div class="modal-action">
-      <button class="btn" on:click={() => {show=false; handleConfirm}}>{confirmText}</button>
+      <button class="btn" onclick={() => {show=false; handleConfirm}}>{confirmText}</button>
     </div>
   </div>
 </div>
