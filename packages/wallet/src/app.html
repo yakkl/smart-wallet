@@ -2,13 +2,13 @@
 <!-- Removed the 'dark' class and daisyui should handle it going forward but test and then remove this comment -->
 <html lang="en" class="h-full bg-base-100 bg-dotted-spacing-1 bg-dotted-gray-600 no-js dark" style="overscroll-behavior-x: none;" data-theme="yakkl">
 	<head>
-		 
+
 		<!-- <meta http-equiv="Content-Type" content="text/html" charset="utf-8" /> -->
 
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, viewport-fit=cover" />
-		
+
 		<!-- <meta http-equiv="content-security-policy" content="script-src 'self' ; script-src-elem 'self' "> -->
 
 		<link rel="shortcut icon" href="/images/favicon.png" />
@@ -32,24 +32,24 @@
 				-webkit-appearance: none;
 				margin: 0;
 		}
-	
+
 		/*
 		input[type=number]{
 			-moz-appearance: textfield;
 		}
 		*/
-		
+
 		::-webkit-scrollbar{
 			display: none;
 		}
-		
+
 		body {
 			-ms-overflow-style: none;  /* IE and Edge */
 			scrollbar-width: none;  /* Firefox */
 		}
 		</style>
 
-		
+
 
 		%sveltekit.head%
 
@@ -61,6 +61,7 @@
 
 		<div id="sk-body" style="display: contents">%sveltekit.body%</div>
 
+    <script src="/js/errorHandler.js"></script>
 		<script src="/js/helpers.js"></script>
 		<script src="/js/fontawesome-8d8e5192b2.js"></script>
 		<script src="/js/darkmode.js"></script>

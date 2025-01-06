@@ -7,8 +7,8 @@
     onCancel?: () => void;
     onClose?: () => void;
     onCreate: () => void;
-    // onImport: () => void;
-    // onRestore?: () => void;
+    onImport: () => void;  // NOTE: This is for the RegistrationOptionModal component. The RegistrationOption is only for the RegistrationOptionModal component. Restore requires a valid account to be created first. So, removed restore from here for now.
+    onRestore?: () => void; // NOTE: RegistrationOption below does not have onImport nor onRestore.
   }
 
   let {
@@ -16,8 +16,8 @@
     onCancel = $bindable(() => {show = false}),
     onClose = $bindable(() => {show = false}),
     onCreate,
-    // onImport,
-    // onRestore
+    onImport,
+    onRestore
   }: Props = $props();
 
   // NOTE: This is for the RegistrationOptionModal component. The RegistrationOption is only for the RegistrationOptionModal component. Restore requires a valid account to be created first. So, removed restore from here for now.
