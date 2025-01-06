@@ -13,7 +13,13 @@
     setYakklWatchListStorage, setYakklBlockedListStorage, setYakklConnectedDomainsStorage,
     profileStore, yakklPreferencesStore, yakklSettingsStore, yakklCurrentlySelectedStore,
     yakklContactsStore, yakklChatsStore, yakklAccountsStore, yakklPrimaryAccountsStore,
-    yakklWatchListStore, yakklBlockedListStore, yakklConnectedDomainsStore
+    yakklWatchListStore, yakklBlockedListStore, yakklConnectedDomainsStore,
+		getYakklTokenData,
+		getYakklTokenDataCustom,
+		setYakklTokenDataStorage,
+		yakklTokenDataStore,
+		setYakklTokenDataCustomStorage,
+		yakklTokenDataCustomStore
   } from '$lib/common/stores';
   import type { EmergencyKitMetaData } from '$lib/common';
   import Confirmation from './Confirmation.svelte';
@@ -61,6 +67,8 @@
       const blockedList = await getYakklBlockedList();
       const connectedDomains = await getYakklConnectedDomains();
       const passwordOrSaltedKey = getMiscStore();
+      const tokenData = await getYakklTokenData();
+      const tokenDataCustom = await getYakklTokenDataCustom();
 
       if (!preferences || !settings || !profile || !currentlySelected || !passwordOrSaltedKey) {
         throw new Error('Missing required data for export');
@@ -78,7 +86,9 @@
         watchList ?? [],
         blockedList ?? [],
         connectedDomains ?? [],
-        passwordOrSaltedKey
+        passwordOrSaltedKey,
+        tokenData ?? [],
+        tokenDataCustom ?? [],
       );
 
       const fileName = await EmergencyKitManager.downloadBulkEmergencyKit(bulkEmergencyKit);
@@ -134,6 +144,8 @@
       { key: 'yakklWatchListStore', setStorage: setYakklWatchListStorage, store: yakklWatchListStore },
       { key: 'yakklBlockedListStore', setStorage: setYakklBlockedListStorage, store: yakklBlockedListStore },
       { key: 'yakklConnectedDomainsStore', setStorage: setYakklConnectedDomainsStorage, store: yakklConnectedDomainsStore },
+      { key: 'yakklTokenDataStore', setStorage: setYakklTokenDataStorage, store: yakklTokenDataStore },
+      { key: 'yakklTokenDataCustomStore', setStorage: setYakklTokenDataCustomStorage, store: yakklTokenDataCustomStore },
     ];
 
     for (const { key, setStorage, store } of updateFunctions) {

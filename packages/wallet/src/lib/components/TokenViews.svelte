@@ -1,8 +1,8 @@
 <script lang="ts">
   import ViewControls from './ViewControls.svelte';
   import TokenGridView from './TokenGridView.svelte';
-  import TokenCarouselView from './TokenCarouselView.svelte';
-  import TokenThumbnailView from './TokenThumbnailView.svelte';
+  // import TokenCarouselView from './TokenCarouselView.svelte';
+  // import TokenThumbnailView from './TokenThumbnailView.svelte';
   import type { TokenData } from '$lib/common/interfaces';
 	import TokenChartsView from './TokenChartsView.svelte';
 	import TokenNewsTradingView from './TokenNewsTradingView.svelte';
@@ -21,6 +21,11 @@
   let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol'>('grid');
   let sortedTokens = $state([...tokens]);
   let sortBy = $state('name');
+
+  $effect(() => {
+    tokens = $combinedTokenStore;
+    // handleSortChange(sortBy);
+  });
 
   // Handle sorting
   function handleSortChange(criteria: string) {
@@ -74,6 +79,7 @@
       <TokenTechnicalView symbol="COINBASE:ETHUSD"/>
     {:else if currentView === 'symbol'}
       <TokenSymbolView symbol="COINBASE:ETHUSD"/>
+      <TokenSymbolView symbol="COINBASE:BTCUSD"/>
     <!-- {:else if currentView === 'thumbnail'}
       <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} /> -->
     {/if}

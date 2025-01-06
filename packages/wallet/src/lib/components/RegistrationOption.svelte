@@ -6,7 +6,7 @@
     /// <reference types="svelte" />
     title?: string;
     onCreate: () => void;
-    // onImport: () => void;
+    // onImport: () => void;  // NOTE: import and restore will not work if there is no account created first. Need to either create a tmp account and restore or move this to another component.
     // onRestore: () => void;
   }
 

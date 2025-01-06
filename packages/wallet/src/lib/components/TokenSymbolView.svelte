@@ -6,25 +6,30 @@
   const URL = import.meta.env.VITE_TRADING_VIEW_LINK;
 
   const initializeWidget = () => {
-    if (!widgetContainer) return;
+    try {
+      if (!widgetContainer) return;
 
-    // Clear any existing widget
-    widgetContainer.innerHTML = '';
+      // Clear any existing widget
+      widgetContainer.innerHTML = '';
 
-    // Add the widget container for the new TradingView script
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = '../../js/embed-widget-symbol-info.js';
-    script.innerHTML = JSON.stringify({
-      width: '392',
-      isTransparent: false,
-      symbol, // Dynamically set the symbol
-      locale: 'en',
-      colorTheme: 'light',
-    });
+      // Add the widget container for the new TradingView script
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.async = true;
+      script.src = '../../js/embed-widget-symbol-info.js';
+      script.innerHTML = JSON.stringify({
+        width: '392',
+        isTransparent: false,
+        symbol, // Dynamically set the symbol
+        locale: 'en',
+        colorTheme: 'light',
+      });
 
-    widgetContainer.appendChild(script);
+      widgetContainer.appendChild(script);
+    } catch (error) {
+      console.log('Error initializing TradingView widget', error);
+    }
+
   };
 
   // Reactively reinitialize the widget when `symbol` changes
