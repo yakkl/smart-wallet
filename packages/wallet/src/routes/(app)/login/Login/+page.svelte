@@ -363,17 +363,11 @@
 
 <!-- Here, we don't need to close anything so no need for onClose or onCancel -->
 <RegistrationOptionModal bind:show={showRegistrationOption} onCreate={() => {showRegistrationOption=false; goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);}} onImport={() => {showRegistrationOption=false; showImportAccount=true;}} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}} />
-
 <ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} />
-
 <ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  />
-
 <ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}}/>
-
 <EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit}/>
-
 <ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." />
-
 <ErrorNoAction bind:show={error} title="ERROR!" value={errorValue} handle={handleCustomAction} />
 
 <Popover class="text-sm z-10 w-60" triggeredBy="#register" placement="top">

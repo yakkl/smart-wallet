@@ -33,9 +33,9 @@
   };
 
   // Reactively reinitialize the widget when `symbol` changes
-  $effect(() => {
-    initializeWidget();
-  });
+  // $effect(() => {
+  //   initializeWidget();
+  // });
 
   onMount(() => {
     initializeWidget();
@@ -48,18 +48,20 @@
   });
 </script>
 
-<div class="tradingview-widget-container">
-  <div bind:this={widgetContainer} class="tradingview-widget-container__widget"></div>
-  <div class="tradingview-widget-copyright">
-    <a
-      href={URL}
-      rel="noopener nofollow"
-      target="_blank"
-    >
-      <span class="blue-text">Track all markets on TradingView</span>
-    </a>
+<section id="symbol-info">
+  <div class="tradingview-widget-container">
+    <div bind:this={widgetContainer} class="tradingview-widget-container__widget"></div>
+    <div class="tradingview-widget-copyright">
+      <a
+        href={URL}
+        rel="noopener nofollow"
+        target="_blank"
+      >
+        <span class="blue-text">Track all markets on TradingView</span>
+      </a>
+    </div>
   </div>
-</div>
+</section>
 
 <style>
   .tradingview-widget-container {

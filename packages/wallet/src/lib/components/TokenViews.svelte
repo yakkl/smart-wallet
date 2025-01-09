@@ -1,87 +1,93 @@
 <script lang="ts">
   import ViewControls from './ViewControls.svelte';
   import TokenGridView from './TokenGridView.svelte';
-  // import TokenCarouselView from './TokenCarouselView.svelte';
-  // import TokenThumbnailView from './TokenThumbnailView.svelte';
+  import TokenChartsView from './TokenChartsView.svelte';
+  import TokenNewsTradingView from './TokenNewsTradingView.svelte';
+  import TokenTechnicalView from './TokenTechnicalView.svelte';
+  import TokenSymbolView from './TokenSymbolView.svelte';
+  import { tokenManager } from '$lib/common/stores/tokenManager';
   import type { TokenData } from '$lib/common/interfaces';
-	import TokenChartsView from './TokenChartsView.svelte';
-	import TokenNewsTradingView from './TokenNewsTradingView.svelte';
-	import TokenTechnicalView from './TokenTechnicalView.svelte';
-	import TokenSymbolView from './TokenSymbolView.svelte';
-	import { combinedTokenStore } from '$lib/common/derivedStores';
+  import { createPriceUpdater } from '$lib/common/createPriceUpdater';
+  import { PriceManager } from '$lib/plugins/PriceManager';
+  import { onMount, onDestroy } from 'svelte';
 
-  interface Props {
-    tokens?: TokenData[];
-    title?: string;
-    onTokenClick?: (token: TokenData) => void;
-  }
+  let tokens: TokenData[] = []; // Reactive tokens array
+  let sortedTokens: TokenData[] = []; // Sorted version of tokens
+  let currentView: 'grid' | 'chart' | 'news' | 'analysis' | 'symbol' | 'carousel' | 'thumbnail' | 'list' | 'table' = 'grid'; // Reactive current view
+  let sortBy: string = 'name'; // Sort criteria
 
-  let { tokens = $combinedTokenStore, title = 'Token Portfolio', onTokenClick = (token) => {} }: Props = $props();
+  // Initialize PriceManager
+  let priceManager = new PriceManager();
+  // Create priceUpdater instance
+  const priceUpdater = createPriceUpdater(priceManager, 30000); // Fetch every 30 seconds
 
-  let currentView = $state<'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol'>('grid');
-  let sortedTokens = $state([...tokens]);
-  let sortBy = $state('name');
+  onMount(() => {
+    // Subscribe to tokenManager to get the initial list of tokens
+    const tokenManagerUnsubscribe = tokenManager.subscribe((allTokens) => {
+      tokens = [...allTokens]; // Clone tokens to avoid reference issues
+      sortedTokens = [...tokens]; // Default sorted tokens
+      priceUpdater.fetchPrices(tokens).catch(console.error); // Fetch initial prices
+    });
 
-  $effect(() => {
-    tokens = $combinedTokenStore;
-    // handleSortChange(sortBy);
+    // Subscribe to priceUpdater to update tokens with prices
+    const priceUpdaterUnsubscribe = priceUpdater.subscribe((updatedTokens) => {
+      tokens = updatedTokens; // Update tokens with prices
+      handleSortChange(sortBy); // Reapply sorting on price updates
+    });
+
+    return () => {
+      // Cleanup subscriptions
+      tokenManagerUnsubscribe();
+      priceUpdaterUnsubscribe();
+      priceUpdater.destroy(); // Stop the price updater interval
+    };
   });
 
-  // Handle sorting
+  // Sorting handler
   function handleSortChange(criteria: string) {
     sortBy = criteria;
 
-    if (criteria === 'name') {
-      sortedTokens = [...tokens].sort((a, b) => a.name.localeCompare(b.name));
-    } else if (criteria === 'price') {
-      sortedTokens = [...tokens].sort((a, b) => b?.price?.price ?? 0 - a?.price?.price ?? 0);
-    } else if (criteria === 'value') {
-      sortedTokens = [...tokens].sort((a, b) => (Number(b?.value ?? 0) ?? 0) - (Number(a?.value ?? 0) ?? 0));
-    }
+    // Sort tokens based on criteria
+    sortedTokens = [...tokens].sort((a, b) => {
+      if (criteria === 'name') return a.name.localeCompare(b.name);
+      if (criteria === 'price') return (b?.price?.price || 0) - (a?.price?.price || 0);
+      if (criteria === 'value') return (b.value || 0) - (a.value || 0);
+      return 0;
+    });
   }
 
-  // Handle view changes
-  function handleViewChange(view: 'grid' | 'carousel' | 'thumbnail' | 'chart' | 'list' | 'table' | 'news' | 'analysis' | 'symbol') {
-    currentView = view;
+  // View change handler
+  function handleViewChange(view: 'grid' | 'chart' | 'news' | 'analysis' | 'symbol' | 'carousel' | 'thumbnail' | 'list' | 'table') {
+    currentView = view; // Update the current view
   }
 
-  // Handle print
+  // Print handler
   function handlePrint() {
-    window.print(); // Simply prints the sceen. Needs to have the content in a print-friendly format
+    window.print();
   }
 </script>
 
 <div class="w-full h-full mt-1">
   <!-- Header Section -->
   <div class="flex justify-between items-center px-2 py-1">
-    <!-- Title -->
-    <h2 class="text-lg font-bold text-gray-300">{title}</h2>
-
-    <!-- ViewControls -->
-    <ViewControls
-      onSortChange={handleSortChange}
-      onViewChange={handleViewChange}
-      onPrint={handlePrint}
-    />
+    <h2 class="text-lg font-bold text-gray-300">Token Portfolio</h2>
+    <ViewControls onSortChange={handleSortChange} onViewChange={handleViewChange} onPrint={handlePrint} />
   </div>
 
-  <!-- Views -->
+  <!-- Dynamic Views -->
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
     {#if currentView === 'grid'}
-      <TokenGridView tokens={sortedTokens} onTokenClick={onTokenClick} />
-    <!-- {:else if currentView === 'carousel'}
-      <TokenCarouselView tokens={sortedTokens} onTokenClick={onTokenClick} /> -->
+      <TokenGridView tokens={sortedTokens} onTokenClick={(token) => console.log('Clicked:', token)} />
     {:else if currentView === 'chart'}
       <TokenChartsView />
     {:else if currentView === 'news'}
       <TokenNewsTradingView />
     {:else if currentView === 'analysis'}
-      <TokenTechnicalView symbol="COINBASE:ETHUSD"/>
+      <TokenTechnicalView symbol="CRYPTO:ETHUSD" />
     {:else if currentView === 'symbol'}
-      <TokenSymbolView symbol="COINBASE:ETHUSD"/>
-      <TokenSymbolView symbol="COINBASE:BTCUSD"/>
-    <!-- {:else if currentView === 'thumbnail'}
-      <TokenThumbnailView tokens={sortedTokens} onTokenClick={onTokenClick} /> -->
+      {#each sortedTokens as token}
+        <TokenSymbolView symbol={`CRYPTO:${token.symbol.toUpperCase()}USD`} />
+      {/each}
     {/if}
   </div>
 </div>

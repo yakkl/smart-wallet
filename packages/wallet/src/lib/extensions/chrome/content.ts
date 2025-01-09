@@ -48,7 +48,7 @@ const onMessageListener = (function() {
     try {
       if (response.type === 'YAKKL_RESPONSE') {
         window.postMessage(response, windowOrigin); // This is the response back to the dApp!
-      } 
+      }
     } catch (error) {
       console.log(error); // General error handling
       window.postMessage({id: response.id, method: response.method, error: error, type: 'YAKKL_RESPONSE'}, windowOrigin);
@@ -75,7 +75,7 @@ function onDisconnectListener( event ) {
     }
     portExternal = undefined;
     createPort(YAKKL_EXTERNAL);
-    // This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code    
+    // This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code
   } catch ( error ) {
     console.log( 'content.js - error', error );
   }
@@ -88,7 +88,7 @@ try {
     const container = document.head || document.documentElement;
     const script = document.createElement( "script" );
     script.setAttribute( "async", "false" );
-    script.src = browser_ext.runtime.getURL( "/js/inpage.js" );  // May want to pull in inpage.js during build instead of runtime to make sure it's registered quickly and first
+    script.src = browser_ext.runtime.getURL( "/ext/inpage.js" );  // May want to pull in inpage.js during build instead of runtime to make sure it's registered quickly and first
     script.id = YAKKL_PROVIDER_ETHEREUM;  // TODO: May want to change to something more dynamic...?
     script.onload = () => {
       script.remove();
@@ -96,7 +96,7 @@ try {
     container.prepend( script );
   }
 
-  createPort(YAKKL_EXTERNAL);  
+  createPort(YAKKL_EXTERNAL);
 
   // View all of the message data that was sent with the global window.postMessage({data}, URI)
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -114,10 +114,10 @@ try {
         if ( data.params === undefined ) {
           data.params = [];
         }
-        
+
         const faviconUrl = getIcon();
         const title = window.document?.title ?? '';
-        const domain = extractFQDN(event?.origin); 
+        const domain = extractFQDN(event?.origin);
         const context = data.method;
         const message = (data.method === 'eth_requestAccounts' || data.method === 'wallet_requestPermissions') ? 'Wanting you to approve one or more accounts the dApp can work with!' : 'Wanting you to approve the transaction or sign message. Be mindful of the request!';
 
@@ -126,7 +126,7 @@ try {
         }
 
         const metaDataParams: MetaDataParams = { title: title, icon: faviconUrl, domain: domain, context: context, message: message};
-        
+
         switch (data.method) {
           case 'wallet_switchEthereumChain':
           case 'wallet_addEthereumChain':
@@ -141,9 +141,9 @@ try {
             data.metaDataParams = metaDataParams
             break;
         }
-        
+
         if (data.method && portExternal) {
-          portExternal.postMessage( data ); 
+          portExternal.postMessage( data );
         }
       }
     } catch (e) {

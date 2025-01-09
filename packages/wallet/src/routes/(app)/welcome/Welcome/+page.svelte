@@ -13,19 +13,13 @@
 	import type { Browser } from 'webextension-polyfill';
 	import { setIconLock } from '$lib/utilities';
 	import Import from '$lib/components/Import.svelte';
-  // import { yakklTokenDataStore, yakklTokenDataCustomStore } from "$lib/common/stores";
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  import type { TokenData } from '$lib/common/interfaces';
-	import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
-	import { getYakklCurrentlySelectedStore, getYakklTokenDataStore, yakklCurrentlySelectedStore } from "$lib/common/stores";
+	import { getYakklCurrentlySelectedStore } from "$lib/common/stores";
 	import TokenViews from "$lib/components/TokenViews.svelte";
   import { Wallet } from '$lib/plugins/Wallet';
-	// import { Blockchain } from "$lib/plugins/Blockchain";
-	// import { Provider } from "$lib/plugins/Provider";
-	// import { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
 	import { getInstances } from "$lib/common/wallet";
 	import type { Provider } from "$lib/plugins/Provider";
 	import type { Blockchain } from "$lib/plugins/Blockchain";

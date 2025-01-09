@@ -13,13 +13,13 @@
   } from '$lib/common/stores';
   import {PATH_WELCOME, YAKKL_ZERO_ADDRESS, PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
   import ClipboardJS from 'clipboard';
-  import QR from '$lib/components/QR.svelte';
+  // import QR from '$lib/components/QR.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { truncate, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
   import { startCheckPrices, stopCheckPrices, checkPricesCB } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-  import { AccountTypeCategory, NetworkType, RegistrationType, getInstances, isEncryptedData,
+  import { AccountTypeCategory, NetworkType, getInstances, isEncryptedData,
     type CurrentlySelectedData, type Network, type YakklAccount, type YakklCurrentlySelected,
     type YakklPrimaryAccount } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';

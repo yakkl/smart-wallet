@@ -2,7 +2,7 @@
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
   import Modal from './Modal.svelte';
-  import { type TokenData } from '$lib/common';
+  import { VERSION, type TokenData } from '$lib/common';
 
   interface Props {
     show?: boolean;
@@ -11,7 +11,7 @@
     onSubmit?: (token: TokenData) => void;
   }
 
-  let { show = $bindable(false), token=null, className='z-[999]', onSubmit = () => {} }: Props = $props();
+  let { show = $bindable(false), token=null, className='z-[999]', onSubmit }: Props = $props();
 
   const { form, errors, handleChange, handleSubmit, updateInitialValues } = createForm({
     initialValues: {
@@ -37,13 +37,35 @@
       logoURI: yup.string().optional(),
     }),
     onSubmit: (values) => {
-      const updatedToken: TokenData = {
-        ...values,
-        customDefault: 'custom', // Ensure customDefault is always 'custom'
-        symbol: values.symbol.toUpperCase(), // Ensure symbol is always uppercase
-      };
-      onSubmit(updatedToken);
-      show = false;
+      try {
+        const updatedToken: TokenData = {
+          ...values,
+          customDefault: 'custom', // Ensure customDefault is always 'custom'
+          symbol: values.symbol.toUpperCase(), // Ensure symbol is always uppercase
+          balance: token?.balance ?? 0n,
+          quantity: token?.quantity ?? 0,
+          price: {
+            price: 0,
+            isNative: false,
+            provider: '',
+            lastUpdated: new Date(),
+            chainId: token?.chainId ?? 1,
+            currency: '',
+            status: token?.price?.status ?? 0,
+            message: token?.price?.message ?? '',
+          },
+          change: token?.change ?? [],
+          value: token?.value ?? 0,
+          tags: token?.tags ?? [],
+          version: token?.version ?? VERSION,
+        };
+
+        onSubmit(updatedToken);
+        resetForm();
+        show = false;
+      } catch (error) {
+        console.log('TokenForm: Error:', error);
+      }
     },
   });
 
@@ -68,15 +90,15 @@
       updateInitialValues({
         address: token.address,
         name: token.name,
-        alias: token.alias || '',
+        alias: token.alias ?? '',
         symbol: token.symbol,
         decimals: token.decimals,
-        chainId: token.chainId || 1,
-        logoURI: token.logoURI || '',
+        chainId: token.chainId ?? 1,
+        logoURI: token.logoURI ?? '',
         customDefault: 'custom',
-        isNative: token.isNative || false,
-        isStablecoin: token.isStablecoin || false,
-        description: token.description || '',
+        isNative: token.isNative ?? false,
+        isStablecoin: token.isStablecoin ?? false,
+        description: token.description ?? '',
       });
     }
   });
@@ -102,7 +124,7 @@
 
     <div>
       <label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alias</label>
-      <input type="text" id="alias" required placeholder="Enter an alias like an ENS (optional)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} onchange={handleChange} />
+      <input type="text" id="alias" placeholder="Enter an alias like an ENS (optional)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-800" bind:value={$form.alias} onchange={handleChange} />
       {#if $errors.alias}
         <p class="mt-2 text-sm text-red-600">{$errors.alias}</p>
       {/if}
