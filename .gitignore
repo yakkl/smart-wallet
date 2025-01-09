@@ -53,7 +53,7 @@ packages/wallet/src/routes/(app)/dashboard/
 packages/wallet/src/routes/(app)/import/import-emergencykit/
 packages/wallet/src/routes/(app)/markets/
 packages/wallet/src/routes/(app)/nfts/
-packages/wallet/src/routes/(app)/security/
+packages/wallet/src/routes/(app)/security/**/*.tmp
 packages/wallet/src/routes/(app)/settings/
 packages/wallet/src/routes/(app)/smartContracts/
 packages/wallet/src/routes/(app)/university/

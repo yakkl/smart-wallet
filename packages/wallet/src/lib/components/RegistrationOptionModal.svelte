@@ -7,7 +7,7 @@
     onCancel?: () => void;
     onClose?: () => void;
     onCreate: () => void;
-    onImport: () => void;  // NOTE: This is for the RegistrationOptionModal component. The RegistrationOption is only for the RegistrationOptionModal component. Restore requires a valid account to be created first. So, removed restore from here for now.
+    onImport?: () => void;  // NOTE: This is for the RegistrationOptionModal component. The RegistrationOption is only for the RegistrationOptionModal component. Restore requires a valid account to be created first. So, removed restore from here for now.
     onRestore?: () => void; // NOTE: RegistrationOption below does not have onImport nor onRestore.
   }
 

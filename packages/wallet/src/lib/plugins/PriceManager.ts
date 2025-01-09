@@ -20,9 +20,9 @@ export class PriceManager {
 
   static getDefaultProviders(): WeightedProvider[] {
     return [
-      // { provider: new CoingeckoPriceProvider(), weight: 5 },
+      // { provider: new AlchemyPriceProvider(), weight: 2 },
       { provider: new CoinbasePriceProvider(), weight: 8 },
-      { provider: new AlchemyPriceProvider(), weight: 2 },
+      { provider: new CoingeckoPriceProvider(), weight: 5 },
       // { provider: new KrakenPriceProvider(), weight: 1 },
       // Add other providers with their weights...
     ];
