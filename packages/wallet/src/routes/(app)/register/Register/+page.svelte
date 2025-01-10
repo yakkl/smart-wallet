@@ -18,7 +18,7 @@
   import Warning from '$lib/components/Warning.svelte';
 	import type { CurrentlySelectedData, Profile, ProfileData, YakklAccount, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { RegistrationType } from '$lib/common/types';
-	import { isEncryptedData } from '$lib/common';
+	import { getUserId, isEncryptedData } from '$lib/common';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
@@ -237,7 +237,7 @@
         profile = {
           ...profile,
           userName,
-          id: crypto.randomUUID(),
+          id: getUserId(),
           createDate: dateString(),
           updateDate: dateString(),
           version: VERSION,

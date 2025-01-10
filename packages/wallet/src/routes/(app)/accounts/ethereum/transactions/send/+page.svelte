@@ -9,20 +9,20 @@
 	import { handleOpenInTab, formatValue, getChainId, deepCopy } from '$lib/utilities/utilities';
 	import { getLengthInBytes, wait } from '$lib/common/utils';
   import { onDestroy, onMount } from 'svelte';
-  import { ETH_BASE_EOA_GAS_UNITS, ETH_BASE_SCA_GAS_UNITS, PATH_LOCK, PATH_LOGOUT } from '$lib/common/constants';
+  import { ETH_BASE_EOA_GAS_UNITS, ETH_BASE_SCA_GAS_UNITS, PATH_LOGOUT } from '$lib/common/constants';
 	import { startCheckGasPrices, stopCheckGasPrices, debounce } from '$lib/utilities/gas';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Warning from '$lib/components/Warning.svelte';
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
 	import { isEthereum } from '$lib/plugins/BlockchainGuards';
-	import { BigNumber, isEncryptedData, toBigInt, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
+	import { BigNumber, debug_log, isEncryptedData, toBigInt, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
 	import PincodeModal from '$lib/components/PincodeVerify.svelte';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
   import { handleOnMessage } from '$lib/common/handlers';
 
-  import type { TransactionState, GasState, UIState, ValueState, ConfigState } from './stateInterfaces';
+  import type { TransactionState, GasState, UIState, ValueState, ConfigState } from '$lib/common/stateInterfaces';
 
 	import type { Browser } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
@@ -125,7 +125,8 @@
 	// let currencyLabel: string = $state();
   // let currencyFormat: Intl.NumberFormat = $state();
 
-
+  // Look for key in the response body: {"jsonrpc":"2.0","id":44,"error":{"code":-32000,"message":"transaction underpriced: gas tip cap 0, minimum needed 1"}}
+  // processing response error (body="{\"jsonrpc\":\"2.0\",\"id\":44,\"error\":{\"code\":-32000,\"message\":\"transaction underpriced: gas tip cap 0, minimum needed 1\"}}", error={"code":-32000}, requestBody=...)
 
   ////////////////////
 
@@ -406,22 +407,31 @@
 			if (!profile) {
 				throw 'No profile found';
 			}
-			if (isEncryptedData(profile.data)) {
-				let result = await decryptData(profile.data, yakklMiscStore);
-				const profileData = result as ProfileData;
-				if (profileData.pincode) {
-					pin = profileData.pincode;
-					if (pin === pincode) {
-						pincodeVerified = true;
-					} else {
-						pincodeVerified = false;
-					}
-				} else {
-					pincodeVerified = false;
-				}
-			} else {
-				console.log("Profile data is not encrypted", profile.data);
-			}
+
+			// if (isEncryptedData(profile.data)) {
+			// 	let result = await decryptData(profile.data, yakklMiscStore);
+			// 	const profileData = result as ProfileData;
+
+      //   debug_log('validate: profileData', profileData);
+
+      //   debug_log('validate: pincode', profileData.pincode);
+
+			// 	if (profileData.pincode) {
+			// 		pin = profileData.pincode;
+
+      //     debug_log('validate: pin', pin);
+
+			// 		if (pin === pincode) {
+			// 			pincodeVerified = true;
+			// 		} else {
+			// 			pincodeVerified = false;
+			// 		}
+			// 	} else {
+			// 		pincodeVerified = false;
+			// 	}
+			// } else {
+			// 	console.log("Profile data is not encrypted", profile.data);
+			// }
 
 			maxPriorityFeePerGasOverride = BigNumber.from(data.maxPriorityFeePerGasOverride);
 			maxFeePerGasOverride = BigNumber.from(data.maxFeePerGasOverride);
@@ -440,21 +450,23 @@
 
 			const blockchain = wallet.getBlockchain();
 			if (isEthereum(blockchain)) {
-				resolvedAddr = await blockchain.resolveName(data.toAddress);
+				resolvedAddr = await blockchain.resolveName(address);
 			} else {
 				// Handle cases where the blockchain is not Ethereum
 			}
 
 			if (resolvedAddr) {
-				transactionState.address = resolvedAddr;
+				address = resolvedAddr;
 			}
 
-			if (!blockchain.isAddress(transactionState.address)) {
-				uiState.warningValue = `Wallet Address ${transactionState.address} is not a valid address. This can be verified on a platform like https://etherscan.io. A valid toAddress is required.`;
+			if (!blockchain.isAddress(address)) {
+				uiState.warningValue = `Wallet Address ${address} is not a valid address. This can be verified on a platform like https://etherscan.io. A valid toAddress is required.`;
 				uiState.warning = true;
 				clearVerificationValues();
 				return;
 			}
+
+      toAddress = address;
 
 			const feePerGas: number = BigNumber.from(gasState.maxFeePerGas).toNumber() as number;
 			if ( feePerGas < gasState.gasEstimate) {
@@ -638,54 +650,62 @@
 	}
 
 
-	async function verifyWithPin(pin: string, pincodeVerified: boolean): Promise<Profile | null>{
-		try {
-			let profile: Profile | null = await getProfile();
-			if (profile === null) {
-				throw 'Profile was not found.';
-			}
+	// async function verifyWithPin(pin: string, pincodeVerified: boolean): Promise<Profile | null>{
+	// 	try {
+	// 		let profile: Profile | null = await getProfile();
+	// 		if (profile === null) {
+	// 			throw 'Profile was not found.';
+	// 		}
 
-			let profileEncrypted = null;
+	// 		let profileEncrypted = null;
 
-			if (isEncryptedData(profile.data)) {
-				profileEncrypted = deepCopy(profile);
-				await decryptData(profile?.data, yakklMiscStore).then(result => {
-					(profile as Profile).data = result as ProfileData;
-				});
-			}
+	// 		if (isEncryptedData(profile.data)) {
+	// 			profileEncrypted = deepCopy(profile);
+	// 			await decryptData(profile?.data, yakklMiscStore).then(result => {
+	// 				(profile as Profile).data = result as ProfileData;
+	// 			});
+	// 		}
 
-			if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
-				throw 'PINCODE was not verified.';
-			}
+  //     debug_log('verifyWithPin: profile.data', profile.data);
+  //     debug_log('verifyWithPin: profile.data.pincode',(profile.data as ProfileData).pincode);
+  //     debug_log('verifyWithPin: pincodeVerified', pincodeVerified);
 
-			if (pincode === (profile.data as ProfileData).pincode) {
-				profile = null;
-				return profileEncrypted;
-			} else {
-				throw 'PINCODE did not match.';
-			}
-		} catch(e) {
-			console.log(e);
-			uiState.errorValue = e as string;
-			uiState.error = true;
-			return null;
-		}
-	}
+	// 		if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
+	// 			throw 'PINCODE was not verified.';
+	// 		}
+
+	// 		if (pincode === (profile.data as ProfileData).pincode) {
+	// 			profile = null;
+
+  //       debug_log('verifyWithPin: profile', profileEncrypted);
+
+	// 			return profileEncrypted;
+	// 		} else {
+	// 			throw 'PINCODE did not match.';
+	// 		}
+	// 	} catch(e) {
+	// 		console.log(e);
+	// 		uiState.errorValue = e as string;
+	// 		uiState.error = true;
+	// 		return null;
+	// 	}
+	// }
 
 	// unblockIncrease is a percentage increase (100 is added to it and then multiplied)
 	// It MUST be as an integer and not a float. Example, 10% increase would be 10 and not .10
+
   async function processTransaction(unblockIncrease = 0, nonce = -1, hash: string = '', cancel = false, eoa=true) {
 		try {
 			currentlySelected = deepCopy($yakklCurrentlySelectedStore); // Allows for a deep copy of the store that does not impact the actual store
-			profile = await verifyWithPin(deepCopy(pincode), pincodeVerified); // Verifies one more time. deepCopy is used to ensure that the pincode is not changed
-			if (!profile) {
-				throw 'Unable to verify your PINCODE. Please try again.'; //YAKKL pincode not valid. Please try again.';
-			}
+
+			// profile = await verifyWithPin(deepCopy(pincode), pincodeVerified); // Verifies one more time. deepCopy is used to ensure that the pincode is not changed
+			// if (!profile) {
+			// 	throw 'Unable to verify your PINCODE. Please try again.'; //YAKKL pincode not valid. Please try again.';
+			// }
 
 			// Create a transaction object
 			// Override values are set at submit time so we use those
 			// If cancel = true then have from and to be the same address, value = 0 and increase gas
-
 
 			const priorityFeePerGas = Math.max(Number(gasState.maxPriorityFeePerGas), Number(maxPriorityFeePerGasOverride));// EthereumBigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride).toString(); //BigNumber.max(maxPriorityFeePerGas, maxPriorityFeePerGasOverride));
 			let feePerGas = Math.max(Number(gasState.maxFeePerGas), Number(maxFeePerGasOverride)); //EthereumBigNumber.max(maxFeePerGas, maxFeePerGasOverride);
@@ -771,8 +791,10 @@
      	  throw 'No transaction was returned. Something went wrong.';
     	}
 		} catch(e: any) {
+      // Verify if the error is a response error and if so, process it for a more accurate error message
 			uiState.errorValue = e?.message ?? e;
 			uiState.error = true;
+      console.log(e);
 		} finally {
 			console.log('processTransaction: finally. Clearing verification values.');
 			clearVerificationValues();
@@ -956,7 +978,7 @@
 	// Default is 20 = (10 * 2)
 	function handleCancel(increase=10, nonce: number, hash: string) {
 		try {
-			console.log('handleCancel', increase*2, nonce, hash);
+			// console.log('handleCancel', increase*2, nonce, hash);
 
 			processTransaction(increase*2, nonce, hash, true); // setting cancel = true (last param) will send a cancel transaction
 		} catch(e) {
@@ -1180,7 +1202,7 @@
 	});
 </script>
 
-<PincodeModal bind:show={uiState.showVerify} onVerified={handlePin} className="text-gray-600"/>
+<!-- <PincodeModal bind:show={uiState.showVerify} onVerified={handlePin} className="text-gray-600"/> -->
 
 <ErrorNoAction bind:show={uiState.error} value={uiState.errorValue} handle={handleClose}/>
 
