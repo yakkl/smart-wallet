@@ -3,6 +3,7 @@
 import type { Provider } from '$plugins/Provider';
 import type { Blockchain } from '$plugins/Blockchain';
 import {
+  debug_log,
   isYakklPrimaryAccount,
   type AccountInfo,
   type Transaction,
@@ -174,7 +175,7 @@ export class Wallet {
   public getTokenService(): TokenService<any> | null {
     return this.tokenService;
   }
-    
+
   public getChainId(): number {
     return this.chainId;
   }
@@ -325,7 +326,7 @@ export class Wallet {
         case 'Ethereum':
           this.signer = new EthereumSigner(privateKey, this.provider);
           break;
-        // case 'Polygon': 
+        // case 'Polygon':
         //   this.signer = new PolygonSigner(this.privateKey);
         //   break;
         // case 'Optimism':
@@ -333,16 +334,16 @@ export class Wallet {
         //   break;
         // case 'Arbitrum':
         //   this.signer = new ArbitrumSigner(this.privateKey);
-        //   break;           
+        //   break;
         // case 'Avalanche':
         //   this.signer = new AvalancheSigner(this.privateKey);
-        //   break;        
+        //   break;
         // case 'Base':
         //   this.signer = new BaseSigner(this.privateKey);
-        //   break;        
+        //   break;
         // case 'Celo':
         //   this.signer = new CeloSigner(this.privateKey);
-        //   break;        
+        //   break;
         // case 'Bitcoin':
         //   this.signer = new BitcoinSigner(this.privateKey);
         //   break;
@@ -378,7 +379,7 @@ export class Wallet {
    * Switches to a different provider.
    */
   public switchProvider(): void {
-    console.log('Wallet: Switching provider');
+    debug_log('Wallet: Switching provider');
     if (!this.blockchain || !this.provider) {
       throw new Error('Blockchain or Provider not initialized');
     }
@@ -403,7 +404,7 @@ export class Wallet {
    * @param providerOrName - The provider name or instance to switch to.
    */
   public switchToProvider(providerOrName: string | Provider): void {
-    console.log('Wallet: Switching to provider');
+    debug_log('Wallet: Switching to provider');
     if (!this.blockchain) {
       throw new Error('Blockchain not initialized');
     }
@@ -452,7 +453,7 @@ export class Wallet {
       if (!this.privateKey) {
         throw new Error('Private key not set');
       } else {
-        console.log('Setting signer with private key - again!! :', this.privateKey);
+        debug_log('Setting signer with private key - again!! :', this.privateKey);
 
         await this.setSigner(this.privateKey);
       }
@@ -463,7 +464,7 @@ export class Wallet {
       throw new Error('Blockchain or Provider or Signer not initialized');
     }
 
-    // Implement gas estimation - Found an issue the FeeProvider model (not complete). 
+    // Implement gas estimation - Found an issue the FeeProvider model (not complete).
     // const gasEstimate = await this.blockchain.getGasEstimate(transaction);
 
     // Apply the gas estimate to the transaction
@@ -471,7 +472,8 @@ export class Wallet {
     // transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
     // transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
 
-    console.log('Sending transaction to provider:', transaction);
+    debug_log('Sending transaction to provider:', transaction);
+
     return await this.blockchain.sendTransaction(transaction);
   }
 

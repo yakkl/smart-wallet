@@ -1,5 +1,6 @@
 // src/utils/handlers.ts
 import { goto } from '$app/navigation';
+import { setIconLock } from '$lib/utilities';
 import { PATH_LOCK } from './constants';
 import type { Runtime } from 'webextension-polyfill';  // Correct Type Import
 
@@ -17,6 +18,8 @@ export function handleOnMessage(
   } catch (e) {
     console.log('Error handling message:', e);
     return Promise.resolve();  // Fallback on error
+  } finally {
+    setIconLock();
   }
 }
 

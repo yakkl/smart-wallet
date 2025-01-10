@@ -1,12 +1,20 @@
 /* eslint-disable no-debugger */
-// import browser from 'webextension-polyfill';
 import { type ErrorBody, type ParsedError } from '$lib/common';
-// import { Utils } from "alchemy-sdk";
-
 import { AccountTypeCategory } from '$lib/common/types';
 import type { YakklAccount } from '$lib/common/interfaces';
 import { getYakklAccounts } from '$lib/common/stores';
 import { ethers as ethersv6 } from 'ethers-v6';
+
+
+// This should represent the .id property of given objects for uniqueness
+export function getUserId(): string {
+  let userId = localStorage.getItem('anonymous_user_id');
+  if (!userId) {
+    userId = crypto.randomUUID(); //  `${string}-${string}-${string}-${string}-${string}` format of very random string
+    localStorage.setItem('anonymous_user_id', userId);
+  }
+  return userId;
+}
 
 export async function checkAccountRegistration(): Promise<boolean> {
   try {
@@ -49,41 +57,6 @@ export function parseAmount( amount: string, decimals: number ): bigint {
   }
 }
 
-// export function parseAmount( amount: string, decimals: number ): bigint {
-//   // Handle empty or invalid inputs
-//   if ( !amount || amount === '.' || amount.trim() === '' ) {
-//     return 0n;
-//   }
-
-//   // Sanitize input
-//   const sanitizedAmount = amount.replace( /[^0-9.]/g, '' );
-
-//   // Ensure only one decimal point
-//   const parts = sanitizedAmount.split( '.' );
-//   if ( parts.length > 2 ) {
-//     throw new Error( 'Invalid number format' );
-//   }
-
-//   // Split into integer and decimal parts
-//   const [ integerPart = '0', decimalPart = '' ] = parts;
-
-//   // Pad or truncate decimal part
-//   const paddedDecimal = ( decimalPart + '0'.repeat( decimals ) ).slice( 0, decimals );
-
-//   // Combine parts, ensuring non-empty integer part
-//   const fullAmountString = `${ integerPart || '0' }${ paddedDecimal ? '.' + paddedDecimal : '' }`;
-
-//   // Validate the parsed amount
-//   try {
-//     // Use parseUnits directly
-//     return ethers.parseUnits( fullAmountString, decimals );
-//   } catch ( error ) {
-//     console.error( 'Error parsing amount:', error, 'Input:', fullAmountString );
-//     return 0n;
-//   }
-// }
-
-// Alternative approach using Number and BigInt conversion
 export function parseAmountAlternative( amount: string, decimals: number ): bigint {
   // Handle empty or invalid inputs
   if ( !amount || amount === '.' || amount.trim() === '' ) {
@@ -101,18 +74,6 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
     return 0n;
   }
 }
-
-// Optional: Format amount back to a string with proper decimal handling
-// export function formatAmount( amount: bigint, decimals: number ): string {
-//   const formattedAmount = ethersv6.formatUnits( amount, decimals );
-
-//   // Remove trailing zeros after decimal point
-//   const [ integerPart, decimalPart ] = formattedAmount.split( '.' );
-//   if ( !decimalPart ) return integerPart;
-
-//   const trimmedDecimal = decimalPart.replace( /0+$/, '' );
-//   return trimmedDecimal ? `${ integerPart }.${ trimmedDecimal }` : integerPart;
-// }
 
 // Format USD amounts to 2 decimal places
 export function formatUsd(amount: number): string {
@@ -164,7 +125,7 @@ export function typewriter(node: HTMLElement, { speed = 1 }: TypewriterOptions) 
   };
 }
 
-// TODO: Add more blockchain support here
+// TODO: Add more blockchain support here - Audit functions and classes and remove any duplicates (this could be one)
 export function supportedChainId(chainId: number) {
   switch (chainId) {
     case 1:
