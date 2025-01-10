@@ -78,7 +78,7 @@
 </script>
 
 <div class="relative {className}">
-  <PincodeVerify bind:show={showPincodeModal} onVerify={verifyPincode} />
+  <PincodeVerify bind:show={showPincodeModal} onVerified={verifyPincode} />
 
   <Modal bind:show={showPrivateKeyModal} title="Private Key" onClose={() => showPrivateKeyModal = false}>
     <div class="p-6">

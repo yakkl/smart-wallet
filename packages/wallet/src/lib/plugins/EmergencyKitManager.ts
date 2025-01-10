@@ -16,7 +16,8 @@ import type {
   YakklWatch,
   YakklChat,
   YakklBlocked,
-  ProfileData
+  ProfileData,
+  TokenData
 } from '$lib/common';
 
 interface BulkEmergencyKitData {
@@ -33,6 +34,8 @@ interface BulkEmergencyKitData {
     yakklWatchListStore: EncryptedData;
     yakklBlockedListStore: EncryptedData;
     yakklConnectedDomainsStore: EncryptedData;
+    yakklTokenDataStore: EncryptedData;
+    yakklTokenDataCustomStore: EncryptedData;
   };
   cs: string;
 }
@@ -46,6 +49,7 @@ interface BulkEmergencyKitData {
 // import { S3 } from 'aws-sdk';
 import { profile } from '../models/dataModels';
 import { RegistrationType } from '../common/types';
+import type { Token } from './Token';
 // Then do: npm install aws-sdk
 
 // Add conditional import to handle server-side only
@@ -104,6 +108,82 @@ export class EmergencyKitManager {
     return emergencyKit;
   }
 
+  static async createBulkEmergencyKit(
+    preferences: Preferences,
+    settings: Settings,
+    profile: Profile,
+    currentlySelected: any,
+    contacts: YakklContact[],
+    chats: YakklChat[],
+    accounts: YakklAccount[],
+    primaryAccounts: YakklPrimaryAccount[],
+    watchList: YakklWatch[],
+    blockedList: YakklBlocked[],
+    connectedDomains: YakklConnectedDomain[],
+    passwordOrSaltedKey: string | SaltedKey,
+    tokenData: TokenData[],
+    tokenDataCustom: TokenData[]
+  ): Promise<BulkEmergencyKitData> {
+    const createDate = new Date().toISOString();
+    const id = this.generateId();
+
+    const encryptedData: BulkEmergencyKitData['data'] = {
+      yakklPreferencesStore: await this.encryptWithChecksum(preferences, passwordOrSaltedKey),
+      yakklSettingsStore: await this.encryptWithChecksum(settings, passwordOrSaltedKey),
+      profileStore: await this.encryptWithChecksum(profile, passwordOrSaltedKey),
+      yakklCurrentlySelectedStore: await this.encryptWithChecksum(currentlySelected, passwordOrSaltedKey),
+      yakklContactsStore: await this.encryptWithChecksum(contacts, passwordOrSaltedKey),
+      yakklChatsStore: await this.encryptWithChecksum(chats, passwordOrSaltedKey),
+      yakklAccountsStore: await this.encryptWithChecksum(accounts, passwordOrSaltedKey),
+      yakklPrimaryAccountsStore: await this.encryptWithChecksum(primaryAccounts, passwordOrSaltedKey),
+      yakklWatchListStore: await this.encryptWithChecksum(watchList, passwordOrSaltedKey),
+      yakklBlockedListStore: await this.encryptWithChecksum(blockedList, passwordOrSaltedKey),
+      yakklConnectedDomainsStore: await this.encryptWithChecksum(connectedDomains, passwordOrSaltedKey),
+      yakklTokenDataStore: await this.encryptWithChecksum(tokenData, passwordOrSaltedKey),
+      yakklTokenDataCustomStore: await this.encryptWithChecksum(tokenDataCustom, passwordOrSaltedKey)
+    };
+
+    let profileData: ProfileData | null = null;
+    if (isEncryptedData(profile.data)) {
+      profileData = await decryptData(profile.data, passwordOrSaltedKey);
+    }
+
+    const meta: EmergencyKitMetaData = {
+      id,
+      createDate,
+      updateDate: createDate,
+      version: VERSION,
+      type: "yakkl_bulk",
+      registeredType: profileData?.registered?.type ?? RegistrationType.STANDARD,
+      hash: await this.createHash(JSON.stringify(encryptedData)),
+      files: [
+        'yakklPreferencesStore',
+        'yakklSettingsStore',
+        'profileStore',
+        'yakklCurrentlySelectedStore',
+        'yakklContactsStore',
+        'yakklChatsStore',
+        'yakklAccountsStore',
+        'yakklPrimaryAccountsStore',
+        'yakklWatchListStore',
+        'yakklBlockedListStore',
+        'yakklConnectedDomainsStore',
+        'yakklTokenDataStore',
+        'yakklTokenDataCustomStore'
+      ]
+    };
+
+    profileData = null;
+
+    const bulkEmergencyKit: BulkEmergencyKitData = {
+      meta,
+      data: encryptedData,
+      cs: await this.createHash(JSON.stringify(meta) + JSON.stringify(encryptedData))
+    };
+
+    return bulkEmergencyKit;
+  }
+
   static async downloadEmergencyKit(emergencyKit: EmergencyKitData, filePath?: string): Promise<string> {
     if (typeof window !== 'undefined' && window.document) {
       const fileName = `emergency-kit-${emergencyKit.id}-${emergencyKit?.meta?.createDate}.json`;
@@ -116,6 +196,22 @@ export class EmergencyKitManager {
       return filePath;
     } else {
       throw new Error('Download not supported in this environment');
+    }
+  }
+
+  static async downloadBulkEmergencyKit(bulkEmergencyKit: BulkEmergencyKitData): Promise<string> {
+    try {
+      if (typeof window !== 'undefined' && window.document) {
+        const fileName = `bulk-emergency-kit-${bulkEmergencyKit.meta.id}-${bulkEmergencyKit.meta.createDate}.json`;
+        // Browser environment
+        this.downloadObjectAsJson(bulkEmergencyKit, fileName);
+        return fileName;
+      } else {
+        throw new Error('Download not supported in this environment');
+      }
+    } catch (error) {
+      console.log('Error downloading bulk emergency kit:', error);
+      throw error;
     }
   }
 
@@ -141,128 +237,6 @@ export class EmergencyKitManager {
     }
 
     return emergencyKit;
-  }
-
-  static async readEmergencyKitMetadata(source: File | string): Promise<EmergencyKitMetaData | undefined> {
-    let fileContent: string;
-
-    if (typeof source === 'string' && typeof window === 'undefined') {
-      // Node.js environment
-      const fs = await import('fs');
-      const { promisify } = await import('util');
-      const readFile = promisify(fs.readFile);
-      fileContent = await readFile(source, 'utf-8');
-    } else if (source instanceof File) {
-      // Browser environment
-      fileContent = await source.text();
-    } else {
-      throw new Error('Unsupported source type');
-    }
-
-    const emergencyKit: EmergencyKitData = JSON.parse(fileContent);
-    return emergencyKit.meta;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private static cloudImport(source: File | string): string {
-    return '';
-  }
-
-  private static downloadObjectAsJson(exportObj: any, exportName: string) {
-    try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));//encodeJSON(exportObj)); //JSON.stringify(exportObj));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", exportName);
-      document.body.appendChild(downloadAnchorNode); // required for Firefox
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-    } catch (e) {
-      console.error(`Download failed: ${e}`);
-    }
-  }
-
-  private static async saveJsonToFile(exportObj: any, filePath: string) {
-    if (fs && promisify) {
-      const writeFile = promisify(fs.writeFile);
-      try {
-        const dataStr = JSON.stringify(exportObj, null, 2); // Pretty print JSON
-        await writeFile(filePath, dataStr, 'utf8');
-        console.log(`Emergency kit saved to ${filePath}`);
-      } catch (e) {
-        console.error(`Failed to save emergency kit: ${e}`);
-      }
-    }
-  }
-
-  private static generateId(): string {
-    return 'xxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
-  }
-
-  private static async createHash(data: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-  }
-
-  static async createBulkEmergencyKit(
-    preferences: Preferences,
-    settings: Settings,
-    profile: Profile,
-    currentlySelected: any,
-    contacts: YakklContact[],
-    chats: YakklChat[],
-    accounts: YakklAccount[],
-    primaryAccounts: YakklPrimaryAccount[],
-    watchList: YakklWatch[],
-    blockedList: YakklBlocked[],
-    connectedDomains: YakklConnectedDomain[],
-    passwordOrSaltedKey: string | SaltedKey
-  ): Promise<BulkEmergencyKitData> {
-    const createDate = new Date().toISOString();
-    const id = this.generateId();
-
-    const encryptedData: BulkEmergencyKitData['data'] = {
-      yakklPreferencesStore: await this.encryptWithChecksum(preferences, passwordOrSaltedKey),
-      yakklSettingsStore: await this.encryptWithChecksum(settings, passwordOrSaltedKey),
-      profileStore: await this.encryptWithChecksum(profile, passwordOrSaltedKey),
-      yakklCurrentlySelectedStore: await this.encryptWithChecksum(currentlySelected, passwordOrSaltedKey),
-      yakklContactsStore: await this.encryptWithChecksum(contacts, passwordOrSaltedKey),
-      yakklChatsStore: await this.encryptWithChecksum(chats, passwordOrSaltedKey),
-      yakklAccountsStore: await this.encryptWithChecksum(accounts, passwordOrSaltedKey),
-      yakklPrimaryAccountsStore: await this.encryptWithChecksum(primaryAccounts, passwordOrSaltedKey),
-      yakklWatchListStore: await this.encryptWithChecksum(watchList, passwordOrSaltedKey),
-      yakklBlockedListStore: await this.encryptWithChecksum(blockedList, passwordOrSaltedKey),
-      yakklConnectedDomainsStore: await this.encryptWithChecksum(connectedDomains, passwordOrSaltedKey),
-    };
-
-    let profileData: ProfileData | null = null;
-    if (isEncryptedData(profile.data)) {
-      profileData = await decryptData(profile.data, passwordOrSaltedKey);
-    }
-
-    const meta: EmergencyKitMetaData = {
-      id,
-      createDate,
-      updateDate: createDate,
-      version: VERSION,
-      type: "yakkl_bulk",
-      registeredType: profileData?.registered?.type ?? RegistrationType.STANDARD,
-      hash: await this.createHash(JSON.stringify(encryptedData)),
-      files: ['yakklPreferencesStore', 'yakklSettingsStore', 'profileStore', 'yakklCurrentlySelectedStore', 'yakklContactsStore', 'yakklChatsStore', 'yakklAccountsStore', 'yakklPrimaryAccountsStore', 'yakklWatchListStore', 'yakklBlockedListStore', 'yakklConnectedDomainsStore']
-    };
-
-    profileData = null;
-
-    const bulkEmergencyKit: BulkEmergencyKitData = {
-      meta,
-      data: encryptedData,
-      cs: await this.createHash(JSON.stringify(meta) + JSON.stringify(encryptedData))
-    };
-
-    return bulkEmergencyKit;
   }
 
   static async importBulkEmergencyKit(source: File | string, passwordOrSaltedKey: string | SaltedKey): Promise<{
@@ -316,20 +290,24 @@ export class EmergencyKitManager {
     }
   }
 
-  static async downloadBulkEmergencyKit(bulkEmergencyKit: BulkEmergencyKitData): Promise<string> {
-    try {
-      if (typeof window !== 'undefined' && window.document) {
-        const fileName = `bulk-emergency-kit-${bulkEmergencyKit.meta.id}-${bulkEmergencyKit.meta.createDate}.json`;
-        // Browser environment
-        this.downloadObjectAsJson(bulkEmergencyKit, fileName);
-        return fileName;
-      } else {
-        throw new Error('Download not supported in this environment');
-      }
-    } catch (error) {
-      console.log('Error downloading bulk emergency kit:', error);
-      throw error;
+  static async readEmergencyKitMetadata(source: File | string): Promise<EmergencyKitMetaData | undefined> {
+    let fileContent: string;
+
+    if (typeof source === 'string' && typeof window === 'undefined') {
+      // Node.js environment
+      const fs = await import('fs');
+      const { promisify } = await import('util');
+      const readFile = promisify(fs.readFile);
+      fileContent = await readFile(source, 'utf-8');
+    } else if (source instanceof File) {
+      // Browser environment
+      fileContent = await source.text();
+    } else {
+      throw new Error('Unsupported source type');
     }
+
+    const emergencyKit: EmergencyKitData = JSON.parse(fileContent);
+    return emergencyKit.meta;
   }
 
   static async readBulkEmergencyKitMetadata(source: File | string): Promise<EmergencyKitMetaData> {
@@ -357,16 +335,25 @@ export class EmergencyKitManager {
     }
   }
 
-  private static async encryptWithChecksum(data: any, passwordOrSaltedKey: string | SaltedKey): Promise<EncryptedData> {
-    try {
-      const jsonString = JSON.stringify(data);
-      const checksum = await this.createHash(jsonString);
-      const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
-      return encryptedData;
-    } catch (error) {
-      console.log('Error encrypting data:', error);
-      throw error;
-    }
+  // Internal methods...
+  private static async checkDataExists(key: string, data: any): Promise<boolean> {
+    // Implement this method based on your data structure and storage mechanism
+    // For example, you might check against a database or local storage
+    // Return true if the data already exists, false otherwise
+    return false; // Placeholder implementation
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private static cloudImport(source: File | string): string {
+    return '';
+  }
+
+  private static async createHash(data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
   private static async decryptWithChecksumVerification(encryptedData: EncryptedData, passwordOrSaltedKey: string | SaltedKey): Promise<any> {
@@ -385,15 +372,49 @@ export class EmergencyKitManager {
     }
   }
 
-  private static async checkDataExists(key: string, data: any): Promise<boolean> {
-    // Implement this method based on your data structure and storage mechanism
-    // For example, you might check against a database or local storage
-    // Return true if the data already exists, false otherwise
-    return false; // Placeholder implementation
+  private static downloadObjectAsJson(exportObj: any, exportName: string) {
+    try {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));//encodeJSON(exportObj)); //JSON.stringify(exportObj));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", exportName);
+      document.body.appendChild(downloadAnchorNode); // required for Firefox
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    } catch (e) {
+      console.log(`Download failed: ${e}`);
+    }
   }
 
-  // Existing private methods (generateId, createHash, etc.) remain unchanged
-  // ...
+  private static async encryptWithChecksum(data: any, passwordOrSaltedKey: string | SaltedKey): Promise<EncryptedData> {
+    try {
+      const jsonString = JSON.stringify(data);
+      const checksum = await this.createHash(jsonString);
+      const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
+      return encryptedData;
+    } catch (error) {
+      console.log('Error encrypting data:', error);
+      throw error;
+    }
+  }
+
+  private static generateId(): string {
+    return 'xxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+  }
+
+  private static async saveJsonToFile(exportObj: any, filePath: string) {
+    if (fs && promisify) {
+      const writeFile = promisify(fs.writeFile);
+      try {
+        const dataStr = JSON.stringify(exportObj, null, 2); // Pretty print JSON
+        await writeFile(filePath, dataStr, 'utf8');
+        console.log(`Emergency kit saved to ${filePath}`);
+      } catch (e) {
+        console.log(`Failed to save emergency kit: ${e}`);
+      }
+    }
+  }
+
 }
 
 
@@ -421,7 +442,7 @@ export class EmergencyKitManager {
 // const metadata = await EmergencyKitManager.readBulkEmergencyKitMetadata(file);
 
 // Import a bulk emergency kit
-// const { newData, existingData } = await EmergencyKitManager.importBulkEmergencyKit(file, password);
+// const { newData, existingData } = await .importBulkEmergencyKit(file, password);
 
 // console.log('New data:', newData);
 // console.log('Existing data:', existingData);
@@ -433,5 +454,5 @@ export class EmergencyKitManager {
 // console.log('Single Account Emergency Kit Metadata:', singleAccountMetadata);
 
 // For a bulk emergency kit
-// const bulkMetadata = await EmergencyKitManager.readBulkEmergencyKitMetadata(file);
+// const bulkMetadata = await .readBulkEmergencyKitMetadata(file);
 // console.log('Bulk Emergency Kit Metadata:', bulkMetadata);

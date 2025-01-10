@@ -366,7 +366,7 @@ export interface Transactions {
 
 export interface SwapToken {
   chainId: number;
-  address: string;
+  address: string;  // Token address
   name: string;
   symbol: string;
   decimals: number;
@@ -884,6 +884,8 @@ export interface BasePriceData {
   currency?: string;
   status?: number;
   message?: string;
+  isNative?: boolean;
+  isStablecoin?: boolean;
 }
 
 // Amounts reference quantity of tokens and Price reference the price of a given token
@@ -934,7 +936,6 @@ export interface SwapPriceData extends BasePriceData {
 export interface MarketPriceData extends BasePriceData {
   price: number;
   pair?: string;
-  isNative?: boolean;
 }
 
 export interface PoolInfoData extends BasePriceData {

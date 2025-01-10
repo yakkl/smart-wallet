@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { on } from 'events';
 	import EmergencyKitModal from './EmergencyKitModal.svelte';
 	import ImportOptionModal from './ImportOptionModal.svelte';
 	import ImportPhrase from './ImportPhrase.svelte';

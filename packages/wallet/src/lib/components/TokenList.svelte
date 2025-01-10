@@ -46,6 +46,7 @@
 </script>
 
 <ul class="divide-y divide-gray-300">
+  {console.log('Token List:', tokens)}
   {#each tokens as token, index}
     <li
       class="relative py-4 flex justify-between items-center"
@@ -61,7 +62,7 @@
         <div>
           <p class="text-sm font-medium text-gray-900">{token.name}</p>
           <p class="text-xs text-gray-500">{token.symbol} - {token.address}</p>
-          <!-- <p class="text-xs text-gray-500">{token.balance || 0}</p> -->
+          <p class="text-xs text-gray-500">Balance: {token.balance ?? 0}</p>
         </div>
       </button>
       {#if token?.customDefault === 'custom'} <!-- Only show controls if custom -->

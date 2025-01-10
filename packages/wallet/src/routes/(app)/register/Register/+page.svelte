@@ -18,7 +18,7 @@
   import Warning from '$lib/components/Warning.svelte';
 	import type { CurrentlySelectedData, Profile, ProfileData, YakklAccount, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { RegistrationType } from '$lib/common/types';
-	import { isEncryptedData } from '$lib/common';
+	import { getUserId, isEncryptedData } from '$lib/common';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
@@ -237,7 +237,7 @@
         profile = {
           ...profile,
           userName,
-          id: crypto.randomUUID(),
+          id: getUserId(),
           createDate: dateString(),
           updateDate: dateString(),
           version: VERSION,
@@ -423,17 +423,13 @@
 </svelte:head>
 
 <!-- <ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} /> -->
-
 <!-- <ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  /> -->
-
 <!-- <EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit} mode='import'/> -->
-
 <!-- <ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={handleRestore}/> -->
 
 <RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} />
 
 <ErrorNoAction bind:show={error} value={errorValue} title="ERROR!"/>
-
 <Warning bind:show={warning} value={warningValue} title="WARNING!" />
 
 <!-- <div class="modal" class:modal-open={showRegistrationOption}>

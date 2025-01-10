@@ -218,7 +218,7 @@
   </div>
 
   <div class="my-4">
-    <RegistrationOptionModal bind:show={showRegistrationOptions} onCreate={handleCreateAccount} />
+    <RegistrationOptionModal bind:show={showRegistrationOptions} onCreate={handleCreateAccount} onImport={() => {}}/>
   </div>
 
   <div class="my-4">
