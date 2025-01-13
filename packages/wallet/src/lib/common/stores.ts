@@ -35,11 +35,13 @@ import {
 	STORAGE_YAKKL_WALLET_PROVIDERS,
   STORAGE_YAKKL_TOKENDATA,
   STORAGE_YAKKL_TOKENDATA_CUSTOM,
+  STORAGE_YAKKL_COMBINED_TOKENS,
 } from '$lib/common/constants';
 
 import { encryptData, decryptData } from '$lib/common/encryption';
 import { isEncryptedData } from '$lib/common/misc';
 import { type PricingStore } from '$lib/common/types';	;
+import { isEqual } from 'lodash-es';
 
 import type {
   CurrentlySelectedData,
@@ -62,6 +64,7 @@ import type {
 } from '$lib/common/interfaces';
 
 import type { Wallet } from '$plugins/Wallet';
+import { debug_log } from './debug-error';
 
 // Svelte writeable stores
 export const alert = writable({
@@ -152,6 +155,7 @@ export const yakklWalletProvidersStore = writable<string[]>([]);
 export const yakklWalletBlockchainsStore = writable<string[]>( [] );
 export const yakklTokenDataStore = writable<TokenData[]>([]);  // This is the official list of default tokens that we check to see if the user has any positions in
 export const yakklTokenDataCustomStore = writable<TokenData[]>([]);  // This is the official list of user added tokens that we check to see if the user has any positions in
+export const yakklCombinedTokenStore = writable<TokenData[]>([]);  // This is the combined list of default and custom tokens. We use this instead of derived so we can control the reactiveness better
 
 // yakklGPTRunningStore and yakklGPTKeyStore are used for the GPT API
 export const yakklGPTRunningStore = writable(false); // Single indicator for GPT running or not
@@ -210,10 +214,12 @@ export function storageChange(changes: any) {
 			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
 		}
     if (changes.yakklTokenDataCustom) {
-			setYakklTokenDataCustomStore(changes.yakklTokenDataCustom.newValue);
+      debug_log('storageChange yakklTokenDataCustom', changes.yakklTokenDataCustom.newValue);
+			// setYakklTokenDataCustomStore(changes.yakklTokenDataCustom.newValue);
 		}
     if (changes.yakklTokenData) {
-			setYakklTokenDataStore(changes.yakklTokenData.newValue);
+      debug_log('storageChange yakklTokenData', changes.yakklTokenData.newValue);
+			// setYakklTokenDataStore(changes.yakklTokenData.newValue);
 		}
 	} catch (error) {
 		console.log(error);
@@ -301,6 +307,11 @@ export function getYakklTokenDataStore() {
 
 export function getYakklTokenDataCustomStore() {
 	const store = get(yakklTokenDataCustomStore);
+	return store;
+}
+
+export function getYakklCombinedTokenStore() {
+	const store = get(yakklCombinedTokenStore);
 	return store;
 }
 
@@ -440,6 +451,12 @@ export function setYakklTokenDataStore(values: TokenData[]) {
 export function setYakklTokenDataCustomStore(values: TokenData[]) {
 	const store = get(yakklTokenDataCustomStore);
 	yakklTokenDataCustomStore.set(values);
+	return store;
+}
+
+export function setYakklCombinedTokenStore(values: TokenData[]) {
+	const store = get(yakklCombinedTokenStore);
+	yakklCombinedTokenStore.set(values);
 	return store;
 }
 
@@ -596,6 +613,19 @@ export async function getYakklTokenData(): Promise<TokenData[]> {
 export async function getYakklTokenDataCustom(): Promise<TokenData[]> {
   try {
     const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_TOKENDATA_CUSTOM);
+		if (typeof value === 'string') {
+      // Handle the case where value is a string, which shouldn't happen in this context
+      throw new Error('Unexpected string value received from local storage');
+    }
+    return value || []; // Return an empty array or provide a default value if necessary
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getYakklCombinedToken(): Promise<TokenData[]> {
+  try {
+    const value = await getObjectFromLocalStorage<TokenData[]>(STORAGE_YAKKL_COMBINED_TOKENS);
 		if (typeof value === 'string') {
       // Handle the case where value is a string, which shouldn't happen in this context
       throw new Error('Unexpected string value received from local storage');
@@ -786,8 +816,13 @@ export async function setYakklContactsStorage(values: YakklContact[]) {
 
 export async function setYakklTokenDataStorage(values: TokenData[]) {
 	try {
-		yakklTokenDataStore.set( values );
-		await setObjectInLocalStorage( 'yakklTokenData', values );
+		const current = get(yakklTokenDataStore);
+
+		// Only update if the values are different
+		if (!isEqual(current, values)) {
+			yakklTokenDataStore.set(values);
+			await setObjectInLocalStorage('yakklTokenData', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -795,8 +830,27 @@ export async function setYakklTokenDataStorage(values: TokenData[]) {
 
 export async function setYakklTokenDataCustomStorage(values: TokenData[]) {
 	try {
-		yakklTokenDataCustomStore.set( values );
-		await setObjectInLocalStorage( 'yakklTokenDataCustom', values );
+		const current = get(yakklTokenDataCustomStore);
+
+		// Only update if the values are different
+		if (!isEqual(current, values)) {
+			yakklTokenDataCustomStore.set(values);
+			await setObjectInLocalStorage('yakklTokenDataCustom', values);
+		}
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+export async function setYakklCombinedTokenStorage(values: TokenData[]) {
+	try {
+		const current = get(yakklCombinedTokenStore);
+
+		// Only update if the values are different
+		if (!isEqual(current, values)) {
+			yakklCombinedTokenStore.set(values);
+			await setObjectInLocalStorage('yakklCombinedTokens', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -804,8 +858,11 @@ export async function setYakklTokenDataCustomStorage(values: TokenData[]) {
 
 export async function setYakklChatsStorage(values: YakklChat[]) {
 	try {
-		yakklChatsStore.set(values);
-		await setObjectInLocalStorage('yakklChats', values);
+		const current = get(yakklChatsStore);
+		if (!isEqual(current, values)) {
+			yakklChatsStore.set(values);
+			await setObjectInLocalStorage('yakklChats', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -813,8 +870,11 @@ export async function setYakklChatsStorage(values: YakklChat[]) {
 
 export async function setYakklWalletBlockchainsStorage(values: string[]) {
 	try {
-		yakklWalletBlockchainsStore.set(values);
-		await setObjectInLocalStorage('yakklWalletBlockchains', values);
+		const current = get(yakklWalletBlockchainsStore);
+		if (!isEqual(current, values)) {
+			yakklWalletBlockchainsStore.set(values);
+			await setObjectInLocalStorage('yakklWalletBlockchains', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -822,8 +882,11 @@ export async function setYakklWalletBlockchainsStorage(values: string[]) {
 
 export async function setYakklWalletProvidersStorage(values: string[]) {
 	try {
-		yakklWalletProvidersStore.set(values);
-		await setObjectInLocalStorage('yakklWalletProviders', values);
+		const current = get(yakklWalletProvidersStore);
+		if (!isEqual(current, values)) {
+			yakklWalletProvidersStore.set(values);
+			await setObjectInLocalStorage('yakklWalletProviders', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -831,8 +894,11 @@ export async function setYakklWalletProvidersStorage(values: string[]) {
 
 export async function setYakklConnectedDomainsStorage(values: YakklConnectedDomain[]) {
 	try {
-		yakklConnectedDomainsStore.set(values);
-		await setObjectInLocalStorage('yakklConnectedDomains', values);
+		const current = get(yakklConnectedDomainsStore);
+		if (!isEqual(current, values)) {
+			yakklConnectedDomainsStore.set(values);
+			await setObjectInLocalStorage('yakklConnectedDomains', values);
+		}
 	} catch (error) {
 		console.log(error);
 	}
@@ -840,34 +906,43 @@ export async function setYakklConnectedDomainsStorage(values: YakklConnectedDoma
 
 export async function setSettingsStorage(values: Settings) {
 	try {
-		yakklSettingsStore.set(values);
-		await setObjectInLocalStorage('settings', values);
+		const current = get(yakklSettingsStore);
+		if (!isEqual(current, values)) {
+			yakklSettingsStore.set(values);
+			await setObjectInLocalStorage('settings', values);
+		}
 	} catch (error) {
 		console.log(error);
-    throw new Error("Error in setSettingsStorage: " + error);
+		throw new Error("Error in setSettingsStorage: " + error);
 	}
 }
 
 export async function setPreferencesStorage(values: Preferences) {
 	try {
-		yakklPreferencesStore.set(values);
-		await setObjectInLocalStorage('preferences', values);
+		const current = get(yakklPreferencesStore);
+		if (!isEqual(current, values)) {
+			yakklPreferencesStore.set(values);
+			await setObjectInLocalStorage('preferences', values);
+		}
 	} catch (error) {
 		console.log(error);
-    throw new Error("Error in setPreferencesStorage: " + error);
+		throw new Error("Error in setPreferencesStorage: " + error);
 	}
 }
 
 export async function setProfileStorage(values: Profile) {
 	try {
+		const current = get(profileStore);
 		const newValues = await verifyEncryption(values) as Profile;
-		profileStore.set(newValues);
-		await setObjectInLocalStorage('profile', values);
+
+		if (!isEqual(current, newValues)) {
+			profileStore.set(newValues);
+			await setObjectInLocalStorage('profile', newValues);
+		}
 	} catch (error) {
 		console.log(error);
-    throw new Error("Error in setProfileStorage: " + error);
-
-  }
+		throw new Error("Error in setProfileStorage: " + error);
+	}
 }
 
 export async function setYakklCurrentlySelectedStorage(values: YakklCurrentlySelected) {
@@ -880,9 +955,26 @@ export async function setYakklCurrentlySelectedStorage(values: YakklCurrentlySel
 			);
 		}
 
-		setYakklCurrentlySelectedStore(values);
-		const newValues = await verifyEncryption(values); // We put this after the store since data.<whatever> holds already encrypted data
-		await setObjectInLocalStorage('yakklCurrentlySelected', newValues);
+    // Get current store value
+		const current = get(yakklCurrentlySelectedStore);
+
+		// Avoid unnecessary updates by checking for equality
+		if (!isEqual(current, values)) {
+			// Update the store with the new value
+			setYakklCurrentlySelectedStore(values);
+
+			// Verify encryption (ensures the value is encrypted correctly before storing)
+			const newValues = await verifyEncryption(values);
+
+			// Update localStorage only if the encrypted data differs
+			const currentEncrypted = await verifyEncryption(current); // Encrypt current for comparison
+			if (!isEqual(currentEncrypted, newValues)) {
+				await setObjectInLocalStorage('yakklCurrentlySelected', newValues);
+			}
+		}
+		// setYakklCurrentlySelectedStore(values);
+		// const newValues = await verifyEncryption(values); // We put this after the store since data.<whatever> holds already encrypted data
+		// await setObjectInLocalStorage('yakklCurrentlySelected', newValues);
 	} catch (error) {
 		console.log(error);
 	}
@@ -959,3 +1051,10 @@ export async function updateYakklTokenDataCustom(updater: (token: TokenData) => 
 		throw error;
 	}
 }
+
+// Function to update the combined store
+export function updateCombinedTokenStore() {
+  const combinedTokens = [...get(yakklTokenDataStore), ...get(yakklTokenDataCustomStore)];
+  yakklCombinedTokenStore.set(combinedTokens); // Single reactive update for the combined tokens
+}
+

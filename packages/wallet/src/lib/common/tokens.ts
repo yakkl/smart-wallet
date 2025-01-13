@@ -1,7 +1,9 @@
 import type { TokenData } from './interfaces';
 import { get } from 'svelte/store';
 import { ethers } from 'ethers-v6';
-import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage } from '$lib/common/stores';
+import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage, getYakklTokenData, updateCombinedTokenStore } from '$lib/common/stores';
+import { debug_log } from './debug-error';
+import { isEqual } from 'lodash-es';
 
 
 // type TokenKey = string;
@@ -122,77 +124,97 @@ import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustom
 
 export async function updateTokenBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
   try {
-    await Promise.all([
+    const [defaultTokens, customTokens] = await Promise.all([
       updateTokenDataBalances(userAddress, provider),
       updateTokenDataCustomBalances(userAddress, provider),
     ]);
+
+    // debug_log('Default tokens:', defaultTokens);
+    // debug_log('Custom tokens:', customTokens);
+
+    // Update the combined tokens store to trigger a single reactive update
+    updateCombinedTokenStore();
   } catch (error) {
     console.log('Error updating token balances:', error);
   }
 }
 
-export async function updateTokenDataBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
+export async function updateTokenDataBalances(userAddress: string, provider: ethers.Provider): Promise<TokenData[]> {
   try {
-    const tokens = get(yakklTokenDataStore);
+    const tokens = await getYakklTokenData(); // Fetch default tokens from storage or store
 
     if (!tokens || tokens.length === 0) {
       console.log('No tokens available to update balances');
-      return;
+      return [];
     }
 
-    // Update each token's quantity
+    // Fetch balances for all default tokens
     const updatedTokens = await Promise.all(
       tokens.map(async (token) => {
         try {
-          // ETH native is handled like WETH so this is fine
-          const balance = await getTokenBalance(token, userAddress, provider); // Fetch balance
+          const balance = await getTokenBalance(token, userAddress, provider);
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
           };
         } catch (balanceError) {
           console.log(`Error fetching balance for token ${token.symbol}:`, balanceError);
-          return token; // Return token unchanged if balance fetch fails
+          return token; // Return token unchanged on error
         }
       })
     );
 
-    // Store updated token data
-    await setYakklTokenDataStorage(updatedTokens);
+    // Update the store only if the data has changed
+    const currentTokens = get(yakklTokenDataStore);
+    if (!isEqual(currentTokens, updatedTokens)) {
+      await setYakklTokenDataStorage(updatedTokens);
+    }
+
+    return updatedTokens;
   } catch (error) {
     console.log('Error updating token balances:', error);
+    return []; // Return an empty array on error
   }
 }
 
-export async function updateTokenDataCustomBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
+export async function updateTokenDataCustomBalances(userAddress: string, provider: ethers.Provider): Promise<TokenData[]> {
   try {
     const customTokens = get(yakklTokenDataCustomStore);
+
     if (!customTokens || customTokens.length === 0) {
-      return;
+      console.log('No custom tokens available to update balances');
+      return [];
     }
 
-    // Update each token's quantity
+    // Fetch balances for all custom tokens
     const updatedCustomTokens = await Promise.all(
       customTokens.map(async (token) => {
         try {
-          const balance = await getTokenBalance(token, userAddress, provider); // Fetch balance
+          const balance = await getTokenBalance(token, userAddress, provider);
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
           };
         } catch (balanceError) {
           console.log(`Error fetching balance for custom token ${token.symbol}:`, balanceError);
-          return token; // Return token unchanged if balance fetch fails
+          return token; // Return token unchanged on error
         }
       })
     );
 
-    // Store updated token data
-    await setYakklTokenDataCustomStorage(updatedCustomTokens);
+    // Update the store only if the data has changed
+    const currentCustomTokens = get(yakklTokenDataCustomStore);
+    if (!isEqual(currentCustomTokens, updatedCustomTokens)) {
+      await setYakklTokenDataCustomStorage(updatedCustomTokens);
+    }
+
+    return updatedCustomTokens;
   } catch (error) {
     console.log('Error updating custom token balances:', error);
+    return []; // Return an empty array on error
   }
 }
+
 
 // {
 //     "chainId": 1,

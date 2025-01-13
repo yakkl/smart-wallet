@@ -19,7 +19,7 @@
   import { encryptData, decryptData } from '$lib/common/encryption';
   import { startCheckPrices, stopCheckPrices, checkPricesCB } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-  import { AccountTypeCategory, NetworkType, getInstances, isEncryptedData,
+  import { AccountTypeCategory, NetworkType, debug_log, getInstances, isEncryptedData,
     type CurrentlySelectedData, type Network, type YakklAccount, type YakklCurrentlySelected,
     type YakklPrimaryAccount } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';
@@ -109,6 +109,8 @@
   let formattedEtherValue: string = $state();
   let currentlySelected: YakklCurrentlySelected = $state();
 
+  let isDropdownOpen = $state(false);
+
   //////// Toast
   let toastStatus = $state(false);
   let toastCounter = 3;
@@ -127,17 +129,17 @@
     toastStatus = false;
   }
 
-  $effect(() => {
-    try {
-      currentlySelected = $yakklCurrentlySelectedStore;
-      assetPriceValue = $yakklPricingStore?.price ?? 0n;
-      chainId = currentlySelected.shortcuts.network.chainId ?? 1;
-      networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
-      shortcutsValue = EthereumBigNumber.from(currentlySelected.shortcuts.value ?? 0n);
-    } catch (e) {
-      console.log(e);
-    }
-  });
+  // $effect(() => {
+  //   try {
+  //     currentlySelected = $yakklCurrentlySelectedStore;
+  //     assetPriceValue = $yakklPricingStore?.price ?? 0n;
+  //     chainId = currentlySelected.shortcuts.network.chainId ?? 1;
+  //     networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
+  //     shortcutsValue = EthereumBigNumber.from(currentlySelected.shortcuts.value ?? 0n);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // });
 
   $effect(() => {
     if (assetPriceValue) {
@@ -149,6 +151,34 @@
       startPricingChecks(); // Here because of different accounts with different values
       updateValuePriceFiat();
   });
+
+  $effect(() => {
+    try {
+      const selected = $yakklCurrentlySelectedStore;
+      if (!selected || selected.shortcuts.value === 0n) {
+        console.log("Reactive trigger skipped for zero or undefined value.");
+        return;
+      }
+
+      updateCurrentlySelected(selected);
+    } catch (error) {
+      console.log("Reactive block error:", error);
+    }
+  });
+
+  function updateCurrentlySelected(currentlySelected: YakklCurrentlySelected) {
+    const { address, accountName, network, value } = currentlySelected.shortcuts;
+
+    addressShow = truncate(address, 6) + address.substring(address.length - 4);
+    name = accountName;
+    nameShow = truncate(accountName, 20);
+    networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
+    assetPriceValue = $yakklPricingStore?.price ?? 0n;
+
+    currencyLabel = currentlySelected.preferences.currency.code ?? "USD";
+    shortcutsValue = EthereumBigNumber.from(value) ?? EthereumBigNumber.from(0);
+    chainId = network.chainId ?? 1;
+  }
 
   onMount(async () => {
     try {
@@ -220,107 +250,223 @@
   //   }
   // }
 
-  async function updateValuePriceFiat(): Promise<void> {
-    try {
-      if ($yakklCurrentlySelectedStore?.shortcuts.address === YAKKL_ZERO_ADDRESS) {
-        if ($yakklCurrentlySelectedStore) {
-          let updatedCurrentlySelected: YakklCurrentlySelected = {
-            ...$yakklCurrentlySelectedStore,
-            shortcuts: {
-              ...$yakklCurrentlySelectedStore.shortcuts,
-              value: EthereumBigNumber.from(0),
-            },
-            preferences: $yakklCurrentlySelectedStore.preferences,
-            data: $yakklCurrentlySelectedStore.data,
-          };
+  // async function updateValuePriceFiat(): Promise<void> {
+  //   try {
+  //     if ($yakklCurrentlySelectedStore?.shortcuts.address === YAKKL_ZERO_ADDRESS) {
+  //       if ($yakklCurrentlySelectedStore) {
+  //         let updatedCurrentlySelected: YakklCurrentlySelected = {
+  //           ...$yakklCurrentlySelectedStore,
+  //           shortcuts: {
+  //             ...$yakklCurrentlySelectedStore.shortcuts,
+  //             value: EthereumBigNumber.from(0),
+  //           },
+  //           preferences: $yakklCurrentlySelectedStore.preferences,
+  //           data: $yakklCurrentlySelectedStore.data,
+  //         };
 
-          // Set the modified copy back to the store
-          yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
-        }
-        return;
-      }
+  //         // Set the modified copy back to the store
+  //         yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
+  //         await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
+  //       }
+  //       return;
+  //     }
 
-      if (!$yakklCurrentlySelectedStore?.shortcuts.value || $yakklCurrentlySelectedStore.shortcuts.value === EthereumBigNumber.from(0)) {
-        if ($yakklCurrentlySelectedStore) {
-          let updatedCurrentlySelected: YakklCurrentlySelected = {
-            ...$yakklCurrentlySelectedStore,
-            shortcuts: {
-              ...$yakklCurrentlySelectedStore.shortcuts,
-              value: EthereumBigNumber.from(0),
-            },
-            preferences: $yakklCurrentlySelectedStore.preferences,
-            data: $yakklCurrentlySelectedStore.data,
-          };
+  //     if (!$yakklCurrentlySelectedStore?.shortcuts.value || $yakklCurrentlySelectedStore.shortcuts.value === EthereumBigNumber.from(0)) {
+  //       if ($yakklCurrentlySelectedStore) {
+  //         let updatedCurrentlySelected: YakklCurrentlySelected = {
+  //           ...$yakklCurrentlySelectedStore,
+  //           shortcuts: {
+  //             ...$yakklCurrentlySelectedStore.shortcuts,
+  //             value: EthereumBigNumber.from(0),
+  //           },
+  //           preferences: $yakklCurrentlySelectedStore.preferences,
+  //           data: $yakklCurrentlySelectedStore.data,
+  //         };
 
-          // Set the modified copy back to the store
-          yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-          await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
-        }
-        return;
-      }
+  //         // Set the modified copy back to the store
+  //         yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
+  //         await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
+  //       }
+  //       return;
+  //     }
 
-      currentlySelected = $yakklCurrentlySelectedStore;
+  //     currentlySelected = $yakklCurrentlySelectedStore;
 
-      if (currentlySelected.shortcuts.address) {
-        startPricingChecks(); // Start the price checks if not already started else it will just return
-        if (!$yakklPricingStore?.price) {
-          checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
-        }
+  //     if (currentlySelected.shortcuts.address) {
+  //       startPricingChecks(); // Start the price checks if not already started else it will just return
+  //       if (!$yakklPricingStore?.price) {
+  //         checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
+  //       }
 
-        // Convert the value to EthereumBigNumber
-        // Convert from Wei to Ether and get string representation
-        const etherValueString = formatEther(currentlySelected.shortcuts.value);
-        if ($yakklPricingStore && $yakklPricingStore.price) {
-          price = $yakklPricingStore.price;
-        } else {
-          price = 0;
-        }
+  //       // Convert the value to EthereumBigNumber
+  //       // Convert from Wei to Ether and get string representation
+  //       const etherValueString = formatEther(currentlySelected.shortcuts.value);
+  //       if ($yakklPricingStore && $yakklPricingStore.price) {
+  //         price = $yakklPricingStore.price;
+  //       } else {
+  //         price = 0;
+  //       }
 
-        if (prevPrice > price) {
-          direction = 'dn';
-        } else if (prevPrice < price) {
-          direction = 'up';
-        } else {
-          direction = 'fl'; // flat
-        }
+  //       if (prevPrice > price) {
+  //         direction = 'dn';
+  //       } else if (prevPrice < price) {
+  //         direction = 'up';
+  //       } else {
+  //         direction = 'fl'; // flat
+  //       }
 
-        prevPrice = price;
+  //       prevPrice = price;
 
-        const etherValue = parseFloat(etherValueString);
-        if (!isNaN(etherValue)) {
-          valueFiat = currency ? currency.format(etherValue * price) : '0.00';
-          // Format Ether value to display up to 5 decimal places
-          formattedEtherValue = etherValue.toFixed(5);
-        } else {
-          valueFiat = '0.00';
-        }
-      } else {
-        valueFiat = '0.00';
-        stopCheckPrices();
-      }
-    } catch (e) {
-      console.log(`updateValuePriceFiat: ${e}`);
-    }
-    updateCurrentlySelected();
+  //       const etherValue = parseFloat(etherValueString);
+  //       if (!isNaN(etherValue)) {
+  //         valueFiat = currency ? currency.format(etherValue * price) : '0.00';
+  //         // Format Ether value to display up to 5 decimal places
+  //         formattedEtherValue = etherValue.toFixed(5);
+  //       } else {
+  //         valueFiat = '0.00';
+  //       }
+  //     } else {
+  //       valueFiat = '0.00';
+  //       stopCheckPrices();
+  //     }
+  //   } catch (e) {
+  //     console.log(`updateValuePriceFiat: ${e}`);
+  //   }
+  //   updateCurrentlySelected();
+  // }
+
+  function toggleDropdown() {
+    isDropdownOpen = !isDropdownOpen;
   }
 
-  function updateCurrentlySelected() {
+  async function updateValuePriceFiat(): Promise<void> {
     try {
-      if ($yakklCurrentlySelectedStore) {
-        address = $yakklCurrentlySelectedStore.shortcuts.address;
-        addressShow = truncate($yakklCurrentlySelectedStore.shortcuts.address, 6) + address.substring(address.length - 4);
-        name = $yakklCurrentlySelectedStore.shortcuts.accountName;
-        currencyLabel = $yakklCurrentlySelectedStore.preferences.currency.code ?? 'USD';
+      const currentlySelected = $yakklCurrentlySelectedStore;
 
-        if (address === YAKKL_ZERO_ADDRESS) {
-          nameShow = '0x0000...0000';
-        } else {
-          nameShow = truncate(name, 20);
-        }
+      if (!currentlySelected) {
+        console.log("No currently selected account.");
+        resetPriceData();
+        return;
       }
-    } catch (e) {
-      console.log(`updateCurrentlySelected: ${e}`);
+
+      const { address, value, network } = currentlySelected.shortcuts;
+
+      // If the address is the zero address or balance is zero
+      if (address === YAKKL_ZERO_ADDRESS || !value || value === 0n) {
+        setDefaultsForZeroAddress();
+        return;
+      }
+
+      // Calculate fiat and ether values
+      const etherValue = parseFloat(formatEther(value));
+      if (!isNaN(etherValue) && $yakklPricingStore?.price) {
+        const fiatValue = etherValue * $yakklPricingStore.price;
+
+        formattedEtherValue = etherValue.toFixed(5);
+        valueFiat = currency ? currency.format(fiatValue) : "0.00";
+
+        updatePriceDirection($yakklPricingStore.price);
+      } else {
+        resetPriceData();
+      }
+    } catch (error) {
+      console.log("Error in updateValuePriceFiat:", error);
+      resetPriceData();
+    }
+  }
+
+  function setDefaultsForZeroAddress() {
+    yakklCurrentlySelectedStore.update((current) => ({
+      ...current,
+      shortcuts: { ...current.shortcuts, value: EthereumBigNumber.from(0) },
+    }));
+
+    valueFiat = "0.00";
+    formattedEtherValue = "0.00000";
+    direction = "fl"; // flat
+  }
+
+  function updatePriceDirection(newPrice: number) {
+    if (prevPrice > newPrice) {
+      direction = "dn"; // down
+    } else if (prevPrice < newPrice) {
+      direction = "up"; // up
+    } else {
+      direction = "fl"; // flat
+    }
+    prevPrice = newPrice;
+  }
+
+  function resetPriceData() {
+    valueFiat = "0.00";
+    formattedEtherValue = "0.00000";
+    direction = "fl"; // flat
+  }
+
+  // function updateCurrentlySelected() {
+  //   try {
+  //     if ($yakklCurrentlySelectedStore) {
+  //       address = $yakklCurrentlySelectedStore.shortcuts.address;
+  //       addressShow = truncate($yakklCurrentlySelectedStore.shortcuts.address, 6) + address.substring(address.length - 4);
+  //       name = $yakklCurrentlySelectedStore.shortcuts.accountName;
+  //       currencyLabel = $yakklCurrentlySelectedStore.preferences.currency.code ?? 'USD';
+
+  //       if (address === YAKKL_ZERO_ADDRESS) {
+  //         nameShow = '0x0000...0000';
+  //       } else {
+  //         nameShow = truncate(name, 20);
+  //       }
+  //     }
+  //   } catch (e) {
+  //     console.log(`updateCurrentlySelected: ${e}`);
+  //   }
+  // }
+
+  async function handleAccounts(account: YakklAccount): Promise<void> {
+    try {
+      if (!account) {
+        console.log("Account is not defined.");
+        return;
+      }
+
+      let updatedCurrentlySelected = $yakklCurrentlySelectedStore;
+
+      if (updatedCurrentlySelected && isEncryptedData(updatedCurrentlySelected.data)) {
+        updatedCurrentlySelected.data = (await decryptData(updatedCurrentlySelected.data, yakklMiscStore)) as CurrentlySelectedData;
+      }
+
+      const balance = await getBalance(chainId || 1, account.address);
+
+      updatedCurrentlySelected = {
+        ...updatedCurrentlySelected,
+        shortcuts: {
+          ...updatedCurrentlySelected.shortcuts,
+          accountType: account.accountType,
+          address: account.address,
+          primary: account.primaryAccount,
+          accountName: account.name,
+          value: balance ?? EthereumBigNumber.from(0),
+        },
+        data: await encryptData(
+          {
+            ...updatedCurrentlySelected?.data,
+            account,
+          },
+          yakklMiscStore
+        ),
+      };
+
+      // yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
+      await setYakklCurrentlySelectedStorage(updatedCurrentlySelected);
+
+      // Update price and UI
+      updateValuePriceFiat();
+      if (wallet && provider && blockchain && tokenService) {
+        tokenService.updateTokenBalances(updatedCurrentlySelected.shortcuts.address);
+      }
+    } catch (error) {
+      console.log("Error in handleAccounts:", error);
+      showAccountsModal = false;
     }
   }
 
@@ -402,61 +548,60 @@
   //   return Promise.reject(undefined);
   // }
 
-  async function handleAccounts(account: YakklAccount) {
-    try {
-      if (!account) {
-        console.log('Account is not defined.');
-        return;
-      }
+  // async function handleAccounts(account: YakklAccount) {
+  //   try {
+  //     if (!account) {
+  //       console.log('Account is not defined.');
+  //       return;
+  //     }
 
-      if ($yakklCurrentlySelectedStore) currentlySelected = $yakklCurrentlySelectedStore;
+  //     if ($yakklCurrentlySelectedStore) currentlySelected = $yakklCurrentlySelectedStore;
 
-      if (currentlySelected && isEncryptedData(currentlySelected.data)) {
-        const decryptedData = await decryptData(currentlySelected.data, yakklMiscStore);
-        currentlySelected.data = decryptedData as CurrentlySelectedData;
-      }
+  //     if (currentlySelected && isEncryptedData(currentlySelected.data)) {
+  //       const decryptedData = await decryptData(currentlySelected.data, yakklMiscStore);
+  //       currentlySelected.data = decryptedData as CurrentlySelectedData;
+  //     }
 
-      if (currentlySelected) {
-        currentlySelected.shortcuts.accountType = account.accountType;
-        currentlySelected.shortcuts.address = account.address;
-        currentlySelected.shortcuts.primary = account.primaryAccount;
-        currentlySelected.shortcuts.accountName = account.name;
+  //     if (currentlySelected) {
+  //       currentlySelected.shortcuts.accountType = account.accountType;
+  //       currentlySelected.shortcuts.address = account.address;
+  //       currentlySelected.shortcuts.primary = account.primaryAccount;
+  //       currentlySelected.shortcuts.accountName = account.name;
 
-        if (account.accountType === AccountTypeCategory.PRIMARY) {
-          let primaryAccounts = await getYakklPrimaryAccounts();
-          let primaryAccount = primaryAccounts.find(primary => primary.address === account.address);
-          (currentlySelected.data as CurrentlySelectedData).primaryAccount = primaryAccount as YakklPrimaryAccount;
-        }
+  //       if (account.accountType === AccountTypeCategory.PRIMARY) {
+  //         let primaryAccounts = await getYakklPrimaryAccounts();
+  //         let primaryAccount = primaryAccounts.find(primary => primary.address === account.address);
+  //         (currentlySelected.data as CurrentlySelectedData).primaryAccount = primaryAccount as YakklPrimaryAccount;
+  //       }
 
-        (currentlySelected.data as CurrentlySelectedData).account = account;
-        if (!isEncryptedData(currentlySelected.data)) {
-          const encryptedData = await encryptData(currentlySelected.data, yakklMiscStore);
-          currentlySelected.data = encryptedData;
-        }
+  //       (currentlySelected.data as CurrentlySelectedData).account = account;
+  //       if (!isEncryptedData(currentlySelected.data)) {
+  //         const encryptedData = await encryptData(currentlySelected.data, yakklMiscStore);
+  //         currentlySelected.data = encryptedData;
+  //       }
 
-        currentlySelected.shortcuts.value = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
-        await setYakklCurrentlySelectedStorage(currentlySelected);
-        showAccountsModal = false;
-        updateValuePriceFiat();
+  //       currentlySelected.shortcuts.value = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
+  //       await setYakklCurrentlySelectedStorage(currentlySelected);
+  //       showAccountsModal = false;
+  //       updateValuePriceFiat();
 
-        if (wallet && provider && blockchain && tokenService) {
-          tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
-        }
+  //       // if (wallet && provider && blockchain && tokenService) {
+  //       //   tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+  //       // }
 
-        goto(PATH_WELCOME);
-      }
-    } catch (e) {
-      console.log('handleAccounts:', e);
-      showAccountsModal = false;
-    }
-    showAccountsModal = false;
-  }
+  //       goto(PATH_WELCOME);
+  //     }
+  //   } catch (e) {
+  //     console.log('handleAccounts:', e);
+  //     showAccountsModal = false;
+  //   }
+  //   showAccountsModal = false;
+  // }
 
   async function handleContact() {
     try {
       showAccountImportModal = false;
       updateValuePriceFiat();
-      goto(PATH_WELCOME);
     } catch (e) {
       console.log(e);
     }
@@ -466,7 +611,6 @@
     try {
       showAccountImportModal = false; // ?????????
       updateValuePriceFiat();
-      goto(PATH_WELCOME);
     } catch (e) {
       console.log(e);
     }
@@ -474,7 +618,7 @@
 
   async function handleImport() {
     try {
-      console.log('handleImport - selected');
+      debug_log('handleImport - selected');
     } catch (e) {
       console.log(e);
     }
@@ -483,30 +627,36 @@
   async function handleNetworkTypeChange(net: Network) {
     try {
       if ($yakklCurrentlySelectedStore) {
+        isDropdownOpen = false;
         currentlySelected = $yakklCurrentlySelectedStore;
         currentlySelected.shortcuts.chainId = net.chainId;
         chainId = net.chainId;
         network = net;
         currentlySelected.shortcuts.network = net;
 
-        if (wallet) await wallet.setChainId(currentlySelected.shortcuts.network.chainId);
+        if (wallet) await wallet.setChainId(chainId);
 
         direction = 'fl';
         currentlySelected.shortcuts.symbol = network.symbol;
         currentlySelected.shortcuts.type = network.type.toString();
 
-        const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
-        $yakklCurrentlySelectedStore.shortcuts.value = val ?? 0n;
+        const val = await getBalance(chainId, currentlySelected.shortcuts.address);
+        currentlySelected.shortcuts.value = val ?? 0n;
 
         if (!isEncryptedData(currentlySelected.data)) {
           const encryptedData = await encryptData(currentlySelected.data, yakklMiscStore);
           currentlySelected.data = encryptedData;
         }
 
-        await setYakklCurrentlySelectedStorage(currentlySelected);
+        await setYakklCurrentlySelectedStorage(currentlySelected); // Only want one update
 
         updateValuePriceFiat();
-        goto(PATH_WELCOME);  // For combo box to update properly
+        if (wallet && provider && blockchain && tokenService) {
+          tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+        }
+
+        // Close the dropdown
+        isDropdownOpen = false;
       }
     } catch (e) {
       console.log(e);
@@ -758,27 +908,20 @@
         </SpeedDialButton>
       </SpeedDial>
 
-      <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
+      <!-- <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
         <div class="flex text-center justify-left w-[410px]">
           <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">{$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}</span>
           {#if showTestNetworks}
           <span class="flex h-6 absolute top-2 right-8">
             <div class="dropdown dropdown-bottom">
               {#if networkLabel.toLowerCase() === 'mainnet'}
-              <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
-              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label tabindex="0" role="button" class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">LIVE-{networkLabel}</label>
               {:else}
-              <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
-              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label tabindex="0" role="button" class="w-28 px-3 py-1 bg-green-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-green-700 hover:shadow-lg focus:bg-green-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-green-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">Test-{networkLabel}</label>
               {/if}
-              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
               <ul tabindex="0" class="dropdown-content menu bg-opacity-90 text-base z-50 float-left py-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-gray-800">
                 {#each networks as network}
                 <li>
-                  <!-- svelte-ignore a11y_click_events_have_key_events -->
-                  <!-- svelte-ignore a11y_interactive_supports_focus -->
                   <div role="button" onclick={() => handleNetworkTypeChange(network)} class="dropdown-item text-sm py-2 px-4 font-normal w-full whitespace-nowrap bg-transparent text-gray-300 hover:bg-gray-500 hover:text-white focus:text-white focus:bg-gray-700">
                     {#if network.type === NetworkType.MAINNET}
                     LIVE-{network.name}
@@ -793,12 +936,120 @@
           </span>
           {:else}
           <span class="flex h-6 absolute top-2 right-8">
-            <!-- svelte-ignore a11y_label_has_associated_control -->
             <label class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">LIVE-{networkLabel}</label>
           </span>
           {/if}
         </div>
-      </nav>
+      </nav> -->
+
+<!-- <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
+  <div class="flex text-center justify-left w-[410px]">
+    <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">
+      {$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}
+    </span>
+    <button
+      onclick={toggleDropdown}
+      class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    >
+      {networkLabel.toLowerCase() === 'mainnet' ? `LIVE-${networkLabel}` : `Test-${networkLabel}`}
+    </button>
+    {#if isDropdownOpen}
+    <ul
+      class="absolute left-0 z-50 w-full py-2 mt-1 text-base bg-gray-800 rounded-lg shadow-lg"
+    >
+      {#each networks as network}
+      <li>
+        <div
+          onclick={() => handleNetworkTypeChange(network)}
+          class="block px-4 py-2 text-gray-300 hover:bg-gray-500 hover:text-white cursor-pointer"
+        >
+          {network.type === NetworkType.MAINNET ? `LIVE-${network.name}` : `Testnet-${network.name}`}
+        </div>
+      </li>
+      {/each}
+    </ul>
+    {/if}
+  </div>
+</nav> -->
+
+
+<nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
+  <div class="flex text-center justify-left w-[410px]">
+    <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">
+      {$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}
+    </span>
+    {#if showTestNetworks}
+    <span class="flex h-6 absolute top-2 right-8">
+      <div class="dropdown dropdown-bottom relative">
+        {#if networkLabel.toLowerCase() === 'mainnet'}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_label_has_associated_control -->
+        <button
+          onclick={toggleDropdown}
+          class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+        >
+          LIVE-{networkLabel}
+        </button>
+        {:else}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_label_has_associated_control -->
+        <button
+          onclick={toggleDropdown}
+          class="w-28 px-3 py-1 bg-green-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-green-700 hover:shadow-lg focus:bg-green-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-green-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+        >
+          Test-{networkLabel}
+        </button>
+        {/if}
+        {#if isDropdownOpen}
+        <ul
+          class="absolute top-full left-0 dropdown-content menu bg-opacity-70 text-base z-50 float-left py-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-gray-800"
+        >
+          {#each networks as network}
+          <li>
+              <!-- role="button"
+              tabindex="0"
+                            onkeydown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleNetworkTypeChange(network);
+                }
+              }}
+              -->
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              role="button"
+              tabindex="0"
+              class="dropdown-item text-sm py-2 px-4 font-normal w-full whitespace-nowrap bg-transparent text-gray-300 hover:bg-gray-500 hover:text-white focus:text-white focus:bg-gray-700"
+              onclick={() => handleNetworkTypeChange(network)}
+            >
+              {#if network.type === NetworkType.MAINNET}
+              LIVE-{network.name}
+              {:else}
+              Testnet-{network.name}
+              {/if}
+            </div>
+          </li>
+          {/each}
+        </ul>
+        {/if}
+      </div>
+    </span>
+    {:else}
+    <span class="flex h-6 absolute top-2 right-8">
+      <!-- svelte-ignore a11y_label_has_associated_control -->
+      <label
+        class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+      >
+        LIVE-{networkLabel}
+      </label>
+    </span>
+    {/if}
+  </div>
+</nav>
+
 
       <div class="ml-4">
         <div class="row-span-2 -mt-4">

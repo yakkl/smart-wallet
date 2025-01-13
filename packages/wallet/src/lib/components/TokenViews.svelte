@@ -6,62 +6,59 @@
   import TokenTechnicalView from './TokenTechnicalView.svelte';
   import TokenSymbolView from './TokenSymbolView.svelte';
   import { tokenManager } from '$lib/common/stores/tokenManager';
-  import type { TokenData } from '$lib/common/interfaces';
   import { createPriceUpdater } from '$lib/common/createPriceUpdater';
   import { PriceManager } from '$lib/plugins/PriceManager';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
+  import type { TokenData } from '$lib/common/interfaces';
 
-  let tokens: TokenData[] = []; // Reactive tokens array
-  let sortedTokens: TokenData[] = []; // Sorted version of tokens
-  let currentView: 'grid' | 'chart' | 'news' | 'analysis' | 'symbol' | 'carousel' | 'thumbnail' | 'list' | 'table' = 'grid'; // Reactive current view
-  let sortBy: string = 'name'; // Sort criteria
+  let tokens: TokenData[] = [];
+  let sortedTokens: TokenData[] = [];
+  let currentView = 'grid';
+  let sortBy = 'name';
 
-  // Initialize PriceManager
   let priceManager = new PriceManager();
-  // Create priceUpdater instance
-  const priceUpdater = createPriceUpdater(priceManager, 30000); // Fetch every 30 seconds
+  let priceUpdater = createPriceUpdater(priceManager, 30000);
 
   onMount(() => {
-    // Subscribe to tokenManager to get the initial list of tokens
-    const tokenManagerUnsubscribe = tokenManager.subscribe((allTokens) => {
-      tokens = [...allTokens]; // Clone tokens to avoid reference issues
-      sortedTokens = [...tokens]; // Default sorted tokens
-      priceUpdater.fetchPrices(tokens).catch(console.error); // Fetch initial prices
+    // Subscribe to the combined token store
+    const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
+      tokens = allTokens;
+      handleSortChange(sortBy);
+      if (tokens.length > 0) {
+        priceUpdater.fetchPrices(tokens).catch(console.error);
+      }
     });
 
-    // Subscribe to priceUpdater to update tokens with prices
-    const priceUpdaterUnsubscribe = priceUpdater.subscribe((updatedTokens) => {
-      tokens = updatedTokens; // Update tokens with prices
-      handleSortChange(sortBy); // Reapply sorting on price updates
+    // Subscribe to the price updater
+    const unsubscribePriceUpdater = priceUpdater.subscribe((updatedTokens = []) => {
+      tokens = updatedTokens;
+      handleSortChange(sortBy);
     });
 
+    // Cleanup subscriptions
     return () => {
-      // Cleanup subscriptions
-      tokenManagerUnsubscribe();
-      priceUpdaterUnsubscribe();
-      priceUpdater.destroy(); // Stop the price updater interval
+      unsubscribeTokenManager();
+      unsubscribePriceUpdater();
+      priceUpdater.destroy();
     };
   });
 
-  // Sorting handler
+  // Sort tokens based on criteria
   function handleSortChange(criteria: string) {
     sortBy = criteria;
-
-    // Sort tokens based on criteria
     sortedTokens = [...tokens].sort((a, b) => {
       if (criteria === 'name') return a.name.localeCompare(b.name);
-      if (criteria === 'price') return (b?.price?.price || 0) - (a?.price?.price || 0);
-      if (criteria === 'value') return (b.value || 0) - (a.value || 0);
+      if (criteria === 'price') return (b.price?.price || 0) - (a.price?.price || 0);
       return 0;
     });
   }
 
-  // View change handler
-  function handleViewChange(view: 'grid' | 'chart' | 'news' | 'analysis' | 'symbol' | 'carousel' | 'thumbnail' | 'list' | 'table') {
-    currentView = view; // Update the current view
+  // Change the current view
+  function handleViewChange(view: string) {
+    currentView = view;
   }
 
-  // Print handler
+   // Print handler - basic stub for now. Need to format for print within each view.
   function handlePrint() {
     window.print();
   }
@@ -77,7 +74,7 @@
   <!-- Dynamic Views -->
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
     {#if currentView === 'grid'}
-      <TokenGridView tokens={sortedTokens} onTokenClick={(token) => console.log('Clicked:', token)} />
+      <TokenGridView tokens={sortedTokens} onTokenClick={(token) => console.log('Clicked:', token)} /> <!-- default onTokenClick for future -->
     {:else if currentView === 'chart'}
       <TokenChartsView />
     {:else if currentView === 'news'}

@@ -21,7 +21,7 @@
 		setYakklTokenDataCustomStorage,
 		yakklTokenDataCustomStore
   } from '$lib/common/stores';
-  import type { EmergencyKitMetaData } from '$lib/common';
+  import { VERSION, type EmergencyKitMetaData } from '$lib/common';
   import Confirmation from './Confirmation.svelte';
 
   interface Props {
@@ -152,8 +152,18 @@
       const data = newData[key] || existingData[key];
       if (data) {
         if ( key === 'yakklPreferencesStore') {
-          data['version'] = existingData[key]['version']; // Keep the latest version number metadata
+          if (data && typeof data === 'object' && !Array.isArray(data)) {
+            // Keep the metadata version of the latest version
+            if (typeof VERSION !== 'undefined' && typeof VERSION === 'string' && VERSION.trim() !== '') {
+              data['version'] = VERSION;
+            } else {
+              console.log("VERSION is not properly defined.");
+            }
+          } else {
+            console.log("Invalid 'data' object. Cannot assign 'version'.");
+          }
         }
+
         await setStorage(data);
         store.set(data);
       }

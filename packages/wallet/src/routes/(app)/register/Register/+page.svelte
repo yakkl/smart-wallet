@@ -29,6 +29,7 @@
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import { sendNotification } from '$lib/common/notifications';
+	import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -320,6 +321,8 @@
 
           await setSettingsStorage(settings);
         }
+
+        await loadDefaultTokens();
 
         sendNotification('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
 
