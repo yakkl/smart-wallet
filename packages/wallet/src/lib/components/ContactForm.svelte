@@ -9,7 +9,7 @@
   import { yakklCurrentlySelectedStore, yakklContactsStore } from '$lib/common/stores';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
-
+  import { VERSION } from '$lib/common/constants';
 
   interface Props {
     // import { Input } from './ui/input';
@@ -50,14 +50,14 @@
                 ...contact,
                 ...values,
                 addressType: addressType,
-                version: $yakklCurrentlySelectedStore!.version ?? '1.1.5',
+                version: $yakklCurrentlySelectedStore!.version ?? VERSION,
                 updateDate: dateString(),
               }
             : {
                 id: crypto.randomUUID(),
                 ...values,
                 addressType: addressType,
-                version: $yakklCurrentlySelectedStore!.version ?? '1.1.5',
+                version: $yakklCurrentlySelectedStore!.version ?? VERSION,
                 createDate: dateString(),
                 updateDate: dateString(),
               };
@@ -84,7 +84,6 @@
 
     const isValid = blockchain.isAddress(faddress);
     if (!isValid) {
-      // debug_log(`Address ${faddress} is not a valid address. A valid address is required.`);
       return false;
     }
 
@@ -94,7 +93,7 @@
     // Check for duplicates
     const contacts = $yakklContactsStore;
     const isDuplicate = contacts.some(c => c.name === fname || c.address === faddress); // alias can be blank so not checking for duplicates
-    if (isDuplicate) {
+    if (isDuplicate && !contact) {
       return false;
     }
 

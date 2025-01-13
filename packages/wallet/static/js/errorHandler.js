@@ -18,6 +18,8 @@ window.addEventListener('error', (event) => {
 
 // Handle unhandled promise rejections (e.g., async errors)
 window.addEventListener('unhandledrejection', (event) => {
-  console.log('Unhandled Promise Rejection:', event.reason);
+  console.log('Unhandled Promise Rejection 1:', event);
+  console.log('Unhandled Promise Rejection 2:', event.reason);
+  console.trace();
   event.preventDefault();
 });

@@ -472,7 +472,7 @@ export class Wallet {
     // transaction.maxFeePerGas = gasEstimate.feeEstimate.totalFee;
     // transaction.maxPriorityFeePerGas = gasEstimate.feeEstimate.priorityFee;
 
-    debug_log('Sending transaction to provider:', transaction);
+    // debug_log('Sending transaction to provider:', transaction);
 
     return await this.blockchain.sendTransaction(transaction);
   }

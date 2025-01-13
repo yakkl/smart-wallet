@@ -381,8 +381,11 @@ export class UniswapSwapManager extends SwapManager {
         );
       }
     } catch ( error ) {
-      debug_log( 'Error fetching multi-hop quote - falling back to alpha routing:', error );
-      throw new Error("Failed to get multi-hop quote. This means pools do not exist");
+      const excludedProperties = ["url", "requestBody", "requestMethod", "accessList"];
+      const formattedError = this.errorUniswap(error, excludedProperties);
+      // debug_log( 'Formatted error: ', formattedError );
+
+      throw new Error(formattedError);
       // AlphaRouter causes issues with current version of ethers so it is no longer used here
       // return this.multiHopQuoteAlphaRouter( tokenIn, tokenOut, amount, fundingAddress, isExactIn );
     }
@@ -1166,6 +1169,43 @@ export class UniswapSwapManager extends SwapManager {
       status: 404,
       message
     };
+  }
+
+  errorUniswap(error: any, excludeProps: string[] = []): string {
+    // Recursive function to clean up the object
+    const cleanObject = (obj: any, exclude: string[]): any => {
+        if (!obj || typeof obj !== 'object') {
+            return obj;
+        }
+
+        // Create a shallow copy to avoid mutating the original object
+        const cleaned = Array.isArray(obj) ? [...obj] : { ...obj };
+
+        for (const key in cleaned) {
+            if (exclude.includes(key)) {
+                delete cleaned[key];
+            } else if (typeof cleaned[key] === 'string') {
+                // Attempt to parse stringified JSON for better readability
+                try {
+                    const parsed = JSON.parse(cleaned[key]);
+                    cleaned[key] = parsed; // Replace with parsed JSON if valid
+                } catch {
+                    // Keep the string as-is if it's not valid JSON
+                }
+            } else if (typeof cleaned[key] === 'object') {
+                // Recursively clean nested objects
+                cleaned[key] = cleanObject(cleaned[key], exclude);
+            }
+        }
+
+        return cleaned;
+    };
+
+    // Extract and clean up the error object
+    const cleanedError = cleanObject(error, excludeProps);
+
+    // Format the cleaned object into a readable JSON string
+    return JSON.stringify(cleanedError, null, 2);
   }
 
   private async getTokenReserve( token: Token, poolAddress: string ): Promise<string> {

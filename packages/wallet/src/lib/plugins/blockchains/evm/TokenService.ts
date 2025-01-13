@@ -42,7 +42,6 @@ export class TokenService<T extends BaseTransaction> {
       // Could check tokenAddress to see if it 'ethersv6.ZeroAddress' and if so then call provider.getBalance(userAddress). This would be for native tokens. In balanceUtils.ts, this is done with token.isNative
       const contract = this.getTokenContract( tokenAddress );
       if ( !contract ) return 0n;
-
       return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
       console.log('Contract - getBalance - error', error);
@@ -55,7 +54,7 @@ export class TokenService<T extends BaseTransaction> {
       if ( !userAddress ) throw new Error( 'Invalid parameters' );
       // This fuction is defined in tokens.ts and updates the standard token balances and custom token balances.
       // Since this is the only function within the method then no need for await
-      updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() || undefined );
+      updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() ?? undefined );
     } catch ( error ) {
       console.log( 'Error updating token balances:', error );
     }

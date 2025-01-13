@@ -1,7 +1,7 @@
 // IMPORTANT NOTE: Edit 'constants.mustache' since it is the template for 'constants.ts'
 
 // Global shared constants. Network specifics are in the network/<whatever>/contants.js file
-export const VERSION = "1.2.6";
+export const VERSION = "1.2.7";
 
 export const YEAR = "2024"; // Instead of computing year since user can change date on system - use a constant
 
@@ -70,6 +70,7 @@ export const STORAGE_YAKKL_CONTACTS = "yakklContacts";
 //export const STORAGE_YAKKL_TOKENS = "yakklTokens";
 export const STORAGE_YAKKL_TOKENDATA = "yakklTokenData";
 export const STORAGE_YAKKL_TOKENDATA_CUSTOM = "yakklTokenDataCustom";
+export const STORAGE_YAKKL_COMBINED_TOKENS = "yakklCombinedTokens";
 export const STORAGE_YAKKL_CHATS = "yakklChats";
 export const STORAGE_YAKKL_WATCHLIST = "yakklWatchList";
 export const STORAGE_YAKKL_BLOCKEDLIST = "yakklBlockedList";
