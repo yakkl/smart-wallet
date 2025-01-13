@@ -8,22 +8,17 @@
   import { setIconLock, blockContextMenu, blockWindowResize } from '$lib/utilities';
   import { onMount } from 'svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-	// import Warning from '$lib/components/Warning.svelte';
-	// import { Tooltip } from 'flowbite-svelte';
+
+
   interface Props {
     children?: import('svelte').Snippet;
   }
 
   let { children }: Props = $props();
 
-  // import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	// import type { Browser } from 'webextension-polyfill';
-  // let browser_ext: Browser;
-  // if (browserSvelte) browser_ext = getBrowserExt();
-
   // Local version
   let yakklMiscStore: string;
-  let currentlySelected: YakklCurrentlySelected;
+  // let currentlySelected: YakklCurrentlySelected;
   let yakklSettings: Settings | null;
   let yakklPreferences: Preferences;
 
@@ -32,26 +27,21 @@
   let title = $state(DEFAULT_TITLE);
   let contextMenu = false;
   let resize = false;
-
-  // let tooltipTriggerList;
-  // let tooltipList;
   let legal = $state(false);
-
   let error = $state(false);
   let errorValue: string = $state('');
-
   let maxHeightClass = $state('max-h-[448px]');
 
-  $effect(() => {
-    if (browserSvelte) {
-      if (!window.navigator.onLine) {
-        errorValue = 'It appears your Internet connection is offline. YAKKL needs access to the Internet to obtain current market prices and gas fees. A number of areas will either not function or work in a limited capacity. Thank you!';
-        error = true;
-      } else {
-        error = false;
-      }
-    }
-  });
+  // $effect(() => {
+  //   if (browserSvelte) {
+  //     if (!window.navigator.onLine) {
+  //       errorValue = 'It appears your Internet connection is offline. YAKKL needs access to the Internet to obtain current market prices and gas fees. A number of areas will either not function or work in a limited capacity. Thank you!';
+  //       error = true;
+  //     } else {
+  //       error = false;
+  //     }
+  //   }
+  // });
 
   async function getSettingsUpdate() {
     if (browserSvelte) {
@@ -71,8 +61,10 @@
     try {
       if (browserSvelte) {
         yakklMiscStore = getMiscStore();
-        currentlySelected = await getYakklCurrentlySelected();
-        legal = currentlySelected.shortcuts.legal === true;
+        // currentlySelected = await getYakklCurrentlySelected();
+        // legal = currentlySelected.shortcuts.legal === true;
+
+        legal = true;
 
         getPreferencesUpdate().then(async result => {
           if (result) {
@@ -131,16 +123,6 @@
         if (!resize) {
           blockWindowResize(popupWidth, popupHeight);
         }
-
-        // tooltipTriggerList = [].slice.call(
-        //   document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        // );
-
-        // if (tooltipTriggerList.length > 0) {
-        //   tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        //     return new Tooltip(tooltipTriggerEl);
-        // });
-        //}
       }
     } catch (error) {
       console.log('layout: error', error);
@@ -155,16 +137,14 @@
 </script>
 
 <svelte:head>
-	<title>{title}</title>
+  <title>{title}</title>
 </svelte:head>
 
-<!-- TODO: These will become residents here using stores - later. For now, use <ErrorNoAction.../> for consistent look -->
 <ErrorNoAction bind:show={error} title="Error" value={errorValue} />
-<!-- <Warning bind:show={showWarning} className="z-[999]" value={warningValue} handle={handleClose} /> -->
 
 <div id="wrapper" class="w-[{popupWidth}px] rounded-lg flex flex-col">
-  {#if legal === true}
-  <Header containerWidth={popupWidth} />
+  {#if legal}
+    <Header containerWidth={popupWidth} />
   {/if}
 
   <div class="min-h-[40rem] mx-2">
@@ -175,7 +155,7 @@
     </div>
   </div>
 
-  {#if legal === true}
-  <Footer containerWidth={popupWidth.toString()} classParam="print:hidden text-xs mt-1 visible" />
+  {#if legal}
+    <Footer containerWidth={popupWidth.toString()} />
   {/if}
 </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser as browserSvelte} from '$app/environment';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { createForm } from "svelte-forms-lib";
   import { getSettings, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, setSettings, getPreferences, setPreferencesStorage, getYakklPrimaryAccounts, setSettingsStorage, setProfileStorage, yakklDappConnectRequestStore, getMiscStore } from '$lib/common/stores';
   import { syncStoresToStorage, yakklVersionStore, yakklUserNameStore } from '$lib/common/stores';
@@ -29,8 +29,6 @@
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
-  // let wallet: Wallet;
-
   let currentlySelected: YakklCurrentlySelected;
   let yakklMiscStore: string;
   let yakklPrimaryAccountsStore: YakklPrimaryAccount[];
@@ -52,7 +50,7 @@
   let showImportPhrase = $state(false);
 
   if (browserSvelte) {
-    requestId = $page.url.searchParams.get('requestId') as string;
+    requestId = page.url.searchParams.get('requestId') as string ?? '';
     $yakklDappConnectRequestStore = requestId;
     if (requestId) {
       redirect = PATH_DAPP_ACCOUNTS + '.html?requestId=' + requestId;
@@ -69,9 +67,6 @@
         }
 
         currentlySelected = await getYakklCurrentlySelected();
-
-        // wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected  ? currentlySelected.shortcuts.chainId ?? 1 : 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
-        // console.log('onMount: wallet', wallet);
 
         pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement;
         pweyeClosedId = document.getElementById("pweye-closed") as HTMLButtonElement;
@@ -101,12 +96,12 @@
             registeredType = RegistrationType.STANDARD;
           }
 
-          // PROMO - BETA
-          let promoDate = new Date('2025-01-01T00:00:00');  // TODO: May want to remove this altogether later...
-          let date = new Date();
-          if (date < promoDate) {
+          // PROMO
+          // let promoDate = new Date('2026-01-01T00:00:00');  // TODO: May want to remove this altogether later...
+          // let date = new Date();
+          // if (date < promoDate) {
             registeredType = RegistrationType.PRO;
-          }
+          // }
           ////
 
           yakklSettings.isLocked = true; // This forces a lock
@@ -153,14 +148,7 @@
           if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected();
 
           currentlySelected.shortcuts.isLocked = false;
-          // May can wait until the welcome page card to make any blockchain calls...
-          // if (currentlySelected.shortcuts.address && wallet) {
-          //   let result = await wallet.getBalance(currentlySelected.shortcuts.address);
-          //   if (result) {
-          //     if ((currentlySelected.data as CurrentlySelectedData)?.account?.value) (currentlySelected.data as CurrentlySelectedData).account.value = result;
-          //     if (currentlySelected.shortcuts?.value) currentlySelected.shortcuts.value = result;
-          //   }
-          // }
+
           if (!isEncryptedData(currentlySelected.data)) {
             encryptData(currentlySelected.data, yakklMiscStore).then(result => {
               currentlySelected.data = result;

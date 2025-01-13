@@ -2,7 +2,6 @@
   import {
     setYakklTokenDataCustomStorage,
     yakklCurrentlySelectedStore,
-    yakklTokenDataStore,
     yakklTokenDataCustomStore,
   } from '$lib/common/stores';
   import { debug_log, getInstances, type TokenData } from '$lib/common';
@@ -13,8 +12,7 @@
   import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
   import type { Provider } from '$lib/plugins/Provider';
   import { getTokenBalance } from '$lib/utilities/balanceUtils';
-	import { combinedTokenStore } from '$lib/common/derivedStores';
-	import { debug } from 'console';
+	// import { combinedTokenStore } from '$lib/common/derivedStores';
 
   interface Props {
     show?: boolean;
@@ -39,9 +37,9 @@
   });
 
   // Subscribe to the combined token store for display
-  $effect(() => {
-    tokens = $combinedTokenStore; // Reactive combined store
-  });
+  // $effect(() => {
+  //   tokens = $yakklCombinedTokenStore; // Reactive combined store
+  // });
 
   function handleTokenSelect(selectedToken: TokenData) {
     if (onTokenSelect !== null) {
@@ -78,7 +76,6 @@
   }
 
   function handleTokenUpdate(updatedToken: TokenData) {
-    debug_log('Updating token:', updatedToken);
     yakklTokenDataCustomStore.update((tokens) => {
       const updatedTokens = tokens.map((t) => (t.address === updatedToken.address ? updatedToken : t));
       setYakklTokenDataCustomStorage(updatedTokens);
