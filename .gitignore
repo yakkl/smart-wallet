@@ -27,6 +27,7 @@ packages/contracts/code/*.old
 packages/wallet/*.tmp
 packages/wallet/*.wip
 packages/wallet/src/lib/plugins/swaps/uniswap/UniswapHelper.ts
+packages/wallet/src/lib/0tmp/
 
 # Specific files and directories
 packages/wallet/package

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
   import { debug_log, error_log } from '$lib/common/debug-error';
@@ -29,7 +29,7 @@
 	import Warning from './Warning.svelte';
 	import PincodeVerify from './PincodeVerify.svelte';
 	import Confirmation from './Confirmation.svelte';
-	import { sendNotification, sendNotificationPing } from '$lib/common/notifications';
+	import { sendNotification } from '$lib/common/notifications';
 
 	// import { multiHopQuoteAlphaRouter } from '$lib/plugins/alphaRouter';
 
@@ -945,8 +945,8 @@
     <!-- Summary -->
     <SwapSummary swapPriceDataStore={swapPriceDataStore} disabled={isEthWethSwap}/>
 
-    <!-- Error Message -->
-    {#if $swapStateStore.error}
+    <!-- Error Message (need to look at wrap blocking)-->
+    {#if $swapStateStore.error && !isEthWethSwap}
       <div class="w-full bg-red-50 border border-red-200 rounded-lg p-3">
         <div class="flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -974,7 +974,7 @@
     <button
       onclick={handleConfirmSwap}
       class="w-full px-4 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      disabled={!$swapStateStore.tokenIn || !$swapStateStore.tokenOut || !$swapStateStore.fromAmount || !$swapStateStore.toAmount || $uiStateStore.isLoading || $uiStateStore.isSwapping}
+      disabled={!$swapStateStore.tokenIn || !$swapStateStore.tokenOut || !$swapStateStore.fromAmount || !$swapStateStore.toAmount}
     >
       {#if !isEthWethSwap}
         {$uiStateStore.isLoading ? 'Loading...' : $uiStateStore.isSwapping ? 'Swapping...' : 'Swap'}

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { Button, Modal, Spinner } from 'flowbite-svelte';
   import { getProfile, getMiscStore, getSettings } from '$lib/common/stores';
   import { yakklRegisteredData } from '$lib/models/dataModels';

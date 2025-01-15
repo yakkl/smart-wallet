@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/stores';
   import { YAKKL_DAPP } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
@@ -41,7 +41,7 @@
         port.postMessage({method: 'get_warning', id: requestId ?? 0}); // request is not currently used but we may want to later
       }
     } catch(e) {
-      console.error(e);
+      console.log(e);
     }
   });
 

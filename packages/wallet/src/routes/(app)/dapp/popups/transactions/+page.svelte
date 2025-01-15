@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/stores';
   import { getYakklCurrentlySelected, yakklCurrentlySelectedStore, yakklMiscStore, yakklDappConnectRequestStore, getYakklConnectedDomains, getYakklAccounts } from '$lib/common/stores';
   import { YAKKL_DAPP, ETH_BASE_SCA_GAS_UNITS, ETH_BASE_EOA_GAS_UNITS } from '$lib/common/constants';
@@ -72,7 +72,7 @@
       $yakklDappConnectRequestStore = requestId;
     }
   } catch(e) {
-    console.error(e);
+    console.log(e);
   }
 
   if (!requestId) requestId = '';
@@ -138,7 +138,7 @@
         }
       }
     } catch(e) {
-      console.error(e);
+      console.log(e);
     }
   });
 

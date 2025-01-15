@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { getYakklCurrentlySelected, setMiscStore } from '$lib/common/stores';
   import { getSettings, setSettings, setYakklCurrentlySelectedStorage } from '$lib/common/stores';
   import { setIconLock } from '$lib/utilities/utilities';
@@ -7,7 +8,7 @@
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
 	import type { Settings, YakklCurrentlySelected } from '$lib/common';
-  let browser_ext: Browser; 
+  let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
 
@@ -31,7 +32,7 @@
         browser_ext.runtime.reload(); //???
       }
     } catch (e) {
-      console.log(e);   
+      console.log(e);
     } finally {
       window.close();
     }

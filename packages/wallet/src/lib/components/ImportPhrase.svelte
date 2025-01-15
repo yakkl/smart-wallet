@@ -1,6 +1,7 @@
 <!-- ImportPhrase.svelte -->
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from 'svelte-forms-lib';
   import * as yup from 'yup';
@@ -359,7 +360,7 @@
           throw new Error('Your Secret Phrase does not seem to be correct. Check the formatting. You can enter each word and it MUST BE IN ORDER -OR- paste the whole phrase after copying from your backup into any field.');
         }
       } catch (e) {
-        console.error(e);
+        console.log(e);
         error = String(e);
         resetForm();
       }

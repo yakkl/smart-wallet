@@ -2,37 +2,17 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { loadTokens } from '$lib/common/stores/tokens';
-	import { setIconLock } from '$lib/utilities';
-	import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-	import { dateString } from '$lib/common/datetime';
-	import type { Settings } from '$lib/common/interfaces';
-	import { yakklSettingsStore } from '$lib/common/stores';
+	import { handleLockDown } from '$lib/common/handlers';
 
   let { children } = $props();
 
   onMount(() => {
     loadTokens();
 
-    const handleBeforeUnload = async () => {
-      try {
-        await setIconLock();
-        const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-        if (yakklSettings) {
-            yakklSettings.isLocked = true;
-            yakklSettings.isLockedHow = 'window_exit';
-            yakklSettings.updateDate = dateString();
-            yakklSettingsStore.set(yakklSettings);
-            await setObjectInLocalStorage('settings', yakklSettings);
-        }
-      } catch (error) {
-        console.log('Error in beforeunload handler:', error);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleLockDown);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleLockDown);
     };
   });
 </script>

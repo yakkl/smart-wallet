@@ -1,6 +1,7 @@
 <!-- ImportPrivateKey.svelte -->
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { setYakklAccountsStorage, setYakklCurrentlySelectedStorage, setProfileStorage, getYakklAccounts, getProfile, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
   import { yakklAccount as yakklAccountDefault } from '$lib/models/dataModels';
   import { getWallet } from '$lib/utilities/ethereum';

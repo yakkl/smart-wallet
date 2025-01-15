@@ -42,7 +42,7 @@ export function formatTimestamp(
 
     return new Intl.DateTimeFormat(locale, options).format(date);
   } catch (e) {
-    console.error(e);
+    console.log(e);
     return placeholder;
   }
 }

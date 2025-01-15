@@ -1,10 +1,10 @@
 // FeeManager.ts
 import { BigNumber } from '$lib/common/bignumber';
-import type { 
-  FeeManager, 
-  GasProvider, 
-  GasEstimate, 
-  HistoricalGasData, 
+import type {
+  FeeManager,
+  GasProvider,
+  GasEstimate,
+  HistoricalGasData,
   GasPrediction,
   FeeEstimate
 } from '$lib/common/gas-types';
@@ -38,7 +38,7 @@ export class BaseFeeManager implements FeeManager {
     const estimates: GasEstimate[] = await Promise.all(
       Array.from( this.providers.values() ).map( async ( provider ): Promise<GasEstimate | null> => {
         return provider.getGasEstimate( transaction ).catch( ( error: unknown ): GasEstimate | null => {
-          console.error( `Failed to get gas estimate from ${ provider.getName() }:`, error );
+          console.log( `Failed to get gas estimate from ${ provider.getName() }:`, error );
           return null; // Explicitly return `null` for failed estimates
         } );
       } )
@@ -146,5 +146,5 @@ export class BaseFeeManager implements FeeManager {
     }
   }
 
-  
+
 }

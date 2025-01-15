@@ -61,7 +61,7 @@ export class EthereumGasProvider implements GasProvider {
     } catch ( error ) {
       console.log('Error estimating gas gasLimit, feeEstimate, feeData :==>>', { gasLimit, feeEstimate, feeData });
 
-      console.error( 'Error estimating gas:', error );
+      console.log( 'Error estimating gas:', error );
       throw error;
     }
   }
@@ -84,7 +84,7 @@ export class EthereumGasProvider implements GasProvider {
         priorityFee: item.priorityFeePerGas
       } ) );
     } catch ( error ) {
-      console.error( 'Error fetching historical gas data:', error );
+      console.log( 'Error fetching historical gas data:', error );
       throw error;
     }
   }
@@ -107,7 +107,7 @@ export class EthereumGasProvider implements GasProvider {
 
       return predictions;
     } catch ( error ) {
-      console.error( 'Error predicting future gas fees:', error );
+      console.log( 'Error predicting future gas fees:', error );
       throw error;
     }
   }
@@ -151,7 +151,7 @@ export class EthereumGasProvider implements GasProvider {
 
       return `$${ gasCostUsd.toFixed( 2 ) } (${ gasCostEth } ETH)`;
     } catch ( error ) {
-      console.error( 'Gas estimation error:', error );
+      console.log( 'Gas estimation error:', error );
       return 'Unable to estimate gas';
     }
   }
@@ -316,7 +316,7 @@ export class EthereumGasProvider implements GasProvider {
       const marketPrice = this.priceProvider.getMarketPrice( 'ETH-USD' );
       return ( await marketPrice ).price;
     } catch ( error ) {
-      console.error( 'Error fetching ETH price:', error );
+      console.log( 'Error fetching ETH price:', error );
       // throw error;
       return 0;
     }

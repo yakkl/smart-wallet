@@ -1,13 +1,15 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { setSettings, setPreferencesStorage, getPreferences, getSettings, getMiscStore, getYakklCurrentlySelected } from "$lib/common/stores";
   import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH } from '$lib/common';
-  import type { Preferences, Settings, YakklCurrentlySelected } from '$lib/common';
+  import type { Preferences, Settings } from '$lib/common';
   import Header from '$components/Header.svelte';
   import Footer from '$components/Footer.svelte';
   import { setIconLock, blockContextMenu, blockWindowResize } from '$lib/utilities';
   import { onMount } from 'svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
+	import { handleLockDown } from '$lib/common/handlers';
 
 
   interface Props {
@@ -57,14 +59,16 @@
     return null;
   }
 
-  onMount(async () => {
+  onMount(() => {
     try {
       if (browserSvelte) {
         yakklMiscStore = getMiscStore();
-        // currentlySelected = await getYakklCurrentlySelected();
-        // legal = currentlySelected.shortcuts.legal === true;
-
-        legal = true;
+        getYakklCurrentlySelected().then(result => {
+          if (result) {
+            const currentlySelected = result;
+            legal = currentlySelected.shortcuts.legal === true;
+          }
+        });
 
         getPreferencesUpdate().then(async result => {
           if (result) {
@@ -124,6 +128,12 @@
           blockWindowResize(popupWidth, popupHeight);
         }
       }
+
+      window.addEventListener('beforeunload', handleLockDown);
+      return () => {
+        window.removeEventListener('beforeunload', handleLockDown);
+      };
+
     } catch (error) {
       console.log('layout: error', error);
       popupWidth = DEFAULT_POPUP_WIDTH;

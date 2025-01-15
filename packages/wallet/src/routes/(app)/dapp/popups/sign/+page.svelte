@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/stores';
 
   import { getYakklCurrentlySelected, yakklDappConnectRequestStore, getYakklAccounts, getMiscStore, getDappConnectRequestStore, setDappConnectRequestStore } from '$lib/common/stores';
@@ -129,7 +129,7 @@
           port.postMessage({method: 'get_params', id: requestId}); // request is not currently used but we may want to later
       }
     } catch(e) {
-      console.error(e);
+      console.log(e);
     }
   });
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { goto } from '$app/navigation';
   import { getYakklCurrentlySelected, setMiscStore } from '$lib/common/stores';
   import { getSettings, setSettings, setYakklCurrentlySelectedStorage } from '$lib/common/stores';

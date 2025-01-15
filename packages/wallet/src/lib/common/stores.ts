@@ -174,7 +174,7 @@ export const yakklContractStore = writable<ContractData>({
 
 // Generic error logger
 export function onError(e: any) {
-	console.error(e);
+	console.log(e);
 }
 
 // Anytime any local storage changes then we set the Svelte memory stores to keep things in sync
@@ -649,7 +649,7 @@ export async function getYakklChats(): Promise<YakklChat[]> {
     }
     return value || [];
   } catch (error) {
-    console.error('Error in getYakklChats:', error);
+    console.log('Error in getYakklChats:', error);
     return [];
   }
 }

@@ -18,8 +18,6 @@ export interface EncryptedData {
   salt?: string;
 }
 
-// src/lib/security/types.ts
-
 export interface User {
   id: string;
   email: string;

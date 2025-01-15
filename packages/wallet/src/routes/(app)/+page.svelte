@@ -20,7 +20,5 @@
 {:else}
   {#if !yakklSettings.legal?.termsAgreed}
     <Legal />
-  {:else}
-    <p>Welcome to YAKKL Wallet</p>
   {/if}
 {/if}

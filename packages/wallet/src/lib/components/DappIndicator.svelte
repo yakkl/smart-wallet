@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
 	import { onDestroy, onMount } from 'svelte';
   import browser from 'webextension-polyfill';
 
@@ -49,7 +50,7 @@
       }
       return Promise.resolve(); // Correct TypeScript return type
     } catch (e) {
-      console.error('Error handling message:', e);
+      console.log('Error handling message:', e);
       return Promise.resolve(); // Ensure a valid return type
     }
   }

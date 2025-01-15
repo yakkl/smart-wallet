@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/state';
   import { createForm } from "svelte-forms-lib";
   import { getSettings, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, setSettings, getPreferences, setPreferencesStorage, getYakklPrimaryAccounts, setSettingsStorage, setProfileStorage, yakklDappConnectRequestStore, getMiscStore } from '$lib/common/stores';
@@ -25,6 +25,7 @@
 	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
 	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	import { sendNotificationStartLockIconTimer } from '$lib/common/notifications';
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -231,6 +232,7 @@
 
           // Make sure there is at least one Primary or Imported account
           if (await checkAccountRegistration()) {
+            await sendNotificationStartLockIconTimer();
             goto(redirect);
           } else {
             showRegistrationOption = true;

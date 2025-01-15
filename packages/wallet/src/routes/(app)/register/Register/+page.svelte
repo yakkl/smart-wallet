@@ -1,7 +1,8 @@
 <!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
      Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { getSettings, yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, getPreferences, setPreferencesStorage, setSettingsStorage, setMiscStore } from '$lib/common/stores';
   import { profile as profileDefaults, yakklPreferences as yakklPreferencesDefaults, yakklCurrentlySelected as yakklCurrentlySelectedDefaults } from '$lib/models/dataModels';
   import { encryptData, digestMessage, decryptData } from '$lib/common/encryption';
@@ -11,23 +12,23 @@
   import zxcvbn from "zxcvbn";
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
-  import { PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_LOGIN, DEFAULT_TITLE, YAKKL_ZERO_ADDRESS, YAKKL_ZERO_ACCOUNT_NAME, VERSION, PATH_WELCOME, PATH_LOGOUT } from '$lib/common/constants';
+  import { PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_LOGIN, DEFAULT_TITLE, YAKKL_ZERO_ADDRESS, YAKKL_ZERO_ACCOUNT_NAME, VERSION, PATH_LOGOUT } from '$lib/common/constants';
   import { getCurrencyCode, getCurrencySymbol } from '$lib/utilities/utilities';
   import { onMount } from 'svelte';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import Warning from '$lib/components/Warning.svelte';
-	import type { CurrentlySelectedData, Profile, ProfileData, YakklAccount, YakklCurrentlySelected } from '$lib/common/interfaces';
+	import type { CurrentlySelectedData, Profile, ProfileData, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { RegistrationType } from '$lib/common/types';
 	import { getUserId, isEncryptedData } from '$lib/common';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
 	import { dateString } from '$lib/common/datetime';
-	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
-	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
+	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
+	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
 	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
-	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
-	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
+	// import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	// import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import { sendNotification } from '$lib/common/notifications';
 	import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 
@@ -51,9 +52,9 @@
   let pweyeClosedId: HTMLButtonElement;
 
   let showRegistrationOption = false;
-  let showImportOption = false;
+  // let showImportOption = false;
   let showImportAccount = false;
-  let showImportPhrase = false;
+  // let showImportPhrase = false;
   let showEmergencyKit = false;
 
   // Force 'Standard' version on registration - normally

@@ -1,6 +1,7 @@
 <script lang="ts">
   // For Derived Accounts
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { Button, Modal, Spinner } from 'flowbite-svelte';
   import { getProfile, getYakklCurrentlySelected, getSettings, getMiscStore } from '$lib/common/stores';
   import { decryptData, type Profile, isEncryptedData, type ProfileData, type YakklRegisteredData, type CurrentlySelectedData, type AccountData, type PrimaryAccountData, type YakklPrimaryAccount, type YakklAccount, type EmergencyKitAccountData, type YakklCurrentlySelected, type Settings } from '$lib/common';

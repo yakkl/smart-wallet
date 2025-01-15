@@ -66,7 +66,7 @@ export class AlphaRouterService {
   }
 
   private handleWorkerError( error: ErrorEvent ) {
-    console.error( 'Worker error:', error );
+    console.log( 'Worker error:', error );
     // Reject all pending requests
     this.pending.forEach( ( { reject, timeout } ) => {
       clearTimeout( timeout );
