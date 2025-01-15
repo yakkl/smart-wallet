@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser as browserSvelte} from "$app/environment";
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
   import { PATH_IMPORT_EMERGENCYKIT, PATH_LOCK, PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";

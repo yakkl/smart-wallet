@@ -3,7 +3,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /* eslint-disable no-debugger */
-import { browser as browserSvelte} from "$app/environment";
+// import { browser as } from "$app/environment";
+import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
+
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
 import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR, TIMELINES } from "$lib/common/constants";
@@ -19,6 +21,7 @@ import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser;
 if (browserSvelte) browser_ext = getBrowserExt();
+
 
 
 export function getTokenChange(

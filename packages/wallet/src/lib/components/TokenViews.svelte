@@ -1,4 +1,5 @@
 <script lang="ts">
+  // svelte-ignore options_renamed_ssr_dom
   import ViewControls from './ViewControls.svelte';
   import TokenGridView from './TokenGridView.svelte';
   import TokenChartsView from './TokenChartsView.svelte';
@@ -25,7 +26,7 @@
       tokens = allTokens;
       handleSortChange(sortBy);
       if (tokens.length > 0) {
-        priceUpdater.fetchPrices(tokens).catch(console.error);
+        priceUpdater.fetchPrices(tokens).catch(console.log);
       }
     });
 
@@ -48,7 +49,8 @@
     sortBy = criteria;
     sortedTokens = [...tokens].sort((a, b) => {
       if (criteria === 'name') return a.name.localeCompare(b.name);
-      if (criteria === 'price') return (b.price?.price || 0) - (a.price?.price || 0);
+      if (criteria === 'price') return (b.price?.price ?? 0) - (a.price?.price ?? 0);
+      if (criteria === 'value') return (b.value ?? 0) - (a.value ?? 0);
       return 0;
     });
   }

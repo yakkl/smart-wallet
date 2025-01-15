@@ -22,6 +22,7 @@ import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
 import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 import { dateString } from '$lib/common/datetime';
+import { handleLockDown } from '$lib/common/handlers';
 // import type { Yakkl } from '$lib/plugins/providers';
 // import { yakklPreferences } from '../../models/dataModels';
 
@@ -63,12 +64,36 @@ function initializeBrowserExt() {
 //   console.log('Browser extension API not available');
 // }
 
+let lockIconTimer: ReturnType<typeof setInterval> | null = null;
+
+function startLockIconTimer() {
+  if (!lockIconTimer) {
+    lockIconTimer = setInterval(async () => {
+      const yakklSettings = await getObjectFromLocalStorage('settings') as Settings;
+      if (yakklSettings?.isLocked) {
+        await setIconLock();
+      } else {
+        await setIconUnlock();
+      }
+    }, 10000); // Check every 10 seconds
+  }
+}
+
+async function stopLockIconTimer() {
+  await setIconLock();
+  const yakklSettings = await getObjectFromLocalStorage('settings') as Settings;
+  if (yakklSettings) {
+    yakklSettings.isLocked = true;
+    await setObjectInLocalStorage('settings', yakklSettings);
+  }
+  if (lockIconTimer) {
+    clearInterval(lockIconTimer);
+    lockIconTimer = null;
+  }
+}
+
 try {
   browser_ext!.runtime.onMessage.addListener((message: any, sender: RuntimeSender, sendResponse) => {
-    if (message.type === 'ping') {
-      sendResponse({ status: 'pong' });
-      return true;
-    }
     handleOnMessage(message, sender, sendResponse);
     // Returning true ensures the response can be asynchronous
     return true;
@@ -336,14 +361,7 @@ async function handleRequest(method: string, params: any) {
 // Supposed to fire when extension is about to close but...
 async function handleOnSuspend() {
   try {
-    await setIconLock();
-    const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-    if (yakklSettings) {
-      yakklSettings.isLocked = true;
-      yakklSettings.isLockedHow = 'background_unload';
-      yakklSettings.updateDate = dateString();
-      await setObjectInLocalStorage('settings', yakklSettings);
-    }
+    handleLockDown();
   } catch (error) {
     console.log('Error during runtime.onSuspend:', error);
   }
@@ -353,31 +371,46 @@ async function handleOnMessage(
   message: any,
   sender: RuntimeSender,
   sendResponse: (response?: any) => void
-): Promise<void> {
+): Promise<boolean | void> {
   try {
-    // Handle specific message types
-    if (message.type === 'createNotification') {
-      const { notificationId, title, messageText } = message.payload;
-
-      // Perform notification creation
-      await browser_ext.notifications.create(notificationId, {
-        type: 'basic',
-        iconUrl: browser_ext.runtime.getURL('/images/logoBullLock48x48.png'),
-        title: title || 'Notification',
-        message: messageText || 'Default message.',
-      });
-
-      // Respond back to the sender
-      sendResponse({ success: true, message: 'Notification created successfully.' });
-    } else {
-      // Handle other message types
-      sendResponse({ success: false, error: 'Unknown message type.' });
+    switch (message.type) {
+      case 'ping': {
+        sendResponse({ success: true, message: 'Pong' });
+        return true; // Indicates asynchronous response
+      }
+      case 'createNotification': {
+        const { notificationId, title, messageText } = message.payload;
+        await browser_ext.notifications.create(notificationId, {
+          type: 'basic',
+          iconUrl: browser_ext.runtime.getURL('/images/logoBullLock48x48.png'),
+          title: title || 'Notification',
+          message: messageText || 'Default message.',
+        });
+        sendResponse({ success: true, message: 'Notification created successfully.' });
+        return true; // Indicate asynchronous response
+      }
+      case 'startLockIconTimer': {
+        startLockIconTimer();
+        sendResponse({ success: true, message: 'Lock icon timer started.' });
+        return true;
+      }
+      case 'stopLockIconTimer': {
+        stopLockIconTimer();
+        sendResponse({ success: true, message: 'Lock icon timer stopped.' });
+        return true;
+      }
+      default: {
+        sendResponse({ success: false, error: 'Unknown message type.' });
+        return true;
+      }
     }
   } catch (error: any) {
     console.log('Error handling message:', error);
     sendResponse({ success: false, error: error.message || 'Unknown error occurred.' });
+    return true; // Indicate asynchronous response
   }
 }
+
 
 async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType ): Promise<void> {
   try {
@@ -477,14 +510,7 @@ async function onDisconnectListener(port: RuntimePort): Promise<void> {
     }
     if (port) {
       if (port.name === "yakkl") {
-        await setIconLock();
-        const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-        if (yakklSettings) {
-          yakklSettings.isLocked = true;
-          yakklSettings.isLockedHow = 'background_unload';
-          yakklSettings.updateDate = dateString();
-          await setObjectInLocalStorage('settings', yakklSettings);
-        }
+        handleLockDown();
       }
       port.onDisconnect.removeListener(onDisconnectListener);
       if (mainPort === port) {
@@ -618,7 +644,7 @@ async function onConnect(port: RuntimePort) {
 //     }
 //     return Promise.resolve(); // Correct TypeScript return type
 //   } catch (e) {
-//     console.error('Error handling message:', e);
+//     console.log('Error handling message:', e);
 //     return Promise.resolve(); // Ensure a valid return type
 //   }
 // }

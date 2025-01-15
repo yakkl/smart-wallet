@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser as browserSvelte} from "$app/environment";
+  import { browserSvelte } from "$lib/utilities/browserSvelte";
   import { goto } from "$app/navigation";
   import { PATH_LOCK, PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";
   import Back from "$lib/components/Back.svelte";

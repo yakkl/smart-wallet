@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-debugger */
 // Inject this into any given webpage or iFrame so that it may communicate with the extension.
-// You can not use browser extention only classes and methods here. You must pass events 
+// You can not use browser extention only classes and methods here. You must pass events
 //   back and forth to the background.js service.
 
 import EventEmitter from "events";
@@ -50,7 +50,7 @@ class EthereumProviderManager {
   providers: Map<any, any>;
   previousProvider: any;
   currentProvider: any;
-  
+
   constructor() {
     this.providers = new Map();
     this.previousProvider = undefined;
@@ -61,7 +61,7 @@ class EthereumProviderManager {
     if (typeof window !== "undefined") {
       if (window.ethereum) {
         this.previousProvider = window.ethereum;
-          
+
         const descriptor = Object.getOwnPropertyDescriptor(window, "ethereum");
 
         if (descriptor?.writable && descriptor.configurable) {
@@ -69,7 +69,7 @@ class EthereumProviderManager {
         } else {
           this._removeProxyAndReplaceProvider(new YakklWalletProvider());
         }
-        
+
         if (!(window.ethereum instanceof YakklWalletProvider)) {
           this.addProvider('previous', window.ethereum); // Would be good if all providers provided a consist name/label to identify themselves
           this._replaceProvider(new YakklWalletProvider());
@@ -183,7 +183,7 @@ export class YakklWalletProvider extends EventEmitter {
       if (event?.data?.type === 'YAKKL_RESPONSE' && event.origin === windowOrigin) {
         try {
           const { id, error } = event.data;
-        
+
           const handlers = this._pendingRequests.get(id);
           if (handlers) {
             this._pendingRequests.delete(id);
@@ -193,7 +193,7 @@ export class YakklWalletProvider extends EventEmitter {
               const result = this.handleResults(event);
               handlers.resolve(result);
             }
-          }            
+          }
         } catch (e) {
           console.log(e);
         }
@@ -203,7 +203,7 @@ export class YakklWalletProvider extends EventEmitter {
   }
 
   private _pendingRequests = new Map<
-  string, 
+  string,
   {
     resolve: (value: unknown) => void;
     reject: (value: unknown) => void;
@@ -267,7 +267,7 @@ export class YakklWalletProvider extends EventEmitter {
   private disconnect(): void {
     this._connected = false; // The dApp will need to reconnect
     this.selectedAddresses = [];
-    this.emit('disconnect', this.chainId); 
+    this.emit('disconnect', this.chainId);
   }
 
 
@@ -311,19 +311,19 @@ export class YakklWalletProvider extends EventEmitter {
       switch (method) {
         case 'eth_chainId':
           return this.handleChainId(); // Automatically wraps this in a Promise
-          
+
         case 'net_version':
           return this.handleNetworkVersion(); // Automatically wraps this in a Promise
-          
+
         case 'eth_accounts':
           return this.handleAccounts(); // Automatically wraps this in a Promise
-          
+
         case 'eth_requestAccounts':
           return this.requestAccounts(params ?? []);
-          
+
         case 'eth_sendTransaction':
           return this.sendTransaction(params ?? []);
-          
+
         case 'eth_signTypedData_v3':
           return this.signTypedData_v3(params ?? []);
 
@@ -338,19 +338,19 @@ export class YakklWalletProvider extends EventEmitter {
 
         case 'wallet_requestPermissions':
           return this.requestPermissions(params ?? []);
-          
+
         case 'wallet_switchEthereumChain':
           return this.switchEthereumChain(params ?? []);
 
         case 'wallet_addEthereumChain':
           return this.addEthereumChain(params ?? []);
-          
+
         case 'eth_getBlockByNumber':
           return this.getBlockByNumber(params ?? []);
-          
+
         case 'eth_estimateGas':
           return this.estimateGas(params ?? []);
-            
+
         default:
           throw new ProviderRpcError(4200, `The requested method ${method} is not supported by this Ethereum provider.`);
       }
@@ -428,19 +428,19 @@ export class YakklWalletProvider extends EventEmitter {
   }
 
   private async sendTransaction(params: unknown[] | object): Promise<unknown> {
-    return this.sendRequest('eth_sendTransaction', params); 
+    return this.sendRequest('eth_sendTransaction', params);
   }
 
   private async signTypedData_v3(params: unknown[] | object): Promise<unknown> {
-    return this.sendRequest('eth_signTypedData_v3', params); 
+    return this.sendRequest('eth_signTypedData_v3', params);
   }
 
   private async signTypedData_v4(params: unknown[] | object): Promise<unknown> {
-    return this.sendRequest('eth_signTypedData_v4', params); 
+    return this.sendRequest('eth_signTypedData_v4', params);
   }
 
   private async personal_sign(params: unknown[] | object): Promise<unknown> {
-    return this.sendRequest('personal_sign', params); 
+    return this.sendRequest('personal_sign', params);
   }
 
   private async getPermissions(params: unknown[] | object): Promise<unknown> {
@@ -480,12 +480,12 @@ export class YakklWalletProvider extends EventEmitter {
           {
             const addresses = result as string[];
             const chainId = event.data.chainId;
-      
+
             if (!this._connected && addresses && addresses.length > 0) {
               this._connected = true;
-              this.emit('connect', { chainId: chainId });  
-            } 
-            
+              this.emit('connect', { chainId: chainId });
+            }
+
             this.handleChainIdChange(chainId);
             this.handleAddressChange(addresses);
           }
@@ -522,12 +522,12 @@ export class YakklWalletProvider extends EventEmitter {
       throw new ProviderRpcError(4900, 'The Provider is disconnected from all chains.');
     }
   }
-  
+
   private validateRequest(request: RequestArguments): void {
     // eslint-disable-next-line no-useless-catch
     try{
       const { method } = request;
-      
+
       if (!this._rateLimiter.consume()) {
         throw new ProviderRpcError(429, 'Too many requests which exceeds the default rate limit. Rate of calls will continue to be throttled or stopped unless rate slows down. Try again later.');
       }
@@ -535,7 +535,7 @@ export class YakklWalletProvider extends EventEmitter {
       if (request === undefined) {
         throw new ProviderRpcError(-32603, 'request had no value(s) passed in.');
       }
-      
+
       const validMethods = [
         'eth_requestAccounts',
         'eth_accounts',
@@ -560,7 +560,7 @@ export class YakklWalletProvider extends EventEmitter {
       throw e;
     }
   }
-  
+
   private handleChainIdChange(chainId: number): void {
     try {
       this.chainId = chainId;
@@ -594,7 +594,7 @@ export class YakklWalletProvider extends EventEmitter {
 
 //     return await this.request(request);
 //   }
-  
+
 //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
 //   public async sendAsync(request: RequestArguments, callback: unknown): Promise<unknown> {
 //     try {
@@ -604,10 +604,10 @@ export class YakklWalletProvider extends EventEmitter {
 //       const result = await this.request(request);
 //       return result;
 //     } catch (e) {
-//       console.error(e);
+//       console.log(e);
 //       throw e;
 //     }
-//   }  
+//   }
 
 }
 
@@ -635,7 +635,7 @@ let cachedCurrentProvider: LegacyWalletProvider;
 
 // Default - YakklWalletProvider is passed here...
 function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
-  try {    
+  try {
     if (!window.yakklLegacy) {
       Object.defineProperty(window, 'yakklLegacy', windowProvider); // set this with no proxy
 
@@ -643,7 +643,7 @@ function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
         value: new EthereumProviderManager,
         writable: false,
         configurable: false,
-      });    
+      });
 
       Object.defineProperty(window, "ethereum", {
         get() {
@@ -651,7 +651,7 @@ function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
             throw new Error("window.ethereumProviderManager is expected to be set to change the injected provider on window.ethereum.");
           }
           if (cachedEthereumProviderProxy && cachedCurrentProvider === window.ethereumProviderManager.currentProvider) return cachedEthereumProviderProxy;
-                  
+
           cachedEthereumProviderProxy = new Proxy(window.ethereumProviderManager.currentProvider, {
             get(target, prop, receiver) {
               if (
@@ -696,7 +696,7 @@ function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
           }
         },
         configurable: false, // true
-      })      
+      })
     }
     window.dispatchEvent(new Event('ethereum#initialized'));
   } catch (e) {
@@ -714,12 +714,12 @@ window.yakkl = eip6963ProviderDetail;
 window.addEventListener('DOMContentLoaded', () => {
   try {
     // Legacy - EIP-1193 provider
-    setGlobalProvider(windowProvider); 
+    setGlobalProvider(windowProvider);
     // EIP-6963 provider
     eip6963ProviderDetail.provider.announce();
     } catch (e) {
     console.log('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e);
-  } 
+  }
 });
 
 

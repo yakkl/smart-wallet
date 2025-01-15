@@ -37,7 +37,7 @@ const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 //   const quote = await service.getQuote( tokenIn, tokenOut, amount, fundingAddress );
 //   // Use quote data
 // } catch ( error ) {
-//   console.error( 'Quote error:', error );
+//   console.log( 'Quote error:', error );
 // } finally {
 //   service.dispose();
 // }
@@ -130,7 +130,7 @@ export class UniswapSwapManager extends SwapManager {
       data.tokens.unshift( eth );
       return data.tokens;
     } catch ( error ) {
-      console.error( 'Error fetching token list:', error );
+      console.log( 'Error fetching token list:', error );
       return [];
     }
   }
@@ -1218,7 +1218,7 @@ export class UniswapSwapManager extends SwapManager {
       const price = await this.getMarketPrice( token.symbol + '-USD' );
       return price.price;
     } catch ( error ) {
-      console.error( 'Error getting token price. Defaulting to 0:', error );
+      console.log( 'Error getting token price. Defaulting to 0:', error );
       return 0;
     }
   }

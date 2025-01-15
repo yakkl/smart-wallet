@@ -1,7 +1,8 @@
 <script lang="ts">
   // Import statements
   import { goto } from '$app/navigation';
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   // import { createForm } from "svelte-forms-lib";
   // import * as yup from 'yup';
   import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
@@ -154,7 +155,7 @@
 
   $effect(() => {
     try {
-      const selected = $yakklCurrentlySelectedStore;
+      let selected = $yakklCurrentlySelectedStore;
       if (!selected || selected.shortcuts.value === 0n) {
         console.log("Reactive trigger skipped for zero or undefined value.");
         return;
@@ -166,7 +167,7 @@
     }
   });
 
-  function updateCurrentlySelected(currentlySelected: YakklCurrentlySelected) {
+  async function updateCurrentlySelected(currentlySelected: YakklCurrentlySelected) {
     const { address, accountName, network, value } = currentlySelected.shortcuts;
 
     addressShow = truncate(address, 6) + address.substring(address.length - 4);
@@ -176,8 +177,11 @@
     assetPriceValue = $yakklPricingStore?.price ?? 0n;
 
     currencyLabel = currentlySelected.preferences.currency.code ?? "USD";
+
+    // TODO: Need to reflect balance changes immediately without impacting reactivity depth! This is an eventual consistency issue.
+
     shortcutsValue = EthereumBigNumber.from(value) ?? EthereumBigNumber.from(0);
-    chainId = network.chainId ?? 1;
+    chainId = network?.chainId ?? 1;
   }
 
   onMount(async () => {
@@ -435,7 +439,7 @@
         updatedCurrentlySelected.data = (await decryptData(updatedCurrentlySelected.data, yakklMiscStore)) as CurrentlySelectedData;
       }
 
-      const balance = await getBalance(chainId || 1, account.address);
+      const balance = await getBalance(chainId ?? 1, account.address);
 
       updatedCurrentlySelected = {
         ...updatedCurrentlySelected,
@@ -456,7 +460,6 @@
         ),
       };
 
-      // yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
       await setYakklCurrentlySelectedStorage(updatedCurrentlySelected);
 
       // Update price and UI
@@ -668,10 +671,12 @@
   // Gets the ether balance for the given address
   async function getBalance(chainId: number, address: string): Promise<bigint | null> {
     try {
-      if (chainId) {
+      if (chainId && wallet) {
         await wallet.setChainId(chainId);
         const val = await wallet.getBalance(address);
         return val;
+      } else {
+        console.trace('getBalance (no wallet): ChainId or wallet is not defined.');
       }
       return null;
     } catch (e) {

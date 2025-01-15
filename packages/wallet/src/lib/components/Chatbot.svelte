@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { onDestroy, onMount } from 'svelte';
   import { yakklChatsStore, getYakklChats, setYakklChatsStorage, yakklGPTRunningStore, yakklConnectionStore, yakklGPTKeyStore } from '$lib/common/stores';
   import { autoscroll } from '$lib/utilities';
@@ -86,7 +87,7 @@
       // Then store in localStorage
       await setYakklChatsStorage(cleanMessages);
     } catch (e) {
-      console.error('Error storing chats:', e);
+      console.log('Error storing chats:', e);
       throw e; // Rethrow if you want to handle it in the calling function
     }
   }

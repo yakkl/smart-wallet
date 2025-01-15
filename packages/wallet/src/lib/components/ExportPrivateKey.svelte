@@ -1,6 +1,7 @@
 <!-- ExportPrivateKey.svelte -->
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { getYakklCurrentlySelected, yakklMiscStore } from '$lib/common/stores';
   import { onMount } from 'svelte';
   import { decryptData } from '$lib/common/encryption';
@@ -60,7 +61,7 @@
 
       onVerify();
     } catch (e) {
-      console.error('Error verifying pincode:', e);
+      console.log('Error verifying pincode:', e);
     }
   }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import {onDestroy, onMount} from 'svelte';
   import { YAKKL_SPLASH, NUM_OF_SPLASH_IMAGES } from '$lib/common/constants';
 	import { wait } from '$lib/common/utils';
@@ -56,7 +56,7 @@
           }
         }
 
-        browser_ext.alarms.create('yakkl-splash-alarm', {when: Date.now() + 2500}); // Change this number to reflect how much time we want the user to see the splash screen
+        browser_ext.alarms.create('yakkl-splash-alarm', {when: Date.now() + 2000}); // Change this number to reflect how much time we want the user to see the splash screen
         browser_ext.alarms.onAlarm.addListener((m: any) => {
           if (port && !isPortDisconnected) port.postMessage({popup: "YAKKL: Splash"}); // Fire when the timer ends - goes to the background.ts
         });

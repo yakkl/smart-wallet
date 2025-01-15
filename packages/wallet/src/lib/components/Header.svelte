@@ -14,6 +14,7 @@
 	import Share from '$lib/components/Share.svelte';
   import CommingSoon from '$lib/components/ComingSoon.svelte';
 	import { onMount } from 'svelte';
+	import EmergencyKitModal from './EmergencyKitModal.svelte';
 
   interface Props {
     id?: string;
@@ -29,7 +30,9 @@
 
   let address: string;
   let imageSRC: string;
-
+  let showEmergencyKit = $state(false);
+  let showEmergencyKitExport = $state(false);
+  let showEmergencyKitImport = $state(false);
 
   onMount(async () => {
     try {
@@ -66,8 +69,8 @@
 </script>
 
 <NotEnabled bind:show={showInfo} value="This feature is not yet available. It will be released soon!"/>
-
 <CommingSoon bind:show={showComingSoon} value="This feature is not yet available. It will be released soon!"/>
+<EmergencyKitModal bind:show={showEmergencyKit} mode={showEmergencyKitExport ? 'export' : showEmergencyKitImport ? 'import' : 'export'} />
 
 <ImageBar>
   <!-- id="{id}" -->
@@ -174,7 +177,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
         </svg>
-        <h5 class="offcanvas-title mb-0 leading-normal font-semibold" id="offcanvasSettingsLabel">Account Settings</h5>
+        <h5 class="offcanvas-title mb-0 leading-normal font-semibold" id="offcanvasSettingsLabel">Emergency Kit</h5>
         <button type="button"
           class="-mr-2 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 "
           data-bs-dismiss="offcanvas" aria-label="Close">
@@ -227,23 +230,23 @@
           <li class="relative" data-bs-dismiss="offcanvas" >
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_interactive_supports_focus -->
-            <div role="button" onclick={() => goto(PATH_EXPORT)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden hover:text-base-300 hover:bg-primary/50 text-ellipsis whitespace-nowrap rounded  transition duration-300 ease-in-out"
+            <div role="button" onclick={() => {showEmergencyKitImport = false; showEmergencyKitExport=true; showEmergencyKit=true;}} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden hover:text-base-300 hover:bg-primary/50 text-ellipsis whitespace-nowrap rounded  transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>Export Account</span>
+              <span>Export</span>
             </div>
           </li>
           <li class="relative" data-bs-dismiss="offcanvas" >
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_interactive_supports_focus -->
-            <div role="button" onclick={() => goto(PATH_IMPORT_PRIVATEKEY)} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out"
+            <div role="button" onclick={() => {showEmergencyKitExport = false; showEmergencyKitImport=true; showEmergencyKit=true;}} class="flex items-center text-sm py-4 px-3 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded hover:text-base-300 hover:bg-primary/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>Import Account</span>
+              <span>Import</span>
             </div>
           </li>
           <!-- <li class="relative" data-bs-dismiss="offcanvas" > -->

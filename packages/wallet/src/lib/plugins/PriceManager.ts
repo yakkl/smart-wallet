@@ -64,7 +64,7 @@ export class PriceManager {
     try {
       return await provider.getMarketPrice( pair );
     } catch ( error ) {
-      console.error( `Error fetching price from ${ provider.getName() }:`, error );
+      console.log( `Error fetching price from ${ provider.getName() }:`, error );
       // Retry with a different provider
       return this.getMarketPrice( pair, providersToUse.filter( p => p !== provider ) ); // Avoid circular error by excluding failed provider
     }

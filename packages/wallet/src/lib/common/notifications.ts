@@ -1,37 +1,71 @@
-import { browser as browserSvelte} from "$app/environment";
+import { browserSvelte } from '$lib/utilities/browserSvelte';
+
 // import browser from 'webextension-polyfill';
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import type { Browser } from 'webextension-polyfill';
 let browser_ext: Browser;
 if (browserSvelte) browser_ext = getBrowserExt();
 
+function isResponseWithSuccess(response: any): response is { success: string } {
+  return response && typeof response.success === 'boolean';
+}
+
 export async function sendNotificationPing() {
-  browser_ext.runtime.sendMessage({
-    type: 'ping',
-  }).then((response: any) => {
-    if (response?.status) {
-      console.log(response.status);
+  try {
+    const response = await browser_ext.runtime.sendMessage({
+      type: 'ping',
+    });
+    if (isResponseWithSuccess(response)) {
+      if (response?.success) {
+        console.log('Ping response status:', response.success);
+      }
     }
     console.log('Pong response:', response);
-  }).catch((error) => {
-    console.log('No Pong response', error);
-  });
+  } catch (error) {
+    console.log('No Pong response:', error);
+  }
 }
 
 export async function sendNotification(title: string, messageText: string) {
-  browser_ext.runtime.sendMessage({
-    type: 'createNotification',
-    payload: {
-      notificationId: 'yakkl-notication',
-      title: title,
-      messageText: messageText,
-    },
-  }).then((response: any) => {
-    // if (response?.success) {
-    //   console.log('Notification created successfully');
-    // }
-    // console.log('Notification response:', response);
-  }).catch((error) => {
+  try {
+    const response = await browser_ext.runtime.sendMessage({
+      type: 'createNotification',
+      payload: {
+        notificationId: 'yakkl-notification',
+        title: title,
+        messageText: messageText,
+      },
+    });
+    if (isResponseWithSuccess(response)) {
+      if (response?.success) {
+        console.log('Notification created successfully');
+      }
+    }
+    console.log('Notification response:', response);
+  } catch (error) {
     console.log('Error sending notification message:', error);
-  });
+  }
 }
+
+export async function sendNotificationStartLockIconTimer() {
+  try {
+    const response = await browser_ext.runtime.sendMessage({
+      type: 'startLockIconTimer',
+    });
+    console.log('startLockIconTimer response:', response);
+  } catch (error) {
+    console.log('startLockIconTimer error:', error);
+  }
+}
+
+export async function sendNotificationStopLockIconTimer() {
+  try {
+    const response = await browser_ext.runtime.sendMessage({
+      type: 'stopLockIconTimer',
+    });
+    console.log('stopLockIconTimer response:', response);
+  } catch (error) {
+    console.log('stopLockIconTimer error:', error);
+  }
+}
+

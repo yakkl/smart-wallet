@@ -5,8 +5,8 @@ export async function load() {
   try {
     const yakklSettings = await getSettings();
 
-    if (!yakklSettings) {
-      goto('/register'); // Navigate to registration
+    if (!yakklSettings || !yakklSettings.init) {
+      goto('/register/Register'); // Navigate to registration
       return;
     }
 

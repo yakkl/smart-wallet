@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from '$app/environment';
   import { blockContextMenu, blockWindowResize } from "$lib/utilities";
   import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT } from "$lib/common";
   interface Props {

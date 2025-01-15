@@ -64,7 +64,7 @@ export async function postWithBackoff(url: string, data: object, attempt: number
 // const data = { name: 'Item 1', price: 10.0 };
 // postWithBackoff(url, data)
 //   .then(response => console.log(response))
-//   .catch(error => console.error(error));
+//   .catch(error => console.log(error));
 
 // A call for either POST or GET
 
@@ -130,7 +130,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
 // };
 // requestWithBackoff(url, options)
 //   .then(response => console.log(response))
-//   .catch(error => console.error(error));
+//   .catch(error => console.log(error));
 
 
 // GET Example
@@ -143,5 +143,5 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
 // };
 // requestWithBackoff(url, options)
 //   .then(response => console.log(response))
-//   .catch(error => console.error(error));
+//   .catch(error => console.log(error));
 

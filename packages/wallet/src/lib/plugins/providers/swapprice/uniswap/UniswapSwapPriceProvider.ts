@@ -53,7 +53,7 @@
 
 //       // this.initialized = true;
 //     } catch ( error ) {
-//       console.error( 'Failed to initialize provider:', error );
+//       console.log( 'Failed to initialize provider:', error );
 //       throw error;
 //     }
 //   }
@@ -248,7 +248,7 @@
   //       gasEstimate: gasEstimate
   //     };
   //   } catch ( error ) {
-  //     console.error( 'Error in getSwapPriceOut:', error );
+  //     console.log( 'Error in getSwapPriceOut:', error );
   //     throw error;
   //   }
   // }
@@ -378,7 +378,7 @@
   //       gasEstimate: gasEstimate
   //     };
   //   } catch ( error ) {
-  //     console.error( 'Error in getSwapPriceIn:', error );
+  //     console.log( 'Error in getSwapPriceIn:', error );
   //     throw error;
   //   }
   // }

@@ -92,7 +92,7 @@ export function tokenInNetAmount( tokenOut: SwapToken, tokenOutAmount: BigNumber
 
     return tokenInAmount;
   } catch ( error ) {
-    console.error( 'Error calculating net amount:', error );
+    console.log( 'Error calculating net amount:', error );
     return 0n;
   }
 }

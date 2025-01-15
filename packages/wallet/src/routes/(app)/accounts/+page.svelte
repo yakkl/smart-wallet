@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser as browserSvelte} from "$app/environment";
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
   import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PRIVATEKEY, PATH_EXPORT, PATH_IMPORT_WATCH, YAKKL_ZERO_ADDRESS, PATH_ACCOUNT_MAINTENANCE, PATH_LOCK } from "$lib/common/constants";
