@@ -17,7 +17,7 @@
           console.log("Signer:", signer);
         }
       } catch (err) {
-        console.error("Failed to connect wallet:", err);
+        console.log("Failed to connect wallet:", err);
       }
     } else {
       alert("Ethereum is not supported in your browser. Please install MetaMask or another compatible wallet.");

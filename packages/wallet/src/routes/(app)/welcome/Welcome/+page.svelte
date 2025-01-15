@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { browser as browserSvelte } from "$app/environment";
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { browser as browserSvelte } from "$app/environment";
   import { onMount, onDestroy } from "svelte";
   import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
   import ComingSoon from "$components/ComingSoon.svelte";
@@ -52,7 +53,7 @@
         }
       }
     } catch (e) {
-      console.error(e);
+      console.log(e);
     }
   });
 
@@ -63,7 +64,7 @@
         browser_ext.runtime.onMessage.removeListener(handleOnMessage);
       }
     } catch (e) {
-      console.error(e);
+      console.log(e);
     }
   });
 

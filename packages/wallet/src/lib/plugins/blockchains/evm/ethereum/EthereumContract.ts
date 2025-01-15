@@ -80,7 +80,7 @@ export class EthereumContract extends AbstractContract {
       if ( !tx ) throw new Error( 'Invalid transaction from populate transaction' );
       return EthersConverter.ethersTransactionRequestToTransactionRequest( tx );
     } catch ( error ) {
-      console.error( `Error populating transaction for ${ functionName }:`, error );
+      console.log( `Error populating transaction for ${ functionName }:`, error );
       throw error;
     }
   }
@@ -96,7 +96,7 @@ export class EthereumContract extends AbstractContract {
 
       return EthersConverter.ethersTransactionResponseToTransactionResponse( tx );
     } catch ( error ) {
-      console.error( `Error sending transaction for ${ functionName }:`, error );
+      console.log( `Error sending transaction for ${ functionName }:`, error );
       throw error;
     }
   }

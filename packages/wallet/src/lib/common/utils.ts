@@ -31,7 +31,7 @@ export async function checkAccountRegistration(): Promise<boolean> {
 
     return hasPrimaryOrImported;
   } catch (error) {
-    console.error('Error checking registration:', error);
+    console.log('Error checking registration:', error);
     return false;
   }
 }
@@ -52,7 +52,7 @@ export function parseAmount( amount: string, decimals: number ): bigint {
 
     return BigInt( fullAmount );
   } catch ( error ) {
-    console.error( 'Failed to parse amount:', error );
+    console.log( 'Failed to parse amount:', error );
     return 0n;
   }
 }
@@ -70,7 +70,7 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
     // Multiply by 10^decimals and convert to bigint
     return BigInt( Math.round( numericValue * ( 10 ** decimals ) ) );
   } catch ( error ) {
-    console.error( 'Error parsing amount:', error );
+    console.log( 'Error parsing amount:', error );
     return 0n;
   }
 }

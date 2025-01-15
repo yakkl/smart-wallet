@@ -1,7 +1,7 @@
 <!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
      Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
-  import { browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { ethers as ethersv6 } from 'ethers-v6';
   import { createForm } from "svelte-forms-lib";
   import * as yup from 'yup';
@@ -484,7 +484,7 @@
           throw new Error('Your Secret Phrase does not seem to correct. Check the formatting. You can enter each word and it MUST BE IN ORDER -OR- paste the whole phrase after copying from your backup into any field.');
         }
       } catch(e) {
-        console.error(e);
+        console.log(e);
         clearData(data);
       }
     }

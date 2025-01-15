@@ -120,7 +120,7 @@ import { isEqual } from 'lodash-es';
 // Example usage:
 // updateTokenBalances(userAddress, provider)
 //   .then(() => console.log('Balances updated'))
-//   .catch((error) => console.error('Error updating balances:', error));
+//   .catch((error) => console.log('Error updating balances:', error));
 
 export async function updateTokenBalances(userAddress: string, provider: ethers.Provider): Promise<void> {
   try {

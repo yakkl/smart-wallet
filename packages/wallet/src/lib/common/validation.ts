@@ -53,7 +53,7 @@ export function validateObject<T extends Record<string, any>>(
     if ( value === undefined || value === null ) {
       return !rule.required;
     }
-    
+
     let bigIntValue: bigint | undefined;
 
     // Type checking with more robust handling
@@ -208,7 +208,7 @@ export function validateSwapQuote( quote: SwapPriceData ): ValidationResult {
 //   const validationResult = validateSwapQuote( swapQuote );
 
 //   if ( !validationResult.isValid ) {
-//     console.error( 'Validation failed:', validationResult.error );
+//     console.log( 'Validation failed:', validationResult.error );
 //   }
 // }
 

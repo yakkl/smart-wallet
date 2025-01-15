@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/stores';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 

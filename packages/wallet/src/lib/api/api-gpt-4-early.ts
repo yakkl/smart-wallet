@@ -32,7 +32,7 @@ export async function fetchGPT4Response(prompt: string) {
 
     return data.choices[0].text.trim();
   } catch (error) {
-    console.error('Error fetching GPT-4 response:', error);
+    console.log('Error fetching GPT-4 response:', error);
     throw error;
   }
 }

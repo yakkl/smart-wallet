@@ -26,7 +26,7 @@ export async function getPrimaryAccountByAddress(address: string): Promise<Yakkl
   if (!address) return null;
   // First, try to find the account in the reactive store
   const accounts: YakklPrimaryAccount[] = []; //await getYakklPrimaryAccounts();
-  
+
   if (!accounts) return null;
   // Find the account with the matching address
   const primaryAccount = accounts.find((account: YakklPrimaryAccount) => account.address === address);
@@ -235,11 +235,10 @@ export function parseJsonOrObject<T>(value: any): T | null {
         return parsed;
       }
     } catch (e) {
-      console.error('Error parsing JSON string:', e);
+      console.log('Error parsing JSON string:', e);
       return null;
     }
   }
-
   return null;
 }
 
@@ -251,7 +250,7 @@ export async function resolveProperties<T>(object: Readonly<Deferrable<T>>): Pro
   });
 
   const results = await Promise.all( promises );
-  
+
   console.log('resolveProperties results', results);
 
   return results.reduce((accum, result) => {

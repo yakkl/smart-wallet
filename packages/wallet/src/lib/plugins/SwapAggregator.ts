@@ -22,7 +22,7 @@ export class SwapAggregator {
         try {
           return await manager.getQuote( tokenIn, tokenOut, amountIn, fundingAddress, isExactIn );
         } catch ( error ) {
-          console.error( `Error getting quote from ${ manager.getName() }:`, error );
+          console.log( `Error getting quote from ${ manager.getName() }:`, error );
           return null;
         }
       } )
@@ -99,7 +99,7 @@ export class SwapAggregator {
 //         try {
 //           return await manager.getQuote( tokenIn, tokenOut, amountIn );
 //         } catch ( error ) {
-//           console.error( `Error getting quote from ${ manager.getName() }:`, error );
+//           console.log( `Error getting quote from ${ manager.getName() }:`, error );
 //           return null;
 //         }
 //       } )
@@ -130,7 +130,7 @@ export class SwapAggregator {
 //     if ( !bestQuote ) {
 //       throw new Error( 'No valid quotes received' );
 //     }
-    
+
 //     const bestManager = this.swapManagers.find( manager => manager.getName() === bestQuote.provider );
 
 //     if ( !bestManager ) {

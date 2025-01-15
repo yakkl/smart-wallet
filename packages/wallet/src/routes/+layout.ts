@@ -6,7 +6,7 @@
 export const prerender = true;
 
 // import { yakklSettingsStore } from "$lib/common/stores";
-import {browser as browserSvelte} from '$app/environment';
+import { browserSvelte } from '$lib/utilities/browserSvelte';
 // import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
 import { setIconLock } from '$lib/utilities/utilities.js';
 import { YAKKL_INTERNAL } from "$lib/common/constants";

@@ -1,6 +1,6 @@
 <!-- Must be here - prerender -->
 <script lang="ts">
-  import {browser as browserSvelte} from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
   import { PATH_REGISTER } from '$lib/common';
   import type { Settings } from '$lib/common';

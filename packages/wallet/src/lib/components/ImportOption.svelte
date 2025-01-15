@@ -27,12 +27,12 @@
   <div class="space-y-4 mb-6">
     <p class="text-secondary-light dark:text-secondary-dark text-center">Choose an option to import or restore your wallet:</p>
     <ul class="list-disc list-inside text-secondary-light dark:text-secondary-dark space-y-2">
-      <li>Import an account using a private key</li>
-      <li>Import an account using a secret phrase (12-24 words)</li>
+      <li>Import a single account using a private key</li>
+      <li>Import a single account using a secret phrase (12-24 words)</li>
       {#if showImportWatch}
-        <li>Import a watch-only address</li>
+        <li>Import a single watch-only address</li>
       {/if}
-      <li>Restore from a YAKKL Emergency Kit if you're recovering your wallet</li>
+      <li>Restore everything from a YAKKL Emergency Kit (recover your whole wallet)</li>
     </ul>
   </div>
 
@@ -68,7 +68,7 @@
       onclick={onRestore}
       class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75 transition duration-200 ease-in-out"
     >
-      Restore from Emergency Kit
+      Restore all from Emergency Kit
     </button>
   </div>
 </div>

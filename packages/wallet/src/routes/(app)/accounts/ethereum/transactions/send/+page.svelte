@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { browser as browserSvelte } from '$app/environment';
+  import { browserSvelte } from '$lib/utilities/browserSvelte';
+	// import { browser as browserSvelte } from '$app/environment';
 	import { goto } from "$app/navigation";
 	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
 	import { decryptData } from '$lib/common/encryption';
@@ -973,7 +974,6 @@
 		}
 	}
 
-
 	// increase is a percent like 10% = 10 and not .10
 	// Default is 20 = (10 * 2)
 	function handleCancel(increase=10, nonce: number, hash: string) {
@@ -986,7 +986,6 @@
 			clearVerificationValues();
 		}
 	}
-
 
 	function handleOpenAddress(url: string) {
 		try {
@@ -1006,7 +1005,6 @@
 		}
 	}
 
-
 	// function handleRecycle() {
 	const handleRecycle = debounce(async () => {
 		try {
@@ -1018,11 +1016,9 @@
 		}
 	});
 
-
 	function handleSendRequest() {
 		uiState.showVerify = true;
 	}
-
 
 	function handleReject() {
 		try {
@@ -1035,7 +1031,6 @@
 		}
 	}
 
-
 	async function handleApprove() {
 		try {
 			uiState.showVerify = false;
@@ -1045,7 +1040,6 @@
 			clearVerificationValues();
 		}
 	}
-
 
 	// The calling function should compute the increase and then call this function. For example, count the wordsin the data field, multiply by 68 and then call this function
 	function handleIncreaseGasLimit(increase: number) {
@@ -1058,7 +1052,6 @@
 			console.log(e);
 		}
 	}
-
 
 	// First verfication for the pincode. The second verification is done in the processTransaction function
 	function handlePin(pin: string) {
@@ -1075,12 +1068,10 @@
 		}
 	}
 
-
 	function handleSetFiatValue() {
 		$form.toAddressValue = valueState.valueUSD;
 		valueState.valueType = 'fiat';
 	}
-
 
 	function handleSetCryptoValue() {
 		$form.toAddressValue = valueState.valueCrypto;
@@ -1088,7 +1079,6 @@
 	}
 
   //////// Toast
-
 
 	$effect(() => {
 		if ($errors.toAddress ||
