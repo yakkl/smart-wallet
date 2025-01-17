@@ -38,7 +38,7 @@ export default defineConfig( {
       $components: path.resolve( './src/lib/components' ),
       $routes: path.resolve( './src/routes' ),
       $plugins: path.resolve( './src/lib/plugins' ),
-      'webextension-polyfill': path.resolve( __dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js' ),
+      'webextension-polyfill': path.resolve( __dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.js' ),
       stream: 'stream-browserify',
       ethersv6: path.resolve( 'node_modules/ethers-v6' ),
       ethers: path.resolve( 'node_modules/ethers' ),

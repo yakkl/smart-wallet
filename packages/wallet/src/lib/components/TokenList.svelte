@@ -23,10 +23,8 @@
   let showDeleteModal = $state(false);
 
   function handleEdit(token: TokenData) {
-    if (token?.customDefault === 'custom') {
-      selectedToken = token;
-      showEditModal = true;
-    }
+    selectedToken = token;
+    showEditModal = true;
   }
 
   function handleDelete(token: TokenData) {
@@ -46,7 +44,6 @@
 </script>
 
 <ul class="divide-y divide-gray-300">
-  {console.log('Token List:', tokens)}
   {#each tokens as token, index}
     <li
       class="relative py-4 flex justify-between items-center"
@@ -65,12 +62,12 @@
           <p class="text-xs text-gray-500">Balance: {token.balance ?? 0}</p>
         </div>
       </button>
-      {#if token?.customDefault === 'custom'} <!-- Only show controls if custom -->
       <EditControls
+        onCopy={() => navigator.clipboard.writeText(token.address)}
         onEdit={() => handleEdit(token)}
         onDelete={() => handleDelete(token)}
+        controls={ token?.customDefault === 'custom' ? ['copy', 'edit', 'delete'] : ['copy', 'edit'] }
       />
-      {/if}
     </li>
   {/each}
 </ul>

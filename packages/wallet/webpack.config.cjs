@@ -66,7 +66,7 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
     alias: {
       'process/browser': require.resolve( 'process/browser' ),
-      'webextension-polyfill': path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
+      'webextension-polyfill': path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.js'),
       '$lib': path.resolve(__dirname, 'src/lib'),
       '$lib/common': path.resolve(__dirname, 'src/lib/common'),
       '$plugins': path.resolve(__dirname, 'src/lib/plugins'),
@@ -89,8 +89,8 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js'),
-          to: path.resolve(__dirname, 'static/ext/browser-polyfill.min.js')
+          from: path.resolve(__dirname, 'node_modules/webextension-polyfill/dist/browser-polyfill.js'),
+          to: path.resolve(__dirname, 'static/ext/browser-polyfill.js')
         },
       ],
     }),

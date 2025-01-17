@@ -20,7 +20,6 @@ export async function sendNotificationPing() {
         console.log('Ping response status:', response.success);
       }
     }
-    console.log('Pong response:', response);
   } catch (error) {
     console.log('No Pong response:', error);
   }
@@ -41,7 +40,6 @@ export async function sendNotification(title: string, messageText: string) {
         console.log('Notification created successfully');
       }
     }
-    console.log('Notification response:', response);
   } catch (error) {
     console.log('Error sending notification message:', error);
   }
@@ -52,7 +50,6 @@ export async function sendNotificationStartLockIconTimer() {
     const response = await browser_ext.runtime.sendMessage({
       type: 'startLockIconTimer',
     });
-    console.log('startLockIconTimer response:', response);
   } catch (error) {
     console.log('startLockIconTimer error:', error);
   }
@@ -63,7 +60,6 @@ export async function sendNotificationStopLockIconTimer() {
     const response = await browser_ext.runtime.sendMessage({
       type: 'stopLockIconTimer',
     });
-    console.log('stopLockIconTimer response:', response);
   } catch (error) {
     console.log('stopLockIconTimer error:', error);
   }

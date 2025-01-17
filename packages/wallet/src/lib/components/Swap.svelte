@@ -729,7 +729,7 @@
       };
     } catch (error) {
       // Fallback to manual rates
-      debug_log('Error fetching gas prices (fallback being used):', error);
+      // debug_log('Error fetching gas prices (fallback being used):', error);
       return {
         maxFeePerGas: ethersv6.parseUnits('30', 'gwei'),
         maxPriorityFeePerGas: ethersv6.parseUnits('1', 'gwei')
@@ -803,7 +803,7 @@
 			showWarning = true;
 			warningValue = rejection;
 		} catch(e: any) {
-			debug_log(e);
+			console.log(e);
 		}
 	}
 
@@ -856,7 +856,7 @@
 				throw 'PINCODE did not match.';
 			}
 		} catch(e: any) {
-      debug_log(e);
+      console.log(e);
       pincodeVerified = false;
 			return null;
 		}

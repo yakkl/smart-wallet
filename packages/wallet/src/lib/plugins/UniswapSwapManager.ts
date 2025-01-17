@@ -517,14 +517,14 @@ export class UniswapSwapManager extends SwapManager {
         );
       }
     } catch ( error ) {
-      debug_log( 'Direct pool quote failed, trying multi-hop:', error );
+      console.log( 'Direct pool quote failed, trying multi-hop:', error );
     }
 
     // If direct pool fails, attempt multi-hop anyway
     try {
       return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
     } catch ( error ) {
-      debug_log( 'Multi-hop quote failed:', error );
+      console.log( 'Multi-hop quote failed:', error );
       throw new Error( 'No valid route exists for the provided tokens and amount' );
     }
   }
@@ -547,7 +547,7 @@ export class UniswapSwapManager extends SwapManager {
           availablePools.push( fee );
         }
       } catch ( error ) {
-        debug_log( `Pool not found for tokens ${ tokenA.symbol }/${ tokenB.symbol } with fee ${ fee }` );
+        console.log( `Pool not found for tokens ${ tokenA.symbol }/${ tokenB.symbol } with fee ${ fee }` );
       }
     }
     return availablePools;

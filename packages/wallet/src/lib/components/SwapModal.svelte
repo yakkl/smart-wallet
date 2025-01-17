@@ -63,7 +63,7 @@
 			showWarning = true;
 			warningValue = rejection;
 		} catch(e: any) {
-			debug_log(e);
+			console.log(e);
 		}
 	}
 
@@ -99,7 +99,7 @@
 				throw 'PINCODE did not match.';
 			}
 		} catch(e: any) {
-      debug_log(e);
+      console.log(e);
       pincodeVerified = false;
 			return null;
 		}

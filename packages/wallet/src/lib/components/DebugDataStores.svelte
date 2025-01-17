@@ -1,11 +1,12 @@
 <script lang="ts">
   import { get } from 'svelte/store';
-  import { yakklTokenDataStore, yakklTokenDataCustomStore } from '$lib/common/stores';
+  import { yakklTokenDataStore, yakklTokenDataCustomStore, yakklCombinedTokenStore } from '$lib/common/stores';
 
   // Define the store map
   const stores = {
     yakklTokenDataStore,
     yakklTokenDataCustomStore,
+    yakklCombinedTokenStore
   };
 </script>
 

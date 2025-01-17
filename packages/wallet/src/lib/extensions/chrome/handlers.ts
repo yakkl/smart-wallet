@@ -1,6 +1,7 @@
 import { setIconLock, setIconUnlock } from './ui';
 import { isBlacklisted, initializeDatabase } from './database';
 import { browser_ext } from './utils';
+import { startLockIconTimer, stopLockIconTimer } from './timers';
 
 // Handles runtime.onMessage
 export async function handleOnMessage(message: any, sender: any, sendResponse: (response?: any) => void) {
@@ -91,21 +92,21 @@ export function handleOnTabRemoved(tabId: number) {
 }
 
 // Lock icon timer management
-let lockIconTimer: ReturnType<typeof setInterval> | null = null;
+// let lockIconTimer: ReturnType<typeof setInterval> | null = null;
 
-export function startLockIconTimer() {
-    if (!lockIconTimer) {
-        lockIconTimer = setInterval(async () => {
-            console.log('Lock icon timer tick.');
-            // Your lock icon logic
-            await setIconLock();
-        }, 10000); // 10 seconds
-    }
-}
+// export function startLockIconTimer() {
+//     if (!lockIconTimer) {
+//         lockIconTimer = setInterval(async () => {
+//             console.log('Lock icon timer tick.');
+//             // Your lock icon logic
+//             await setIconLock();
+//         }, 10000); // 10 seconds
+//     }
+// }
 
-export function stopLockIconTimer() {
-    if (lockIconTimer) {
-        clearInterval(lockIconTimer);
-        lockIconTimer = null;
-    }
-}
+// export function stopLockIconTimer() {
+//     if (lockIconTimer) {
+//         clearInterval(lockIconTimer);
+//         lockIconTimer = null;
+//     }
+// }
