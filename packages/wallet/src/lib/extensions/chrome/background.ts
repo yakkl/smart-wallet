@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Background actions for the extension...
@@ -13,22 +12,25 @@ import { detect } from 'detect-browser';
 import { supportedChainId  } from "$lib/common/utils";
 import { upgrade, updateVersion } from '$lib/upgrades/upgrades';
 import { Alchemy, Network, type TransactionRequest, type BlockTag } from 'alchemy-sdk';
-import Dexie from 'dexie';
+
 import type { Deferrable } from '@ethersproject/properties';
-import type { YakklBlocked, YakklCurrentlySelected, Preferences, Settings, YakklWallet} from '$lib/common/interfaces';
+import type { YakklCurrentlySelected, Preferences, Settings } from '$lib/common/interfaces';
 // import browser from 'webextension-polyfill';
 
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-import type { Runtime, Windows, Alarms, Tabs, Browser } from 'webextension-polyfill';
+import type { Runtime, Windows, Tabs, Browser } from 'webextension-polyfill';
 import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
-import { dateString } from '$lib/common/datetime';
 import { handleLockDown } from '$lib/common/handlers';
+import { checkDomain, initializeDatabase, isBlacklisted } from './database';
+import { setIconLock, setIconUnlock } from '$lib/utilities';
+import { clearAlarm, handleOnAlarm } from './alarms';
+import { startLockIconTimer, stopLockIconTimer } from './timers';
+import { debug_log } from '$lib/common';
 // import type { Yakkl } from '$lib/plugins/providers';
 // import { yakklPreferences } from '../../models/dataModels';
 
 type RuntimePort = Runtime.Port;
 type WindowsWindow = Windows.Window;
-type AlarmsAlarm = Alarms.Alarm;
 type RuntimePlatformInfo = Runtime.PlatformInfo;
 type RuntimeSender = Runtime.MessageSender;
 
@@ -38,9 +40,7 @@ function initializeBrowserExt() {
   browser_ext = getBrowserExt();
 }
 
-// (() => {
-  initializeBrowserExt();
-// })();
+initializeBrowserExt();
 
 // Example: const browser_ext = ensureBrowserExt();
 //  browser_ext.runtime.onInstalled.addListener(handleOnInstalledUpdated);
@@ -64,34 +64,6 @@ function initializeBrowserExt() {
 //   console.log('Browser extension API not available');
 // }
 
-let lockIconTimer: ReturnType<typeof setInterval> | null = null;
-
-function startLockIconTimer() {
-  if (!lockIconTimer) {
-    lockIconTimer = setInterval(async () => {
-      const yakklSettings = await getObjectFromLocalStorage('settings') as Settings;
-      if (yakklSettings?.isLocked) {
-        await setIconLock();
-      } else {
-        await setIconUnlock();
-      }
-    }, 10000); // Check every 10 seconds
-  }
-}
-
-async function stopLockIconTimer() {
-  await setIconLock();
-  const yakklSettings = await getObjectFromLocalStorage('settings') as Settings;
-  if (yakklSettings) {
-    yakklSettings.isLocked = true;
-    await setObjectInLocalStorage('settings', yakklSettings);
-  }
-  if (lockIconTimer) {
-    clearInterval(lockIconTimer);
-    lockIconTimer = null;
-  }
-}
-
 try {
   browser_ext!.runtime.onMessage.addListener((message: any, sender: RuntimeSender, sendResponse) => {
     handleOnMessage(message, sender, sendResponse);
@@ -102,51 +74,50 @@ try {
   console.log('background.js - onMessage error',error);
 }
 
+// async function setIconLock(): Promise<void> {
+//   try {
+//     if (!browser_ext) {
+//       console.log("background: setIconLock - browser_ext is not initialized");
+//       return;
+//     }
+//     await browser_ext.action.setIcon({
+//       path: {
+//         16: "/images/logoBullLock16x16.png",
+//         32: "/images/logoBullLock32x32.png",
+//         48: "/images/logoBullLock48x48.png",
+//         128: "/images/logoBullLock128x128.png"
+//       }
+//     });
+//   } catch (e) {
+//     console.log("Error setting lock icon:", e);
+//   }
+// }
 
-async function setIconLock(): Promise<void> {
-  try {
-    if (!browser_ext) {
-      console.log("background: setIconLock - browser_ext is not initialized");
-      return;
-    }
-    await browser_ext.action.setIcon({
-      path: {
-        16: "/images/logoBullLock16x16.png",
-        32: "/images/logoBullLock32x32.png",
-        48: "/images/logoBullLock48x48.png",
-        128: "/images/logoBullLock128x128.png"
-      }
-    });
-  } catch (e) {
-    console.log("Error setting lock icon:", e);
-  }
-}
-
-async function setIconUnlock(): Promise<void> {
-  try {
-    if (!browser_ext) {
-      console.log("background: setIconUnLock - browser_ext is not initialized");
-      return;
-    }
-    await browser_ext.action.setIcon({
-      path: {
-        16: "/images/logoBull16x16.png",
-        32: "/images/logoBull32x32.png",
-        48: "/images/logoBull48x48.png",
-        128: "/images/logoBull128x128.png"
-      }
-    });
-  } catch (e) {
-    console.log("Error setting unlock icon:", e);
-  }
-}
+// async function setIconUnlock(): Promise<void> {
+//   try {
+//     if (!browser_ext) {
+//       console.log("background: setIconUnLock - browser_ext is not initialized");
+//       return;
+//     }
+//     await browser_ext.action.setIcon({
+//       path: {
+//         16: "/images/logoBull16x16.png",
+//         32: "/images/logoBull32x32.png",
+//         48: "/images/logoBull48x48.png",
+//         128: "/images/logoBull128x128.png"
+//       }
+//     });
+//   } catch (e) {
+//     console.log("Error setting unlock icon:", e);
+//   }
+// }
 
 // NOTE: Any console.log output only shows up in the YAKKL® Smart Wallet console and NOT the dApp. Inpagejs and content.js will show up in the dApp only!
-
 // There can be multiple browser tabs attempting to communicate with the backend service. Use the sender.tab.id as an index so the communication is with the correct
 // tab
 
 // eslint-disable-next-line prefer-const
+
 let requestsExternal = new Map<
   string,
   {
@@ -159,9 +130,9 @@ let requestsExternal = new Map<
 // let dappPort;
 
 // eslint-disable-next-line prefer-const
-let portsDapp = [];
+let portsDapp: RuntimePort[] = [];
 // eslint-disable-next-line prefer-const
-let portsInternal = [];
+let portsInternal: RuntimePort[] = [];
 // eslint-disable-next-line prefer-const
 let providers = new Map();
 const portsExternal = new Map();
@@ -178,26 +149,6 @@ const openPopups = new Map();
 let mainPort: RuntimePort | undefined;
 let idleAutoLockCycle = 3; // 3 (default) 'idle' counter ticks before being able to lock the account
 
-interface DomainEntry {
-  domain: string;
-}
-
-class BlacklistDatabase extends Dexie {
-  domains: Dexie.Table<DomainEntry, string> | undefined;
-
-  constructor() {
-      super("BlacklistDatabase");
-      this.version(1).stores({
-          domains: 'domain'
-      });
-  }
-}
-
-const db = new BlacklistDatabase();
-db.version(1).stores({
-    domains: 'domain'
-});
-
 // Extract the domain from a URL
 function extractDomain(url: string | URL) {
     const domain = new URL(url).hostname;
@@ -208,32 +159,52 @@ function extractDomain(url: string | URL) {
 }
 
 
-async function initializeDatabase(override: boolean) {
-  try {
-    // Check if the database is already populated
-    if (override === true) {
-      await db.domains?.clear();
-    }
-    const count = await db.domains?.count();
-    // If not populated, load the data from lists.json and populate
-    if (count === 0) {
-      // Fetch the lists.json bundled with the extension
-      const response = await fetch(browser_ext!.runtime.getURL("/data/lists.json"));
-      const data = await response.json();
-      // Bulk add to Dexie
-      await db.domains?.bulkAdd(data.blacklist.map((domain: unknown) => ({ domain })));
-    }
-  } catch(e) {
-    console.log(e);
-  }
-}
+// interface DomainEntry {
+//   domain: string;
+// }
 
+// class BlacklistDatabase extends Dexie {
+//   domains: Dexie.Table<DomainEntry, string> | undefined;
+
+//   constructor() {
+//       super("BlacklistDatabase");
+//       this.version(1).stores({
+//           domains: 'domain'
+//       });
+//   }
+// }
+
+// const db = new BlacklistDatabase();
+// db.version(1).stores({
+//     domains: 'domain'
+// });
+
+// async function initializeDatabase(override: boolean) {
+//   try {
+//     // Check if the database is already populated
+//     if (override === true) {
+//       await db.domains?.clear();
+//     }
+//     const count = await db.domains?.count();
+//     // If not populated, load the data from lists.json and populate
+//     if (count === 0) {
+//       // Fetch the lists.json bundled with the extension
+//       const response = await fetch(browser_ext!.runtime.getURL("/data/lists.json"));
+//       const data = await response.json();
+//       // Bulk add to Dexie
+//       await db.domains?.bulkAdd(data.blacklist.map((domain: unknown) => ({ domain })));
+//     }
+//   } catch(e) {
+//     console.log(e);
+//   }
+// }
 
 // Check if domain is blacklisted
-async function isBlacklisted(domain: string) {
-  const found = await db.domains?.get({ domain });
-  return !!found;
-}
+// async function isBlacklisted(domain: string) {
+//   const found = await db.domains?.get({ domain });
+//   return !!found;
+// }
+
 
 
 try {
@@ -257,7 +228,6 @@ try {
 } catch (e) {
   console.log(e);
 }
-
 
 // Call as soon as possible...
 try {
@@ -411,7 +381,6 @@ async function handleOnMessage(
   }
 }
 
-
 async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType ): Promise<void> {
   try {
     const platform: RuntimePlatformInfo = await browser_ext!.runtime.getPlatformInfo();
@@ -451,21 +420,20 @@ async function handleOnInstalledUpdated( details: Runtime.OnInstalledDetailsType
     // Add default tokens
     loadDefaultTokens();
 
-    // Just a safety catch
-    const count = await db.domains?.count();
-    if (count === 0) {
-      await initializeDatabase(false);
-    }
+    // // Just a safety catch
+    // const count = await db.domains?.count();
+    // if (count === 0) {
+    //   await initializeDatabase(false);
+    // }
   } catch (e) {
     console.log(e);
   }
 }
 
-
 async function setLocalObjectStorage(platform: RuntimePlatformInfo | null, upgradeOption: boolean = false): Promise<void> {
   try {
     const yakklSettings = await getObjectFromLocalStorage<Settings>("settings") as Settings | null;
-    const prevVersion = yakklSettings?.version ?? '0.0.0';
+    const prevVersion = yakklSettings?.version ?? '1.2.7';
 
     if (upgradeOption) {
       upgrade(prevVersion, VERSION);
@@ -502,7 +470,6 @@ async function setLocalObjectStorage(platform: RuntimePlatformInfo | null, upgra
   }
 }
 
-
 async function onDisconnectListener(port: RuntimePort): Promise<void> {
   try {
     if (browser_ext!.runtime.lastError) {
@@ -510,7 +477,7 @@ async function onDisconnectListener(port: RuntimePort): Promise<void> {
     }
     if (port) {
       if (port.name === "yakkl") {
-        handleLockDown();
+        await handleLockDown();
       }
       port.onDisconnect.removeListener(onDisconnectListener);
       if (mainPort === port) {
@@ -522,7 +489,6 @@ async function onDisconnectListener(port: RuntimePort): Promise<void> {
   }
 }
 
-
 // TODO: Fix this to have a better type of parameters
 // This section registers when the content and background services are connected.
 async function onConnect(port: RuntimePort) {
@@ -533,6 +499,8 @@ async function onConnect(port: RuntimePort) {
     // TBD - Think about this. Is it really the only port?????????
     mainPort = port;
 
+    // debug_log('background.js - onConnect', port);
+    // debug_log('background.js - onConnect 1 - ports...', portsExternal, portsDapp, portsInternal);
     if (port.sender && port.sender.tab && port.name === YAKKL_EXTERNAL) {
       portsExternal.set(port.sender.tab.id, port);
     }
@@ -546,6 +514,8 @@ async function onConnect(port: RuntimePort) {
     // May want to revist this and simplify
     if (port.onDisconnect && port.onDisconnect.hasListener && !port.onDisconnect.hasListener(onDisconnectListener)) {
       port.onDisconnect.addListener(onDisconnectListener);
+
+      // debug_log('background.js - onConnect - onDisconnect', port);
     }
 
     switch (port.name) {
@@ -681,44 +651,6 @@ async function onPortInternalListener(event: any): Promise<void> {
   }
 }
 
-async function updateScreenPreferences(event: any): Promise<void> {
-  if (typeof browser_ext === 'undefined') {
-    console.log('Browser extension API is not available.');
-    return;
-  }
-
-  try {
-    const yakklPreferences = await getObjectFromLocalStorage<any>('yakklPreferences');
-
-    if (yakklPreferences) {
-      yakklPreferences.preferences.screenWidth = event.data.availWidth;
-      yakklPreferences.preferences.screenHeight = event.data.availHeight;
-
-      await setObjectInLocalStorage('preferences', yakklPreferences);
-    } else {
-      console.log('yakklPreferences not found.');
-    }
-  } catch (error) {
-    console.log('Error updating yakklPreferences:', error);
-  }
-}
-
-async function checkDomain(domain: any): Promise<boolean | undefined> {
-  try {
-    const yakklBlockList = await getObjectFromLocalStorage("yakklBlockList") as YakklBlocked[];
-    if (yakklBlockList) {
-      if (yakklBlockList.find((obj: { domain: any; }) => {return obj.domain === domain;})) {
-        return Promise.resolve(true);
-      }
-    }
-    return Promise.resolve(false);
-  } catch (e) {
-    console.log(e);
-    Promise.reject(e);
-  }
-}
-
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 async function onPortExternalListener(event, sender): Promise<void> {
@@ -738,7 +670,7 @@ async function onPortExternalListener(event, sender): Promise<void> {
         case 'yak_checkdomain':
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           checkDomain(event.params[0]).then(result => {
-// WIP - Need to update the background.ts in yakkl to build the db from the json file and then have the inpage.ts send the domain to content.ts which will ask background.ts to check it. If it's flagged, then we'll redirect to this page. My concern is the performance of this. We'll need to test it.
+          // WIP - Need to update the background.ts in yakkl to build the db from the json file and then have the inpage.ts send the domain to content.ts which will ask background.ts to check it. If it's flagged, then we'll redirect to this page. My concern is the performance of this. We'll need to test it.
           });
           break;
       }
@@ -861,7 +793,6 @@ async function onPortExternalListener(event, sender): Promise<void> {
   }
 }
 
-
 async function onDappListener(event: any, sender: any): Promise<void> {
   try {
     switch(event?.method) {
@@ -927,6 +858,27 @@ async function onDappListener(event: any, sender: any): Promise<void> {
   }
 }
 
+async function updateScreenPreferences(event: any): Promise<void> {
+  if (typeof browser_ext === 'undefined') {
+    console.log('Browser extension API is not available.');
+    return;
+  }
+
+  try {
+    const yakklPreferences = await getObjectFromLocalStorage<any>('yakklPreferences');
+
+    if (yakklPreferences) {
+      yakklPreferences.preferences.screenWidth = event.data.availWidth;
+      yakklPreferences.preferences.screenHeight = event.data.availHeight;
+
+      await setObjectInLocalStorage('preferences', yakklPreferences);
+    } else {
+      console.log('yakklPreferences not found.');
+    }
+  } catch (error) {
+    console.log('Error updating yakklPreferences:', error);
+  }
+}
 
 async function showDappPopup(request: string) {
   try {
@@ -949,7 +901,6 @@ async function showDappPopup(request: string) {
   }
 }
 
-
 // Has to check the method here too since this function gets called from different places
 async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { popup: string; } ) => void; }) {
   try {
@@ -965,20 +916,20 @@ async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { 
         }
 
         if (windowId) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          browser_ext!.windows.get(windowId).then(async (_result: any) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            browser_ext!.windows.get(windowId).then(async (_result: any) => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              browser_ext!.windows.update(windowId, {focused: true}).then(() => {
-                // result not currently used
-              }).catch((error: any) => {console.log(error)});
+            browser_ext!.windows.update(windowId, {focused: true}).then(() => {
+              // result not currently used
+            }).catch((error: any) => {console.log(error)});
 
-              p.postMessage({popup: "YAKKL: Launched"}); // Goes to +page@popup.svelte
-              return;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            }).catch(async () => {
-              showPopup('');
-              p.postMessage({popup: "YAKKL: Launched"});
-            });
+            p.postMessage({popup: "YAKKL: Launched"}); // Goes to +page@popup.svelte
+            return;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          }).catch(async () => {
+            showPopup('');
+            p.postMessage({popup: "YAKKL: Launched"});
+          });
         } else {
           // TBD - Maybe look for any existing popup windows before creating a new one...
           // Maybe register a popup
@@ -991,7 +942,6 @@ async function onPopupLaunch(m: { popup: string; }, p: { postMessage: ( arg0: { 
     console.log('background.js - ',error);
   }
 }
-
 
 export async function showExtensionPopup(
   popupWidth = 428,
@@ -1076,7 +1026,6 @@ export async function showExtensionPopup(
   }
 }
 
-
 // TBD! - May need to set up a connection between UI and here
 // Check the lastlogin date - todays date = days hash it using dj2 then use as salt to encrypt and send to here and send back on request where it is reversed or else login again
 export async function showPopup(url: string): Promise<void> {
@@ -1098,7 +1047,6 @@ export async function showPopup(url: string): Promise<void> {
   }
 }
 
-
 export async function showPopupDapp(url: string): Promise<void> {
   try {
     showExtensionPopup(428, 926, url).then(async (result) => {
@@ -1114,7 +1062,6 @@ export async function showPopupDapp(url: string): Promise<void> {
   }
 }
 
-
 function onEthereumListener(event: any) {
   try {
     console.log('background.js -', `yakkl-eth port: ${event}`);
@@ -1123,7 +1070,6 @@ function onEthereumListener(event: any) {
   }
 }
 
-
 function onEIP6963Listener(event: any) {
   try {
     console.log('background.js -', `yakkl-eip6963 port: ${event}`);
@@ -1131,7 +1077,6 @@ function onEIP6963Listener(event: any) {
     console.log(error);
   }
 }
-
 
 async function onIdleListener(state: string): Promise<void> {
   try {
@@ -1156,57 +1101,6 @@ async function onIdleListener(state: string): Promise<void> {
     }
   } catch (error) {
     console.log('background.js - idleListener',error);
-  }
-}
-
-
-async function clearAlarm(alarmName: string | undefined): Promise<void> {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    browser_ext!.alarms.get(alarmName).then(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      browser_ext!.alarms.clear(alarmName).then(() => {
-        // Noop
-      });
-    });
-  } catch (error) {
-    console.log('background.js - clear',error);
-  }
-}
-
-
-async function handleOnAlarm(alarm: AlarmsAlarm): Promise<void> {
-  try {
-    let yakklSettings;
-    // try/catch should catch an invalid alarm object
-    if (alarm.name === "yakkl-lock-alarm") {
-      yakklSettings = await getObjectFromLocalStorage("settings") as Settings;
-      if (yakklSettings) {
-        yakklSettings.isLocked = true;
-        yakklSettings.isLockedHow = 'idle_system';
-        yakklSettings.updateDate = new Date().toISOString();
-        await setObjectInLocalStorage('settings', yakklSettings);
-        // send a browser notification letting the user know that yakkl locked due to timeout
-        // This may need to be sent from the UI layer
-        browser_ext!.notifications.create('yakkl-lock', {
-          type: 'basic',
-          iconUrl: browser_ext!.runtime.getURL('/images/logoBullLock48x48.png'),
-          title: 'Security Notification',
-          message: 'YAKKL is locked and requires a login due to idle timeout.',
-        }).catch((error: any) => {
-          console.log('background.js - handleOnAlarm',error);
-        });
-
-        // post a message to show login screen
-        browser_ext!.runtime.sendMessage({method: 'yak_lockdown'});
-        // Set the lock icon
-        await setIconLock();
-      }
-
-      await clearAlarm("yakkl-lock-alarm"); // Clear the alarm so since it forwarded everything
-    }
-  } catch (error) {
-    console.log('background.js - alarm',error);
   }
 }
 

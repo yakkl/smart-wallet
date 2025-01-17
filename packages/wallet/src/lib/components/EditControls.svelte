@@ -1,7 +1,5 @@
 <!-- EditControls.svelte -->
 <script lang="ts">
-  import { stopPropagation } from 'svelte/legacy';
-
   import { Edit2Icon, TrashIcon, ClipboardIcon } from 'svelte-feather-icons';
   import { fade } from 'svelte/transition';
 
@@ -24,7 +22,8 @@
   let deleted = $state(false);
   let hoverText = $state('');
 
-  function handleCopy() {
+  function handleCopy(event: MouseEvent) {
+    event.stopPropagation();
     onCopy();
     copied = true;
     setTimeout(() => {
@@ -32,7 +31,8 @@
     }, 1000);
   }
 
-  function handleEdit() {
+  function handleEdit(event: MouseEvent) {
+    event.stopPropagation();
     onEdit();
     edited = true;
     setTimeout(() => {
@@ -40,7 +40,8 @@
     }, 1000);
   }
 
-  function handleDelete() {
+  function handleDelete(event: MouseEvent) {
+    event.stopPropagation();
     onDelete();
     deleted = true;
     setTimeout(() => {
@@ -61,7 +62,7 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      onclick={stopPropagation(handleCopy)}
+      onclick={handleCopy}
       onmouseenter={() => showHoverText('Copy')}
       onmouseleave={() => (hoverText = '')}
     >
@@ -86,7 +87,7 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      onclick={stopPropagation(handleEdit)}
+      onclick={handleEdit}
       onmouseenter={() => showHoverText('Edit')}
       onmouseleave={() => (hoverText = '')}
     >
@@ -111,7 +112,7 @@
     <button
       type="button"
       class="text-gray-400 hover:text-gray-500 focus:outline-none relative"
-      onclick={stopPropagation(handleDelete)}
+      onclick={handleDelete}
       onmouseenter={() => showHoverText('Delete')}
       onmouseleave={() => (hoverText = '')}
     >

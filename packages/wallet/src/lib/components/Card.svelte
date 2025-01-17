@@ -2,7 +2,6 @@
   // Import statements
   import { goto } from '$app/navigation';
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from '$app/environment';
   // import { createForm } from "svelte-forms-lib";
   // import * as yup from 'yup';
   import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
@@ -10,19 +9,21 @@
     yakklPricingStore,
     getYakklPrimaryAccounts, setYakklCurrentlySelectedStorage,
     getYakklCurrentlySelected, getMiscStore,
-    yakklCurrentlySelectedStore, yakklAccountsStore
+    yakklCurrentlySelectedStore, yakklAccountsStore,
+		yakklCombinedTokenStore,
+		yakklTokenDataStore,
+		yakklTokenDataCustomStore
   } from '$lib/common/stores';
-  import {PATH_WELCOME, YAKKL_ZERO_ADDRESS, PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
+  import {YAKKL_ZERO_ADDRESS, PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
   import ClipboardJS from 'clipboard';
   // import QR from '$lib/components/QR.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import { truncate, timeoutClipboard, checkUpgrade } from "$lib/utilities/utilities";
+  import { truncate, timeoutClipboard } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices, checkPricesCB } from '$lib/tokens/prices';
+  import { startCheckPrices, stopCheckPrices } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-  import { AccountTypeCategory, NetworkType, debug_log, getInstances, isEncryptedData,
-    type CurrentlySelectedData, type Network, type YakklAccount, type YakklCurrentlySelected,
-    type YakklPrimaryAccount } from '$lib/common';
+  import { NetworkType, debug_log, getInstances, isEncryptedData,
+    type CurrentlySelectedData, type Network, type TokenData, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';
   import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';
@@ -36,6 +37,14 @@
 	import type { Blockchain } from '$lib/plugins/Blockchain';
 	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
 	import type { Provider } from '$lib/plugins/Provider';
+	import EyeIcon from './icons/EyeIcon.svelte';
+	import ProtectedValue from './ProtectedValue.svelte';
+	import { PriceManager } from '$lib/plugins/PriceManager';
+	import { createPriceUpdater } from '$lib/common/createPriceUpdater';
+	import { tokenManager } from '$lib/common/stores/tokenManager';
+	import { get } from 'svelte/store';
+	import { tokenTotals } from '$lib/common/stores/tokenTotals';
+	import { isEqual } from 'lodash-es';
 
   interface Props {
     id?: string;
@@ -109,8 +118,11 @@
   let chainId: number = $state(1);
   let formattedEtherValue: string = $state();
   let currentlySelected: YakklCurrentlySelected = $state();
-
   let isDropdownOpen = $state(false);
+
+  let priceManager = new PriceManager();
+  let priceUpdater = createPriceUpdater(priceManager, 30000);
+  let tokens: TokenData[] = [];
 
   //////// Toast
   let toastStatus = $state(false);
@@ -142,6 +154,10 @@
   //   }
   // });
 
+  // const totalTokenValue = derived(yakklCombinedTokenStore, (tokens) =>
+  //   tokens.reduce((sum, token) => sum + (token.value ?? 0), 0)
+  // );
+
   $effect(() => {
     if (assetPriceValue) {
       assetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
@@ -167,6 +183,34 @@
     }
   });
 
+  // Using $effect for setup and cleanup
+  $effect.root(() => {
+    const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
+      // Only update if the tokens have actually changed
+      if (!isEqual(tokens, allTokens)) {
+        tokens = allTokens;
+        if (tokens.length > 0) {
+          priceUpdater.fetchPrices(tokens).catch(console.error);
+        }
+      }
+    });
+
+    const unsubscribePriceUpdater = priceUpdater.subscribe((updatedTokens = []) => {
+      // Only update if the values have actually changed
+      const currentTokens = get(yakklCombinedTokenStore);
+      if (!isEqual(currentTokens, updatedTokens)) {
+        tokens = updatedTokens;
+        yakklCombinedTokenStore.set(updatedTokens);
+      }
+    });
+
+    return () => {
+      unsubscribeTokenManager();
+      unsubscribePriceUpdater();
+      priceUpdater.destroy();
+    };
+  });
+
   async function updateCurrentlySelected(currentlySelected: YakklCurrentlySelected) {
     const { address, accountName, network, value } = currentlySelected.shortcuts;
 
@@ -187,6 +231,8 @@
   onMount(async () => {
     try {
       if (browserSvelte) {
+        startPricingChecks();
+
         toastStatus = false;
         if (!$yakklCurrentlySelectedStore) yakklCurrentlySelectedStore.set(await getYakklCurrentlySelected());
         if (!yakklMiscStore) yakklMiscStore = getMiscStore();
@@ -215,12 +261,12 @@
 
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
           $yakklCurrentlySelectedStore.shortcuts.value = val ?? 0n;
+          // updateValuePriceFiat(); // this is async so let it update whenever it can
 
           clipboard = new ClipboardJS('.clip');
-          if (currentlySelected.shortcuts.value) updateValuePriceFiat();
+          if ($yakklCurrentlySelectedStore.shortcuts.value) updateValuePriceFiat();
 
           // updateUpgradeButton();
-          startPricingChecks();
         }
       }
     } catch (e) {
@@ -621,7 +667,7 @@
 
   async function handleImport() {
     try {
-      debug_log('handleImport - selected');
+      // debug_log('handleImport - selected');
     } catch (e) {
       console.log(e);
     }
@@ -675,8 +721,6 @@
         await wallet.setChainId(chainId);
         const val = await wallet.getBalance(address);
         return val;
-      } else {
-        console.trace('getBalance (no wallet): ChainId or wallet is not defined.');
       }
       return null;
     } catch (e) {
@@ -865,8 +909,8 @@
   <div style="z-index: 4; background-image: url('/images/{card}'); " class="visible print:hidden relative m-2 ml-0 mr-0 h-[261px] rounded-xl">
     <div class="grid grid-rows-5 gap-1 h-full">
       <div class="absolute left-4 bottom-1">
-        <span class="text-gray-100 text-lg">Asset Price:</span>
-        <span class="ml-2 text-gray-100 text-lg">{assetPrice} {currencyLabel}</span>
+        <span class="text-gray-100 text-md">Asset Market Price:</span>
+        <span class="ml-2 text-gray-100 text-md">{assetPrice} {currencyLabel}</span>
       </div>
 
       <SpeedDial defaultClass="absolute right-1 bottom-1 z-10 bg-primary rounded-full" pill={false} tooltip="none" placement='bottom'>
@@ -913,21 +957,58 @@
         </SpeedDialButton>
       </SpeedDial>
 
-      <!-- <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
+      <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
         <div class="flex text-center justify-left w-[410px]">
-          <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">{$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}</span>
+          <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">
+            {$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}
+          </span>
           {#if showTestNetworks}
           <span class="flex h-6 absolute top-2 right-8">
-            <div class="dropdown dropdown-bottom">
+            <div class="dropdown dropdown-bottom relative">
               {#if networkLabel.toLowerCase() === 'mainnet'}
-              <label tabindex="0" role="button" class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">LIVE-{networkLabel}</label>
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+              <!-- svelte-ignore a11y_label_has_associated_control -->
+              <button
+                onclick={toggleDropdown}
+                class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+              >
+                LIVE-{networkLabel}
+              </button>
               {:else}
-              <label tabindex="0" role="button" class="w-28 px-3 py-1 bg-green-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-green-700 hover:shadow-lg focus:bg-green-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-green-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">Test-{networkLabel}</label>
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+              <!-- svelte-ignore a11y_label_has_associated_control -->
+              <button
+                onclick={toggleDropdown}
+                class="w-28 px-3 py-1 bg-green-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-green-700 hover:shadow-lg focus:bg-green-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-green-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+              >
+                Test-{networkLabel}
+              </button>
               {/if}
-              <ul tabindex="0" class="dropdown-content menu bg-opacity-90 text-base z-50 float-left py-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-gray-800">
+              {#if isDropdownOpen}
+              <ul
+                class="absolute top-full left-0 dropdown-content menu bg-opacity-70 text-base z-50 float-left py-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-gray-800"
+              >
                 {#each networks as network}
                 <li>
-                  <div role="button" onclick={() => handleNetworkTypeChange(network)} class="dropdown-item text-sm py-2 px-4 font-normal w-full whitespace-nowrap bg-transparent text-gray-300 hover:bg-gray-500 hover:text-white focus:text-white focus:bg-gray-700">
+                    <!-- role="button"
+                    tabindex="0"
+                                  onkeydown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleNetworkTypeChange(network);
+                      }
+                    }}
+                    -->
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div
+                    role="button"
+                    tabindex="0"
+                    class="dropdown-item text-sm py-2 px-4 font-normal w-full whitespace-nowrap bg-transparent text-gray-300 hover:bg-gray-500 hover:text-white focus:text-white focus:bg-gray-700"
+                    onclick={() => handleNetworkTypeChange(network)}
+                  >
                     {#if network.type === NetworkType.MAINNET}
                     LIVE-{network.name}
                     {:else}
@@ -937,124 +1018,21 @@
                 </li>
                 {/each}
               </ul>
+              {/if}
             </div>
           </span>
           {:else}
           <span class="flex h-6 absolute top-2 right-8">
-            <label class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap">LIVE-{networkLabel}</label>
+            <!-- svelte-ignore a11y_label_has_associated_control -->
+            <label
+              class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
+            >
+              LIVE-{networkLabel}
+            </label>
           </span>
           {/if}
         </div>
-      </nav> -->
-
-<!-- <nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
-  <div class="flex text-center justify-left w-[410px]">
-    <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">
-      {$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}
-    </span>
-    <button
-      onclick={toggleDropdown}
-      class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-    >
-      {networkLabel.toLowerCase() === 'mainnet' ? `LIVE-${networkLabel}` : `Test-${networkLabel}`}
-    </button>
-    {#if isDropdownOpen}
-    <ul
-      class="absolute left-0 z-50 w-full py-2 mt-1 text-base bg-gray-800 rounded-lg shadow-lg"
-    >
-      {#each networks as network}
-      <li>
-        <div
-          onclick={() => handleNetworkTypeChange(network)}
-          class="block px-4 py-2 text-gray-300 hover:bg-gray-500 hover:text-white cursor-pointer"
-        >
-          {network.type === NetworkType.MAINNET ? `LIVE-${network.name}` : `Testnet-${network.name}`}
-        </div>
-      </li>
-      {/each}
-    </ul>
-    {/if}
-  </div>
-</nav> -->
-
-
-<nav id="{id}" class="print:hidden visible relative row-span-1 inset-x-0 navbar navbar-expand-sm p-2 flex items-center w-full justify-between">
-  <div class="flex text-center justify-left w-[410px]">
-    <span class="text-gray-100 text-center dark:text-white text-4xl ml-2 -mt-6 font-bold">
-      {$yakklCurrentlySelectedStore && $yakklCurrentlySelectedStore.shortcuts.network.blockchain}
-    </span>
-    {#if showTestNetworks}
-    <span class="flex h-6 absolute top-2 right-8">
-      <div class="dropdown dropdown-bottom relative">
-        {#if networkLabel.toLowerCase() === 'mainnet'}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <button
-          onclick={toggleDropdown}
-          class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
-        >
-          LIVE-{networkLabel}
-        </button>
-        {:else}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <button
-          onclick={toggleDropdown}
-          class="w-28 px-3 py-1 bg-green-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-green-700 hover:shadow-lg focus:bg-green-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-green-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
-        >
-          Test-{networkLabel}
-        </button>
-        {/if}
-        {#if isDropdownOpen}
-        <ul
-          class="absolute top-full left-0 dropdown-content menu bg-opacity-70 text-base z-50 float-left py-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-gray-800"
-        >
-          {#each networks as network}
-          <li>
-              <!-- role="button"
-              tabindex="0"
-                            onkeydown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  handleNetworkTypeChange(network);
-                }
-              }}
-              -->
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-              role="button"
-              tabindex="0"
-              class="dropdown-item text-sm py-2 px-4 font-normal w-full whitespace-nowrap bg-transparent text-gray-300 hover:bg-gray-500 hover:text-white focus:text-white focus:bg-gray-700"
-              onclick={() => handleNetworkTypeChange(network)}
-            >
-              {#if network.type === NetworkType.MAINNET}
-              LIVE-{network.name}
-              {:else}
-              Testnet-{network.name}
-              {/if}
-            </div>
-          </li>
-          {/each}
-        </ul>
-        {/if}
-      </div>
-    </span>
-    {:else}
-    <span class="flex h-6 absolute top-2 right-8">
-      <!-- svelte-ignore a11y_label_has_associated_control -->
-      <label
-        class="w-28 px-3 py-1 bg-red-800/80 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-red-700 hover:shadow-lg focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-red-800 active:shadow-lg active:text-white transition duration-150 ease-in-out flex items-center whitespace-nowrap"
-      >
-        LIVE-{networkLabel}
-      </label>
-    </span>
-    {/if}
-  </div>
-</nav>
-
+      </nav>
 
       <div class="ml-4">
         <div class="row-span-2 -mt-4">
@@ -1115,8 +1093,13 @@
         </div>
 
         <div class="flex text-xl justify-center mt-4 text-gray-100 dark:text-white row-span-1">
-          <span data-bs-toggle="tooltip" data-bs-placement="top" title="{shortcutsValue.toEtherString()}">{formattedEtherValue}</span>
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="{shortcutsValue.toEtherString()}">
+            <ProtectedValue value={formattedEtherValue} placeholder="*******" />
+          </span>
           <span class="ml-2">{symbolLabel}</span>
+          <div class="relative">
+            <EyeIcon />
+          </div>
         </div>
 
         <div class="flex justify-center text-lg text-gray-100 dark:text-white -mt-1 row-span-1 -ml-[2.3rem]">
@@ -1131,9 +1114,15 @@
             </svg>
             {/if}
           </span>
-          <span class="">{valueFiat}</span>
+          <ProtectedValue value={valueFiat} placeholder="*******" />
           <span class="ml-2">{currencyLabel}</span>
         </div>
+
+        <div class="flex justify-center text-lg text-gray-100 dark:text-white mt-2 row-span-1" style="max-width: 300px; overflow-x: auto; white-space: nowrap;">
+          <span>Account Portfolio: </span>
+          <span class="ml-2"><ProtectedValue value={$tokenTotals.formattedTotal} placeholder="*******" /></span>
+        </div>
+
       </div>
     </div>
   </div>

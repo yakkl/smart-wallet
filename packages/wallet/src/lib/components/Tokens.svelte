@@ -1,10 +1,11 @@
 <script lang="ts">
   import {
     setYakklTokenDataCustomStorage,
+    yakklCombinedTokenStore,
     yakklCurrentlySelectedStore,
     yakklTokenDataCustomStore,
   } from '$lib/common/stores';
-  import { debug_log, getInstances, type TokenData } from '$lib/common';
+  import { getInstances, type TokenData } from '$lib/common';
   import Modal from './Modal.svelte';
   import TokenList from './TokenList.svelte';
   import TokenForm from './TokenForm.svelte';
@@ -12,7 +13,6 @@
   import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
   import type { Provider } from '$lib/plugins/Provider';
   import { getTokenBalance } from '$lib/utilities/balanceUtils';
-	// import { combinedTokenStore } from '$lib/common/derivedStores';
 
   interface Props {
     show?: boolean;
@@ -37,9 +37,9 @@
   });
 
   // Subscribe to the combined token store for display
-  // $effect(() => {
-  //   tokens = $yakklCombinedTokenStore; // Reactive combined store
-  // });
+  $effect(() => {
+    tokens = $yakklCombinedTokenStore; // Reactive combined store
+  });
 
   function handleTokenSelect(selectedToken: TokenData) {
     if (onTokenSelect !== null) {
@@ -49,10 +49,7 @@
   }
 
   async function handleTokenAdd(token: TokenData) {
-    debug_log('Adding token (outside):', token);
-
     if (token?.customDefault === 'custom') {
-      debug_log('Adding custom token (inside):', token, $yakklCurrentlySelectedStore.shortcuts.address, provider, tokenService);
       const balance = await getTokenBalance(
         token,
         $yakklCurrentlySelectedStore.shortcuts.address,
@@ -62,7 +59,6 @@
       token.balance = balance;
       yakklTokenDataCustomStore.update((tokens) => [...tokens, token]);
       setYakklTokenDataCustomStorage($yakklTokenDataCustomStore);
-      debug_log('Custom token added:', $yakklTokenDataCustomStore);
     }
     showAddModal = false;
   }

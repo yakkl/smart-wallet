@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TokenData } from '$lib/common/interfaces';
 	import { formatPrice, getTokenChange } from '$lib/utilities/utilities';
+	import ProtectedValue from './ProtectedValue.svelte';
 	import * as HoverCard from './ui/hover-card';
 
   interface Props {
@@ -34,13 +35,13 @@
 <HoverCard.Root openDelay={300}>
   <HoverCard.Trigger>
 <div
-  class="flex flex-col items-center justify-center p-2 w-full h-full rounded-lg border shadow-md {className}">
-  <img src={token.logoURI} alt="{token.symbol}" class={isLarge ? 'w-14 h-14' : 'w-8 h-8'} />
+  class="flex flex-col items-center justify-center p-1 w-full h-full rounded-lg border shadow-md {className}">
+  <img src={token.logoURI} alt="{token.symbol}" class="{isLarge ? 'w-14 h-14' : 'w-8 h-8'} rounded-full" />
   <h3 class="font-bold mt-2 text-md">{token.symbol}</h3>
-  <p class="text-gray-600 mt-1 text-xs">{balance}</p>
+  <p class="text-gray-500 mt-1 text-sm">Value: <span><ProtectedValue value={valueFormatted} placeholder="*******" /></span></p>
   {#if isLarge}
-    <p class="text-gray-500 mt-1 text-sm">Price: ${price}</p>
-    <p class="text-gray-500 mt-1 text-sm">Value: {valueFormatted}</p>
+    <p class="text-gray-500 mt-1 text-sm">Price: $<span><ProtectedValue value={price.toString()} placeholder="*******" /></span></p>
+    <p class="text-gray-600 mt-1 text-xs">Qty: <span><ProtectedValue value={balance.toString()} placeholder="*******" /></span></p>
   {/if}
 </div>
   </HoverCard.Trigger>
@@ -55,9 +56,9 @@
           <img src={token.logoURI} alt={token.symbol} class="w-8 h-8" />
           <span class="font-semibold leading-6">{token.name} - {token.symbol}</span>
         </p>
-        <p>Price: ${price}</p>
-        <p>Value: {valueFormatted}</p>
-        <p>Quantity: {balance}</p>
+        <p>Price: $<span><ProtectedValue value={price.toString()} placeholder="*******" /></span></p>
+        <p>Value: <span><ProtectedValue value={valueFormatted} placeholder="*******" /></span></p>
+        <p>Quantity: <span><ProtectedValue value={balance.toString()} placeholder="*******" /></span></p>
         <p>Change: <span class={percentChangeColor}>{percentChange ? percentChange : '--'}%</span></p>
       </div>
     </div>
