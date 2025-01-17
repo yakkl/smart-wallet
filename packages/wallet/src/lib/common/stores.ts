@@ -214,11 +214,11 @@ export function storageChange(changes: any) {
 			setYakklBlockedListStore(changes.yakklBlockedList.newValue);
 		}
     if (changes.yakklTokenDataCustom) {
-      debug_log('storageChange yakklTokenDataCustom', changes.yakklTokenDataCustom.newValue);
+      // debug_log('storageChange yakklTokenDataCustom', changes.yakklTokenDataCustom.newValue);
 			// setYakklTokenDataCustomStore(changes.yakklTokenDataCustom.newValue);
 		}
     if (changes.yakklTokenData) {
-      debug_log('storageChange yakklTokenData', changes.yakklTokenData.newValue);
+      // debug_log('storageChange yakklTokenData', changes.yakklTokenData.newValue);
 			// setYakklTokenDataStore(changes.yakklTokenData.newValue);
 		}
 	} catch (error) {

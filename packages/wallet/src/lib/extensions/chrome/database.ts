@@ -1,3 +1,5 @@
+import type { YakklBlocked } from '$lib/common/interfaces';
+import { getObjectFromLocalStorage } from '$lib/common/storage';
 import Dexie from 'dexie';
 
 interface DomainEntry {
@@ -19,6 +21,7 @@ class BlacklistDatabase extends Dexie {
 const db = new BlacklistDatabase();
 
 export async function initializeDatabase(override = false) {
+  try {
     if (override) await db.domains.clear();
     const count = await db.domains.count();
     if (count === 0) {
@@ -26,9 +29,32 @@ export async function initializeDatabase(override = false) {
         const data = await response.json();
         await db.domains.bulkAdd(data.blacklist.map((domain: string) => ({ domain })));
     }
+  } catch(error) {
+    console.log("Warning initializing database", error);
+  }
 }
 
 export async function isBlacklisted(domain: string): Promise<boolean> {
+  try {
     const result = await db.domains.get({ domain });
     return !!result;
+  } catch(error) {
+    console.log("Warning checking blacklist", error);
+    return false;
+  }
+}
+
+export async function checkDomain(domain: any): Promise<boolean | undefined> {
+  try {
+    const yakklBlockList = await getObjectFromLocalStorage("yakklBlockList") as YakklBlocked[];
+    if (yakklBlockList) {
+      if (yakklBlockList.find((obj: { domain: any; }) => {return obj.domain === domain;})) {
+        return Promise.resolve(true);
+      }
+    }
+    return Promise.resolve(false);
+  } catch (e) {
+    console.log(e);
+    Promise.reject(e);
+  }
 }

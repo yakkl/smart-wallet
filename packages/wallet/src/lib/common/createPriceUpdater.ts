@@ -1,7 +1,6 @@
 import { writable, get } from 'svelte/store';
 import type { TokenData } from './interfaces';
 import type { PriceManager } from '$lib/plugins/PriceManager';
-import { EthereumBigNumber } from './bignumber-ethereum';
 
 // Utility for debouncing
 function debounce(func: (...args: any[]) => void, delay: number) {
@@ -40,15 +39,23 @@ export function createPriceUpdater(priceManager: PriceManager, fetchInterval = 3
 
   async function fetchTokenData(token: TokenData, priceManager: PriceManager): Promise<TokenData> {
     const pair = `${token.symbol}-USD`;
-
     try {
       const marketPrice = await priceManager.getMarketPrice(pair);
       const price = marketPrice?.price ?? 0;
       const value = token.balance
-        ? Number(EthereumBigNumber.from(token.balance).toBigInt() * EthereumBigNumber.from(price).toBigInt())
+        ? Number(token.balance) * price
         : 0;
-
-      return { ...token, price: marketPrice || null, value };
+      // const retVal = { ...token, price: marketPrice ?? null, value };
+      // return retVal;
+      return {
+        ...token,
+        price: marketPrice ?? null,
+        value,
+        formattedValue: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(value)
+       };
     } catch (error) {
       console.log(`Failed to fetch price for token ${token.symbol}`, error);
       return token; // Return token as is on failure

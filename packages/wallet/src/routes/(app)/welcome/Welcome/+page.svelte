@@ -20,7 +20,7 @@
   import type { Blockchain } from "$lib/plugins/Blockchain";
   import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
   import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
-	import { getYakklCurrentlySelectedStore, yakklTokenDataStore, yakklCombinedTokenStore } from "$lib/common/stores";
+	import { getYakklCurrentlySelectedStore, yakklTokenDataStore, yakklCombinedTokenStore, yakklTokenDataCustomStore } from "$lib/common/stores";
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
