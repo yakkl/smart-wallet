@@ -1,9 +1,7 @@
-<!-- @migration-task Error while migrating Svelte code: can't migrate `let error = false;` to `$state` because there's a variable named state.
-     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
   // import { browser as browserSvelte } from '$app/environment';
-  import { getSettings, yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, getPreferences, setPreferencesStorage, setSettingsStorage, setMiscStore } from '$lib/common/stores';
+  import { getSettings, yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, getPreferences, setPreferencesStorage, setSettingsStorage, setMiscStore, yakklSettingsStore } from '$lib/common/stores';
   import { profile as profileDefaults, yakklPreferences as yakklPreferencesDefaults, yakklCurrentlySelected as yakklCurrentlySelectedDefaults } from '$lib/models/dataModels';
   import { encryptData, digestMessage, decryptData } from '$lib/common/encryption';
   // import { GoogleAuth } from '$lib/index';
@@ -29,7 +27,7 @@
 	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	// import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
 	// import ImportPhrase from '$lib/components/ImportPhrase.svelte';
-	import { sendNotification } from '$lib/common/notifications';
+	import { sendNotificationMessage } from '$lib/common/notifications';
 	import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 
   let browser_ext: Browser;
@@ -325,7 +323,7 @@
 
         await loadDefaultTokens();
 
-        sendNotification('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
+        sendNotificationMessage('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
 
         showRegistrationOption = true;
       }
@@ -336,7 +334,6 @@
       console.log(errorValue);
     }
   }
-
 
   const { form, errors, state, isValid, handleChange, handleSubmit } = createForm({
     initialValues: { userName: "", password: "", confirmPassword: "", pincode: "", email: "", accountName: "Primary Portfolio Account"},

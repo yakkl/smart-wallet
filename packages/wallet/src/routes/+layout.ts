@@ -5,22 +5,14 @@
 
 export const prerender = true;
 
-// import { yakklSettingsStore } from "$lib/common/stores";
 import { browserSvelte } from '$lib/utilities/browserSvelte';
-// import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
-import { setIconLock } from '$lib/utilities/utilities.js';
 import { YAKKL_INTERNAL } from "$lib/common/constants";
 import { wait } from "$lib/common/utils";
-// import type { Settings } from '$lib/common/interfaces';
-
 import type { Browser, Runtime } from 'webextension-polyfill';
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-import type { Settings } from '$lib/common/interfaces';
-import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-import { dateString } from '$lib/common/datetime';
-// import { dateString } from '$lib/common/datetime';
+import { handleLockDown } from '$lib/common/handlers';
 
-let browser_ext: Browser;
+let browser_ext: Browser | null = null;
 if (browserSvelte) {
   browser_ext = getBrowserExt();
 }
@@ -34,36 +26,22 @@ async function initializeExtension() {
       port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
       if (port) {
         port.onDisconnect.addListener(async (event: any) => {
-          await setIconLock();
-          const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-          if (yakklSettings) {
-            yakklSettings.isLocked = true;
-            yakklSettings.isLockedHow = 'port_disconnect';
-            yakklSettings.updateDate = dateString();
-            await setObjectInLocalStorage('settings', yakklSettings);
-          }
+          handleLockDown();
           port = undefined;
           if (event?.error) {
             console.log(event.error?.message);
           }
         });
       } else {
-        console.log('Port is trying again 1 second...');
+        console.log('[INFO]: Port is trying again 1 second...');
         wait(1000).then();
         port = browser_ext.runtime.connect({name: YAKKL_INTERNAL}); // Can look at being more efficient later here!
         if (port) {
           port.onDisconnect.addListener(async (event: any) => {
-            await setIconLock();
-            const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-            if (yakklSettings) {
-              yakklSettings.isLocked = true;
-              yakklSettings.isLockedHow = 'port_disconnect';
-              yakklSettings.updateDate = dateString();
-              await setObjectInLocalStorage('settings', yakklSettings);
-            }
+            handleLockDown();
             port = undefined;
             if (event?.error) {
-              console.log(event.error?.message);
+              console.log('[ERROR]:', event.error?.message);
             }
           });
         } else {
@@ -71,29 +49,6 @@ async function initializeExtension() {
           browser_ext.runtime.reload(); // This is here to try and fix the issue of the port not connecting
         }
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      // window.addEventListener('beforeunload', async function () {
-      //   try {
-      //     if (port) {
-      //       port.postMessage('close');
-      //       port.disconnect();
-      //     }
-      //     setIconLock();
-
-      //     const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-      //     yakklSettings.isLocked = true;
-      //     yakklSettings.isLockedHow = 'window_exit';
-      //     yakklSettings.updateDate = dateString();
-      //     yakklSettingsStore.set(yakklSettings);
-      //     await setObjectInLocalStorage('settings', yakklSettings);
-
-      //   } catch (e) {
-      //     console.log(e);
-      //   } finally {
-      //     setIconLock();
-      //   }
-      // });
     }
   } catch(e) {
     console.log(e);

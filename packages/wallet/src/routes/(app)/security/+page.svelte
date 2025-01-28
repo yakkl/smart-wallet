@@ -14,7 +14,6 @@
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
-  import { handleOnMessage } from "$lib/common/handlers";
 	import EmergencyKitModal from "$lib/components/EmergencyKitModal.svelte";
 
   let browser_ext: Browser;
@@ -26,27 +25,6 @@
   let showComingSoon = $state(false);
   let showPin = $state(false);
   let showEmergencyKit = $state(false);
-
-
-  onMount(() => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.addListener(handleOnMessage);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
-
-  onDestroy(() => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.removeListener(handleOnMessage);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
 
   if (browserSvelte) {
     getSettings().then(result => {

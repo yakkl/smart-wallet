@@ -21,7 +21,6 @@
 	import PincodeModal from '$lib/components/PincodeVerify.svelte';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-  import { handleOnMessage } from '$lib/common/handlers';
 
   import type { TransactionState, GasState, UIState, ValueState, ConfigState } from '$lib/common/stateInterfaces';
 
@@ -257,8 +256,6 @@
 				handleRecycle();
 				loadContacts();
 
-				browser_ext.runtime.onMessage.addListener(handleOnMessage);
-
 				checkValue();
 
 				// May can remove this later if we still want to enable all tabs
@@ -283,9 +280,6 @@
 
 	onDestroy(() => {
 		try {
-			if (browserSvelte) {
-				browser_ext.runtime.onMessage.removeListener(handleOnMessage);
-			}
 			clearValues(); // Clear all values
 			stopCheckGasPrices();
 		} catch(e) {

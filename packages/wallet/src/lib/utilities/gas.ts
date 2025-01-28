@@ -51,6 +51,10 @@ export function startCheckGasPrices(provider = 'blocknative', seconds = 5) {
     }
   } catch (error) {
     console.log(error);
+    if (gasPriceIntervalID && Number(gasPriceIntervalID) > 0) {
+      clearInterval(gasPriceIntervalID);
+      gasPriceIntervalID = undefined;
+    }
   }
 }
 

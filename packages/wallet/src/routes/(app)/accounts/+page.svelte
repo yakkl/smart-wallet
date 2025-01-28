@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PRIVATEKEY, PATH_EXPORT, PATH_IMPORT_WATCH, YAKKL_ZERO_ADDRESS, PATH_ACCOUNT_MAINTENANCE, PATH_LOCK } from "$lib/common/constants";
   import { getYakklCurrentlySelected } from '$lib/common/stores';
@@ -8,11 +8,10 @@
   import Back from "$lib/components/Back.svelte";
 	import ButtonGrid from "$lib/components/ButtonGrid.svelte";
   import ButtonGridItem from "$lib/components/ButtonGridItem.svelte";
-  import { handleOnMessage } from '$lib/common/handlers';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
-	import { routeCheckWithSettings } from '$lib/common/routes';
+	// import { routeCheckWithSettings } from '$lib/common/routes';
 	import type { YakklAccount, YakklCurrentlySelected, YakklWatch } from '$lib/common';
 	import ImportWatchAccount from '$lib/components/ImportWatchAccount.svelte';
 	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
@@ -37,24 +36,13 @@
     try {
       if (browserSvelte) {
         currentlySelected = await getYakklCurrentlySelected();
-        browser_ext.runtime.onMessage.addListener(handleOnMessage);
       }
     } catch (e) {
       console.log(e);
     }
   });
 
-  onDestroy(() => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.removeListener(handleOnMessage);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
-
-  routeCheckWithSettings();
+  // routeCheckWithSettings();
 
   function handleAccounts(e: any) {
     if (browserSvelte) {

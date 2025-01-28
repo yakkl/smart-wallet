@@ -6,3 +6,4 @@ export function extractDomain(url: string | URL): string {
 // export const browser_ext = typeof browser !== "undefined" ? browser : chrome;
 import browser from 'webextension-polyfill';
 export const browser_ext = browser;
+

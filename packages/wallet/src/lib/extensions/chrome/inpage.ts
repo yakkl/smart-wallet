@@ -162,9 +162,7 @@ class EthereumProviderManager {
   }
 }
 
-
 export class YakklWalletProvider extends EventEmitter {
-
   constructor() {
     super();
     this._requestId = 0;
@@ -183,7 +181,6 @@ export class YakklWalletProvider extends EventEmitter {
       if (event?.data?.type === 'YAKKL_RESPONSE' && event.origin === windowOrigin) {
         try {
           const { id, error } = event.data;
-
           const handlers = this._pendingRequests.get(id);
           if (handlers) {
             this._pendingRequests.delete(id);
@@ -262,14 +259,12 @@ export class YakklWalletProvider extends EventEmitter {
     }
   }
 
-
   // Private methods
   private disconnect(): void {
     this._connected = false; // The dApp will need to reconnect
     this.selectedAddresses = [];
     this.emit('disconnect', this.chainId);
   }
-
 
   private async sendRequest(method: string, params: unknown[] | object): Promise<unknown> {
     let promise;
@@ -401,7 +396,6 @@ export class YakklWalletProvider extends EventEmitter {
   //   case "web3_clientVersion":
   //   case "web3_sha3":
 
-
   // All of these methods do not flow through to the background.js service
   private handleChainId(): number {
     try {
@@ -468,7 +462,6 @@ export class YakklWalletProvider extends EventEmitter {
     // It is getting the block info so no account is needed
     return this.sendRequest('eth_estimateGas', params);
   }
-
 
   // Result handler
   private handleResults(event: MessageEvent): unknown {
@@ -581,36 +574,7 @@ export class YakklWalletProvider extends EventEmitter {
       console.log(e);
     }
   }
-
-  // ---- Deprecated methods ----:
-//   public async enable(): Promise<unknown> {
-//     console.log('enable: dApp is using a deprecated method. Please use send() instead.');
-
-//     return await this.request({method: 'eth_requestAccounts'});
-//   };
-
-//   public async send(request: RequestArguments): Promise<unknown> {
-//     console.log('send: dApp is using a deprecated method. Please use send() instead.');
-
-//     return await this.request(request);
-//   }
-
-//   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//   public async sendAsync(request: RequestArguments, callback: unknown): Promise<unknown> {
-//     try {
-//       console.log('sendAsync: dApp is using a deprecated method. Please use send() instead.');
-
-//       this.checkConnection();
-//       const result = await this.request(request);
-//       return result;
-//     } catch (e) {
-//       console.log(e);
-//       throw e;
-//     }
-//   }
-
 }
-
 
 // Initial setting of window.ethereum before the proxy
 export const windowProvider = {
@@ -631,7 +595,6 @@ declare global {
 let cachedEthereumProviderProxy: LegacyWindowEthereum;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let cachedCurrentProvider: LegacyWalletProvider;
-
 
 // Default - YakklWalletProvider is passed here...
 function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
@@ -710,16 +673,15 @@ eip6963ProviderDetail.provider.announce(); // Made 'announce' a public method pa
 
 window.yakkl = eip6963ProviderDetail;
 
-
 window.addEventListener('DOMContentLoaded', () => {
   try {
     // Legacy - EIP-1193 provider
     setGlobalProvider(windowProvider);
     // EIP-6963 provider
     eip6963ProviderDetail.provider.announce();
+    // Dispatch an event to signal Ethereum provider initialization
+    window.dispatchEvent(new Event('ethereum#initialized'));
     } catch (e) {
     console.log('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e);
   }
 });
-
-
