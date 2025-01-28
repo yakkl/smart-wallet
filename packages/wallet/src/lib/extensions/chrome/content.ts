@@ -3,7 +3,6 @@
 // Content script referenced in the manifest.json file. This gets loaded automatically within the context of every web page.
 // It injects a '<script>' tag with the 'src' being the '/js/inpage.js'. The inpage.js reference we be at the top of every web page.
 
-
 import { Duplex } from 'readable-stream';
 import { YAKKL_EXTERNAL, YAKKL_PROVIDER_EIP6963, YAKKL_PROVIDER_ETHEREUM } from '$lib/common/constants';
 
@@ -12,21 +11,60 @@ import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import { getIcon } from '$lib/common/icon';
 import { extractFQDN } from '$lib/common/misc';
 import type { MetaDataParams } from '$lib/common/interfaces';
+// import { PortManager } from './ports';
+
+// EIP-6963
+
+class PortDuplexStream extends Duplex {
+  private port: RuntimePort;
+
+  constructor(port: RuntimePort) {
+    super({ objectMode: true });
+
+    // console.log('PortDuplexStream constructor', port);
+    this.port = port;
+    this.port.onMessage.addListener(this._onMessage.bind(this));
+    this.port.onDisconnect.addListener(() => this.destroy());
+  }
+
+  _read() {
+    // No-op
+  }
+
+  _write(message: any, _encoding: string, callback: () => void) {
+    this.port.postMessage(message);
+    callback();
+  }
+
+  _onMessage(message: any) {
+    this.push(message);
+  }
+
+  _destroy(err: Error | null, callback: (error: Error | null) => void) {
+    this.port.disconnect();
+    callback(err);
+  }
+}
+
+
 const browser_ext = getBrowserExt();
 
 // NOTE: console.log output will only show up in the dApp console. Background.js only shows up in the YAKKL® Smart Wallet console!
 type RuntimePort = Runtime.Port;
-
 
 // We only want to recieve events from the inpage (injected) script
 const windowOrigin = window.location.origin;
 let portExternal: RuntimePort | undefined = undefined;
 
 
+// Usage: (WIP)
+// const portManager = new PortManager("YAKKL_EXTERNAL");
+// portManager.createPort();
+
 function createPort( name: string ) {
   try {
     // Should only be one. All frames use the same port OR there should only be an injection into the top frame (one content script per tab)
-    if (portExternal) {
+    if (portExternal || !browser_ext) {
       return;
     }
     portExternal = browser_ext.runtime.connect({
@@ -41,7 +79,7 @@ function createPort( name: string ) {
   }
 }
 
-const onMessageListener = (function() {
+function onMessageListener () {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   //@ts-ignore
   return function(response) {
@@ -54,15 +92,14 @@ const onMessageListener = (function() {
       window.postMessage({id: response.id, method: response.method, error: error, type: 'YAKKL_RESPONSE'}, windowOrigin);
     }
   };
-})();
-
+};
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onDisconnectListener( event ) {
   try {
-    if ( browser_ext.runtime.lastError ) {
+    if ( !browser_ext && browser_ext.runtime.lastError ) {
       console.log( 'content.js - lastError:', browser_ext.runtime.lastError );
     }
     if ( portExternal ) {
@@ -74,13 +111,12 @@ function onDisconnectListener( event ) {
       }
     }
     portExternal = undefined;
-    createPort(YAKKL_EXTERNAL);
+    createPort(YAKKL_EXTERNAL); // May want to reload the port here. This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code
     // This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code
   } catch ( error ) {
     console.log( 'content.js - error', error );
   }
 }
-
 
 // This is the main entry point for the content script
 try {
@@ -89,7 +125,7 @@ try {
     const script = document.createElement( "script" );
     script.setAttribute( "async", "false" );
     script.src = browser_ext.runtime.getURL( "/ext/inpage.js" );  // May want to pull in inpage.js during build instead of runtime to make sure it's registered quickly and first
-    script.id = YAKKL_PROVIDER_ETHEREUM;  // TODO: May want to change to something more dynamic...?
+    script.id = YAKKL_PROVIDER_ETHEREUM;
     script.onload = () => {
       script.remove();
     };
@@ -101,7 +137,7 @@ try {
   // View all of the message data that was sent with the global window.postMessage({data}, URI)
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   //@ts-ignore
-  const requestListener = ( event ) => {
+  function requestListener( event ) {
     try {
       if (event?.source !== window) return;
 
@@ -153,56 +189,22 @@ try {
   }
 
   window.addEventListener( 'message', requestListener);
+
+  // may want to not attempt to create if !browser_ext
+  const port = browser_ext.runtime.connect({ name: YAKKL_PROVIDER_EIP6963 });
+  const contentStream = new PortDuplexStream(port);
+
+  window.addEventListener('message', (event: MessageEvent) => {
+    if (event.source === window && event.data && event.data.type === 'YAKKL_REQUEST:EIP6963') {
+      contentStream.write(event.data);
+    }
+  });
+
+  contentStream.on('data', (data) => {
+    window.postMessage(data, window.location.origin);
+  });
+
 } catch ( e ) {
   console.log( 'content.js - YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e );
 }
-
-
-// EIP-6963
-
-
-class PortDuplexStream extends Duplex {
-  private port: RuntimePort;
-
-  constructor(port: RuntimePort) {
-    super({ objectMode: true });
-
-    console.log('PortDuplexStream constructor', port);
-    this.port = port;
-    this.port.onMessage.addListener(this._onMessage.bind(this));
-    this.port.onDisconnect.addListener(() => this.destroy());
-  }
-
-  _read() {
-    // No-op
-  }
-
-  _write(message: any, _encoding: string, callback: () => void) {
-    this.port.postMessage(message);
-    callback();
-  }
-
-  _onMessage(message: any) {
-    this.push(message);
-  }
-
-  _destroy(err: Error | null, callback: (error: Error | null) => void) {
-    this.port.disconnect();
-    callback(err);
-  }
-}
-
-const port = browser_ext.runtime.connect({ name: YAKKL_PROVIDER_EIP6963 });
-const contentStream = new PortDuplexStream(port);
-
-window.addEventListener('message', (event: MessageEvent) => {
-  if (event.source === window && event.data && event.data.type === 'YAKKL_REQUEST:EIP6963') {
-    contentStream.write(event.data);
-  }
-});
-
-
-contentStream.on('data', (data) => {
-  window.postMessage(data, window.location.origin);
-});
 

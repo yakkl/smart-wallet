@@ -3,7 +3,7 @@ import { decryptData, digestMessage } from '$lib/common/encryption';
 import type { AccountData, CurrentlySelectedData, Profile, ProfileData } from '$lib/common/interfaces';
 import { isEncryptedData } from '$lib/common/misc';
 import { getProfile, setMiscStore, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
-import { error_log } from './debug-error';
+import { debug_log, error_log } from './debug-error';
 
 export interface AccountKey {
   address: string;
@@ -19,23 +19,33 @@ export async function verify(id: string): Promise<Profile | undefined> {
     const profile = await getProfile();
     const digest = await digestMessage(id);
 
+    debug_log('verify Profile:', profile);
+
     if (!profile || !digest) {
+      debug_log('Profile or digest is undefined');
+
       return undefined; // Don't set the store to anything here
     } else {
+      debug_log('verify Profile data:', profile.data);
+
       if (isEncryptedData(profile.data)) {
-        await decryptData(profile.data, digest).then(result => {
-          profile.data = result as ProfileData;
+        debug_log('Profile data is encrypted', profile.data);
+
+        const profileData = await decryptData(profile.data, digest) as ProfileData;
+        if (profileData) {
+          profile.data = profileData;
+
+          debug_log('Profile data decrypted:', profileData);
+
           setMiscStore(digest);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        }, _reason => {
-          // TODO: send reason to sentry but keep message generic
+        } else {
           throw 'Verification failed!';
-        });
+        }
       }
       return profile;
     }
   } catch(e) {
-    console.log(e);
+    console.log('[ERROR]:', e);
     throw `Verification failed! - ${e}`;
   }
 }

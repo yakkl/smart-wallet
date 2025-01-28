@@ -29,7 +29,7 @@
 	import Warning from './Warning.svelte';
 	import PincodeVerify from './PincodeVerify.svelte';
 	import Confirmation from './Confirmation.svelte';
-	import { sendNotification } from '$lib/common/notifications';
+	import { sendNotificationMessage } from '$lib/common/notifications';
 
 	// import { multiHopQuoteAlphaRouter } from '$lib/plugins/alphaRouter';
 
@@ -707,7 +707,7 @@
       $swapStateStore.error = '';
 
       // Add more details to the notification in the future
-      await sendNotification('Swap completed successfully', 'Your swap has been completed successfully.');
+      await sendNotificationMessage('Swap completed successfully', 'Your swap has been completed successfully.');
 
       reset();
       show = false;

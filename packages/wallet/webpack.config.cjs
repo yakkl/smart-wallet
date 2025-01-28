@@ -18,21 +18,24 @@ module.exports = {
     publicPath: '/'
   },
   optimization: {
-    minimize: false,
+    minimize: true, //false
     minimizer: [
       new TerserPlugin({
         terserOptions: {
-          mangle: false,
+          mangle: true, //false,
           compress: false,
           keep_classnames: true,
           keep_fnames: true,
           output: {
-            beautify: true,
+            beautify: false, //true,
             indent_level: 2,
           },
         },
       }),
     ],
+    // splitChunks: {
+    //   chunks: 'all', // Splits common dependencies into separate files
+    // },
   },
   module: {
     rules: [

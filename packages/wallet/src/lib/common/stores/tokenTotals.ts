@@ -16,10 +16,13 @@ export type TokenTotals = {
 export const tokenTotals: Readable<TokenTotals> = derived(
   yakklCombinedTokenStore,
   (tokens) => {
-    const portfolioTotal = tokens.reduce(
-      (sum, token) => sum + (token.value ?? 0),
-      0
-    );
+      const portfolioTotal = tokens.reduce((sum, token) => {
+      const tokenValue = token?.value ?? 0; // Get the token value or default to 0
+      const newSum = sum + tokenValue; // Calculate the new sum
+      // console.log('Sum:', newSum, 'Token:', token); // Log the sum and the token
+      return newSum; // Return the updated sum for the next iteration
+    }, 0);
+
 
     const formattedTotal = new Intl.NumberFormat('en-US', {
       style: 'currency',

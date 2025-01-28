@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /* eslint-disable no-debugger */
-import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
+// import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
 
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
@@ -16,10 +16,11 @@ import { yakklVersionStore } from '$lib/common/stores';
 import { Utils } from "alchemy-sdk";
 import { ethers as ethersv6 } from 'ethers-v6';
 
-import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-import type { Browser } from 'webextension-polyfill';
-let browser_ext: Browser;
-if (browserSvelte) browser_ext = getBrowserExt();
+import { isBrowserEnv, browserSvelte, browser_ext } from '$lib/common/environment';
+// import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+// import type { Browser } from 'webextension-polyfill';
+// let browser_ext: Browser;
+// if (browserSvelte) browser_ext = getBrowserExt();
 
 
 export function getTokenChange(
@@ -389,6 +390,7 @@ export async function createHash(val: string) {
 }
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
+// Another option is to use the structuredClone function when it is available natively in the browser.
 // Do not use this for objects that have functions or circular references.
 // Do not use this on boolean - it will return null.
 export function deepCopy<T>(obj: T) {

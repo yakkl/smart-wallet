@@ -1,46 +1,55 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from '$app/environment';
   import { getYakklCurrentlySelected, setMiscStore } from '$lib/common/stores';
   import { getSettings, setSettings, setYakklCurrentlySelectedStorage } from '$lib/common/stores';
   import { setIconLock } from '$lib/utilities/utilities';
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
-	import type { Settings, YakklCurrentlySelected } from '$lib/common';
-  let browser_ext: Browser;
+  import type { Browser } from 'webextension-polyfill';
+  import { debug_log, type Settings, type YakklCurrentlySelected } from '$lib/common';
+
+  let browser_ext: Browser | null = null;
   if (browserSvelte) browser_ext = getBrowserExt();
 
+  let isUpdating = false; // Prevent concurrent executions
 
   async function update() {
+    if (isUpdating) return; // Prevent multiple updates
+    isUpdating = true;
+
     try {
-      if (browserSvelte) {
-        setMiscStore(''); // Only lives as long as the browser session
-        await setIconLock();
+      // Clear session-specific state
+      setMiscStore('');
 
-        let yakklSettings: Settings | null = await getSettings();
-        if (yakklSettings !== null) {
-          yakklSettings.isLocked = true;
-          await setSettings(yakklSettings);
-        }
+      // Set lock icon
+      await setIconLock();
 
-        let currentlySelected: YakklCurrentlySelected = await getYakklCurrentlySelected();
-        currentlySelected.shortcuts.isLocked = true;
-        await setYakklCurrentlySelectedStorage(currentlySelected); // Leaves the last current record and locks it
-        // posthog.capture('yakkl_logout', {'how': 'logout'});
-        // posthog.reset();
-        browser_ext.runtime.reload(); //???
+      // Update Yakkl settings
+      const yakklSettings: Settings | null = await getSettings();
+      if (yakklSettings) {
+        yakklSettings.isLocked = true;
+        await setSettings(yakklSettings);
       }
+
+      // Lock currently selected shortcuts
+      const currentlySelected: YakklCurrentlySelected = await getYakklCurrentlySelected();
+      if (currentlySelected) {
+        currentlySelected.shortcuts.isLocked = true;
+        await setYakklCurrentlySelectedStorage(currentlySelected);
+      }
+
+      // Reload the browser extension
+      browser_ext.runtime.reload();
     } catch (e) {
-      console.log(e);
+      console.error('[ERROR]: Logout failed:', e);
+      alert('Logout encountered an error. Please try again or refresh the extension manually.');
     } finally {
+      isUpdating = false;
       window.close();
     }
   }
 
-  (async () => {
-    if (typeof browserSvelte !== 'undefined' && browserSvelte) {
-      await update();
-    }
-  })();
+  if (browserSvelte) {
+    update();
+  }
 </script>

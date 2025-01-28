@@ -1,7 +1,7 @@
 // IMPORTANT NOTE: Edit 'constants.mustache' since it is the template for 'constants.ts'
 
 // Global shared constants. Network specifics are in the network/<whatever>/contants.js file
-export const VERSION = "1.2.9";
+export const VERSION = "1.3.1";
 
 export const YEAR = "2024"; // Instead of computing year since user can change date on system - use a constant
 
@@ -11,7 +11,7 @@ export const TIMELINES = ['1h', '24h', '7d', '30d'] as const;
 export const NUM_OF_SPLASH_IMAGES = 3;
 export const SPLASH_DELAY = 3000; //milliseconds
 export const ALERT_DELAY = 3000; //milliseconds
-export const IDLE_AUTO_LOCK_CYCLE = 3; // minutes
+export const IDLE_AUTO_LOCK_CYCLE = 1; // minutes
 
 // Retry and backoff constants
 export const DEV_MAX_RETRIES = 5;

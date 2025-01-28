@@ -6,14 +6,18 @@ import { PriceManager } from '$lib/plugins/PriceManager';
 import { KrakenPriceProvider } from '$lib/plugins/providers/price/kraken/KrakenPriceProvider';
 import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/CoingeckoPriceProvider';
 import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+import { debug_log } from "$lib/common/debug-error";
 
+// Use these globally if needed
+export let checkPricesProvider: string = 'coinbase';
+export let checkPricesInterval: number = 10; // Seconds
 
 // https://polygon.io/docs/crypto/get_v3_reference_exchanges - APIs to look at next (stocks and crypto)
 
 let pricingIntervalID: string | number | NodeJS.Timeout | undefined=undefined;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let providerCB: string; // Note: If we decided to have multiple intervals running or alarms then we can add to an array
+let providerCallback: string; // Note: If we decided to have multiple intervals running or alarms then we can add to an array
 
 // Add other providers here
 // NOTE: The original api.pro.coinbase.com is now deprecated.
@@ -24,43 +28,44 @@ const priceManager = new PriceManager([
   // Add other providers with their weights...
 ]);
 
-// The new code is in the plugins folder.
-export async function checkPricesCB() {
+// The new code is in the plugins folder - priceManager
+export async function checkPricesCallback() {
   try {
-    // if (pricingIntervalID) {
-      // if (get(yakklConnectionStore) === true) {
-        const result = await priceManager.getMarketPrice( 'ETH-USD' );
-        if ( result ) {
-          yakklPricingStore.set( {
-            provider: result.provider,
-            id: 'checkPricesCB',
-            price: result.price
-          } );
-        }
-      // } else {
-      //   console.log('checkPrices:', 'Internet connection may be down.'); // Comment this out later
-      // }
-    // }
+    if (get(yakklConnectionStore) === true) {
+      const result = await priceManager.getMarketPrice( 'ETH-USD' );
+      if ( result ) {
+        yakklPricingStore.set( {
+          provider: result.provider,
+          id: 'checkPricesCallback',
+          price: result.price
+        } );
+      }
+    } else {
+      console.log('checkPrices:', 'Internet connection may be down.'); // Comment this out later
+    }
   } catch (e) {
-    console.log(`checkPricesCB: ${e}`);
+    console.log(`checkPricesCallback: ${e}`);
   }
 }
 
-function setCBProvider(provider: string) {
-  providerCB = provider;
+function setProviderCallback(provider: string) {
+  providerCallback = provider;
 }
 
 // Use this function instead of -1 in checkPrices
 export function stopCheckPrices() {
   if (pricingIntervalID && Number(pricingIntervalID) > 0) {
     clearInterval(pricingIntervalID);
-    setCBProvider('');
+    setProviderCallback('');
     pricingIntervalID = undefined;
   } else {
     pricingIntervalID = undefined;
   }
 }
 
+export async function startPricingChecks() {
+  startCheckPrices(checkPricesProvider, checkPricesInterval);
+}
 
 export function startCheckPrices(provider = 'coinbase', seconds = 10): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -69,8 +74,8 @@ export function startCheckPrices(provider = 'coinbase', seconds = 10): Promise<v
         if ( pricingIntervalID && Number( pricingIntervalID ) > 0 ) {
           return resolve(); // Already running
         }
-        setCBProvider(provider);
-        pricingIntervalID = setInterval(checkPricesCB, 1000 * seconds);
+        setProviderCallback(provider);
+        pricingIntervalID = setInterval(checkPricesCallback, 1000 * seconds);
         resolve();
       } else {
         // Handle the case where seconds are less than or equal to 0
@@ -82,35 +87,38 @@ export function startCheckPrices(provider = 'coinbase', seconds = 10): Promise<v
       }
     } catch (e) {
       console.log(`startCheckPrices: ${e}`);
+      if (pricingIntervalID && Number(pricingIntervalID) > 0) {
+        clearInterval(pricingIntervalID);
+        pricingIntervalID = undefined;
+      }
       reject(e);
     }
   });
 }
 
-
 // TODO: Add Provider param with a switch statement to call and default to given providers
-export async function getPrices(pairs: [string]) {
-  // Add an array of the pricing providers
-  // random index for the array
-  // switch statement matching the strings in the array
-  // default to coinbase
-  // transpose results to abstract schema
+// export async function getPrices(pairs: [string]) {
+//   // Add an array of the pricing providers
+//   // random index for the array
+//   // switch statement matching the strings in the array
+//   // default to coinbase
+//   // transpose results to abstract schema
 
-  let pair: string;
+//   let pair: string;
 
-  try {
-    // Needs better gaits
-    pair = pairs[0];
-    if ( get( yakklConnectionStore ) === true ) {
-      return await getPricesCoinbase(pair.toUpperCase());
-    } else {
-      console.log('Internet Connection:', 'May be offline for getPrices method.');
-    }
-  } catch (e) {
-    console.log(`getPrices: ${e}`);
-    return [];
-  }
-}
+//   try {
+//     // Needs better gaits
+//     pair = pairs[0];
+//     if ( get( yakklConnectionStore ) === true ) {
+//       return await getPricesCoinbase(pair.toUpperCase());
+//     } else {
+//       console.log('Internet Connection:', 'May be offline for getPrices method.');
+//     }
+//   } catch (e) {
+//     console.log(`getPrices: ${e}`);
+//     return [];
+//   }
+// }
 
 // export async function getPricesEtherscan(
 //   assets: [string],
@@ -140,15 +148,15 @@ export async function getPrices(pairs: [string]) {
 //  Need Binance and a few others and then we can pool and randomly pick and if an error randomly pick again but without the one that just failed
 
 
-export async function getPricesCoinbase(pair: string) {
-  try {
-    const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // TODO: Move to a provider!
-    return json;
-  } catch (e) {
-    console.log(`getPricesCoinbase: ${e}`);
-    return [];
-  }
-}
+// export async function getPricesCoinbase(pair: string) {
+//   try {
+//     const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // TODO: Move to a provider!
+//     return json;
+//   } catch (e) {
+//     console.log(`getPricesCoinbase: ${e}`);
+//     return [];
+//   }
+// }
 
 // export async function getPricesKraken(pair: string) {
 //   try {

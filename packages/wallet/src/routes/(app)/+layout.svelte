@@ -1,16 +1,20 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from '$app/environment';
   import { setSettings, setPreferencesStorage, getPreferences, getSettings, getMiscStore, getYakklCurrentlySelected } from "$lib/common/stores";
-  import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH } from '$lib/common';
+  import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH, debug_log } from '$lib/common';
   import type { Preferences, Settings } from '$lib/common';
   import Header from '$components/Header.svelte';
   import Footer from '$components/Footer.svelte';
   import { setIconLock, blockContextMenu, blockWindowResize } from '$lib/utilities';
   import { onMount } from 'svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-	import { handleLockDown } from '$lib/common/handlers';
 
+  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+  import type { Browser } from 'webextension-polyfill';
+	import { browserSvelte } from '$lib/utilities/browserSvelte';
+	import { onMessageUnloadAdd, onMessageUnloadRemove } from "$lib/common/listeners/ui/windowListeners";
+
+  let browser_ext: Browser;
+  if (browserSvelte) browser_ext = getBrowserExt();
 
   interface Props {
     children?: import('svelte').Snippet;
@@ -20,7 +24,6 @@
 
   // Local version
   let yakklMiscStore: string;
-  // let currentlySelected: YakklCurrentlySelected;
   let yakklSettings: Settings | null;
   let yakklPreferences: Preferences;
 
@@ -60,88 +63,84 @@
   }
 
   onMount(() => {
-    try {
-      if (browserSvelte) {
-        yakklMiscStore = getMiscStore();
-        getYakklCurrentlySelected().then(result => {
-          if (result) {
-            const currentlySelected = result;
+    let isMounted = true; // To handle potential race conditions
+
+    const initialize = async () => {
+      try {
+        if (browserSvelte) {
+          yakklMiscStore = getMiscStore();
+
+          const currentlySelected = await getYakklCurrentlySelected();
+          if (currentlySelected && isMounted) {
             legal = currentlySelected.shortcuts.legal === true;
           }
-        });
 
-        getPreferencesUpdate().then(async result => {
-          if (result) {
-            yakklPreferences = result;
+          const preferences = await getPreferencesUpdate();
+          if (preferences && isMounted) {
+            yakklPreferences = preferences;
             yakklPreferences.screenHeight = screen.height;
             yakklPreferences.screenWidth = screen.width;
+            setPreferencesStorage(yakklPreferences);
           }
 
-          setPreferencesStorage(yakklPreferences);
-          getSettingsUpdate().then(async (value) => {
-            yakklSettings = value; //? value : undefined;
-            if (yakklSettings) {
-              if (yakklSettings.legal.termsAgreed) {
-                legal = true;
-              }
+          const settings = await getSettingsUpdate();
+          if (settings && isMounted) {
+            yakklSettings = settings;
 
-              if (!yakklMiscStore) {
-                maxHeightClass = ''; // So it is full screen
-                yakklSettings.isLocked = true;
-                setSettings(yakklSettings);
-                await setIconLock();
-              }
-
-              if (yakklPreferences) {
-                if (!yakklPreferences.wallet) {
-                  popupWidth = DEFAULT_POPUP_WIDTH;
-                  popupHeight = DEFAULT_POPUP_HEIGHT;
-                  title = DEFAULT_TITLE;
-                  contextMenu = false;
-                  resize = false;
-                } else {
-                  popupWidth = yakklPreferences.wallet.popupWidth ?? DEFAULT_POPUP_WIDTH;
-                  popupHeight = yakklPreferences.wallet.popupHeight ?? DEFAULT_POPUP_HEIGHT;
-                  title = yakklPreferences.wallet.title ?? DEFAULT_TITLE;
-                  contextMenu = yakklPreferences.wallet.enableContextMenu ?? false;
-                  resize = yakklPreferences.wallet.enableResize ?? false;
-                }
-              } else {
-                popupWidth = DEFAULT_POPUP_WIDTH;
-                popupHeight = DEFAULT_POPUP_HEIGHT;
-                title = DEFAULT_TITLE;
-                contextMenu = false;
-                resize = false;
-              }
+            if (yakklSettings.legal?.termsAgreed) {
+              legal = true;
             }
-          });
-        });
 
-        if (process.env.DEV_DEBUG) {
-          contextMenu = true;
-          resize = true;
+            if (!yakklMiscStore) {
+              maxHeightClass = ''; // So it is full screen
+              yakklSettings.isLocked = true;
+              setSettings(yakklSettings);
+              await setIconLock();
+            }
+
+            if (yakklPreferences?.wallet) {
+              popupWidth = yakklPreferences.wallet.popupWidth ?? DEFAULT_POPUP_WIDTH;
+              popupHeight = yakklPreferences.wallet.popupHeight ?? DEFAULT_POPUP_HEIGHT;
+              title = yakklPreferences.wallet.title ?? DEFAULT_TITLE;
+              contextMenu = yakklPreferences.wallet.enableContextMenu ?? false;
+              resize = yakklPreferences.wallet.enableResize ?? false;
+            } else {
+              popupWidth = DEFAULT_POPUP_WIDTH;
+              popupHeight = DEFAULT_POPUP_HEIGHT;
+              title = DEFAULT_TITLE;
+              contextMenu = false;
+              resize = false;
+            }
+          }
+
+          if (process.env.DEV_DEBUG) {
+            contextMenu = true;
+            resize = true;
+          }
+          if (!contextMenu) blockContextMenu();
+          if (!resize) blockWindowResize(popupWidth, popupHeight);
         }
-        if (!contextMenu) {
-          blockContextMenu();
-        }
-        if (!resize) {
-          blockWindowResize(popupWidth, popupHeight);
-        }
+
+        debug_log('App layout: initialized');
+
+        onMessageUnloadAdd();
+      } catch (error) {
+        console.log('[ERROR]: layout: error', error);
+        popupWidth = DEFAULT_POPUP_WIDTH;
+        popupHeight = DEFAULT_POPUP_HEIGHT;
+        title = DEFAULT_TITLE;
+        contextMenu = false;
+        resize = false;
       }
+    };
 
-      window.addEventListener('beforeunload', handleLockDown);
-      return () => {
-        window.removeEventListener('beforeunload', handleLockDown);
-      };
+    initialize();
 
-    } catch (error) {
-      console.log('layout: error', error);
-      popupWidth = DEFAULT_POPUP_WIDTH;
-      popupHeight = DEFAULT_POPUP_HEIGHT;
-      title = DEFAULT_TITLE;
-      contextMenu = false;
-      resize = false;
-    }
+    // Cleanup function
+    return () => {
+      isMounted = false; // Prevent further updates
+      onMessageUnloadRemove();
+    };
   });
 
 </script>

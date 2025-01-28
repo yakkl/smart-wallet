@@ -14,7 +14,7 @@ async function checkConnectionCB() {
       }
     }
   } catch (e) {
-    console.log(e);    
+    console.log(e);
   }
 }
 
@@ -45,6 +45,10 @@ export function startCheckConnection(url='https://github.com/yakkl', seconds=30)
         1000*seconds);
   }
   } catch (e) {
-    console.log(e);    
+    console.log(e);
+    if (connectionIntervalID && Number(connectionIntervalID) > 0) {
+      clearInterval(connectionIntervalID);
+      connectionIntervalID = undefined;
+    }
   }
 }
