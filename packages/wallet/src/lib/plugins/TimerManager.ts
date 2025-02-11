@@ -1,17 +1,49 @@
+import { writable } from "svelte/store";
+
 type TimerCallback = () => void;
 
-interface Timer {
+export interface Timer {
   id: string;
   callback: TimerCallback;
   duration: number;
-  handle: NodeJS.Timeout | null; // Stores the interval/timeout handle
+  handleIntervalID: NodeJS.Timeout | null; // Stores the interval/timeout handle
 }
+
+export const timerManagerStore = writable<TimerManager | null>(null);
 
 export class TimerManager {
   private timers: Map<string, Timer>;
+  private static instance: TimerManager | null = null;
 
   constructor() {
     this.timers = new Map();
+  }
+
+  public static getInstance(): TimerManager {
+    try {
+      if (!TimerManager.instance) {
+        TimerManager.instance = new TimerManager();
+      }
+      return TimerManager.instance;
+    }
+    catch (error) {
+      console.log("[ERROR]: Failed to get TimerManager instance:", error);
+      throw error;
+    }
+  }
+
+  public static clearInstance(): void {
+    if (this.instance) {
+      this.instance.removeAll();
+    }
+    this.instance = null;
+    timerManagerStore.set(null); // Ensure the store is in sync
+  }
+
+  public static setInstance(instance: TimerManager): void {
+    this.clearInstance();
+    this.instance = instance;
+    timerManagerStore.set(instance);
   }
 
   /**
@@ -26,7 +58,7 @@ export class TimerManager {
       return;
     }
 
-    this.timers.set(id, { id, callback, duration, handle: null });
+    this.timers.set(id, { id, callback, duration, handleIntervalID: null });
   }
 
   /**
@@ -40,12 +72,12 @@ export class TimerManager {
       return;
     }
 
-    if (timer.handle) {
+    if (timer.handleIntervalID) {
       console.warn(`Timer with ID "${id}" is already running.`);
       return;
     }
 
-    timer.handle = setInterval(timer.callback, timer.duration);
+    timer.handleIntervalID = setInterval(timer.callback, timer.duration);
     console.log(`Started timer "${id}" with duration ${timer.duration}ms.`);
   }
 
@@ -60,9 +92,9 @@ export class TimerManager {
       return;
     }
 
-    if (timer.handle) {
-      clearInterval(timer.handle);
-      timer.handle = null;
+    if (timer.handleIntervalID) {
+      clearInterval(timer.handleIntervalID);
+      timer.handleIntervalID = null;
       console.log(`Stopped timer "${id}".`);
     } else {
       console.log(`[ERROR]: Timer with ID "${id}" is not running.`);
@@ -74,7 +106,7 @@ export class TimerManager {
    */
   startAll(): void {
     for (const [id, timer] of this.timers.entries()) {
-      if (!timer.handle) {
+      if (!timer.handleIntervalID) {
         this.startTimer(id);
       }
     }
@@ -86,7 +118,7 @@ export class TimerManager {
    */
   stopAll(): void {
     for (const [id, timer] of this.timers.entries()) {
-      if (timer.handle) {
+      if (timer.handleIntervalID) {
         this.stopTimer(id);
       }
     }
@@ -100,7 +132,7 @@ export class TimerManager {
   getRunningTimers(): string[] {
     const runningTimers: string[] = [];
     for (const [id, timer] of this.timers.entries()) {
-      if (timer.handle) {
+      if (timer.handleIntervalID) {
         runningTimers.push(id);
       }
     }
@@ -114,7 +146,7 @@ export class TimerManager {
    */
   isRunning(id: string): boolean {
     const timer = this.timers.get(id);
-    return timer ? !!timer.handle : false;
+    return timer ? !!timer.handleIntervalID : false;
   }
 
   /**

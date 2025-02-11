@@ -1,0 +1,51 @@
+import { STORAGE_YAKKL_CURRENTLY_SELECTED, STORAGE_YAKKL_SETTINGS } from "./constants";
+import type { Settings, YakklCurrentlySelected } from "./interfaces";
+import { getObjectFromLocalStorage, setObjectInLocalStorage } from "./storage";
+import { yakklCurrentlySelectedStore, yakklSettingsStore } from "./stores";
+
+
+export async function setLocks(locked: boolean = true) {
+  try {
+    let dirty = false;
+
+    const yakklSettings = await getObjectFromLocalStorage(STORAGE_YAKKL_SETTINGS) as Settings;
+    if (yakklSettings) {
+      dirty = false;
+      if (locked) {
+        if (!yakklSettings.isLocked) {
+          yakklSettings.isLocked = true;
+          await setObjectInLocalStorage('settings', yakklSettings);
+          dirty = true;
+        }
+      } else {
+        if (yakklSettings.isLocked) {
+          yakklSettings.isLocked = false;
+          await setObjectInLocalStorage('settings', yakklSettings);
+          dirty = true;
+        }
+      }
+      if (dirty) yakklSettingsStore.set(yakklSettings);
+    }
+
+    const yakklCurrentlySelected = await getObjectFromLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED) as YakklCurrentlySelected;
+    if (yakklCurrentlySelected) {
+      dirty = false;
+      if (locked) {
+        if (!yakklCurrentlySelected.shortcuts.isLocked) {
+          yakklCurrentlySelected.shortcuts.isLocked = true;
+          await setObjectInLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED, yakklCurrentlySelected);
+          dirty = true;
+        }
+      } else {
+        if (yakklCurrentlySelected.shortcuts.isLocked) {
+          yakklCurrentlySelected.shortcuts.isLocked = false;
+          await setObjectInLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED, yakklCurrentlySelected);
+          dirty = true;
+        }
+      }
+      if (dirty) yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
+    }
+  } catch (error) {
+    console.log("[ERROR]: Error setting locks:", error);
+  }
+}

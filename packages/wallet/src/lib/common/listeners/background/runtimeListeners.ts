@@ -1,50 +1,12 @@
 import { isBrowserEnv, browser_ext } from '$lib/common/environment';
 import type { Runtime } from 'webextension-polyfill';
 import { debug_log } from '$lib/common/debug-error';
-import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/timers';
+import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
 import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
 
 type RuntimeSender = Runtime.MessageSender;
 
 // These functions are used to add and remove listeners for the extension EXCEPT for the window listeners and any other listeners that may be specific to a given component or whatever.
-
-// // Runtime Listeners...
-// // Add all runtime listeners
-// export async function addRuntimeListeners() {
-//   try {
-//     console.log('Adding runtime listeners...');
-
-//     // Used in background.ts
-//     if (!browser_ext.runtime.onMessage.hasListener(onRuntimeMessageListener)) {
-//       browser_ext.runtime.onMessage.removeListener(onRuntimeMessageListener);
-//       browser_ext.runtime.onMessage.addListener(onRuntimeMessageListener);
-//     }
-
-
-
-//     console.log('Listeners added.');
-//   } catch (error) {
-//     console.log('[ERROR]: Error adding runtime listeners:', error);
-//   }
-// }
-
-// // Remove all runtime listeners
-// export async function removeRuntimeListeners() {
-//   try {
-//     console.log('Removing runtime listeners...');
-
-//     // No need to check if it exists before removing it
-//     browser_ext.runtime.onMessage.removeListener(handleOnMessageForExtension);
-//     browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
-//     browser_ext.runtime.onMessage.removeListener(onRuntimeMessageListener);
-
-//     console.log('Listeners removed.');
-//   } catch (error) {
-//     console.log('[ERROR]: Error removing runtime listeners:', error);
-//   }
-// }
-
-
 
 export async function onRuntimeMessageListener(
   message: any,
@@ -68,7 +30,7 @@ export async function onRuntimeMessageListener(
 
           // Testing to see where this may have come from. May remove this test later
           if (title === 'Security Notification') {
-            debug_log('Security Notification canceled...');
+            // debug_log('Security Notification canceled...');
             console.trace();
             sendResponse({ success: false, message: 'Security Notification canceled' });
             return true; // Indicate asynchronous response

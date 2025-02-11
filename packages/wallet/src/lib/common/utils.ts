@@ -2,8 +2,9 @@
 import { type ErrorBody, type ParsedError } from '$lib/common';
 import { AccountTypeCategory } from '$lib/common/types';
 import type { YakklAccount } from '$lib/common/interfaces';
-import { getYakklAccounts } from '$lib/common/stores';
+import { yakklAccountsStore } from '$lib/common/stores';
 import { ethers as ethersv6 } from 'ethers-v6';
+import { get } from 'svelte/store';
 
 
 // This should represent the .id property of given objects for uniqueness
@@ -18,7 +19,7 @@ export function getUserId(): string {
 
 export async function checkAccountRegistration(): Promise<boolean> {
   try {
-    const accounts: YakklAccount[] = await getYakklAccounts();
+    const accounts: YakklAccount[] = get(yakklAccountsStore);
 
     if (!accounts || accounts.length === 0) {
       return false;

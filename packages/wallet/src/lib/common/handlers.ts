@@ -3,7 +3,7 @@ import { dateString } from "./datetime";
 import type { Settings } from "./interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "./storage";
 import { isBrowserEnv } from "./environment";
-import { stopLockIconTimer } from "$lib/extensions/chrome/timers";
+import { stopLockIconTimer } from "$lib/extensions/chrome/iconTimer";
 
 // Handlers / Callbacks that are not used as listeners in the extension
 
@@ -13,12 +13,12 @@ export async function handleLockDown() {
     if (isBrowserEnv()) {
       await setIconLock();
       const yakklSettings = await getObjectFromLocalStorage('settings') as Settings;
-      if (yakklSettings) {
+      if (yakklSettings && !yakklSettings.isLocked) {
         yakklSettings.isLocked = true;
         yakklSettings.isLockedHow = 'window_exit';
         yakklSettings.updateDate = dateString();
         await setObjectInLocalStorage('settings', yakklSettings);
-        stopLockIconTimer();
+        // stopLockIconTimer();
       }
     } else {
       console.log('[INFO]: handleLockDown: Does not believe to be in a browser environment.');

@@ -9,54 +9,23 @@ import type { Runtime } from "webextension-polyfill";
 import { showDappPopup, showPopup } from "$lib/extensions/chrome/ui";
 import { estimateGas, getBlock } from "$lib/extensions/chrome/legacy";
 import { supportedChainId } from "$lib/common/utils";
+import { onPortInternalListener } from "$lib/common/listeners/ui/portListeners";
+import { onEthereumListener } from "$lib/common/listeners/background/backgroundListeners";
+import { onEIP6963Listener } from "$lib/extensions/chrome/eip-6963";
+import { onDappListener } from "$lib/extensions/chrome/dapp";
+import { browser_ext } from "$lib/common/environment";
 
-export let requestsExternal = new Map<
-  string,
-  {
-    data: unknown;
-  }
-  >();
+export let requestsExternal = new Map< string, { data: unknown; } >();
+
 type RuntimePort = Runtime.Port;
-type RuntimeSender = Runtime.MessageSender;
-type RuntimePlatformInfo = Runtime.PlatformInfo;
+// type RuntimeSender = Runtime.MessageSender;
+// type RuntimePlatformInfo = Runtime.PlatformInfo;
 
 const portsExternal = new Map();
 let portsDapp: RuntimePort[] = [];
 let portsInternal: RuntimePort[] = [];
 
 // Port Listeners...
-
-export async function onPortDisconnectListener(port: RuntimePort): Promise<void> {
-  try {
-    // debug_log('yakkl - background - onDisconnectListener', port.name);
-
-    if (browser_ext.runtime.lastError) {
-      console.log('background.js - lastError', browser_ext.runtime.lastError);
-    }
-    if (port) {
-      if (port.name === "yakkl") {
-        await handleLockDown();
-        port.onDisconnect.removeListener(onPortDisconnectListener);
-      }
-      if (port.sender && port.sender.tab && port.name === YAKKL_EXTERNAL) {
-        portsExternal.delete(port.sender.tab.id);
-      }
-      else if (port.name === YAKKL_DAPP ) {
-        const index = portsDapp.indexOf(port);
-        if (index !== -1) {
-          portsDapp.splice(index, 1);
-        }
-      } else {
-        const index = portsInternal.indexOf(port);
-        if (index !== -1) {
-          portsInternal.splice(index, 1);
-        }
-      }
-    }
-  } catch (error) {
-    console.log('[ERROR]: onDisconnectListener:',error);
-  }
-}
 
 // This section registers when the content and background services are connected.
 export async function onPortConnectListener(port: RuntimePort) {
@@ -77,11 +46,11 @@ export async function onPortConnectListener(port: RuntimePort) {
       }
     }
 
+    // debug_log('portListeners - onPortConnectListener', portsExternal, portsDapp, portsInternal, port);
+
     // TBD - NOTE: May want to move to .sendMessage for sending popup launch messages!!!!!!!
     // May want to revist this and simplify
-    if (port.onDisconnect && port.onDisconnect.hasListener && !port.onDisconnect.hasListener(onPortDisconnectListener)) {
-      // debug_log('background.js - onConnect - onDisconnect', port.name);
-
+    if (!port.onDisconnect.hasListener(onPortDisconnectListener)) {
       port.onDisconnect.addListener(onPortDisconnectListener);
     }
 
@@ -90,95 +59,94 @@ export async function onPortConnectListener(port: RuntimePort) {
         await setIconUnlock();
         break;
       case YAKKL_SPLASH:
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onPopupLaunchListener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onPopupLaunchListener)) {
           //@ts-ignore
           port.onMessage.addListener(onPopupLaunchListener);
         }
         break;
       case YAKKL_INTERNAL:
         // Now find out the message payload
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onPortInternalListener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onPortInternalListener)) {
           //@ts-ignore
           port.onMessage.addListener(onPortInternalListener);
         }
         break;
       case YAKKL_EXTERNAL:
         // Now find out the message payload
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onPortExternalListener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onPortExternalListener)) {
           //@ts-ignore
           port.onMessage.addListener(onPortExternalListener);
         }
         break;
       case YAKKL_ETH:
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onEthereumListener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onEthereumListener)) {
           //@ts-ignore
           port.onMessage.addListener(onEthereumListener);
         }
       break;
       case YAKKL_DAPP:
-        // dappPort = port;
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onDappListener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onDappListener)) {
           //@ts-ignore
           port.onMessage.addListener(onDappListener);
         }
       break;
       case YAKKL_PROVIDER_EIP6963:
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
-        if (port.onMessage && port.onMessage.hasListener && !port.onMessage.hasListener(onEIP6963Listener)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        if (!port.onMessage.hasListener(onEIP6963Listener)) {
           //@ts-ignore
           port.onMessage.addListener(onEIP6963Listener);
         }
       break;
       default:
         throw `Message ${port.name} is not supported`;
-        break;
     }
   } catch(error) {
     console.log("[ERROR]: onPortConnectListener:", error);
   }
 }
 
-// export async function onPortInternalListener(event: any): Promise<void> {
-//   debug_log('yakkl - background - onPortInternalListener', event);
+export async function onPortDisconnectListener(port: RuntimePort): Promise<void> {
+  try {
+    // debug_log('background - onDisconnectListener', port);
 
-//   if (event && event.method) {
-//     switch(event.method) {
-//       case 'int_screen':
-//         updateScreenPreferences(event);
-//         break;
-//       case 'close':
-//         await setIconLock();
-//         openPopups.clear();
-//         openWindows.clear();
-//         break;
-//       default:
-//         break;
-//     }
-//   }
-// }
+    if (browser_ext.runtime.lastError) {
+      console.log('[ERROR]: background - portListeners - lastError', browser_ext.runtime.lastError);
+    }
+    if (port) {
+      if (port.name === "yakkl") {
+        await handleLockDown();
+        port.onDisconnect.removeListener(onPortDisconnectListener);
+      }
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      if (port.sender && port.sender.tab && port.name === YAKKL_EXTERNAL) {
+        portsExternal.delete(port.sender.tab.id);
+      }
+      else if (port.name === YAKKL_DAPP ) {
+        const index = portsDapp.indexOf(port);
+        if (index !== -1) {
+          portsDapp.splice(index, 1);
+        }
+      } else {
+        const index = portsInternal.indexOf(port);
+        if (index !== -1) {
+          portsInternal.splice(index, 1);
+        }
+      }
+    }
+  } catch (error) {
+    console.log('[ERROR]: onDisconnectListener:',error);
+  }
+}
+
 //@ts-ignore
 export async function onPortExternalListener(event, sender): Promise<void> {
   try {
-    debug_log('yakkl - background - onPortExternalListener', event, sender);
+    // debug_log('yakkl - background - onPortExternalListener', event, sender);
 
     if (event.method) {
       let yakklCurrentlySelected;
@@ -323,7 +291,6 @@ export async function onPopupLaunchListener(m: { popup: string; }, p: { postMess
   try {
     // try/catch should catch if m or p are undefined
     if (m.popup && m.popup === "YAKKL: Splash") {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       await browser_ext.storage.session.get('windowId').then(async (result) => {
         let windowId: number | undefined = undefined;
@@ -359,30 +326,3 @@ export async function onPopupLaunchListener(m: { popup: string; }, p: { postMess
     console.log('[ERROR]: onPopupLaunchListener:',error);
   }
 }
-
-
-
-// Remove all port listeners
-
-export async function removePortListeners() {
-  try {
-    console.log('Removing port listeners...');
-
-    console.log('Listeners removed.');
-  } catch (error) {
-    console.log('[ERROR]: Error removing port listeners:', error);
-  }
-}
-
-// Add all port listeners
-
-export async function addPortListeners() {
-  try {
-    console.log('Adding port listeners...');
-
-    console.log('Listeners added.');
-  } catch (error) {
-    console.log('[ERROR]: Error adding port listeners:', error);
-  }
-}
-

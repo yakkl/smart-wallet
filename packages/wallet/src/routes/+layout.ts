@@ -1,58 +1,64 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
-/* eslint-disable no-debugger */
-
 export const prerender = true;
 
-import { browserSvelte } from '$lib/utilities/browserSvelte';
-import { YAKKL_INTERNAL } from "$lib/common/constants";
-import { wait } from "$lib/common/utils";
-import type { Browser, Runtime } from 'webextension-polyfill';
-import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+import { browserSvelte, browser_ext } from '$lib/common/environment';
+import { YAKKL_INTERNAL } from '$lib/common/constants';
+import { wait } from '$lib/common/utils';
+import type { Runtime } from 'webextension-polyfill';
 import { handleLockDown } from '$lib/common/handlers';
+import { debug_log } from '$lib/common/debug-error';
+import { syncStoresToStorage } from '$lib/common/stores';
+import { loadTokens } from '$lib/common/stores/tokens';
 
-let browser_ext: Browser | null = null;
-if (browserSvelte) {
-  browser_ext = getBrowserExt();
+let port: Runtime.Port | undefined;
+
+async function connectPort(): Promise<boolean> {
+  if (!browser_ext) return false;
+
+  try {
+    port = browser_ext.runtime.connect({ name: YAKKL_INTERNAL });
+
+    if (port) {
+      port.onDisconnect.addListener(async (event) => {
+        handleLockDown();
+        port = undefined;
+        if (event?.error) {
+          console.log('[ERROR]: Port disconnect:', event.error?.message);
+        }
+      });
+      return true;
+    }
+  } catch (error) {
+    console.log('[ERROR]: Port connection failed:', error);
+  }
+  return false;
 }
 
-type RuntimePort = Runtime.Port;
-let port: RuntimePort | undefined = undefined;
-
 async function initializeExtension() {
+  if (!browserSvelte) return;
+
+  // debug_log('Root (route) +layout.ts - Syncing storage and stores + loading tokens ...');
+  // await syncStoresToStorage();
+  // loadTokens();
+
   try {
-    if (browserSvelte) {
-      port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
-      if (port) {
-        port.onDisconnect.addListener(async (event: any) => {
-          handleLockDown();
-          port = undefined;
-          if (event?.error) {
-            console.log(event.error?.message);
-          }
-        });
-      } else {
-        console.log('[INFO]: Port is trying again 1 second...');
-        wait(1000).then();
-        port = browser_ext.runtime.connect({name: YAKKL_INTERNAL}); // Can look at being more efficient later here!
-        if (port) {
-          port.onDisconnect.addListener(async (event: any) => {
-            handleLockDown();
-            port = undefined;
-            if (event?.error) {
-              console.log('[ERROR]:', event.error?.message);
-            }
-          });
-        } else {
-          console.log('Internal port was unable to connect and is exiting...');
-          browser_ext.runtime.reload(); // This is here to try and fix the issue of the port not connecting
-        }
-      }
+    let connected = await connectPort();
+
+    debug_log('ROOT: (route) +layout.ts - Port connected:', connected);
+
+    if (!connected) {
+      console.log('[INFO]: Port connection failed, retrying in 1 second...');
+      await wait(1000);
+      connected = await connectPort();
     }
-  } catch(e) {
-    console.log(e);
+
+    if (!connected) {
+      console.log('[INFO]: Internal port was unable to connect, reloading...');
+      browser_ext?.runtime.reload();
+    }
+  } catch (error) {
+    console.log('[ERROR]: Extension initialization failed:', error);
   }
 }
 
-if (browserSvelte) initializeExtension();
+initializeExtension();
+

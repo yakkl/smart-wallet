@@ -2,7 +2,7 @@
 import { ListenerManager } from '$lib/plugins/ListenerManager';
 import { browser_ext, browserSvelte } from '$lib/common/environment';
 import type { Runtime } from 'webextension-polyfill';
-import { openPopups, openWindows } from '$lib/extensions/chrome/ui';
+import { openPopups, openWindows } from '$lib/common/reload';
 import { initializeDatabase } from '$lib/extensions/chrome/database';
 import { yakklStoredObjects } from '$lib/models/dataModels';
 import { setObjectInLocalStorage } from '$lib/common/storage';
@@ -42,7 +42,6 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
         });
 
         await browser_ext.runtime.setUninstallURL(encodeURI("https://yakkl.com?userName=&utm_source=yakkl&utm_medium=extension&utm_campaign=uninstall&utm_content=" + `${VERSION}` + "&utm_term=extension"));
-
         await setLocalObjectStorage(platform, false);
       }
 
@@ -74,7 +73,6 @@ globalListenerManager.registerContext('background', backgroundListenerManager);
 
 // TODO: Review these against background.ts
 export function addBackgroundListeners() {
-  console.log('Adding background listeners...');
   backgroundListenerManager.add(browser_ext.runtime.onMessage, onRuntimeMessageListener);
   backgroundListenerManager.add(browser_ext.alarms.onAlarm, onAlarmListener);
   backgroundListenerManager.add(browser_ext.runtime.onInstalled, onInstalledUpdatedListener);
@@ -86,6 +84,5 @@ export function addBackgroundListeners() {
 }
 
 export function removeBackgroundListeners() {
-  console.log('Removing background listeners...');
   backgroundListenerManager.removeAll();
 }

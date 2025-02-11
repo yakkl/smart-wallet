@@ -29,7 +29,7 @@ export async function handleOnMessageForExtension(
       sendResponse({ success: true, message: 'Lockdown initiated.' });
       goto(PATH_LOCK);
 
-      debug_log('Lockdown initiated.');
+      // debug_log('Lockdown initiated.');
 
       return true;  // return type - asynchronous
     }
@@ -75,12 +75,12 @@ export async function handleOnMessageForPricing(
 // }
 
 export function addUIListeners() {
-  console.log('Adding UI listeners...');
+  // console.log('Adding UI listeners...');
   uiListenerManager.add(browser_ext.runtime.onMessage, handleOnMessageForExtension);
   uiListenerManager.add(browser_ext.runtime.onMessage, handleOnMessageForPricing);
 }
 
 export function removeUIListeners() {
-  console.log('Removing UI listeners...');
+  // console.log('Removing UI listeners...');
   uiListenerManager.removeAll();
 }

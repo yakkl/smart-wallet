@@ -2,6 +2,8 @@ import { writable, get } from 'svelte/store';
 import type { TokenData } from './interfaces';
 import type { PriceManager } from '$lib/plugins/PriceManager';
 
+let tokenIntervalID: NodeJS.Timeout;
+
 // Utility for debouncing
 function debounce(func: (...args: any[]) => void, delay: number) {
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -65,7 +67,7 @@ export function createPriceUpdater(priceManager: PriceManager, fetchInterval = 3
   // Debounced fetch to reduce frequent updates
   const debouncedFetchPrices = debounce(fetchPrices, 5000);
 
-  const interval = setInterval(() => {
+  tokenIntervalID = setInterval(() => {
     const currentTokens = get(tokens);
     debouncedFetchPrices(currentTokens);
   }, fetchInterval);
@@ -73,6 +75,6 @@ export function createPriceUpdater(priceManager: PriceManager, fetchInterval = 3
   return {
     subscribe,
     fetchPrices,
-    destroy: () => clearInterval(interval),
+    destroy: () => clearInterval(tokenIntervalID),
   };
 }

@@ -379,7 +379,6 @@ export class Wallet {
    * Switches to a different provider.
    */
   public switchProvider(): void {
-    // debug_log('Wallet: Switching provider');
     if (!this.blockchain || !this.provider) {
       throw new Error('Blockchain or Provider not initialized');
     }
@@ -404,7 +403,6 @@ export class Wallet {
    * @param providerOrName - The provider name or instance to switch to.
    */
   public switchToProvider(providerOrName: string | Provider): void {
-    // debug_log('Wallet: Switching to provider');
     if (!this.blockchain) {
       throw new Error('Blockchain not initialized');
     }
@@ -453,14 +451,12 @@ export class Wallet {
       if (!this.privateKey) {
         throw new Error('Private key not set');
       } else {
-        // debug_log('Setting signer with private key - again!! :', this.privateKey);
-
-        await this.setSigner(this.privateKey);
+        await this.setSigner(this.privateKey); // Since it is showing as not set
       }
     }
 
     if (!this.blockchain || !this.provider || !this.signer) {
-      console.log('Blockchain, Provider, Signer:', this.blockchain, this.provider, this.signer);
+      // console.log('Blockchain, Provider, Signer:', this.blockchain, this.provider, this.signer);
       throw new Error('Blockchain or Provider or Signer not initialized');
     }
 

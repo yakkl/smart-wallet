@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from '$app/environment';
-  import { getSettings, yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, getPreferences, setPreferencesStorage, setSettingsStorage, setMiscStore, yakklSettingsStore } from '$lib/common/stores';
-  import { profile as profileDefaults, yakklPreferences as yakklPreferencesDefaults, yakklCurrentlySelected as yakklCurrentlySelectedDefaults } from '$lib/models/dataModels';
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
+  import { yakklVersionStore, yakklUserNameStore, getProfile, setProfileStorage, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, setPreferencesStorage, setSettingsStorage, setMiscStore, getMiscStore, getSettings, getPreferences } from '$lib/common/stores';
+  import { profile as profileDefaults, yakklPreferences as yakklPreferencesDefaults, yakklCurrentlySelected as yakklCurrentlySelectedDefaults, yakklSettings as yakklSettingsDefaults } from '$lib/models/dataModels';
   import { encryptData, digestMessage, decryptData } from '$lib/common/encryption';
-  // import { GoogleAuth } from '$lib/index';
   import { createForm } from "svelte-forms-lib";
   import * as yup from 'yup';
   import zxcvbn from "zxcvbn";
@@ -15,31 +13,29 @@
   import { onMount } from 'svelte';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
   import Warning from '$lib/components/Warning.svelte';
-	import type { CurrentlySelectedData, Profile, ProfileData, YakklCurrentlySelected } from '$lib/common/interfaces';
+	import type { CurrentlySelectedData, Preferences, Profile, ProfileData, Settings, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { RegistrationType } from '$lib/common/types';
-	import { getUserId, isEncryptedData } from '$lib/common';
-
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
-	import { dateString } from '$lib/common/datetime';
-	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
-	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
+	import { debug_log, getUserId, isEncryptedData, type LayoutData } from '$lib/common';
+  import { dateString } from '$lib/common/datetime';
 	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
-	// import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
-	// import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 	import { sendNotificationMessage } from '$lib/common/notifications';
 	import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+  // import { GoogleAuth } from '$lib/index';
+	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
+	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
+	// import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	// import ImportPhrase from '$lib/components/ImportPhrase.svelte';
 
-  let currentlySelected: YakklCurrentlySelected;
-  let yakklMiscStore: string;
+  let currentlySelected: YakklCurrentlySelected | null = null;
+  let yakklSettings: Settings | null = null;
+  let yakklMiscStore: string = '';
+  let yakklPreferences: Preferences | null = null;
+  let yakklProfile: Profile | null = null;
 
-  let profile: Profile | null;
-  let error = false;
-  let errorValue: string;
-  let warning = false;
+  let error = $state(false);
+  let errorValue: string = $state('');
+  let warning = $state(false);
   let warningValue: string;
   let init = false;
   let eyeOpen = false;
@@ -49,11 +45,12 @@
   let pweyeOpenId: HTMLButtonElement;
   let pweyeClosedId: HTMLButtonElement;
 
-  let showRegistrationOption = false;
-  // let showImportOption = false;
+  let showRegistrationOption = $state(false);
   let showImportAccount = false;
-  // let showImportPhrase = false;
   let showEmergencyKit = false;
+  let strength = $state(0);
+  // let showImportOption = false;
+  // let showImportPhrase = false;
 
   // Force 'Standard' version on registration - normally
   // DURING FREE - REMOVE LATER
@@ -66,13 +63,16 @@
   }
   ////
 
-  $: strength = zxcvbn($form.password).score;
+  $effect(() => { strength = zxcvbn($form.password).score ?? 0; });
 
   onMount(async() => {
     try {
       if (browserSvelte) {
         currentlySelected = await getYakklCurrentlySelected() || yakklCurrentlySelectedDefaults;
-        yakklMiscStore = '';
+        yakklSettings = await getSettings() || yakklSettingsDefaults;
+        yakklMiscStore = getMiscStore() || '';
+        yakklPreferences = await getPreferences() || yakklPreferencesDefaults;
+        yakklProfile = await getProfile() || profileDefaults;
 
         eyeOpenId = document.getElementById("eye-open") as HTMLButtonElement;
         eyeClosedId = document.getElementById("eye-closed") as HTMLButtonElement;
@@ -105,7 +105,7 @@
         emailHelp.setAttribute('tabindex', '-1');
       }
     } catch(e) {
-      console.log(`Register: onMount - ${e}`);
+      console.log(`[ERROR]: Register: onMount - ${e}`);
     }
   });
 
@@ -117,77 +117,12 @@
     await goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);
   }
 
-  // function handleImport() {
-  //   showRegistrationOption = false;
-  //   showImportAccount = true;
-  // }
-
-  // function handleRestore() {
-  //   showRegistrationOption = false;
-  //   showEmergencyKit = true;
-  // }
-
-  // function onCompleteImportPrivateKey(account: YakklAccount) {
-  //   showImportAccount = false;
-  //   goto(PATH_WELCOME)
-  // }
-
-  // function onCancelImportPrivateKey() {
-  //   showImportAccount = false;
-  //   showRegistrationOption = true;
-  // }
-
-  // // May want to add parameters of what changed later but not currently needed
-  // function onCompleteImportPhrase() {
-  //   showImportPhrase = false;
-  //   goto(PATH_WELCOME)
-  // }
-
-  // function onCancelImportPhrase() {
-  //   showImportAccount = false;
-  //   showRegistrationOption = true;
-  // }
-
-  // function onCompleteEmergenyKit(success: boolean, message: string) {
-  //   showEmergencyKit = false;
-  //   goto(PATH_WELCOME)
-  // }
-
-  // function onCancelEmergencyKit() {
-  //   showEmergencyKit = false;
-  //   showRegistrationOption = true;
-  // }
-
-  function onCancelRegistrationOption() {
+  async function onCancelRegistrationOption() {
     showRegistrationOption = false;
     showEmergencyKit = false;
     showImportAccount = false;
-    goto(PATH_LOGOUT);
+    await goto(PATH_LOGOUT);
   }
-
-  // function onCancelImportOption() {
-  //   showImportOption = false;
-  //   showEmergencyKit = false;
-  //   showImportAccount = false;
-  //   showImportPhrase = false;
-  //   showRegistrationOption = true; // Go back to the registration option
-  // }
-
-  // function onImportKey() {
-  //   showRegistrationOption = false;
-  //   showImportOption = false;
-  //   showImportPhrase = false;
-  //   showEmergencyKit = false;
-  //   showImportAccount = true;
-  // }
-
-  // function onImportPhrase() {
-  //   showRegistrationOption = false;
-  //   showImportOption = false;
-  //   showEmergencyKit = false;
-  //   showImportAccount = false;
-  //   showImportPhrase = true;
-  // }
 
   // async function checkRegistration() {
   //   if (browserSvelte) {
@@ -219,36 +154,35 @@
         yakklMiscStore = digest;
         setMiscStore(digest);
 
-        if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected() || yakklCurrentlySelectedDefaults;
+        debug_log('Register: digest:', getMiscStore());
 
-        if (isEncryptedData(currentlySelected.data)) {
+        if (isEncryptedData(currentlySelected?.data)) {
           currentlySelected.data = await decryptData(currentlySelected.data, digest) as CurrentlySelectedData;
         }
 
-        profile = await getProfile() || profileDefaults;
-        if (isEncryptedData(profile.data)) {
-          profile.data = await decryptData(profile.data, digest) as ProfileData;
+        if (isEncryptedData(yakklProfile?.data)) {
+          yakklProfile.data = await decryptData(yakklProfile.data, digest) as ProfileData;
         }
 
-        const profileData: ProfileData = typeof profile.data === 'object' && profile.data !== null ? profile.data as ProfileData : profileDefaults.data as ProfileData;
+        const profileData: ProfileData = typeof yakklProfile.data === 'object' && yakklProfile.data !== null ? yakklProfile.data as ProfileData : profileDefaults.data as ProfileData;
 
         $yakklUserNameStore = currentlySelected.shortcuts.profile.userName = userName;
 
-        profile = {
-          ...profile,
+        yakklProfile = {
+          ...yakklProfile,
           userName,
           id: getUserId(),
           createDate: dateString(),
           updateDate: dateString(),
           version: VERSION,
           preferences: {
-            ...profile.preferences,
+            ...yakklProfile.preferences,
             screenWidth: screen.width,
             screenHeight: screen.height,
             locale: navigator.language,
             currency: {
               code: getCurrencyCode(navigator.language),
-              symbol: getCurrencySymbol(navigator.language, profile.preferences.currency.code)
+              symbol: getCurrencySymbol(navigator.language, yakklProfile.preferences.currency.code)
             }
           }
         };
@@ -267,30 +201,30 @@
           };
         }
 
-        profileData.meta = { accountName: accountName || YAKKL_ZERO_ACCOUNT_NAME };
+        profileData.meta = { accountName: accountName ?? YAKKL_ZERO_ACCOUNT_NAME };
 
         currentlySelected = {
           ...currentlySelected,
-          id: profile.id,
+          id: yakklProfile.id,
           version: VERSION,
           createDate: dateString(),
           updateDate: dateString(),
           preferences: {
             ...currentlySelected.preferences,
-            locale: profile.preferences.locale,
-            currency: profile.preferences.currency
+            locale: yakklProfile.preferences.locale,
+            currency: yakklProfile.preferences.currency
           },
           shortcuts: {
             ...currentlySelected.shortcuts,
             legal: true,
             address: YAKKL_ZERO_ADDRESS,
-            accountName: accountName || YAKKL_ZERO_ACCOUNT_NAME,
+            accountName: accountName ?? YAKKL_ZERO_ACCOUNT_NAME,
             init: true,
             isLocked: false,
           },
           data: {
             ...currentlySelected.data,
-            profile
+            profile: yakklProfile,
           }
         };
 
@@ -298,44 +232,45 @@
         pincode = '';
 
         const profileDataEnc = await encryptData(profileData, digest);
-        profile.data = profileDataEnc;
+        yakklProfile.data = profileDataEnc;
 
-        await setProfileStorage(profile); // Sets $profileStore as well
+        await setProfileStorage(yakklProfile); // Sets $profileStore as well
         await setYakklCurrentlySelectedStorage(currentlySelected); // Sets $yakklCurrentlySelectedStore as well
 
-        const preferences = await getPreferences() || yakklPreferencesDefaults;
-        preferences.screenWidth = screen.width;
-        preferences.screenHeight = screen.height;
-        await setPreferencesStorage(preferences); // Sets $yakklPreferencesStore as well
+        // const preferences = await getPreferences() || yakklPreferencesDefaults;
+        yakklPreferences.screenWidth = screen.width;
+        yakklPreferences.screenHeight = screen.height;
+        await setPreferencesStorage(yakklPreferences); // Sets $yakklPreferencesStore as well
 
         await browser_ext.runtime.setUninstallURL(encodeURI(`https://yakkl.com/cta/bye?userName=${userName}&utm_source=yakkl&utm_medium=extension&utm_campaign=uninstall&utm_content=${VERSION}&utm_term=extension`));
 
-        const settings = await getSettings();
-        if (settings !== null) {
-          settings.id = profile.id;
-          settings.registeredType = RegistrationType.PRO;
-          settings.lastAccessDate = settings.updateDate = profile.createDate;
-          settings.init = true;
-          settings.isLocked = false;
-
-          await setSettingsStorage(settings);
+        // const settings = await getSettings();
+        if (yakklSettings !== null) {
+          yakklSettings.id = yakklProfile.id;
+          yakklSettings.registeredType = RegistrationType.PRO;
+          yakklSettings.lastAccessDate = yakklSettings.updateDate = yakklProfile.createDate;
+          yakklSettings.init = true;
+          yakklSettings.isLocked = false;
+          await setSettingsStorage(yakklSettings);
         }
 
-        await loadDefaultTokens();
+        // Already done.
+        // await loadDefaultTokens();
 
         sendNotificationMessage('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
 
-        showRegistrationOption = true;
+        // No need to show registration option at this time. We may enable it later with other options. There must be at least one valid account
+        // showRegistrationOption = true;
       }
     } catch (e) {
       const er = !yakklMiscStore ? String(e) : String(e).replace(yakklMiscStore, "REDACTED");
-      errorValue = `register: Following error occurred: ${er}`;
+      errorValue = `[ERROR]: Register: Following error occurred: ${er}`;
       error = true;
       console.log(errorValue);
     }
   }
 
-  const { form, errors, state, isValid, handleChange, handleSubmit } = createForm({
+  const { form, errors, isValid, handleChange, handleSubmit } = createForm({
     initialValues: { userName: "", password: "", confirmPassword: "", pincode: "", email: "", accountName: "Primary Portfolio Account"},
     validationSchema: yup.object().shape({
         userName: yup
@@ -370,7 +305,7 @@
       } catch (e) {
           error = true;
           // let er = (!password || !confirmPassword ? String(e) : String(e).replace(password, "REDACTED").replace(confirmPassword, "REDACTED"));
-          errorValue = `form: Following error occurred: ${e}`;
+          errorValue = `[ERROR]: Form with following error occurred: ${e}`;
           console.log(errorValue);
       }
     }
@@ -384,10 +319,6 @@
           x.type = "password";
       }
   }
-
-  // async function handleGOTO() { // Make sure the user is logged in before routing to import
-  //   await goto(PATH_IMPORT_PHRASE);
-  // }
 
   function togglePasswordVisability() {
     toggleVisability("password", "text");
@@ -428,25 +359,10 @@
 <!-- <EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit} mode='import'/> -->
 <!-- <ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={handleRestore}/> -->
 
-<RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} />
+<!-- <RegistrationOptionModal bind:show={showRegistrationOption} onClose={onCancelRegistrationOption} onCancel={onCancelRegistrationOption} onCreate={handleCreate} /> -->
 
 <ErrorNoAction bind:show={error} value={errorValue} title="ERROR!"/>
 <Warning bind:show={warning} value={warningValue} title="WARNING!" />
-
-<!-- <div class="modal" class:modal-open={showRegistrationOption}>
-  <div class="modal-box relative">
-    <div class="m-2 text-center p-1">
-      <h1 class="font-bold"><span class="font-bold text-white">OPTIONS</span></h1>
-      <p class="pt-2">If this is a new install then (click): Create initial account!</p>
-      <p class="mt-1">If you wish to restore then (click): Restore from Emergency Kit!</p>
-    </div>
-    <div class="flex flex-col">
-      <button class="btn btn-primary" on:click={handleCreate}>Create initial account!</button>
-      <button class="btn btn-secondary mt-2" on:click={handleImport}>Import an existing account!</button>
-      <button class="btn btn-error mt-2" on:click={handleRestore}>Restore from Emergency Kit!</button>
-    </div>
-  </div>
-</div> -->
 
 <Popover class="text-sm z-50" triggeredBy="#pwd-help" placement="top">
     <h3 class="font-semibold text-gray-900 dark:text-white">Must have at least 8 characters</h3>
@@ -549,23 +465,6 @@
     </ul>
 </Popover>
 
-<!-- <Popover class="text-sm z-10" triggeredBy="#reg-help" placement="top">
-    <h3 class="font-semibold text-gray-900 dark:text-white">Optional registration key.</h3>
-    <div class="grid grid-cols-4 gap-2">
-        <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-        <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-        <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-        <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-    </div>
-    <p class="py-2">It's used for:</p>
-    <ul>
-        <li class="flex items-center mb-1">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-4 h-4 text-green-400 dark:text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            Upgrading to Pro, Business, or Enterprise/Institution versions only. Not required for the default Standard version.
-        </li>
-    </ul>
-</Popover> -->
-
 <Popover class="text-sm z-50" triggeredBy="#email-help" placement="top">
     <h3 class="font-semibold text-gray-900 dark:text-white">Email</h3>
     <div class="grid grid-cols-4 gap-2">
@@ -583,230 +482,236 @@
     </ul>
 </Popover>
 
-  <div class="relative m-2 h-[95%] bg-base-100 text-base-content rounded-xl">
-    <main class="mt-1 mx-auto w-full text-center p-4">
-      <h1 class="text-xl tracking-tight font-extrabold">
-        <span class="3xl:inline">WELCOME</span>
-        <br>
-        <span class="lg:inline">{DEFAULT_TITLE}</span>
-        <!-- <span class="block text-primary-600 xl:inline">Cross-Chain</span> -->
-      </h1>
-      <p class="mt-1 mx-auto text-base">
-        A smart wallet that works as you would expect
-      </p>
-      <p class="mx-auto text-base">
-        Intuitive, Secure, Fast, and Powerful
-      </p>
-      <hr class="my-2">
-      <div class="w-full">
-        {#if init}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <!-- svelte-ignore a11y-interactive-supports-focus -->
-        <div role="button" on:click="{() => {goto(PATH_LOGIN)}}" class="font-bold text-md uppercase my-5">
-          NOTE: It appears you have already registered! Click here to go to login instead. If you continue with registering below then it will RESET your account to empty and start over (BE CAREFUL)!
-        </div>
-        {/if}
-        <span class="mb-2 text-md uppercase font-bold text-center">[Registration is for data encryption! Required]</span>
-        <form class="w-full" on:submit|preventDefault={handleSubmit}>
-          <div class="my-1">
-            <div class="flex flex-row mt-2">
+<div class="relative m-2 h-[95%] bg-base-100 text-base-content rounded-xl">
+  <main class="mt-1 mx-auto w-full text-center p-4">
+    <h1 class="text-xl tracking-tight font-extrabold">
+      <span class="3xl:inline">WELCOME</span>
+      <br>
+      <span class="lg:inline">{DEFAULT_TITLE}</span>
+      <!-- <span class="block text-primary-600 xl:inline">Cross-Chain</span> -->
+    </h1>
+    <p class="mt-1 mx-auto text-base">
+      A smart wallet that works as you would expect
+    </p>
+    <p class="mx-auto text-base">
+      Intuitive, Secure, Fast, and Powerful
+    </p>
+    <hr class="my-2">
+    <div class="w-full">
+      {#if init}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_interactive_supports_focus -->
+      <div role="button" onclick={() => {goto(PATH_LOGIN)}} class="font-bold text-md uppercase my-5">
+        NOTE: It appears you have already registered! Click here to go to login instead. If you continue with registering below then it will RESET your account to empty and start over (BE CAREFUL)!
+      </div>
+      {/if}
+      <span class="mb-2 text-md uppercase font-bold text-center">[Registration data is used for securing your authenticity! Never leaves YAKKL, fully encrypted, and is Required.]</span>
+      <form class="w-full" onsubmit={handleSubmit}>
+        <div class="my-1">
+          <div class="flex flex-row mt-2">
+            <div class="form-control w-full">
+              <label class="input-group">
+                <input id="userName"
+                  type="text"
+                  class="input input-bordered input-primary w-full"
+                  placeholder="Username" autocomplete="off" bind:value="{$form.userName}" onchange={handleChange} required />
+                <span class="label-text">.nfs.id</span>
+              </label>
+            </div>
+            <svg id="nam-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          {#if $errors.userName}
+          <small class="text-red-600 font-bold animate-pulse">{$errors.userName}</small>
+          {/if}
+          <div class="flex flex-row mt-2">
+            <div class="form-control w-full">
+              <input id="password" type="password"
+                class="input input-bordered input-primary w-full mt-2"
+                placeholder="Password"
+                autocomplete="off"
+                bind:value="{$form.password}"
+                onchange={handleChange}
+                required />
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <svg id="pweye-closed" onclick={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
+                <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
+                <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0115.75 12zM12.53 15.713l-4.243-4.244a3.75 3.75 0 004.243 4.243z" />
+                <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 00-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 016.75 12z" />
+              </svg>
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <svg id="pweye-open" onclick={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
+                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <svg id="pwd-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          {#if $errors.password}
+          <small class="text-red-600 font-bold animate-pulse">{$errors.password}</small>
+          {/if}
+          <div class="w-[93%] bg-gray-200 rounded-full my-1 mt-1">
+            {#if strength < 3}
+            <div class="bg-red-600 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-l-full" style="width: 33%">
+              Weak
+            </div>
+            {/if}
+            {#if strength === 3}
+            <div class="bg-yellow-400 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-l-full" style="width: 66%">
+              Average
+            </div>
+            {/if}
+            {#if strength > 3}
+            <div class="bg-green-500 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: 100%">
+              Strong
+            </div>
+            {/if}
+          </div>
+          <div class="w-full text-center mt-1">
+            <span class="text-sm font-bold">Weak password or anything less than 8 characters will not be allowed!</span>
+          </div>
+          <div class="mt-2">
+            <div class="flex flex-row">
               <div class="form-control w-full">
-                <label class="input-group">
-                  <input id="userName"
-                    type="text"
-                    class="input input-bordered input-primary w-full"
-                    placeholder="Username" autocomplete="off" bind:value="{$form.userName}" on:change="{handleChange}" required />
-                  <span class="label-text">.nfs.id</span>
-                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  class="input input-bordered input-primary w-full mt-2"
+                  placeholder="Confirm Password"
+                  autocomplete="off"
+                  bind:value="{$form.confirmPassword}"
+                  onchange={handleChange}
+                  required
+                />
               </div>
-              <svg id="nam-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
+              <svg id="con-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-2 fill-gray-200">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
               </svg>
-              </div>
-              {#if $errors.userName}
-              <small class="text-red-600 font-bold animate-pulse">{$errors.userName}</small>
-              {/if}
-              <div class="flex flex-row mt-2">
-                <div class="form-control w-full">
-                  <input id="password" type="password"
-                    class="input input-bordered input-primary w-full mt-2"
-                    placeholder="Password"
-                    autocomplete="off"
-                    bind:value="{$form.password}"
-                    on:change="{handleChange}"
-                    required />
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <svg id="pweye-closed" on:click={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
-                    <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
-                    <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0115.75 12zM12.53 15.713l-4.243-4.244a3.75 3.75 0 004.243 4.243z" />
-                    <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 00-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 016.75 12z" />
-                  </svg>
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <svg id="pweye-open" on:click={togglePasswordVisability} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
-                    <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                    <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <svg id="pwd-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 ml-1 mt-4 fill-gray-300">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              {#if $errors.password}
-              <small class="text-red-600 font-bold animate-pulse">{$errors.password}</small>
-              {/if}
-              <div class="w-[93%] bg-gray-200 rounded-full my-1 mt-1">
-                {#if strength < 3}
-                <div class="bg-red-600 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-l-full" style="width: 33%">Weak</div>
-                {/if}
-                {#if strength === 3}
-                <div class="bg-yellow-400 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-l-full" style="width: 66%">Average</div>
-                {/if}
-                {#if strength > 3}
-                <div class="bg-green-500 h-1.75 mt-1 text-2xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: 100%">Strong</div>
-                {/if}
-              </div>
-              <div class="w-full text-center mt-1">
-                <span class="text-sm font-bold">Weak password or anything less than 8 characters will not be allowed!</span>
-              </div>
-              <div class="mt-2">
-                <div class="flex flex-row">
-                  <div class="form-control w-full">
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      class="input input-bordered input-primary w-full mt-2"
-                      placeholder="Confirm Password"
-                      autocomplete="off"
-                      bind:value="{$form.confirmPassword}"
-                      on:change="{handleChange}"
-                      required
-                    />
-                  </div>
-                    <svg id="con-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-2 fill-gray-200">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                    </svg>
-                  </div>
-                  {#if $errors.confirmPassword}
-                  <small class="text-red-600 font-bold animate-pulse">{$errors.confirmPassword}</small>
-                  {/if}
-              </div>
-              <div class="flex flex-row mt-2">
-                <div class="form-control w-full flex flex-row">
-                  <input
-                    id="pincode"
-                    type="password"
-                    inputmode="numeric"
-                    minlength="8"
-                    maxlength="8"
-                    class="input input-bordered input-primary w-full mt-2 flex flex-row"
-                    placeholder="8 Digit Pin Code"
-                    autocomplete="off"
-                    bind:value="{$form.pincode}"
-                    on:change="{handleChange}"
-                    required
-                  />
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <svg id="eye-closed" on:click={togglePinVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
-                    <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
-                    <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0115.75 12zM12.53 15.713l-4.243-4.244a3.75 3.75 0 004.243 4.243z" />
-                    <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 00-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 016.75 12z" />
-                  </svg>
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <svg id="eye-open" on:click={togglePinVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
-                    <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                    <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <svg id="pin-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              {#if $errors.pincode}
-              <small class="text-red-600 font-bold animate-pulse">{$errors.pincode}</small>
-              {/if}
-              <div class="flex flex-row mt-2">
-                <div class="form-control w-full flex flex-row">
-                  <input
-                    id="email"
-                    type="email"
-                    class="input input-bordered input-primary w-full mt-2 flex flex-row"
-                    placeholder="Required Email"
-                    autocomplete="on"
-                    bind:value="{$form.email}"
-                    on:change="{handleChange}"
-                    required
-                  />
-                </div>
-                <svg id="email-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              {#if $errors.email}
-              <small class="text-red-600 font-bold animate-pulse">{$errors.email}</small>
-              {/if}
-              <div class="flex flex-row mt-2">
-                <div class="form-control w-full">
-                  <input
-                    id="accountName"
-                    class="input input-bordered input-primary w-full mt-2"
-                    placeholder="Main Account Name"
-                    autocomplete="off"
-                    bind:value="{$form.accountName}"
-                    on:change="{handleChange}"
-                  />
-                </div>
-                <svg id="act-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              {#if $errors.accountName}
-              <small class="text-red-600 font-bold animate-pulse">{$errors.accountName}</small>
-              {/if}
             </div>
-            <div class="mt-2 inline-block text-center">
-              <button
-                type="submit"
-                class="btn btn-primary w-64 rounded-full mt-2">
-                <div class="inline-flex items-center align-middle">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                  </svg>
-                  <span>Register</span>
-                </div>
-              </button>
-            </div>
-          </form>
-        </div>
-      <!-- <div class="divider lg:divider-vertical">Upgrade AFTER registration is complete!</div> -->
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- <div class="flex flex-row justify-center items-center">
-        <div role="button" on:click="{handleGOTO}" class="font-extrabold underline uppercase">
-          Click to import wallet (with secret phrase)
-        </div>
-        <svg id="imp-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="flex flex-row w-6 h-6 ml-1 fill-gray-300">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-        </svg>
-      </div> -->
-
-      <!-- <div id="upgrade" class="w-full mt-8">
-        <div class="card bg-base-100 shadow-xl image-full">
-          <figure><img class="h-auto" src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
-          <div class="card-body p-1">
-            <h2 class="card-title self-center">PRO</h2>
-            <p>This is the beta program for our Pro version. This means you are receiving all Pro features for FREE! We are adding new features and making small cosmetic changes and we would love to have your feedback. To add feedback or create a ticket for a found issue, cloud the BETA button on the Header bar once logged in. We also need your suggestions!
-            </p>
+            {#if $errors.confirmPassword}
+            <small class="text-red-600 font-bold animate-pulse">{$errors.confirmPassword}</small>
+            {/if}
           </div>
+          <div class="flex flex-row mt-2">
+            <div class="form-control w-full flex flex-row">
+              <input
+                id="pincode"
+                type="password"
+                inputmode="numeric"
+                minlength="8"
+                maxlength="8"
+                class="input input-bordered input-primary w-full mt-2 flex flex-row"
+                placeholder="8 Digit Pin Code"
+                autocomplete="off"
+                bind:value="{$form.pincode}"
+                onchange={handleChange}
+                required
+              />
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <svg id="eye-closed" onclick={togglePinVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
+                <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
+                <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0115.75 12zM12.53 15.713l-4.243-4.244a3.75 3.75 0 004.243 4.243z" />
+                <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 00-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 016.75 12z" />
+              </svg>
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <svg id="eye-open" onclick={togglePinVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 ml-1 fill-gray-200 absolute right-11 z-10 mt-5 cursor-pointer">
+                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <svg id="pin-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          {#if $errors.pincode}
+          <small class="text-red-600 font-bold animate-pulse">{$errors.pincode}</small>
+          {/if}
+          <div class="flex flex-row mt-2">
+            <div class="form-control w-full flex flex-row">
+              <input
+                id="email"
+                type="email"
+                class="input input-bordered input-primary w-full mt-2 flex flex-row"
+                placeholder="Required Email"
+                autocomplete="on"
+                bind:value="{$form.email}"
+                onchange={handleChange}
+                required
+              />
+            </div>
+            <svg id="email-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          {#if $errors.email}
+          <small class="text-red-600 font-bold animate-pulse">{$errors.email}</small>
+          {/if}
+          <div class="flex flex-row mt-2">
+            <div class="form-control w-full">
+              <input
+                id="accountName"
+                class="input input-bordered input-primary w-full mt-2"
+                placeholder="Main Account Name"
+                autocomplete="off"
+                bind:value="{$form.accountName}"
+                onchange={handleChange}
+              />
+            </div>
+            <svg id="act-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-6 h-6 relative ml-1 mt-4 fill-gray-200">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          {#if $errors.accountName}
+          <small class="text-red-600 font-bold animate-pulse">{$errors.accountName}</small>
+          {/if}
         </div>
-      </div> -->
 
-    </main>
-  </div>
+          <div class="mt-2 inline-block text-center">
+            <button
+              type="submit"
+              class="btn btn-primary w-64 rounded-full mt-2">
+              <div class="inline-flex items-center align-middle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+                <span>Register</span>
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    <!-- <div class="divider lg:divider-vertical">Upgrade AFTER registration is complete!</div> -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- <div class="flex flex-row justify-center items-center">
+      <div role="button" on:click="{handleGOTO}" class="font-extrabold underline uppercase">
+        Click to import wallet (with secret phrase)
+      </div>
+      <svg id="imp-help" tabindex="-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="flex flex-row w-6 h-6 ml-1 fill-gray-300">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+      </svg>
+    </div> -->
 
+    <!-- <div id="upgrade" class="w-full mt-8">
+      <div class="card bg-base-100 shadow-xl image-full">
+        <figure><img class="h-auto" src="/images/logoBullFav128x128.png" alt="upgrade" /></figure>
+        <div class="card-body p-1">
+          <h2 class="card-title self-center">PRO</h2>
+          <p>This is the beta program for our Pro version. This means you are receiving all Pro features for FREE! We are adding new features and making small cosmetic changes and we would love to have your feedback. To add feedback or create a ticket for a found issue, cloud the BETA button on the Header bar once logged in. We also need your suggestions!
+          </p>
+        </div>
+      </div>
+    </div> -->
 
-  <!-- <h2 class="card-title">UPGRADE TO PRO!</h2>
-  <p>Upgrade to the Pro version! Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p> -->
+  </main>
+</div>
+
+<!-- <h2 class="card-title">UPGRADE TO PRO!</h2>
+<p>Upgrade to the Pro version! Do it today to unlock advanced features. Click the UPGRADE button after you login. This will enable a number of features including our unique Emergency Kit, AI Chat, and enhanced security.</p> -->
 

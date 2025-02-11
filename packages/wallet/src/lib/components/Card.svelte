@@ -4,7 +4,7 @@
   import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
   import { yakklPricingStore, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected, getMiscStore, yakklCurrentlySelectedStore, yakklAccountsStore, yakklCombinedTokenStore } from '$lib/common/stores';
-  import { PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
+  import { PATH_LOGOUT, PATH_LOCK, PATH_LOGIN } from '$lib/common/constants';
   import { onDestroy, onMount } from 'svelte';
   import { truncate, timeoutClipboard } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
@@ -742,13 +742,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
         </SpeedDialButton>
-        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)} class="w-16">
+        <SpeedDialButton name="Lock" on:click={() => goto(PATH_LOCK)} class="w-16">
           <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h10.5A2.25 2.25 0 0118 4.25v10.5A2.25 2.25 0 0115.75 18h-10.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M8.704 10.943l1.048.943H3.75a.75.75 0 000 1.5h6.002l-1.048.943a.75.75 0 101.004 1.114l2.5-2.25a.75.75 0 000-1.114l-2.5-2.25a.75.75 0 10-1.004 1.114z" clip-rule="evenodd" />
           </svg>
         </SpeedDialButton>
-        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)} class="w-16">
+        <SpeedDialButton name="Exit" on:click={() => goto(PATH_LOGOUT)} class="w-16">
           <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />

@@ -11,16 +11,19 @@
   import { PriceManager } from '$lib/plugins/PriceManager';
   import { onMount } from 'svelte';
   import type { TokenData } from '$lib/common/interfaces';
+	import { debug_log } from '$lib/common';
 
   let tokens: TokenData[] = [];
-  let sortedTokens: TokenData[] = [];
-  let currentView = 'grid';
+  let sortedTokens: TokenData[] = $state([]);
+  let currentView = $state('grid');
   let sortBy = 'name';
 
   let priceManager = new PriceManager();
   let priceUpdater = createPriceUpdater(priceManager, 30000);
 
   onMount(() => {
+    debug_log('TokenViews mounted');
+
     // Subscribe to the combined token store
     const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
       tokens = allTokens;

@@ -12,14 +12,44 @@ export const clearObjectsFromLocalStorage = async (): Promise<void> => {
 };
 
 // This had two arguments, but I removed the second one since we only want to return objects
-export const getObjectFromLocalStorage = async <T>(key: string): Promise<T | null> => {
+// export const getObjectFromLocalStorage = async <T>(key: string): Promise<T | null> => {
+//   try {
+//     if (!browser_ext) {
+//       console.log('Browser extension is not available. Returning null.');
+//       return null;
+//     }
+//     const result = await browser_ext.storage.local.get(key);
+//     return result[key] as T;
+//   } catch (error) {
+//     console.log('Error getting object from local storage', error);
+//     throw error;
+//   }
+// };
+
+export const getObjectFromLocalStorage = async <T>(key: string, timeoutMs = 2000): Promise<T | null> => {
   try {
-    if (!browser_ext) return null;
-    const result = await browser_ext.storage.local.get(key);
+    if (!browser_ext) {
+      return null;
+    }
+
+    const storagePromise = browser_ext.storage.local.get(key);
+
+    // Set a timeout to prevent infinite hangs
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => {
+        resolve(null);
+      }, timeoutMs)
+    );
+
+    const result = await Promise.race([storagePromise, timeoutPromise]);
+
+    if (!result || !(key in result)) {
+      return null;
+    }
+
     return result[key] as T;
   } catch (error) {
-    console.log('Error getting object from local storage', error);
-    throw error;
+    return null;
   }
 };
 

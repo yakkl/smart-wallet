@@ -1,6 +1,6 @@
 // import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 // import { browserSvelte } from '$lib/utilities/browserSvelte';
-import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/timers';
+import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
 import { isBrowserEnv, browserSvelte, browser_ext } from './environment';
 
 // let browser_ext = getBrowserExt();

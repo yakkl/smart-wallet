@@ -6,13 +6,13 @@
   import { goto } from '$app/navigation';
   import { identicon } from '$lib/utilities';
   import { getMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
-  import { PATH_EXPORT, PATH_IMPORT_PRIVATEKEY, PATH_LOCK, PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
+  import { PATH_LOCK, PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
   import Card from '$lib/components/Card.svelte';
   import ImageBar from '$lib/components/ImageBar.svelte';
   import { handleOpenInTab } from '$lib/utilities';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import Share from '$lib/components/Share.svelte';
-  import CommingSoon from '$lib/components/ComingSoon.svelte';
+  // import CommingSoon from '$lib/components/ComingSoon.svelte';
 	import { onMount } from 'svelte';
 	import EmergencyKitModal from './EmergencyKitModal.svelte';
 
@@ -24,8 +24,8 @@
   let { id = "header", containerWidth = DEFAULT_POPUP_WIDTH }: Props = $props();
 
   let currentlySelected: YakklCurrentlySelected;
-  let yakklMiscStore: string | null = $state(getMiscStore());
-  let showComingSoon = $state(false);
+  let yakklMiscStore: string | null = getMiscStore();
+  // let showComingSoon = $state(false);
   let showInfo = $state(false);
 
   let address: string;
@@ -37,26 +37,24 @@
   onMount(async () => {
     try {
       currentlySelected = await getYakklCurrentlySelected();
-      yakklMiscStore = getMiscStore();
+      // yakklMiscStore = getMiscStore();
       address = currentlySelected.shortcuts.address;
       imageSRC = identicon(address ? address : 'default');
     } catch (e) {
-      console.log(`Header: onMount - ${e}`);
+      console.log(`[ERROR]: Header: onMount - ${e}`);
     }
   });
 
-
-  function handleDelete() {
-    try {
-      document.getElementById('collapseSidenavSecEx2')?.classList?.remove('show');
-      document.getElementById('offcanvasSettings')?.classList?.remove('show');
-      let id = document.getElementsByClassName('offcanvas-backdrop')[0];
-    id.remove();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
+  // function handleDelete() {
+  //   try {
+  //     document.getElementById('collapseSidenavSecEx2')?.classList?.remove('show');
+  //     document.getElementById('offcanvasSettings')?.classList?.remove('show');
+  //     let id = document.getElementsByClassName('offcanvas-backdrop')[0];
+  //   id.remove();
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 
   function handleUniversity() {
     try {
@@ -69,7 +67,7 @@
 </script>
 
 <NotEnabled bind:show={showInfo} value="This feature is not yet available. It will be released soon!"/>
-<CommingSoon bind:show={showComingSoon} value="This feature is not yet available. It will be released soon!"/>
+<!-- <CommingSoon bind:show={showComingSoon} value="This feature is not yet available. It will be released soon!"/> -->
 <EmergencyKitModal bind:show={showEmergencyKit} mode={showEmergencyKitExport ? 'export' : showEmergencyKitImport ? 'import' : 'export'} />
 
 <ImageBar>
