@@ -1,5 +1,6 @@
 import { isBrowserEnv, browserSvelte, browser_ext } from '$lib/common/environment';
 
+// WIP - do not use
 export async function restartExtension() {
   try {
     console.log('Restarting extension...');

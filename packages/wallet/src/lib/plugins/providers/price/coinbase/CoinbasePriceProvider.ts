@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
+import { debug_log } from "$lib/common/debug-error";
 
 
 export class CoinbasePriceProvider implements PriceProvider {
@@ -19,7 +20,7 @@ export class CoinbasePriceProvider implements PriceProvider {
       }
 
       pair = await this.getProviderPairFormat( pair );
-      
+
       const [ tokenIn, tokenOut ] = pair.split( '-' );
       if ( !tokenIn || !tokenOut ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
@@ -43,9 +44,11 @@ export class CoinbasePriceProvider implements PriceProvider {
       if ( tokenIn === 'WBTC' ) {
         pair = `BTC-${ tokenOut }`;
       }
-    
+
       const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
-    
+
+      debug_log( 'CoinbasePriceProvider - getPrice - json', json );
+
       if ( json.num_products <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
       }
@@ -69,6 +72,8 @@ export class CoinbasePriceProvider implements PriceProvider {
         status = 429;
         message = 'Too Many Requests - Rate limit exceeded';
       }
+
+      debug_log( 'CoinbasePriceProvider - getPrice - error', status, message );
 
       return {
         provider: this.getName(),

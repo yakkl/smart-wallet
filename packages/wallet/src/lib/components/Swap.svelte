@@ -177,7 +177,7 @@
 
   let lastModifiedPanel: 'sell' | 'buy' = 'sell';
   let swapManagerName = '';
-  let pricesInterval: NodeJS.Timeout;
+  let pricesIntervalID: NodeJS.Timeout;
   let isEthWethSwap = $state(false);
   let showVerify = $state(false);
   let showError = $state(false);
@@ -202,7 +202,7 @@
           updateSwapPriceData( { marketPriceGas: price.price });
         });
       }
-      pricesInterval = setInterval(fetchPrices, 60000);
+      pricesIntervalID = setInterval(fetchPrices, 60000);
     } catch (err) {
       error_log('Error initializing swap:', err);
       $swapStateStore.error = 'Failed to initialize swap. Please try again.';
@@ -210,7 +210,7 @@
   });
 
   onDestroy(() => {
-    clearInterval(pricesInterval);
+    clearInterval(pricesIntervalID);
     debouncedGetQuote.cancel();
     debouncedCheckBalance.cancel();
     debouncedGetMarketPrice.cancel();

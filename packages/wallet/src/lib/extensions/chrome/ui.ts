@@ -2,11 +2,10 @@ import { STORAGE_YAKKL_PREFERENCES } from '$lib/common/constants';
 import type { Preferences } from '$lib/common/interfaces';
 import type { Windows } from 'webextension-polyfill';
 import { browser_ext } from './utils';
+import { browserSvelte } from '$lib/common/environment';
 import { debug_log } from '$lib/common/debug-error';
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-
-export const openWindows = new Map();
-export const openPopups = new Map();
+import { openPopups, openWindows } from '$lib/common/reload';
 
 type WindowsWindow = Windows.Window;
 
@@ -16,6 +15,7 @@ export async function showExtensionPopup(
   url: string  // This should be undefined, null or ''
 ): Promise<WindowsWindow> {
   try {
+    if (browserSvelte) {
     // Uses the default 'get' here
     const pref = await browser_ext.storage.local.get( STORAGE_YAKKL_PREFERENCES ) as { yakklPreferences: Preferences; };
     const yakkl = pref['yakklPreferences'] as Preferences;
@@ -87,6 +87,9 @@ export async function showExtensionPopup(
       height: popupHeight,
       focused: true,
     });
+  } else {
+    return Promise.reject();
+  }
   } catch (error) {
     console.log(error);
     return Promise.reject(); // May want to do something else here.
@@ -95,20 +98,22 @@ export async function showExtensionPopup(
 
 // TBD! - May need to set up a connection between UI and here
 // Check the lastlogin date - todays date = days hash it using dj2 then use as salt to encrypt and send to here and send back on request where it is reversed or else login again
-export async function showPopup(url: string): Promise<void> {
+export async function showPopup(url: string = ''): Promise<void> {
   try {
-    showExtensionPopup(428, 926, url).then(async (result) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      browser_ext.windows.update(result.id, {drawAttention: true});
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      await browser_ext.storage.session.set({windowId: result.id});
+    if (browserSvelte) {
+      showExtensionPopup(428, 926, url).then(async (result) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        browser_ext.windows.update(result.id, {drawAttention: true});
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await browser_ext.storage.session.set({windowId: result.id});
 
-      openWindows.set(result.id, result);
-    }).catch((error) => {
-      console.log('background.js - YAKKL: ' + error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
-    });
+        openWindows.set(result.id, result);
+      }).catch((error) => {
+        console.log('background.js - YAKKL: ' + error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+      });
+    }
   } catch (error) {
     console.log('background.js - showPopup',error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
   }
@@ -116,6 +121,7 @@ export async function showPopup(url: string): Promise<void> {
 
 export async function showPopupDapp(url: string): Promise<void> {
   try {
+    if (!browserSvelte) return;
     showExtensionPopup(428, 926, url).then(async (result) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -131,6 +137,7 @@ export async function showPopupDapp(url: string): Promise<void> {
 
 export async function showDappPopup(request: string) {
   try {
+    if (!browserSvelte) return;
     const popupId = openPopups.get('popupId');
 
     debug_log('yakkl - background - showDappPopup', request, popupId);

@@ -1,63 +1,50 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  import { browserSvelte } from '$lib/common/environment';
   import { onMount, onDestroy } from "svelte";
   import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
   import ErrorNoAction from "$components/ErrorNoAction.svelte";
   import ButtonGridItem from "$components/ButtonGridItem.svelte";
   import ButtonGrid from "$components/ButtonGrid.svelte";
-  // import { routeCheckWithSettings } from '$lib/common/routes';
   import { setIconLock } from '$lib/utilities';
   import Import from '$lib/components/Import.svelte';
   import TokenViews from "$lib/components/TokenViews.svelte";
-  import { Wallet } from '$lib/plugins/Wallet';
-  import { getInstances } from "$lib/common/wallet";
-  import type { Provider } from "$lib/plugins/Provider";
-  import type { Blockchain } from "$lib/plugins/Blockchain";
-  import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
-  import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
-	import { getYakklCurrentlySelectedStore, yakklTokenDataStore, yakklCombinedTokenStore } from "$lib/common/stores";
+	import { yakklCombinedTokenStore, yakklCurrentlySelectedStore, yakklInstancesStore } from "$lib/common/stores";
+	import { debug_log, getInstances } from '$lib/common';
+	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+	// import { setStateStore, stateStore } from '$lib/common/stores/stateStore';
+	// import { routeCheckWithSettings } from '$lib/common/routes';
 
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  import type { Browser } from 'webextension-polyfill';
-	import { debug_log } from '$lib/common';
-
-  let browser_ext: Browser | null = null;
-  if (browserSvelte) browser_ext = getBrowserExt();
+  // let wallet: Wallet | null = null;
+  // let provider: Provider | null = null;
+  // let blockchain: Blockchain | null = null;
+  let tokenService: TokenService<any> | null = null;
 
   let error = false;
   let errorValue: any = null;
   let showImportOption = false;
-  let wallet: Wallet | null = null;
-  let provider: Provider | null = null;
-  let blockchain: Blockchain | null = null;
-  let tokenService: TokenService<any> | null = null;
-
-
-  debug_log('Welcome page outside of onMount');
 
   onMount(async () => {
     try {
       if (browserSvelte) {
-        if ($yakklTokenDataStore.length === 0) await loadDefaultTokens(); // Ensure default tokens are loaded.
+        // if (!$stateStore) {
+          const yakklInstances = await getInstances();
 
-        debug_log('Welcome page mounted', $yakklTokenDataStore);
-        const instances = await getInstances();
-        if (instances.length > 0) {
-          debug_log('Welcome page instances:', instances);
+          debug_log('Welcome page $yakklInstancesStore:', yakklInstances);
+          if (yakklInstances) {
+            tokenService = yakklInstances[3];
+            if (tokenService) {
+              debug_log('Welcome page all instances:', yakklInstancesStore);
 
-          wallet = instances[0];
-          provider = instances[1];
-          blockchain = instances[2];
-          tokenService = instances[3];
-          if (wallet && provider && blockchain && tokenService) {
-            const currentlySelected = getYakklCurrentlySelectedStore();
-            tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+              tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
+
+              debug_log('Welcome page after updating token service-------------------------->>>>');
+            }
+          } else {
+            error = true;
+            errorValue = '[ERROR]: No wallet provider found.';
           }
-        } else {
-          error = true;
-          errorValue = '[ERROR]: No wallet provider found.';
         }
-      }
+      // }
     } catch (e) {
       console.log('[ERROR]:', e);
     }
@@ -86,9 +73,9 @@
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
 <ErrorNoAction bind:show={error} title="Error" value={errorValue} />
-<!-- <ComingSoon bind:show={showComingSoon} /> -->
 
-<div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2"></div>
+<div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2">
+</div>
 
 <ButtonGrid>
   <ButtonGridItem path={PATH_ACCOUNTS} title="Wallet Accounts">

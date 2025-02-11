@@ -1,16 +1,27 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
   import { goto } from '$app/navigation';
-  import { getYakklCurrentlySelected, setMiscStore, syncStoresToStorage } from '$lib/common/stores';
-  import { getSettings, setSettings, setYakklCurrentlySelectedStorage } from '$lib/common/stores';
+  import { resetStores, setMiscStore, syncStoresToStorage, yakklCurrentlySelectedStore, yakklSettingsStore } from '$lib/common/stores';
+  import { setSettings, setYakklCurrentlySelectedStorage } from '$lib/common/stores';
   import { PATH_LOGIN, PATH_LOGOUT } from '$lib/common/constants';
 
 	import type { Settings, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { setIconLock } from '$lib/utilities';
-	import { stopTimers } from '$lib/extensions/chrome/timers';
 	import { globalListenerManager } from '$lib/plugins/GlobalListenerManager';
+	import { debug_log } from '$lib/common/debug-error';
+	import { setStateStore } from '$lib/common/stores/stateStore';
+	import { setLocks } from '$lib/common/locks';
+	import { removeTimers, stopTimers } from '$lib/common/timers';
+	import { removeListeners } from '$lib/common/listeners';
 
- let isUpdating = false;
+  // Reactive State
+  let yakklCurrentlySelected: YakklCurrentlySelected | null = $state(null);
+  let yakklSettings: Settings | null = $state(null);
+
+  $effect(() => { yakklCurrentlySelected = $yakklCurrentlySelectedStore; });
+  $effect(() => { yakklSettings = $yakklSettingsStore; });
+
+  let isUpdating = false;
 
   async function update() {
     if (isUpdating) return;
@@ -18,34 +29,33 @@
 
     try {
       if (browserSvelte) {
-        setMiscStore('Locking your account...');
-        const yakklSettings = await getSettings();
-        if (yakklSettings && !yakklSettings.isLocked) {
-          yakklSettings.isLocked = true;
-          await setSettings(yakklSettings);
-        }
-
-        const currentlySelected: YakklCurrentlySelected = await getYakklCurrentlySelected();
-        if (currentlySelected.shortcuts?.isLocked === false) {
-          currentlySelected.shortcuts.isLocked = true;
-          await setYakklCurrentlySelectedStorage(currentlySelected);
-        }
-
         // Update lock icon
         await setIconLock();
 
-        // Stop all active timers
-        await stopTimers();
+        // if (yakklSettings && !yakklSettings.isLocked) {
+        //   yakklSettings.isLocked = true;
+        //   await setSettings(yakklSettings);
+        // }
 
-        // Remove all registered listeners
-        globalListenerManager.removeAll();
+        // if (yakklCurrentlySelected.shortcuts?.isLocked === false) {
+        //   yakklCurrentlySelected.shortcuts.isLocked = true;
+        //   await setYakklCurrentlySelectedStorage(yakklCurrentlySelected);
+        // }
 
-        // Sync all stores to ensure storage is updated
+        await setLocks(true);
+
+        // Reset stores
+        removeTimers();
+        removeListeners();
+        setStateStore(false);
+        setMiscStore('');
+        resetStores();
+
         await syncStoresToStorage();
 
         // Navigate to the login screen
-        await goto(PATH_LOGIN, { invalidateAll: true });
-        // For security, it we should use logout instead of lock.
+        goto(PATH_LOGIN, { replaceState: true, invalidateAll: true });
+
       }
     } catch (e: any) {
       console.log('[ERROR]: Locking error:', e, e?.stack);
@@ -53,7 +63,7 @@
         try {
           await goto(PATH_LOGOUT);
         } catch (err) {
-          console.error('[ERROR]: Navigation to logout failed:', err);
+          console.log('[ERROR]: Navigation to logout failed:', err);
         }
       }
     } finally {

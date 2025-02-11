@@ -25,7 +25,7 @@
     "build:contracts": "pnpm -F contracts run build",
     "test:contracts": "pnpm -F contracts run test"
   },
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "YAKKL Smart Wallet. This repository contains the smart contracts and the wallet application for the browser extension.",
   "main": "index.js",
   "keywords": [

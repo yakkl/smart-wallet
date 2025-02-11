@@ -8,7 +8,6 @@ export function onMessageUnloadAdd() {
   // We add a remove then an add to make sure we don't have multiple listeners for windows. removeListener will be ignored if it doesn't exist.
   if (browserSvelte) {
     if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForExtension)) {
-      browser_ext.runtime.onMessage.removeListener(handleOnMessageForExtension);
       browser_ext.runtime.onMessage.addListener(handleOnMessageForExtension);
     }
     addWindowListeners();

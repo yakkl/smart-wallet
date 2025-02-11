@@ -1,30 +1,24 @@
 <!-- Must be here - prerender -->
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
   import { PATH_REGISTER } from '$lib/common';
   import type { Settings } from '$lib/common';
 
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
 	import { getSettings, setSettingsStorage } from '$lib/common/stores';
+	import { goto } from '$app/navigation';
 
-  let browser_ext: Browser | null = null;
-  if (browserSvelte) browser_ext = getBrowserExt();
-
-  let yakklSettings: Settings;
+  let yakklSettings: Settings | null = null;
 
   async function update() {
     try {
       if (browserSvelte) {
         yakklSettings = await getSettings();
+
         if (yakklSettings) {
           yakklSettings.legal.privacyViewed = true;
           yakklSettings.legal.termsAgreed = true;
-
-          setSettingsStorage(yakklSettings).then(() => {
-            location.href = PATH_REGISTER+".html"; // This will force header/footer to show. If we use 'goto' then no new page rendering will occur to reset header/footer
-            return;
-          });
+          await setSettingsStorage(yakklSettings);
+          await goto(PATH_REGISTER);
         }
       }
     } catch (error) {

@@ -31,6 +31,8 @@ const priceManager = new PriceManager([
 // The new code is in the plugins folder - priceManager
 export async function checkPricesCallback() {
   try {
+    debug_log('checkPricesCallback - priceManager:', priceManager);
+    
     if (get(yakklConnectionStore) === true) {
       const result = await priceManager.getMarketPrice( 'ETH-USD' );
       if ( result ) {

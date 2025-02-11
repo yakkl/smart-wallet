@@ -1,7 +1,7 @@
 import { clearAlarm } from "$lib/common/alarms";
 import { IDLE_AUTO_LOCK_CYCLE } from "$lib/common/constants";
 import { debug_log } from "$lib/common/debug-error";
-import { browserSvelte } from "$lib/common/environment";
+import { browser_ext } from "$lib/common/environment";
 import { handleLockDown } from "$lib/common/handlers";
 import type { Preferences } from "$lib/common/interfaces";
 import { getObjectFromLocalStorage } from "$lib/common/storage";

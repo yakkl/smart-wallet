@@ -7,16 +7,25 @@ class WalletManager {
   private static instance: Wallet | null = null;
 
   public static getInstance(providerNames: string[], blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null, privateKey: string | null = null): Wallet {
-    if (!WalletManager.instance) {
-      WalletManager.instance = new Wallet(providerNames, blockchainNames, chainId, apiKey, privateKey);
-      walletStore.set(WalletManager.instance);
-    } else {
-      if (WalletManager.instance.getSigner() === null && privateKey) { // If the signer is not set and a private key is provided then update the signer
-        WalletManager.instance.setSigner(privateKey);
+    try {
+      if (!WalletManager.instance) {
+        console.log("[DEBUG] Creating new Wallet instance - privateKey:", privateKey);
+        WalletManager.instance = new Wallet(providerNames, blockchainNames, chainId, apiKey, privateKey);
         walletStore.set(WalletManager.instance);
+      } else {
+        console.log("[DEBUG] Wallet instance already exists - privateKey:", privateKey);
+        if (!WalletManager.instance.getSigner() && privateKey) {
+          console.log("[DEBUG] Setting signer for existing Wallet instance");
+          WalletManager.instance.setSigner(privateKey);
+          walletStore.set(WalletManager.instance);
+        }
       }
+      console.log("[DEBUG] Returning Wallet instance");
+      return WalletManager.instance;
+    } catch (error) {
+      console.log("[ERROR]: Failed to get Wallet instance:", error);
+      throw error;
     }
-    return WalletManager.instance; // This can return with no signer set if the private key is not provided. It will be up to the developer to call the setSigner method with a valid private key.
   }
 
   public static clearInstance(): void {
@@ -25,13 +34,14 @@ class WalletManager {
   }
 
   public static setInstance(instance: Wallet): void {
+    this.clearInstance();
     WalletManager.instance = instance;
     walletStore.set(instance);
   }
 
   public static get wallet(): Wallet | null {
     return get(walletStore);
-  }  
+  }
 
 }
 

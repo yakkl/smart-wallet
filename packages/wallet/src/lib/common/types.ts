@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { EventFilter, Addressable, YakklAccount, YakklChat, YakklConnectedDomain, YakklPrimaryAccount, YakklContact, Network, BigNumberish } from '$lib/common';
+import type { EventFilter, Addressable, YakklAccount, YakklChat, YakklConnectedDomain, YakklPrimaryAccount, YakklContact, Network, BigNumberish, TokenData } from '$lib/common';
 
 export type AccountType = YakklAccount | YakklPrimaryAccount;
 export type YakklAccounts = [YakklAccount];
@@ -130,3 +130,19 @@ export type URL = string;
 export type DomainName = string;
 
 export type IMAGEPATH = string; // This is a path to a file or directory, URL, or base64 encoded string of an image
+
+import type { YakklCurrentlySelected, Settings, Preferences } from '$lib/common';
+import type { Blockchain } from '$lib/plugins/Blockchain';
+import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+import type { Provider } from '$lib/plugins/Provider';
+import type { Wallet } from '$lib/plugins/Wallet';
+
+export interface LayoutData {
+  currentlySelected: YakklCurrentlySelected | null;
+  yakklSettings: Settings | null;
+  yakklMiscStore: string;
+  yakklPrimaryAccountsStore: YakklPrimaryAccount[];
+  yakklPreferences: Preferences | null;
+  instances: [Wallet | null, Provider | null, Blockchain | null, TokenService<any> | null];
+  yakklTokenDataStore: TokenData[];
+}

@@ -22,20 +22,20 @@ export async function verify(id: string): Promise<Profile | undefined> {
     debug_log('verify Profile:', profile);
 
     if (!profile || !digest) {
-      debug_log('Profile or digest is undefined');
+      // debug_log('Profile or digest is undefined');
 
       return undefined; // Don't set the store to anything here
     } else {
-      debug_log('verify Profile data:', profile.data);
+      // debug_log('verify Profile data:', profile.data);
 
       if (isEncryptedData(profile.data)) {
-        debug_log('Profile data is encrypted', profile.data);
+        // debug_log('Profile data is encrypted', profile.data);
 
         const profileData = await decryptData(profile.data, digest) as ProfileData;
         if (profileData) {
-          profile.data = profileData;
+          // profile.data = profileData;
 
-          debug_log('Profile data decrypted:', profileData);
+          debug_log('setMiscStore:', digest);
 
           setMiscStore(digest);
         } else {
@@ -58,6 +58,9 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
     let address: string | null = null;
     let privateKey: string | null | undefined = null;
 
+    if (!yakklMiscStore || !currentlySelected) {
+      return null;
+    }
     // May want to put this in a function
     if ( isEncryptedData( currentlySelected.data ) ) {
       const result = await decryptData( currentlySelected.data, yakklMiscStore );
@@ -71,7 +74,7 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
         privateKey = data ? data.account?.data.privateKey : null;
       }
     } else {
-      privateKey = currentlySelected.data ? ( ( currentlySelected.data as CurrentlySelectedData ).account?.data as AccountData ).privateKey : null;
+      privateKey = currentlySelected.data ? ( ( currentlySelected.data as CurrentlySelectedData ).account?.data as AccountData )?.privateKey ?? null : null;
     }
 
     if ( privateKey && address) {

@@ -62,7 +62,7 @@
         fundingAddress = currentlySelected.shortcuts.address;
       }
 
-            if (swapPriceProvider === null) {
+      if (swapPriceProvider === null) {
         let wallet: Wallet | null = null;
         wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
         if (wallet) {
@@ -87,7 +87,7 @@
 
 
     } catch (e) {
-      console.log(`Footer: onMount - ${e}`);
+      console.log(`[ERROR]: Footer: onMount - ${e}`);
     }
   });
 
