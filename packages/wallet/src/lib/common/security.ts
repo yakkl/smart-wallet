@@ -3,7 +3,7 @@ import { decryptData, digestMessage } from '$lib/common/encryption';
 import type { AccountData, CurrentlySelectedData, Profile, ProfileData } from '$lib/common/interfaces';
 import { isEncryptedData } from '$lib/common/misc';
 import { getProfile, setMiscStore, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
-import { debug_log, error_log } from './debug-error';
+import { log } from '$plugins/Logger';
 
 export interface AccountKey {
   address: string;
@@ -15,28 +15,14 @@ export async function verify(id: string): Promise<Profile | undefined> {
     if (!id) {
       return undefined;
     }
-
     const profile = await getProfile();
     const digest = await digestMessage(id);
-
-    debug_log('verify Profile:', profile);
-
     if (!profile || !digest) {
-      // debug_log('Profile or digest is undefined');
-
       return undefined; // Don't set the store to anything here
     } else {
-      // debug_log('verify Profile data:', profile.data);
-
       if (isEncryptedData(profile.data)) {
-        // debug_log('Profile data is encrypted', profile.data);
-
         const profileData = await decryptData(profile.data, digest) as ProfileData;
         if (profileData) {
-          // profile.data = profileData;
-
-          debug_log('setMiscStore:', digest);
-
           setMiscStore(digest);
         } else {
           throw 'Verification failed!';
@@ -45,7 +31,8 @@ export async function verify(id: string): Promise<Profile | undefined> {
       return profile;
     }
   } catch(e) {
-    console.log('[ERROR]:', e);
+    // console.log('[ERROR]:', e);
+    log.error(e);
     throw `Verification failed! - ${e}`;
   }
 }
@@ -85,7 +72,8 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
     }
     return accountKey;
   } catch(e: any) {
-    error_log(e);
+    // error_log(e);
+    log.errorStack(e);
     throw `Error getting account key - ${e}`;
   }
 }

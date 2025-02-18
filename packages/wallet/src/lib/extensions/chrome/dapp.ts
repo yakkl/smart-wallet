@@ -1,5 +1,6 @@
 import { debug_log } from "$lib/common/debug-error";
 import { requestsExternal } from "$lib/common/listeners/background/portListeners";
+import { log } from "$lib/plugins/Logger";
 
 
 export async function onDappListener(event: any, sender: any): Promise<void> {
@@ -65,7 +66,7 @@ export async function onDappListener(event: any, sender: any): Promise<void> {
     }
 
   } catch (error) {
-    console.log(error);
+    log.error(error);
     sender.postMessage({id: event.id, method: event.method, type: 'YAKKL_RESPONSE', data: {code: -1, message: error}});
   }
 }

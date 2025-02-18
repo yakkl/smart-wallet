@@ -4,6 +4,7 @@
   import { decryptData, digestMessage, isEncryptedData, isProfileData } from '$lib/common';
   import type { EncryptedData, ProfileData, Profile } from '$lib/common';
   import Modal from './Modal.svelte';
+	import { log } from "$lib/plugins/Logger";
 
   interface Props {
     show?: boolean;
@@ -52,7 +53,7 @@
       pincode = "";
       show = false;
     } catch (e) {
-      console.log(e);
+      log.error(e);
       onRejected("Pincode verification failed");
     } finally {
       show = false;
@@ -84,7 +85,7 @@
           x.type = "password";
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 

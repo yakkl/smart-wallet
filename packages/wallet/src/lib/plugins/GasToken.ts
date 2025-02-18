@@ -3,8 +3,9 @@
 import { Token, type IToken } from '$plugins/Token';
 import type { Blockchain } from '$plugins/Blockchain';
 import type { Provider } from '$plugins/Provider';
-import type { MarketPriceData } from '$lib/common';
+import { type MarketPriceData } from '$lib/common';
 import { PriceManager } from './PriceManager';
+import { log } from "$plugins/Logger";
 
 export interface IGasToken extends IToken {
   getSponsoredGasEstimate( transaction: any ): Promise<bigint>;
@@ -34,7 +35,7 @@ export class GasToken extends Token {
       contractAddress, // GasToken does not need an address, it is native. However, in the future we may sponsor a gas token, so we keep this field
       name,
       symbol,
-      decimals, 
+      decimals,
       logoURI,
       `${ name } YAKKL native gas token`,
       chainId,
@@ -43,7 +44,7 @@ export class GasToken extends Token {
       blockchain,
       provider
     );
-    
+
     this.priceManager = new PriceManager();
     this.fundingAddress = fundingAddress;
     if ( this.fundingAddress ) this.getBalance( this.fundingAddress ).then( balance => { this.balance = balance; this.lastBalanceCheck = Date.now(); } );
@@ -68,11 +69,22 @@ export class GasToken extends Token {
   }
 
   async getMarketPrice( pair: string | null = this.fundingPair ): Promise<MarketPriceData> {
-    if (!pair ) throw new Error("Invalid pair for market price check");
-    const price = await this.priceManager.getMarketPrice( pair );
-    this.lastPrice = price;
-    this.lastPriceCheck = Date.now();
-    return price;
+    try {
+      if (!pair ) {
+        log.error('GasToken - getMarketPrice - pair is invalid (null)');
+        throw new Error("Invalid pair for market price check");
+      }
+
+      log.debug('GasToken - getMarketPrice - pair', pair);
+
+      const price = await this.priceManager.getMarketPrice( pair );
+      this.lastPrice = price;
+      this.lastPriceCheck = Date.now();
+      return price;
+    } catch ( error ) {
+      log.errorStack('GasToken - getMarketPrice', error);
+      throw error;
+    }
   }
 
   async hasSufficientBalance( userAddress: string, amount: bigint ): Promise<boolean> {

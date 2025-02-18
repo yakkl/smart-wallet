@@ -5,7 +5,7 @@ import type { YakklAccount } from '$lib/common/interfaces';
 import { yakklAccountsStore } from '$lib/common/stores';
 import { ethers as ethersv6 } from 'ethers-v6';
 import { get } from 'svelte/store';
-
+import { log } from "$lib/plugins/Logger";
 
 // This should represent the .id property of given objects for uniqueness
 export function getUserId(): string {
@@ -32,7 +32,7 @@ export async function checkAccountRegistration(): Promise<boolean> {
 
     return hasPrimaryOrImported;
   } catch (error) {
-    console.log('Error checking registration:', error);
+    log.error('Error checking registration:', error);
     return false;
   }
 }
@@ -53,7 +53,7 @@ export function parseAmount( amount: string, decimals: number ): bigint {
 
     return BigInt( fullAmount );
   } catch ( error ) {
-    console.log( 'Failed to parse amount:', error );
+    log.error( 'Failed to parse amount:', error );
     return 0n;
   }
 }
@@ -71,7 +71,7 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
     // Multiply by 10^decimals and convert to bigint
     return BigInt( Math.round( numericValue * ( 10 ** decimals ) ) );
   } catch ( error ) {
-    console.log( 'Error parsing amount:', error );
+    log.error( 'Error parsing amount:', error );
     return 0n;
   }
 }
@@ -170,7 +170,7 @@ export function parseErrorMessageFromJSON(errorMessage: string): ParsedError {
 
     return parsedError;
   } catch (error) {
-    console.log('Failed to parse errorMessage, body or error:', error);
+    log.error('Failed to parse errorMessage, body or error:', error);
   }
 
   return null;

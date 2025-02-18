@@ -9,6 +9,7 @@
 	import { setStateStore } from '$lib/common/stores/stateStore';
 	import { removeTimers } from '$lib/common/timers';
 	import { removeListeners } from '$lib/common/listeners';
+	import { setLocks } from '$lib/common/locks';
 
   // Reactive State
   let yakklCurrentlySelected: YakklCurrentlySelected | null = $state(null);
@@ -27,17 +28,7 @@
       // Set lock icon
       await setIconLock();
 
-      // Update Yakkl settings
-      if (yakklSettings && !yakklSettings.isLocked) {
-        yakklSettings.isLocked = true;
-        await setSettings(yakklSettings);
-      }
-
-      // Lock currently selected shortcuts
-      if (yakklCurrentlySelected && yakklCurrentlySelected.shortcuts?.isLocked === false) {
-        yakklCurrentlySelected.shortcuts.isLocked = true;
-        await setYakklCurrentlySelectedStorage(yakklCurrentlySelected);
-      }
+      setLocks(true);
 
       // Clear session-specific state
       removeTimers();

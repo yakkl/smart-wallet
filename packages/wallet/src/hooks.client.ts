@@ -4,20 +4,26 @@ import { handleOnMessageForExtension } from '$lib/common/listeners/ui/uiListener
 import { syncStoresToStorage } from '$lib/common/stores';
 import { setStateStore } from '$lib/common/stores/stateStore';
 import { loadTokens } from '$lib/common/stores/tokens';
+import { log } from '$plugins/Logger';
 
 export function init() {
-  console.log("[Init]: Running client-side setup...");
+  log.setLevel('ERROR', 'CONTAINS', ['DEBUG', 'ERROR', 'WARN']); // Nothing greater than ERROR (e.g. TRACE)
+  // log.setLogFilterEnabled(false); // Disable log filtering
+  // log.setLogFilterRegex("^\\*\\*\\*\\*");
+
+  log.info("[Init]: Running client-side setup...");
+
   setStateStore(false); // On initial load, set state to false. NOTE: This may go away soon.
   setupGlobalListeners();
 }
 
 export function handleError(error: Error) {
-  console.log("[ERROR]:", error);
+  log.error(error);
 }
 
 export async function setupGlobalListeners() {
   function handleUnload(event: Event) {
-    console.log("App is closing or reloading...");
+    log.info("App is closing or reloading...");
     browser_ext.runtime.sendMessage({ type: 'lockdown' });
   }
 

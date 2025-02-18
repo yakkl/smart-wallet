@@ -3,7 +3,6 @@
 import type { Provider } from '$plugins/Provider';
 import type { Blockchain } from '$plugins/Blockchain';
 import {
-  debug_log,
   isYakklPrimaryAccount,
   type AccountInfo,
   type Transaction,
@@ -23,6 +22,7 @@ import { writable } from 'svelte/store';
 import type { GasEstimate, HistoricalGasData, GasPrediction } from '$lib/common/gas-types';
 import type { Token } from '$plugins/Token';
 import { TokenService } from './blockchains/evm/TokenService';
+import { log } from '$plugins/Logger';
 
 export const walletStore = writable<Wallet | null>(null);
 
@@ -310,16 +310,16 @@ export class Wallet {
   public setSigner(privateKey: string | null): Promise<Signer> | null {
     try {
       if (!this.blockchain) {
-        console.log( 'Blockchain is not initialized yet' );
+        log.warn( 'Blockchain is not initialized yet' );
         return null;
       }
       if (!this.provider) {
-        console.log( 'Provider is not initialized yet' );
+        log.warn( 'Provider is not initialized yet' );
         return null;
       }
       // privateKey can be null if the system is initializing so we simply log and return
       if (!privateKey && !this.privateKey) {
-        console.log('No private key provided yet');
+        log.warn('No private key provided yet');
         return null;
       }
       switch ( this.blockchain.name ) { //this.currentToken.blockchain.name) {
@@ -365,6 +365,7 @@ export class Wallet {
         throw new Error('Signer could not be created');
       }
     } catch (error) {
+      log.error('Error setting signer:', error);
       return Promise.reject(error);
     }
   }
@@ -547,4 +548,3 @@ export class Wallet {
     return await this.blockchain.predictFutureFees(duration);
   }
 }
-

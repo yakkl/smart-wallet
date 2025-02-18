@@ -8,6 +8,7 @@
   import { isEncryptedData, type AccountData, type CurrentlySelectedData, type EncryptedData, type YakklCurrentlySelected } from '$lib/common';
   import PincodeVerify from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     show?: boolean;
@@ -61,7 +62,7 @@
 
       onVerify();
     } catch (e) {
-      console.log('Error verifying pincode:', e);
+      log.error('Error verifying pincode:', e);
     }
   }
 

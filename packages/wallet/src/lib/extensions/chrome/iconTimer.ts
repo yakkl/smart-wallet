@@ -3,39 +3,36 @@ import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/
 import { setIconLock, setIconUnlock } from "$lib/utilities";
 import { browser_ext } from "$lib/common/environment";
 import { STORAGE_YAKKL_CURRENTLY_SELECTED, STORAGE_YAKKL_SETTINGS } from "$lib/common/constants";
-import { setLocks } from "$lib/common/locks";
 import { yakklCurrentlySelectedStore } from "$lib/common/stores";
-
-let lockIconIntervalID: ReturnType<typeof setInterval> | null = null;
+import { timerManager } from "$lib/plugins/TimerManager";
+import { log } from "$plugins/Logger";
 
 export function startLockIconTimer() {
   try {
-    // Improved guard: Ensure it's either null or a valid timer ID
-    if (lockIconIntervalID === null || typeof lockIconIntervalID === "undefined") {
-      lockIconIntervalID = setInterval(async () => {
-        try {
-          const yakklSettings = await getObjectFromLocalStorage(STORAGE_YAKKL_SETTINGS) as Settings;
-          const yakklCurrentlySelected = await getObjectFromLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED) as YakklCurrentlySelected;
-          if (yakklCurrentlySelected) { // This just makes sure the locks are the same
-            if (yakklSettings.isLocked !== yakklCurrentlySelected.shortcuts.isLocked) {
-              yakklCurrentlySelected.shortcuts.isLocked = yakklSettings.isLocked;
-              await setObjectInLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED, yakklCurrentlySelected);
-              yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
-            }
+    timerManager.addTimer('iconTimer_lockIcon', async () => {
+      try {
+        const yakklSettings = await getObjectFromLocalStorage(STORAGE_YAKKL_SETTINGS) as Settings;
+        const yakklCurrentlySelected = await getObjectFromLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED) as YakklCurrentlySelected;
+        if (yakklCurrentlySelected) { // This just makes sure the locks are the same
+          if (yakklSettings.isLocked !== yakklCurrentlySelected.shortcuts.isLocked) {
+            yakklCurrentlySelected.shortcuts.isLocked = yakklSettings.isLocked;
+            await setObjectInLocalStorage(STORAGE_YAKKL_CURRENTLY_SELECTED, yakklCurrentlySelected);
+            yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
           }
-          if (yakklSettings.isLocked) {
-            await setIconLock();
-            await browser_ext.runtime.sendMessage({ type: 'lockdown' });
-          } else {
-            await setIconUnlock();
-          }
-        } catch (error) {
-          console.error('Error in lock icon timer interval:', error);
         }
-      }, 10000); // Check every 10 seconds
-    }
+        if (yakklSettings.isLocked) {
+          await setIconLock();
+          await browser_ext.runtime.sendMessage({ type: 'lockdown' });
+        } else {
+          await setIconUnlock();
+        }
+      } catch (error) {
+        log.error('Error in lock icon timer interval:', error);
+      }
+    }, 10000);
+    timerManager.startTimer('iconTimer_lockIcon');
   } catch (error: any) {
-    console.log('[ERROR]: Error starting lock icon timer:', error, error?.stack);
+    log.error('Error starting lock icon timer:', error, error?.stack);
   }
 }
 
@@ -44,15 +41,11 @@ export async function stopLockIconTimer() {
     await setIconLock();
     const yakklSettings = await getObjectFromLocalStorage(STORAGE_YAKKL_SETTINGS) as Settings;
     if (yakklSettings) {
-      if (lockIconIntervalID !== null && typeof lockIconIntervalID !== 'undefined') {
-        clearInterval(lockIconIntervalID);
-        lockIconIntervalID = null;
-      }
-      // await setLocks(true);
+      timerManager.removeTimer('iconTimer_lockIcon'); // Stops and clears the timer
       await browser_ext.runtime.sendMessage({type: 'lockdown',});
     }
   } catch (error: any) {
-    console.log('[ERROR]: Error stopping lock icon timer:', error, error?.stack);
+    log.error('Error stopping lock icon timer:', error, error?.stack);
   }
 }
 

@@ -3,6 +3,7 @@ import type { Runtime } from 'webextension-polyfill';
 import { debug_log } from '$lib/common/debug-error';
 import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
 import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
+import { log } from '$lib/plugins/Logger';
 
 type RuntimeSender = Runtime.MessageSender;
 
@@ -15,7 +16,7 @@ export async function onRuntimeMessageListener(
 ): Promise<boolean | void> {
   try {
     if (!isBrowserEnv()) {
-      console.log('Yakkl may not running as a browser extension context from the calling environment.');
+      log.warn('Yakkl may not running as a browser extension context from the calling environment.');
       // return true;
     }
 
@@ -31,7 +32,6 @@ export async function onRuntimeMessageListener(
           // Testing to see where this may have come from. May remove this test later
           if (title === 'Security Notification') {
             // debug_log('Security Notification canceled...');
-            console.trace();
             sendResponse({ success: false, message: 'Security Notification canceled' });
             return true; // Indicate asynchronous response
           }
@@ -82,7 +82,7 @@ export async function onRuntimeMessageListener(
       }
     }
   } catch (error: any) {
-    console.log('[ERROR]: Error handling message:', error);
+    log.error('Error handling message:', error);
     if (isBrowserEnv()) sendResponse({ success: false, error: error?.message || 'Unknown error occurred.' });
     return true; // Indicate asynchronous response
   }

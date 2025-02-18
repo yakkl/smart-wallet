@@ -2,6 +2,7 @@
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
 import { splitWords } from '$lib/utilities';
+import { log } from "$lib/plugins/Logger";
 
 // Coingecko public API pulls from a number of exchanges.
 // Coingecko does not update their prices as frequently as other providers so it may appear that prices look like an arbitrage opportunity but it may not be.
@@ -48,7 +49,7 @@ export class CoingeckoPriceProvider implements PriceProvider {
       };
     }
     catch ( e: any ) {
-      console.log( 'CoingeckoPriceProvider - getPrice - error', e );
+      log.error( 'CoingeckoPriceProvider - getPrice - error', e );
 
       let status = 404;  // Default status
       let message = `Error - ${ e }`;

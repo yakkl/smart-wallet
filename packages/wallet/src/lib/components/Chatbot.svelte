@@ -12,6 +12,7 @@
   import { apiKeyFetch } from '$lib/api/apis';
   import ClipboardJS from 'clipboard';
   import { VERSION, type YakklChat } from '$lib/common';
+	import { log } from '$lib/plugins/Logger';
 
   let messages = $state<YakklChat[]>([]);
   let error = $state(false);
@@ -25,7 +26,7 @@
     try {
       clipboard = new ClipboardJS('.clip');
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -54,7 +55,7 @@
         });
       }
     } catch(e) {
-      console.log('Error in onMount:', e);
+      log.error('Error in onMount:', e);
       errorValue = 'Error loading key or chat history. ' + e;
       error = true;
     }
@@ -87,7 +88,7 @@
       // Then store in localStorage
       await setYakklChatsStorage(cleanMessages);
     } catch (e) {
-      console.log('Error storing chats:', e);
+      log.error('Error storing chats:', e);
       throw e; // Rethrow if you want to handle it in the calling function
     }
   }
@@ -159,7 +160,7 @@
 
   function handlePrint() {
     // Implement print functionality
-    console.log("Print functionality not implemented yet");
+    log.error("Print functionality not implemented yet");
   }
 </script>
 

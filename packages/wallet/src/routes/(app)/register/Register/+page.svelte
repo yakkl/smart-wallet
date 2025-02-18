@@ -15,12 +15,13 @@
   import Warning from '$lib/components/Warning.svelte';
 	import type { CurrentlySelectedData, Preferences, Profile, ProfileData, Settings, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { RegistrationType } from '$lib/common/types';
-	import { debug_log, getUserId, isEncryptedData, type LayoutData } from '$lib/common';
+	import { getUserId, isEncryptedData } from '$lib/common';
   import { dateString } from '$lib/common/datetime';
-	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	import { sendNotificationMessage } from '$lib/common/notifications';
-	import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
+  import { log } from '$plugins/Logger';
+	import { updateTokenPrices } from '$lib/common/tokenPriceManager';
 
+	// import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
   // import { GoogleAuth } from '$lib/index';
 	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
 	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
@@ -45,10 +46,11 @@
   let pweyeOpenId: HTMLButtonElement;
   let pweyeClosedId: HTMLButtonElement;
 
-  let showRegistrationOption = $state(false);
-  let showImportAccount = false;
-  let showEmergencyKit = false;
   let strength = $state(0);
+
+  // let showRegistrationOption = $state(false);
+  // let showImportAccount = false;
+  // let showEmergencyKit = false;
   // let showImportOption = false;
   // let showImportPhrase = false;
 
@@ -105,22 +107,23 @@
         emailHelp.setAttribute('tabindex', '-1');
       }
     } catch(e) {
-      console.log(`[ERROR]: Register: onMount - ${e}`);
+      log.error(`Register: onMount - ${e}`);
     }
   });
 
   async function handleCreate() {
-    showRegistrationOption = false;
-    // Make the following are not showing before continuing
-    showEmergencyKit = false;
-    showImportAccount = false;
+    // showRegistrationOption = false;
+    // showEmergencyKit = false;
+    // showImportAccount = false;
+    // The above is commented out since we no longer show the registration option modal
     await goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);
   }
 
   async function onCancelRegistrationOption() {
-    showRegistrationOption = false;
-    showEmergencyKit = false;
-    showImportAccount = false;
+    // showRegistrationOption = false;
+    // showEmergencyKit = false;
+    // showImportAccount = false;
+    // The above is commented out since we no longer show the registration option modal
     await goto(PATH_LOGOUT);
   }
 
@@ -148,13 +151,12 @@
         if (pinPass === pincode) {
           error = true;
           errorValue = "Pin code encryption failed!";
+          log.error(errorValue);
           return;
         }
 
-        yakklMiscStore = digest;
+        yakklMiscStore = digest; // Leave this for now. It's used for testing redaction
         setMiscStore(digest);
-
-        debug_log('Register: digest:', getMiscStore());
 
         if (isEncryptedData(currentlySelected?.data)) {
           currentlySelected.data = await decryptData(currentlySelected.data, digest) as CurrentlySelectedData;
@@ -254,23 +256,25 @@
           await setSettingsStorage(yakklSettings);
         }
 
-        // Already done.
-        // await loadDefaultTokens();
+        await updateTokenPrices();
 
         sendNotificationMessage('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
 
         // No need to show registration option at this time. We may enable it later with other options. There must be at least one valid account
         // showRegistrationOption = true;
+
+        // Call handleCreate directly now to go to the next step
+        await handleCreate();
       }
     } catch (e) {
       const er = !yakklMiscStore ? String(e) : String(e).replace(yakklMiscStore, "REDACTED");
-      errorValue = `[ERROR]: Register: Following error occurred: ${er}`;
+      errorValue = `Register: Following error occurred: ${er}`;
       error = true;
-      console.log(errorValue);
+      log.error(errorValue);
     }
   }
 
-  const { form, errors, isValid, handleChange, handleSubmit } = createForm({
+  const { form, errors, handleChange, handleSubmit } = createForm({
     initialValues: { userName: "", password: "", confirmPassword: "", pincode: "", email: "", accountName: "Primary Portfolio Account"},
     validationSchema: yup.object().shape({
         userName: yup
@@ -305,8 +309,8 @@
       } catch (e) {
           error = true;
           // let er = (!password || !confirmPassword ? String(e) : String(e).replace(password, "REDACTED").replace(confirmPassword, "REDACTED"));
-          errorValue = `[ERROR]: Form with following error occurred: ${e}`;
-          console.log(errorValue);
+          errorValue = `Form with following error occurred: ${e}`;
+          log.error(errorValue);
       }
     }
   });

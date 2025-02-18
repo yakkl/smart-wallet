@@ -1,54 +1,42 @@
 import { yakklConnectionStore } from "$lib/common/stores";
+import { timerManager } from "$lib/plugins/TimerManager";
 import { isOnline } from '$lib/utilities/utilities';
+import { log } from "$plugins/Logger";
 
-let connectionIntervalID: string | number | NodeJS.Timeout | undefined=undefined;
 let urlCheck: string | undefined;
 
 async function checkConnectionCB() {
   try {
-    if (connectionIntervalID) {
-      if (await isOnline(urlCheck) !== true) {
-        yakklConnectionStore.set(false);
-      } else {
-        yakklConnectionStore.set(true);
-      }
+    if (await isOnline(urlCheck) !== true) {
+      yakklConnectionStore.set(false);
+    } else {
+      yakklConnectionStore.set(true);
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
-
 
 export function stopCheckConnection() {
   try {
-    if (connectionIntervalID && Number(connectionIntervalID) > 0) {
-      clearInterval(connectionIntervalID);
-      connectionIntervalID = undefined;
-    } else {
-      connectionIntervalID = undefined;
-    }
+    timerManager.stopTimer('connection_checkConnection');
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 }
-
 
 export function startCheckConnection(url='https://github.com/yakkl', seconds=30) {
   try {
     if (seconds > 0) {
       urlCheck = url;
-      if (connectionIntervalID && Number(connectionIntervalID) > 0) {
+      if (timerManager.isRunning('connection_checkConnection')) {
         return; // Already running
       }
-      connectionIntervalID = setInterval(
-        checkConnectionCB,
-        1000*seconds);
+      timerManager.addTimer('connection_checkConnection', checkConnectionCB, 1000 * seconds);
+      timerManager.startTimer('connection_checkConnection');
   }
   } catch (e) {
-    console.log(e);
-    if (connectionIntervalID && Number(connectionIntervalID) > 0) {
-      clearInterval(connectionIntervalID);
-      connectionIntervalID = undefined;
-    }
+    log.error(e);
+    timerManager.stopTimer('connection_checkConnection');
   }
 }

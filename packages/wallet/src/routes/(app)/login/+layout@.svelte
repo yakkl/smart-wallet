@@ -10,7 +10,6 @@
 
   let { children }: Props = $props();
 
-  debug_log('Login level (route) +layout@.svelte mounted');
   // onMount(() => {
   //   onMessageUnloadAdd(); // Not for background script items. That is handled by another listener in handlersListeners.ts
   //   return () => {

@@ -1,20 +1,19 @@
 // Base coingecko API
-import { fetchJson } from "@ethersproject/web";
+// import { fetchJson } from "@ethersproject/web";
 import { get } from 'svelte/store';
 import { yakklPricingStore, yakklConnectionStore } from "$lib/common/stores";
 import { PriceManager } from '$lib/plugins/PriceManager';
 import { KrakenPriceProvider } from '$lib/plugins/providers/price/kraken/KrakenPriceProvider';
 import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/CoingeckoPriceProvider';
 import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
-import { debug_log } from "$lib/common/debug-error";
+import { log } from "$plugins/Logger";
+import { timerManager } from "$lib/plugins/TimerManager";
 
 // Use these globally if needed
 export let checkPricesProvider: string = 'coinbase';
-export let checkPricesInterval: number = 10; // Seconds
+export let checkPricesInterval: number = 15; // Seconds
 
 // https://polygon.io/docs/crypto/get_v3_reference_exchanges - APIs to look at next (stocks and crypto)
-
-let pricingIntervalID: string | number | NodeJS.Timeout | undefined=undefined;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let providerCallback: string; // Note: If we decided to have multiple intervals running or alarms then we can add to an array
@@ -29,24 +28,27 @@ const priceManager = new PriceManager([
 ]);
 
 // The new code is in the plugins folder - priceManager
-export async function checkPricesCallback() {
+export async function checkPricesCallback(symbol: string = 'ETH-USD') {
   try {
-    debug_log('checkPricesCallback - priceManager:', priceManager);
-    
+    log.debug('checkPricesCallback - priceManager:', priceManager);
+
     if (get(yakklConnectionStore) === true) {
-      const result = await priceManager.getMarketPrice( 'ETH-USD' );
+      const result = await priceManager.getMarketPrice( symbol );
       if ( result ) {
+        const prevPrice = get(yakklPricingStore)?.price ?? 0;
         yakklPricingStore.set( {
           provider: result.provider,
           id: 'checkPricesCallback',
-          price: result.price
+          price: result.price,
+          prevPrice: prevPrice,
         } );
+        log.debug(`Updated yakklPricingStore: New Price = ${result.price}, Previous Price = ${prevPrice}`);
       }
     } else {
-      console.log('checkPrices:', 'Internet connection may be down.'); // Comment this out later
+      log.error('checkPrices:', 'Internet connection may be down.'); // Comment this out later
     }
   } catch (e) {
-    console.log(`checkPricesCallback: ${e}`);
+    log.errorStack(`checkPricesCallback: ${e}`);
   }
 }
 
@@ -56,49 +58,40 @@ function setProviderCallback(provider: string) {
 
 // Use this function instead of -1 in checkPrices
 export function stopCheckPrices() {
-  if (pricingIntervalID && Number(pricingIntervalID) > 0) {
-    clearInterval(pricingIntervalID);
-    setProviderCallback('');
-    pricingIntervalID = undefined;
-  } else {
-    pricingIntervalID = undefined;
-  }
+  timerManager.stopTimer('prices_checkPrices');
+  setProviderCallback('');
 }
 
-export async function startPricingChecks() {
-  startCheckPrices(checkPricesProvider, checkPricesInterval);
+export async function startPricingChecks(symbol: string = 'ETH-USD') {
+  startCheckPrices(checkPricesProvider, checkPricesInterval, symbol);
 }
 
-export function startCheckPrices(provider = 'coinbase', seconds = 10): Promise<void> {
+export function startCheckPrices(provider = 'coinbase', seconds = 15, symbol: string = 'ETH-USD'): Promise<void> {
+  stopCheckPrices();
+  if (!providerCallback) setProviderCallback(provider);
+
   return new Promise((resolve, reject) => {
     try {
       if (seconds > 0) {
-        if ( pricingIntervalID && Number( pricingIntervalID ) > 0 ) {
+        if ( timerManager.isRunning('prices_checkPrices') ) {
           return resolve(); // Already running
         }
-        setProviderCallback(provider);
-        pricingIntervalID = setInterval(checkPricesCallback, 1000 * seconds);
+        timerManager.addTimer('prices_checkPrices', () => {checkPricesCallback(symbol)}, 1000 * seconds);
+        timerManager.startTimer('prices_checkPrices');
         resolve();
       } else {
-        // Handle the case where seconds are less than or equal to 0
-        if (pricingIntervalID && Number(pricingIntervalID) > 0) {
-          clearInterval(pricingIntervalID);
-          pricingIntervalID = undefined;
-        }
+        timerManager.stopTimer('prices_checkPrices');
         resolve();
       }
     } catch (e) {
-      console.log(`startCheckPrices: ${e}`);
-      if (pricingIntervalID && Number(pricingIntervalID) > 0) {
-        clearInterval(pricingIntervalID);
-        pricingIntervalID = undefined;
-      }
+      log.errorStack(`startCheckPrices: ${e}`);
+      timerManager.stopTimer('prices_checkPrices');
+      setProviderCallback('');
       reject(e);
     }
   });
 }
 
-// TODO: Add Provider param with a switch statement to call and default to given providers
 // export async function getPrices(pairs: [string]) {
 //   // Add an array of the pricing providers
 //   // random index for the array
@@ -152,7 +145,7 @@ export function startCheckPrices(provider = 'coinbase', seconds = 10): Promise<v
 
 // export async function getPricesCoinbase(pair: string) {
 //   try {
-//     const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // TODO: Move to a provider!
+//     const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` );
 //     return json;
 //   } catch (e) {
 //     console.log(`getPricesCoinbase: ${e}`);

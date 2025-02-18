@@ -47,9 +47,10 @@ interface BulkEmergencyKitData {
 // ADD other cloud/edge environment imports here
 // When ready to implement S3, uncomment the following line
 // import { S3 } from 'aws-sdk';
-import { profile } from '../models/dataModels';
+// import { profile } from '../models/dataModels';
 import { RegistrationType } from '../common/types';
-import type { Token } from './Token';
+import { log } from './Logger';
+// import type { Token } from './Token';
 // Then do: npm install aws-sdk
 
 // Add conditional import to handle server-side only
@@ -210,7 +211,7 @@ export class EmergencyKitManager {
         throw new Error('Download not supported in this environment');
       }
     } catch (error) {
-      console.log('Error downloading bulk emergency kit:', error);
+      console.log('[ERROR]: Error downloading bulk emergency kit:', error);
       throw error;
     }
   }
@@ -285,7 +286,7 @@ export class EmergencyKitManager {
 
       return { newData, existingData };
     } catch (error) {
-      console.log('Error importing bulk emergency kit:', error);
+      log.error('Error importing bulk emergency kit:', error);
       throw error;
     }
   }
@@ -330,7 +331,7 @@ export class EmergencyKitManager {
       const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
       return bulkEmergencyKit.meta;
     } catch (error) {
-      console.log('Error reading bulk emergency kit metadata:', error);
+      log.error('Error reading bulk emergency kit metadata:', error);
       throw error;
     }
   }
@@ -367,7 +368,7 @@ export class EmergencyKitManager {
 
       return decryptedData.data;
     } catch (error) {
-      console.log('Error decrypting data:', error);
+      log.error('Error decrypting data:', error);
       throw error;
     }
   }
@@ -382,7 +383,7 @@ export class EmergencyKitManager {
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
     } catch (e) {
-      console.log(`Download failed: ${e}`);
+      log.error(`Download failed: ${e}`);
     }
   }
 
@@ -393,7 +394,7 @@ export class EmergencyKitManager {
       const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
       return encryptedData;
     } catch (error) {
-      console.log('Error encrypting data:', error);
+      log.error('Error encrypting data:', error);
       throw error;
     }
   }
@@ -408,9 +409,9 @@ export class EmergencyKitManager {
       try {
         const dataStr = JSON.stringify(exportObj, null, 2); // Pretty print JSON
         await writeFile(filePath, dataStr, 'utf8');
-        console.log(`Emergency kit saved to ${filePath}`);
+        log.info(`Emergency kit saved to ${filePath}`);
       } catch (e) {
-        console.log(`Failed to save emergency kit: ${e}`);
+        log.error(`Failed to save emergency kit: ${e}`);
       }
     }
   }

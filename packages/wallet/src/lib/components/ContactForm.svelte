@@ -10,6 +10,7 @@
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
   import { VERSION } from '$lib/common/constants';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     // import { Input } from './ui/input';
@@ -67,7 +68,7 @@
           alert('Unable to verify contact before processing. There could be a duplicate contact or invalid address.');
         }
       } catch (e) {
-        console.log('Error processing contact:', e);
+        log.error('Error processing contact:', e);
       }
     },
   });
@@ -76,7 +77,6 @@
     currentlySelected = $yakklCurrentlySelectedStore;
     wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected!.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
   });
-
 
   async function verifyContact(fname: string, faddress: string, falias: string, fnote: string) {
     let resolvedAddr = null;

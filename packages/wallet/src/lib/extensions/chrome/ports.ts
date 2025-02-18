@@ -1,5 +1,6 @@
 import type { Browser, Runtime } from 'webextension-polyfill';
 import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+import { log } from '$plugins/Logger';
 
 type RuntimePort = Runtime.Port;
 
@@ -28,7 +29,7 @@ export class PortManager {
       this.port.onDisconnect.addListener(this.onDisconnectListener.bind(this));
       return true;
     } catch (error) {
-      console.log("Failed to create port:", error);
+      log.error("Failed to create port:", error);
       return false;
     }
   }
@@ -39,7 +40,7 @@ export class PortManager {
         window.postMessage(response, window.location.origin);
       }
     } catch (error) {
-      console.log("Error processing message:", error);
+      log.error("Error processing message:", error);
       window.postMessage(
         { id: response.id, method: response.method, error, type: 'YAKKL_RESPONSE' },
         window.location.origin
@@ -48,7 +49,7 @@ export class PortManager {
   }
 
   private onDisconnectListener() {
-    console.warn("Port disconnected.");
+    log.info("Port disconnected.");
     if (this.port) {
       this.port.onMessage.removeListener(this.onMessageListener);
       this.port.onDisconnect.removeListener(this.onDisconnectListener.bind(this));
@@ -82,14 +83,14 @@ export function onConnect(port: RuntimePort) {
         }
         port.onDisconnect.addListener(() => onDisconnect(port));
     } catch (error) {
-        console.log("Port connection error:", error);
+        log.error("Port connection error:", error);
     }
 }
 
 export function onDisconnect(port: RuntimePort) {
     if (mainPort === port) mainPort = undefined;
     // Remove from other collections as necessary
-    console.log(`Port ${port.name} disconnected.`);
+    log.info(`Port ${port.name} disconnected.`);
 }
 
 export function broadcastToPorts(ports: RuntimePort[], message: any) {

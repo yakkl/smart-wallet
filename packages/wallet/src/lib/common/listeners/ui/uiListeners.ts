@@ -4,10 +4,10 @@ import { browser_ext, isBrowserEnv } from '$lib/common/environment';
 import type { Runtime } from 'webextension-polyfill';  // Correct Type Import
 import { goto } from '$app/navigation';
 import { startCheckPrices, stopCheckPrices } from '$lib/tokens/prices';
-import { debug_log } from '$lib/common/debug-error';
 import { PATH_LOCK } from '$lib/common/constants';
 import { handleLockDown } from '$lib/common/handlers';
 import { globalListenerManager } from '$lib/plugins/GlobalListenerManager';
+import { log } from '$plugins/Logger';
 
 export const uiListenerManager = new ListenerManager();
 
@@ -29,12 +29,12 @@ export async function handleOnMessageForExtension(
       sendResponse({ success: true, message: 'Lockdown initiated.' });
       goto(PATH_LOCK);
 
-      // debug_log('Lockdown initiated.');
+      log.debug('Lockdown initiated.');
 
       return true;  // return type - asynchronous
     }
   } catch (e: any) {
-    console.log('[ERROR]: Error handling message:', e);
+    log.error('Error handling message:', e);
     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
     return true; // Indicate asynchronous response
   }
@@ -60,7 +60,7 @@ export async function handleOnMessageForPricing(
       }
     }
   } catch (e: any) {
-    console.log('[ERROR]: Error handling message:', e);
+    log.error('Error handling message:', e);
     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
     return true; // Indicate asynchronous response
   }
@@ -75,12 +75,12 @@ export async function handleOnMessageForPricing(
 // }
 
 export function addUIListeners() {
-  // console.log('Adding UI listeners...');
+  log.debug('Adding UI listeners...');
   uiListenerManager.add(browser_ext.runtime.onMessage, handleOnMessageForExtension);
   uiListenerManager.add(browser_ext.runtime.onMessage, handleOnMessageForPricing);
 }
 
 export function removeUIListeners() {
-  // console.log('Removing UI listeners...');
+  log.debug('Removing UI listeners...');
   uiListenerManager.removeAll();
 }

@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { writable } from 'svelte/store';
-  import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
+  import type { PriceProvider } from '$lib/common/interfaces';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
-	import { debug_log } from '$lib/common/debug-error';
+	import { timerManager } from '$lib/plugins/TimerManager';
+	import { priceStore } from '$lib/common/stores';
+  import { log } from "$plugins/Logger";
 
   interface Props {
     symbol: string; // In a swap this would be the fromToken
@@ -21,30 +22,31 @@
     children
   }: Props = $props();
 
-  const priceStore = writable<MarketPriceData | null>(null);
-  let interval: NodeJS.Timeout;
+  // priceStore is passed to the children layout below - export is not needed but adding it for clarity and possible clean up
+  // export const priceStore = writable<MarketPriceData | null>(null);
+  // let interval: NodeJS.Timeout;
 
   async function updatePrice() {
     try {
-      debug_log('PriceTracker: providers:', providers);
-      
+      log.debug('PriceTracker: providers:', providers);
+
       for (const provider of providers) {
         try {
-          debug_log('PriceTracker: fetching price from', provider.getName());
+          log.debug('PriceTracker: fetching price from: ****************', provider.getName());
 
           const priceData = await provider.getMarketPrice(`${symbol}-${currency}`);
           if (priceData === null) {
-            console.log(`PriceTracker failed to fetch price from ${provider.getName()}: ${symbol}-${currency}`);
+            log.info(`PriceTracker failed to fetch price from ${provider.getName()}: ${symbol}-${currency}`);
             continue;
           }
           priceStore.set(priceData);
           break;
         } catch (error) {
-          console.log(`Error fetching price from ${provider.getName()}:`, error);
+          log.errorStack(`Error fetching price from ${provider.getName()}:`, error);
         }
       }
     } catch (error) {
-      console.log('PriceTracker:', error);
+      log.errorStack('PriceTracker:', error);
     }
   }
 
@@ -55,14 +57,17 @@
       }
 
       updatePrice();
-      interval = setInterval(updatePrice, updateInterval);
+      // Add and start timer
+      timerManager.addTimer("priceTracker_updatePrice", updatePrice, updateInterval);
+      timerManager.startTimer("priceTracker_updatePrice");
+
     } catch (error) {
-      console.log('PriceTracker:', error);
+      log.error(error);
     }
   });
 
   onDestroy(() => {
-    clearInterval(interval);
+    timerManager.stopTimer("priceTracker_updatePrice");
     priceStore.set(null);
   });
 </script>

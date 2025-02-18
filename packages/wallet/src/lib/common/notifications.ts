@@ -1,9 +1,6 @@
-// import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-// import { browserSvelte } from '$lib/utilities/browserSvelte';
 import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
-import { isBrowserEnv, browserSvelte, browser_ext } from './environment';
-
-// let browser_ext = getBrowserExt();
+import { isBrowserEnv, browser_ext } from './environment';
+import { log } from '$plugins/Logger';
 
 /**
  * Utility function to validate the `browser_ext` object.
@@ -11,7 +8,7 @@ import { isBrowserEnv, browserSvelte, browser_ext } from './environment';
  */
 function checkBrowserExt(): void {
   if ( !isBrowserEnv() ) {
-    console.log('Browser extension API is not available.');
+    log.error('Browser extension API is not available.');
     throw new Error('Browser extension API is not initialized. Ensure this code is running in a browser extension environment.');
   }
 }
@@ -27,12 +24,12 @@ export async function sendNotificationPing() {
     });
 
     if (isResponseWithSuccess(response)) {
-      console.log('Ping response status:', response);
+      log.info('Ping response status:', response);
     } else {
-      console.log('Unexpected response structure:', response);
+      log.error('Unexpected response structure:', response);
     }
   } catch (error) {
-    console.log('[ERROR]: No Pong response:', error);
+    log.error('No Pong response:', error);
   }
 }
 
@@ -56,7 +53,7 @@ export async function sendNotificationMessage(title: string, messageText: string
     );
 
   } catch (error) {
-    console.log('[ERROR]: Error sending notification message:', error);
+    log.error('Error sending notification message:', error);
   }
 }
 
@@ -68,7 +65,7 @@ export async function sendNotificationStartLockIconTimer() {
     checkBrowserExt();
     startLockIconTimer();
   } catch (error) {
-    console.log('[ERROR]: Error starting lock icon timer:', error);
+    log.error('Error starting lock icon timer:', error);
   }
 }
 
@@ -80,7 +77,7 @@ export async function sendNotificationStopLockIconTimer() {
     checkBrowserExt();
     stopLockIconTimer();
   } catch (error) {
-    console.log('[ERROR]: Error stopping lock icon timer:', error);
+    log.error('Error stopping lock icon timer:', error);
   }
 }
 

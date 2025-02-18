@@ -1,10 +1,10 @@
-import { debug_log } from "$lib/common/debug-error";
 import { openPopups, openWindows } from "$lib/common/reload";
 import { updateScreenPreferences } from "$lib/extensions/chrome/ui";
+import { log } from "$lib/plugins/Logger";
 import { setIconLock } from "$lib/utilities/utilities";
 
 export async function onPortInternalListener(event: any): Promise<void> {
-  // debug_log('yakkl - background - onPortInternalListener', event);
+  log.debug('yakkl - background - onPortInternalListener', event);
 
   if (event && event.method) {
     switch(event.method) {

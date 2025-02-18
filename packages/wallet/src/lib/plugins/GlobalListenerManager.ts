@@ -1,5 +1,6 @@
 // src/listeners/GlobalListenerManager.ts
 import { ListenerManager } from './ListenerManager';
+import { log } from "$plugins/Logger";
 
 export type ListenerContext = 'background' | 'content' | 'ui' | 'inpage';
 
@@ -10,7 +11,7 @@ export class GlobalListenerManager {
     if (!this.contextManagers.has(context)) {
       this.contextManagers.set(context, manager);
     } else {
-      console.warn(`ListenerManager for context "${context}" is already registered.`);
+      log.warn(`ListenerManager for context "${context}" is already registered.`);
     }
   }
 
@@ -19,7 +20,7 @@ export class GlobalListenerManager {
     if (manager) {
       manager.add(event, handler);
     } else {
-      console.error(`ListenerManager for context "${context}" is not registered.`);
+      log.error(`ListenerManager for context "${context}" is not registered.`);
     }
   }
 
@@ -28,7 +29,7 @@ export class GlobalListenerManager {
     if (manager) {
       manager.remove(event, handler);
     } else {
-      console.error(`ListenerManager for context "${context}" is not registered.`);
+      log.error(`ListenerManager for context "${context}" is not registered.`);
     }
   }
 
@@ -37,13 +38,13 @@ export class GlobalListenerManager {
     if (manager) {
       manager.removeAll();
     } else {
-      console.error(`ListenerManager for context "${context}" is not registered.`);
+      log.error(`ListenerManager for context "${context}" is not registered.`);
     }
   }
 
   removeAll() {
     this.contextManagers.forEach((manager, context) => {
-      console.log(`Removing all listeners from context: ${context}`);
+      log.info(`Removing all listeners from context: ${context}`);
       manager.removeAll();
     });
   }

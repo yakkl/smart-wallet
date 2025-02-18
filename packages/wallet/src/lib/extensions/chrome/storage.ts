@@ -1,6 +1,7 @@
 import { VERSION } from "$lib/common/constants";
 import type { Preferences, Settings } from "$lib/common/interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
+import { log } from "$lib/plugins/Logger";
 import { upgrade } from "$lib/upgrades/upgrades";
 import { detect } from "detect-browser";
 import type { Runtime } from "webextension-polyfill";
@@ -37,7 +38,7 @@ export async function setLocalObjectStorage(platform: RuntimePlatformInfo | null
       await setObjectInLocalStorage('settings', yakklSettings);
     }
   } catch (e) {
-    console.log('setLocalObjectStorage Error', e);
+    log.error('setLocalObjectStorage Error', e);
     throw e;
   }
 }

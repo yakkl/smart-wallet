@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Browser } from 'webextension-polyfill';
+import { log } from '$plugins/Logger';
 
 let browser_ext: Browser;
 
@@ -9,7 +10,7 @@ function isBrowserExtensionEnvironment(): boolean {
            (('browser' in globalThis && 'runtime' in (globalThis as any).browser) ||
             ('chrome' in globalThis && 'runtime' in (globalThis as any).chrome));
   } catch (error) {
-    console.log('[ERROR]: Checking browser extension environment:', error);
+    log.error('Checking browser extension environment:', error);
     return false;
   }
 }
@@ -26,13 +27,13 @@ export function getBrowserExt(): Browser | null {
           throw new Error('Unable to find browser extension API');
         }
       } else {
-        console.log('Not in a browser extension environment');
+        log.info('Not in a browser extension environment');
         return null;
       }
     }
     return browser_ext as Browser;
   } catch (error) {
-    console.log('[ERROR]: Getting browser extension:', error);
+    log.error('Getting browser extension:', error);
     return null;
   }
 }

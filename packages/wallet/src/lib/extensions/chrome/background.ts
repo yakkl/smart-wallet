@@ -6,6 +6,7 @@ import { initializeEIP6963 } from './eip-6963';
 import { addBackgroundListeners } from '$lib/common/listeners/background/backgroundListeners';
 import { debug_log } from '$lib/common/debug-error';
 import { globalListenerManager } from '$lib/plugins/GlobalListenerManager';
+import { log } from '$lib/plugins/Logger';
 
 addBackgroundListeners();
 initializeEIP6963();
@@ -17,18 +18,18 @@ export async function onSuspendListener() {
     // removeBackgroundListeners();
     globalListenerManager.removeAll();
   } catch (error) {
-    console.log('[ERROR]: onSuspendListener:', error);
+    log.error('Background: onSuspendListener:', error);
   }
 }
 
 
 // try {
 //   browser_ext.runtime.onStartup.addListener(async () => {
-//     console.log('[INFO]: background - onStartup');
+//     log.error('[INFO]: background - onStartup');
 //     await browser_ext.action.openPopup();
 //   });
 // } catch (error) {
-//   console.log('[ERROR]: background - onStartup error',error);
+//   log.error('background - onStartup error',error);
 // }
 
 // try {
@@ -37,7 +38,7 @@ export async function onSuspendListener() {
 //     browser_ext.runtime.onMessage.addListener(onRuntimeMessageListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onMessage error',error);
+//   log.error('background - onMessage error',error);
 // }
 
 // try {
@@ -46,7 +47,7 @@ export async function onSuspendListener() {
 //     browser_ext.runtime.onConnect.addListener(onPortConnectListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onConnect error',error);
+//   log.error('background - onConnect error',error);
 // }
 
 // try {
@@ -55,7 +56,7 @@ export async function onSuspendListener() {
 //     browser_ext.tabs.onUpdated.addListener(onTabUpdatedListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background:', error);
+//   log.error('background:', error);
 // }
 
 // try {
@@ -64,7 +65,7 @@ export async function onSuspendListener() {
 //     browser_ext.runtime.onInstalled.addListener(onInstalledUpdatedListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onInstalled error',error);
+//   log.error('background - onInstalled error',error);
 // }
 
 // try {
@@ -73,7 +74,7 @@ export async function onSuspendListener() {
 //     browser_ext.idle.onStateChanged.addListener(onStateChangedListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onStateChanged error',error);
+//   log.error('background - onStateChanged error',error);
 // }
 
 // try {
@@ -82,7 +83,7 @@ export async function onSuspendListener() {
 //     browser_ext.alarms.onAlarm.addListener(onAlarmListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onAlarm error',error);
+//   log.error('background - onAlarm error',error);
 // }
 
 // try {
@@ -91,7 +92,7 @@ export async function onSuspendListener() {
 //     browser_ext.runtime.onSuspend.addListener(onSuspendListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - onSuspend error',error);
+//   log.error('background - onSuspend error',error);
 // }
 
 // try {
@@ -100,5 +101,5 @@ export async function onSuspendListener() {
 //     browser_ext.tabs.onRemoved.addListener(onTabRemovedListener);
 //   }
 // } catch (error) {
-//   console.log('[ERROR]: background - tab error',error);
+//   log.error('background - tab error',error);
 // }

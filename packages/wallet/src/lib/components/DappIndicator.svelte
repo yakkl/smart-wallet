@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { log } from '$lib/plugins/Logger';
   import { browserSvelte } from '$lib/utilities/browserSvelte';
   // import { browser as browserSvelte } from '$app/environment';
 	import { onDestroy, onMount } from 'svelte';
@@ -22,7 +23,7 @@
       if (browserSvelte)
 				browser_ext.runtime.onMessage.addListener(handleOnMessage);
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -33,7 +34,7 @@
       show = false;
       dapp = '';
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -43,14 +44,14 @@
   ): true | Promise<unknown> {
     try {
       if (request?.method === 'yak_dappsite') {
-        console.log(request)
+        log.error(request)
         dapp = 'DAPP';
         show = true;
         return true;
       }
       return Promise.resolve(); // Correct TypeScript return type
     } catch (e) {
-      console.log('Error handling message:', e);
+      log.error('Error handling message:', e);
       return Promise.resolve(); // Ensure a valid return type
     }
   }

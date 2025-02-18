@@ -5,9 +5,7 @@ import { YAKKL_INTERNAL } from '$lib/common/constants';
 import { wait } from '$lib/common/utils';
 import type { Runtime } from 'webextension-polyfill';
 import { handleLockDown } from '$lib/common/handlers';
-import { debug_log } from '$lib/common/debug-error';
-import { syncStoresToStorage } from '$lib/common/stores';
-import { loadTokens } from '$lib/common/stores/tokens';
+import { log } from '$plugins/Logger';
 
 let port: Runtime.Port | undefined;
 
@@ -22,13 +20,13 @@ async function connectPort(): Promise<boolean> {
         handleLockDown();
         port = undefined;
         if (event?.error) {
-          console.log('[ERROR]: Port disconnect:', event.error?.message);
+          log.error('Port disconnect:', event.error?.message);
         }
       });
       return true;
     }
   } catch (error) {
-    console.log('[ERROR]: Port connection failed:', error);
+    log.error('Port connection failed:', error);
   }
   return false;
 }
@@ -36,27 +34,23 @@ async function connectPort(): Promise<boolean> {
 async function initializeExtension() {
   if (!browserSvelte) return;
 
-  // debug_log('Root (route) +layout.ts - Syncing storage and stores + loading tokens ...');
-  // await syncStoresToStorage();
-  // loadTokens();
-
   try {
     let connected = await connectPort();
 
-    debug_log('ROOT: (route) +layout.ts - Port connected:', connected);
+    log.info('ROOT: (route) +layout.ts - Port connected:', connected);
 
     if (!connected) {
-      console.log('[INFO]: Port connection failed, retrying in 1 second...');
+      log.info('Port connection failed, retrying in 1 second...');
       await wait(1000);
       connected = await connectPort();
     }
 
     if (!connected) {
-      console.log('[INFO]: Internal port was unable to connect, reloading...');
+      log.info('Internal port was unable to connect, reloading...');
       browser_ext?.runtime.reload();
     }
   } catch (error) {
-    console.log('[ERROR]: Extension initialization failed:', error);
+    log.error('Extension initialization failed:', error);
   }
 }
 

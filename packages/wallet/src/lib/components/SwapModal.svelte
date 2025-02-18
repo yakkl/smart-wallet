@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Profile, ProfileData, SwapToken } from '$lib/common/interfaces';
-	import { debug_log, decryptData, isEncryptedData, type BigNumberish } from '$lib/common';
+	import { decryptData, isEncryptedData, type BigNumberish } from '$lib/common';
 	import type { Provider } from '$lib/plugins/Provider';
 	import type { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
 	import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
@@ -11,7 +11,7 @@
 	import ErrorNoAction from './ErrorNoAction.svelte';
 	import Warning from './Warning.svelte';
 	import PincodeVerify from './PincodeVerify.svelte';
-
+  import { log } from '$plugins/Logger';
 
   interface Props {
     show?: boolean;
@@ -45,7 +45,7 @@
   // Note: This calls the actual Swap component but handles the onSwap function. If you want to handle the onSwap function then do not use this but call Swap itself.
 
 	function onSwap(fundingAddress: string, fromToken: SwapToken, toToken: SwapToken, fromAmount: BigNumberish, toAmount: BigNumberish) {
-    console.log(`onSwap: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
+    log.info(`onSwap: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
   }
 
   function handleClose() {
@@ -63,7 +63,7 @@
 			showWarning = true;
 			warningValue = rejection;
 		} catch(e: any) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
@@ -99,7 +99,7 @@
 				throw 'PINCODE did not match.';
 			}
 		} catch(e: any) {
-      console.log(e);
+      log.error(e);
       pincodeVerified = false;
 			return null;
 		}
@@ -113,7 +113,7 @@
       }
 
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 

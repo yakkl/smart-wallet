@@ -3,7 +3,7 @@
 import type { SwapToken } from '$lib/common/interfaces';
 import type { Provider } from '../plugins/Provider';
 import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
-import { error_log } from '$lib/common';
+import { log } from '$lib/plugins/Logger';
 
 export async function getTokenBalance(
   token: SwapToken,
@@ -25,7 +25,7 @@ export async function getTokenBalance(
     token.balance = retBal;
     return retBal;
   } catch ( error ) {
-    error_log( 'getTokenBalance - error', error );
+    log.error( 'getTokenBalance - error', error );
     return 0n;
   }
 }

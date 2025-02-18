@@ -9,6 +9,7 @@ import type { Provider } from '$plugins/Provider';
 import type { AbstractContract } from './Contract';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 import type { ethers as ethersv6 } from 'ethers-v6';
+import { log } from './Logger';
 
 export interface ContractInterface {
   address: string;
@@ -275,7 +276,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   getNetworks(): Network[] {
-    console.log( 'Blockchain networks', this.networks );
+    log.info( 'Blockchain networks', this.networks );
     return this.networks;
   }
 

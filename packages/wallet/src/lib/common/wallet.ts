@@ -6,13 +6,16 @@ import { getYakklCurrentlySelectedAccountKey } from "./security";
 import { getMiscStore, getYakklCurrentlySelected } from "./stores";
 import type { Ethereum } from "$lib/plugins/blockchains/evm/ethereum/Ethereum";
 import { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
+import { log } from "$plugins/Logger";
 
 export async function getInstances(): Promise<[Wallet | null, Provider | null, Blockchain | null, TokenService<any> | null]> {
   try {
-    console.log("[DEBUG] getInstances() - Start");
+    log.trace("getInstances() - Start");
+
+    log.debug("getInstances() - Start");
     const yakklMiscStore = getMiscStore();
     if (!yakklMiscStore) {
-      console.log("[DEBUG] getInstances() - yakklMiscStore is null");
+      log.debug("getInstances() - Not logged in.");
       return [null, null, null, null];
     }
 
@@ -24,12 +27,12 @@ export async function getInstances(): Promise<[Wallet | null, Provider | null, B
 
     if (wallet) {
       if (!wallet.getSigner()) {
-        console.log("[DEBUG] No signer found. Retrieving account key...");
+        log.debug("No signer found. Retrieving account key...");
         const accountKey = await getYakklCurrentlySelectedAccountKey();
         if (accountKey?.privateKey) {
           await wallet.setSigner(accountKey.privateKey);
         } else {
-          console.log("[WARN] No account key found, wallet may not be functional.");
+          log.warn("No account key found, wallet may not be functional.");
         }
       }
 
@@ -38,25 +41,25 @@ export async function getInstances(): Promise<[Wallet | null, Provider | null, B
         const signer = wallet.getSigner();
         if (signer) {
           provider.setSigner(signer);
-          console.log("[DEBUG] Provider signer set.");
+          log.debug("Provider signer set.");
         }
 
         const blockchain = wallet.getBlockchain() as Ethereum;
-        console.log("[DEBUG] Retrieved blockchain:", blockchain);
+        log.debug("Retrieved blockchain:", blockchain);
 
         const tokenService = new TokenService(blockchain);
-        console.log("[DEBUG] TokenService Initialized ");
+        log.debug("TokenService Initialized ");
 
         return [wallet, provider, blockchain, tokenService];
       }
-      console.log("[DEBUG] Provider is null.");
+      log.debug("Provider is null.");
       return [wallet, null, null, null];
     }
 
-    console.log("[DEBUG] Wallet is null.");
+    log.debug("Wallet is null.");
     return [null, null, null, null];
   } catch (error) {
-    console.log("[ERROR] getInstances() - Failed:", error);
+    log.error("getInstances() - Failed:", error);
     return [null, null, null, null];
   }
 }

@@ -1,7 +1,7 @@
 import { clearAlarm } from "$lib/common/alarms";
-import { debug_log } from "$lib/common/debug-error";
 import { isBrowserEnv } from "$lib/common/environment";
 import { handleLockDown } from "$lib/common/handlers";
+import { log } from "$lib/plugins/Logger";
 
 export async function onAlarmListener(alarm: any) {
   try {
@@ -15,9 +15,9 @@ export async function onAlarmListener(alarm: any) {
         await clearAlarm("yakkl-lock-alarm"); // Clear the alarm so since it forwarded everything
       }
     } else {
-      console.log('[INFO]: Yakkl may not be running as a browser extension context from the calling environment.');
+      log.info('Yakkl may not be running as a browser extension context from the calling environment.');
     }
   } catch (error) {
-    console.log('[ERROR]: background.js - onAlarmListener - error:', error);
+    log.error('Background - onAlarmListener:', error);
   }
 }

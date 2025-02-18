@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { log } from '$lib/plugins/Logger';
   import { onMount, onDestroy } from 'svelte';
 
   let { symbol = 'COINBASE:ETHUSD' } = $props();
@@ -27,7 +28,7 @@
 
       widgetContainer.appendChild(script);
     } catch (error) {
-      console.log('Error initializing TradingView widget', error);
+      log.error('Error initializing TradingView widget', error);
     }
 
   };
