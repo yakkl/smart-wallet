@@ -15,6 +15,7 @@
   // import CommingSoon from '$lib/components/ComingSoon.svelte';
 	import { onMount } from 'svelte';
 	import EmergencyKitModal from './EmergencyKitModal.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     id?: string;
@@ -41,7 +42,7 @@
       address = currentlySelected.shortcuts.address;
       imageSRC = identicon(address ? address : 'default');
     } catch (e) {
-      console.log(`[ERROR]: Header: onMount - ${e}`);
+      log.error(`Header: onMount - ${e}`);
     }
   });
 
@@ -52,7 +53,7 @@
   //     let id = document.getElementsByClassName('offcanvas-backdrop')[0];
   //   id.remove();
   //   } catch (error) {
-  //     console.log(error);
+  //     log.error(error);
   //   }
   // }
 
@@ -60,7 +61,7 @@
     try {
       handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=extension&utm_content=university&utm_term=extension');
     } catch (error) {
-      console.log(error);
+      log.error(error);
     }
   }
 

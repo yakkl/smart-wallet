@@ -1,7 +1,6 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { page } from '$app/stores';
-  import { getYakklCurrentlySelected, yakklCurrentlySelectedStore, yakklMiscStore, yakklDappConnectRequestStore, getYakklConnectedDomains, getYakklAccounts } from '$lib/common/stores';
+  import { getYakklCurrentlySelected, yakklMiscStore, yakklDappConnectRequestStore, getYakklConnectedDomains, getYakklAccounts } from '$lib/common/stores';
   import { YAKKL_DAPP, ETH_BASE_SCA_GAS_UNITS, ETH_BASE_EOA_GAS_UNITS } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
   import { deepCopy } from '$lib/utilities/utilities';
@@ -11,12 +10,15 @@
 	import { isEncryptedData, type AccountData, type BigNumberish, type TransactionRequest, type TransactionResponse, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
+  import { log } from '$plugins/Logger';
 
   let wallet: Wallet;
 
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import { verify } from '$lib/common/security';
+	import { page } from '$app/state';
+
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
@@ -68,11 +70,11 @@
 
   try {
     if (browserSvelte) {
-      requestId = $page.url.searchParams.get('requestId') ?? '';
+      requestId = page.url.searchParams.get('requestId') ?? '';
       $yakklDappConnectRequestStore = requestId;
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 
   if (!requestId) requestId = '';
@@ -138,7 +140,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -161,7 +163,7 @@ async function handleReject() {
     showFailure = false;
     showSuccess = false;
   } catch(e) {
-    console.log(e);
+    log.error(e);
   } finally {
     await bail();
   }
@@ -173,7 +175,7 @@ async function bail() {
     if (port)
       port.postMessage({method: method, response: {type: 'YAKKL_RESPONSE', data: {name: 'ProviderRPCError', code: 4001, message: 'User rejected the request.'}}, requestData: requestData});
   } catch(e) {
-    console.log(e);
+    log.error(e);
   } finally {
     if (browserSvelte) {
       await close();
@@ -261,7 +263,7 @@ async function handleApprove() {
       throw 'No transaction was returned. Something went wrong.';
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
     errorValue = e as string;
     showFailure = true;
   }
@@ -274,7 +276,7 @@ function handleIncreaseGasLimit(increase: number) {
       gasLimit = gasLimit as bigint + BigInt(txGasLimitIncrease);
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -297,7 +299,7 @@ async function handleClose() {
       window.close();
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 }
 

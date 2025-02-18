@@ -1,4 +1,6 @@
 // ListenerManager.ts
+import { log } from "$plugins/Logger";
+
 type ListenerEntry = {
   event: any; // Event source (e.g., browser.runtime.onMessage)
   handler: Function; // Listener function
@@ -26,6 +28,6 @@ export class ListenerManager {
       event.removeListener(handler);
     });
     this.listeners.clear();
-    console.log('All listeners removed.');
+    log.info('All listeners removed.');
   }
 }

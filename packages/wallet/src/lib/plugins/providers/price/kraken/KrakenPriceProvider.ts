@@ -1,5 +1,6 @@
 import { fetchJson } from "@ethersproject/web";
 import type { PriceData, PriceProvider } from '$lib/common/interfaces';
+import { log } from "$lib/plugins/Logger";
 
 export class KrakenPriceProvider implements PriceProvider {
   getAPIKey(): string {
@@ -32,7 +33,7 @@ export class KrakenPriceProvider implements PriceProvider {
       };
     }
     catch ( e ) {
-      console.log( 'KrakenPriceProvider - getPrice - error', e );
+      log.error( 'KrakenPriceProvider - getPrice - error', e );
       return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
     }
   }

@@ -6,6 +6,7 @@
 
 	import { getSettings, setSettingsStorage } from '$lib/common/stores';
 	import { goto } from '$app/navigation';
+  import { log } from '$plugins/Logger';
 
   let yakklSettings: Settings | null = null;
 
@@ -13,16 +14,16 @@
     try {
       if (browserSvelte) {
         yakklSettings = await getSettings();
-
         if (yakklSettings) {
           yakklSettings.legal.privacyViewed = true;
           yakklSettings.legal.termsAgreed = true;
+          yakklSettings.isLocked = true;
           await setSettingsStorage(yakklSettings);
           await goto(PATH_REGISTER);
         }
       }
     } catch (error) {
-      console.log(error);
+      log.error(error);
     }
   }
 
@@ -30,14 +31,14 @@
       try {
         await update();
       } catch (error) {
-        console.log(error);
+        log.error(error);
       }
   }
 
   function handleLink(e: { srcElement: { href: any; }; }) {
     // send link to new tab
     if (browserSvelte) {
-      console.log(e);
+      log.info(e);
       browser_ext.tabs.create({url: e.srcElement.href});
     }
   }

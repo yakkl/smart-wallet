@@ -1,5 +1,4 @@
 import { YAKKL_DAPP, YAKKL_ETH, YAKKL_EXTERNAL, YAKKL_INTERNAL, YAKKL_PROVIDER_EIP6963, YAKKL_SPLASH } from "$lib/common/constants";
-import { debug_log } from "$lib/common/debug-error";
 import { handleLockDown } from "$lib/common/handlers";
 import type { YakklCurrentlySelected } from "$lib/common/interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
@@ -14,6 +13,7 @@ import { onEthereumListener } from "$lib/common/listeners/background/backgroundL
 import { onEIP6963Listener } from "$lib/extensions/chrome/eip-6963";
 import { onDappListener } from "$lib/extensions/chrome/dapp";
 import { browser_ext } from "$lib/common/environment";
+import { log } from "$lib/plugins/Logger";
 
 export let requestsExternal = new Map< string, { data: unknown; } >();
 
@@ -106,7 +106,7 @@ export async function onPortConnectListener(port: RuntimePort) {
         throw `Message ${port.name} is not supported`;
     }
   } catch(error) {
-    console.log("[ERROR]: onPortConnectListener:", error);
+    log.error("onPortConnectListener:", error);
   }
 }
 
@@ -115,7 +115,7 @@ export async function onPortDisconnectListener(port: RuntimePort): Promise<void>
     // debug_log('background - onDisconnectListener', port);
 
     if (browser_ext.runtime.lastError) {
-      console.log('[ERROR]: background - portListeners - lastError', browser_ext.runtime.lastError);
+      log.error('Background - portListeners - lastError', browser_ext.runtime.lastError);
     }
     if (port) {
       if (port.name === "yakkl") {
@@ -139,7 +139,7 @@ export async function onPortDisconnectListener(port: RuntimePort): Promise<void>
       }
     }
   } catch (error) {
-    console.log('[ERROR]: onDisconnectListener:',error);
+    log.error('onDisconnectListener:',error);
   }
 }
 
@@ -305,7 +305,7 @@ export async function onPopupLaunchListener(m: { popup: string; }, p: { postMess
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             browser_ext.windows.update(windowId, {focused: true}).then(() => {
               // result not currently used
-            }).catch((error: any) => {console.log(error)});
+            }).catch((error: any) => {log.error(error)});
 
             p.postMessage({popup: "YAKKL: Launched"}); // Goes to +page@popup.svelte
             return;
@@ -323,6 +323,6 @@ export async function onPopupLaunchListener(m: { popup: string; }, p: { postMess
       });
     }
   } catch (error) {
-    console.log('[ERROR]: onPopupLaunchListener:',error);
+    log.error('onPopupLaunchListener:',error);
   }
 }

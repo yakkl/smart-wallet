@@ -12,6 +12,7 @@ import { ProviderRpcError } from '$lib/common';
 
 import { getEIP6963ProviderDetail } from '$lib/plugins/providers/network/ethereum_provider/EthereumProvider';
 import type { EIP6963ProviderDetail } from '$lib/plugins/providers/network/ethereum_provider/EthereumProviderTypes';
+import { log } from "$lib/plugins/Logger";
 
 const windowOrigin = window.location.origin;
 
@@ -156,7 +157,7 @@ class EthereumProviderManager {
       //@ts-ignore
       if (window.ethereum) window.ethereum = null;
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
     this._replaceProvider(provider);
   }
@@ -192,7 +193,7 @@ export class YakklWalletProvider extends EventEmitter {
             }
           }
         } catch (e) {
-          console.log(e);
+          log.error(e);
         }
       }
     });
@@ -254,6 +255,7 @@ export class YakklWalletProvider extends EventEmitter {
 
       return this.handleRequest(request);
     } catch(e) {
+      log.error(e);
       this.disconnect();
       return Promise.reject(e); // Must be in a ProviderRpcError format
     }
@@ -283,7 +285,7 @@ export class YakklWalletProvider extends EventEmitter {
 
       return promise;
     } catch (e) {
-      console.log(e);
+      log.error(e);
       if (rejectType === 1) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
@@ -350,7 +352,7 @@ export class YakklWalletProvider extends EventEmitter {
           throw new ProviderRpcError(4200, `The requested method ${method} is not supported by this Ethereum provider.`);
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
       throw e;
     }
   }
@@ -402,7 +404,7 @@ export class YakklWalletProvider extends EventEmitter {
       this.handleChainIdChange(this.chainId);
       return this.chainId;
     } catch (e) {
-      console.log(e);
+      log.error(e);
       return 0;
     }
   }
@@ -501,7 +503,7 @@ export class YakklWalletProvider extends EventEmitter {
       }
       return result;
     } catch (e) {
-        console.log(e); // Must be in a ProviderRpcError format
+        log.error(e); // Must be in a ProviderRpcError format
         if (!(e as ProviderRpcError)?.code) {
           throw new ProviderRpcError(-32603, (e as string)); // Assume a string if not a ProviderRpcError
       } else {
@@ -560,7 +562,7 @@ export class YakklWalletProvider extends EventEmitter {
       this.emit("chainChanged", chainId);
       this.emit("networkChanged", chainId);
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -571,7 +573,7 @@ export class YakklWalletProvider extends EventEmitter {
         this.emit("accountsChanged", addresses);
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 }
@@ -655,7 +657,7 @@ function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
             window.ethereum.providers = [...window.ethereumProviderManager.providers.values()] ?? [];
             // window.ethereumProviderManager?.reload(); // This will check for certain sites that require a reload to work properly
           } catch (e) {
-            console.log(e); // Nothing else
+            log.error(e); // Nothing else
           }
         },
         configurable: false, // true
@@ -663,7 +665,7 @@ function setGlobalProvider(windowProvider: PropertyDescriptor & ThisType<any>) {
     }
     window.dispatchEvent(new Event('ethereum#initialized'));
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -682,6 +684,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // Dispatch an event to signal Ethereum provider initialization
     window.dispatchEvent(new Event('ethereum#initialized'));
     } catch (e) {
-    console.log('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e);
+    log.error('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e);
   }
 });

@@ -3,6 +3,7 @@
   import {onDestroy, onMount} from 'svelte';
   import { YAKKL_SPLASH, NUM_OF_SPLASH_IMAGES } from '$lib/common/constants';
 	import { wait } from '$lib/common/utils';
+  import { log } from '$plugins/Logger';
 
   // Splash size should be maximum default browser extension size.
   // Note: May want to look into providing a communications window for the user to see what is going on if we need to provide them with an important message.
@@ -31,10 +32,10 @@
 
           port.onDisconnect.addListener(() => {
             isPortDisconnected = true; // Mark port as disconnected
-            console.log("Port has been disconnected.");
+            log.info("Port has been disconnected.");
           });
         } else {
-          console.log("YAKKL: Splash: Port is trying again in 2 seconds...");
+          log.info("YAKKL: Splash: Port is trying again in 2 seconds...");
           await wait(2000);
 
           // Try one more time
@@ -49,7 +50,7 @@
 
             port.onDisconnect.addListener(() => {
               isPortDisconnected = true; // Mark port as disconnected
-              console.log("Port has been disconnected.");
+              log.info("Port has been disconnected.");
             });
           } else {
             browser_ext.runtime.reload(); // Reload the extension. This will exit it and apply any pending updates.
@@ -62,7 +63,7 @@
         });
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -77,7 +78,7 @@
         }
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   });
 

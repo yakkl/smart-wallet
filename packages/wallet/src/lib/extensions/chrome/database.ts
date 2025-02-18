@@ -1,21 +1,22 @@
 import type { YakklBlocked } from '$lib/common/interfaces';
 import { getObjectFromLocalStorage } from '$lib/common/storage';
+import { log } from '$lib/plugins/Logger';
 import Dexie from 'dexie';
 
 interface DomainEntry {
-    domain: string;
+  domain: string;
 }
 
 class BlacklistDatabase extends Dexie {
-    domains: Dexie.Table<DomainEntry, string>;
+  domains: Dexie.Table<DomainEntry, string>;
 
-    constructor() {
-        super("BlacklistDatabase");
-        this.version(1).stores({
-            domains: 'domain'
-        });
-        this.domains = this.table("domains");
-    }
+  constructor() {
+    super("BlacklistDatabase");
+    this.version(1).stores({
+        domains: 'domain'
+    });
+    this.domains = this.table("domains");
+  }
 }
 
 const db = new BlacklistDatabase();
@@ -30,7 +31,7 @@ export async function initializeDatabase(override = false) {
         await db.domains.bulkAdd(data.blacklist.map((domain: string) => ({ domain })));
     }
   } catch(error) {
-    console.log("Warning initializing database", error);
+    log.warn("Warning initializing database", error);
   }
 }
 
@@ -39,7 +40,7 @@ export async function isBlacklisted(domain: string): Promise<boolean> {
     const result = await db.domains.get({ domain });
     return !!result;
   } catch(error) {
-    console.log("Warning checking blacklist", error);
+    log.warn("Warning checking blacklist", error);
     return false;
   }
 }
@@ -54,7 +55,7 @@ export async function checkDomain(domain: any): Promise<boolean | undefined> {
     }
     return Promise.resolve(false);
   } catch (e) {
-    console.log(e);
+    log.error(e);
     Promise.reject(e);
   }
 }

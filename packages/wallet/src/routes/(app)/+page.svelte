@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { debug_log, PATH_LEGAL, PATH_LOGIN, PATH_REGISTER } from "$lib/common";
-  import { getSettings, yakklAccountsStore } from "$lib/common/stores";
+	import { PATH_LEGAL, PATH_LOGIN, PATH_REGISTER } from "$lib/common";
+  import { getSettings } from "$lib/common/stores";
 	import { onMount } from "svelte";
+  import { log } from '$plugins/Logger';
 
   onMount(async () => {
     try {
       // Redirect based on settings
       const yakklSettings = await getSettings();
-      debug_log('[INFO]: +page.svelte (app level): yakklSettings, accountsStore', yakklSettings, $yakklAccountsStore);
-
       if (!yakklSettings.legal.termsAgreed) {
         return await goto(PATH_LEGAL);
       } else if (!yakklSettings.init) {
@@ -19,7 +18,7 @@
         return await goto(PATH_LOGIN);
       }
     } catch (error) {
-      console.log('[ERROR]: +page.svelte (app level):', error);
+      log.error('+page.svelte (app level) - redirecting to legal:', error);
       return await goto(PATH_LEGAL);
     }
   });

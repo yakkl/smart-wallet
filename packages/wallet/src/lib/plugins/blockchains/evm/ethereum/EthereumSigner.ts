@@ -5,6 +5,7 @@ import { type EVMTransactionRequest, type BigNumberish, type TransactionRequest,
 import { Signer } from '$plugins/Signer';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
 import type { Provider } from '$lib/plugins/Provider';
+import { log } from '$lib/plugins/Logger';
 
 
 /**
@@ -104,7 +105,7 @@ export class EthereumSigner extends Signer {
       const value = ethersv6.recoverAddress(ethersv6.hashMessage(messageToVerify), signature) === signerAddress;
       return value;
     } catch (e) {
-      console.log(e);
+      log.error(e);
       return false;
     }
   }

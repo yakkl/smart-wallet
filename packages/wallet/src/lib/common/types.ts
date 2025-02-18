@@ -55,6 +55,7 @@ export type PricingStore = {
   id: string; // profile id
   pair?: string;   // e.g. "ETH/USD"
   price: number; // e.g. 2000
+  prevPrice?: number; // e.g. 1990 - set prevPrice = price before getting new price
 }
 
 // Sub-classes of Signer may optionally extend this interface to indicate

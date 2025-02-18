@@ -14,6 +14,7 @@
 	import type { Wallet } from "$lib/plugins/Wallet";
 	import WalletManager from "$lib/plugins/WalletManager";
 	import { getYakklCurrentlySelectedAccountKey } from "$lib/common/security";
+	import { log } from "$lib/plugins/Logger";
 
 
   interface Props {
@@ -87,7 +88,7 @@
 
 
     } catch (e) {
-      console.log(`[ERROR]: Footer: onMount - ${e}`);
+      log.error(`Footer: onMount - ${e}`);
     }
   });
 

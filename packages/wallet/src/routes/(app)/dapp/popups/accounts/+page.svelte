@@ -14,6 +14,7 @@
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import { dateString } from '$lib/common/datetime';
+	import { log } from '$lib/plugins/Logger';
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
 
@@ -69,7 +70,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -114,7 +115,7 @@
         accountNumber = addresses.size;
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -129,7 +130,7 @@
       filteredAddresses = addresses.has(searchTerm) ? addresses : new Map([...addresses].filter(([k, v]) => v.name.toLowerCase().includes(searchTerm.toLowerCase())));
       filteredAddressesArray = Array.from(filteredAddresses.values());
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -216,7 +217,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -231,7 +232,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -274,7 +275,7 @@
       }
       accountsPicked = accounts.length;
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -458,7 +459,7 @@
       await close();
 
     } catch (e) {
-      console.log('Dapp - accounts process error:', e);
+      log.error('Dapp - accounts process error:', e);
       errorValue = e as string;
       resetValuesExcept('showFailure');
     }
@@ -481,7 +482,7 @@
       }
 
     } catch(e) {
-      console.log(e);
+      log.error(e);
     } finally {
       // If requestId is not valid then use 0 since we are bailing out anyway
       // May want to think about putting a slight tick to make sure all queues get flushed

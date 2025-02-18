@@ -37,6 +37,7 @@ export async function postWithBackoff(url: string, data: object, attempt: number
                 .catch(reject);
             }, nextDelay);
           } else {
+            console.log('[ERROR]: postWithBackoff - response:', response);
             // if we've exceeded the maximum number of retries, reject the promise
             reject(new Error(`POST request failed after ${DEV_MAX_RETRIES} attempts.`));
           }
@@ -52,6 +53,7 @@ export async function postWithBackoff(url: string, data: object, attempt: number
               .catch(reject);
           }, nextDelay);
         } else {
+          console.log('[ERROR]: postWithBackoff:', error);
           // if we've exceeded the maximum number of retries, reject the promise
           reject(new Error(`POST request failed after ${DEV_MAX_RETRIES} attempts. ${error}`));
         }
@@ -97,6 +99,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
                 .catch(reject);
             }, nextDelay);
           } else {
+            console.log('[ERROR]: requestWithBackoff - response:', response);
             // if we've exceeded the maximum number of retries, reject the promise
             reject(new Error(`Request failed after ${DEV_MAX_RETRIES} attempts.`));
           }
@@ -112,6 +115,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
               .catch(reject);
           }, nextDelay);
         } else {
+          console.log('[ERROR]: requestWithBackoff:', error);
           // if we've exceeded the maximum number of retries, reject the promise
           reject(new Error(`Request failed after ${DEV_MAX_RETRIES} attempts.  ${error}`));
         }

@@ -431,6 +431,7 @@ export function convertBasisPointsToDecimal( basisPoints: number ): number {
     }
     return basisPoints / 10000;
   } catch ( error ) {
+    console.log(`[ERROR]: convertBasisPointsToDecimal: ${error}`);
     return 0;
   }
 }
@@ -525,6 +526,7 @@ export function getBigInt(value: BigNumberish, name?: string): bigint {
         throw new Error("invalid BigNumberish value");
     }
   } catch (error: unknown) {
+    console.log(`[ERROR]: getBigInt: ${error}`);
     if (error instanceof Error) {
       throw makeError(error.message, "INVALID_ARGUMENT", {
         argument: name || "value",
@@ -552,6 +554,7 @@ export function getUint(value: BigNumberish, name?: string): bigint {
     }
     return result;
   } catch (error: unknown) {
+    console.log(`[ERROR]: getUint: ${error}`);
     if (error instanceof Error) {
       throw makeError(error.message, "NUMERIC_FAULT", {
         fault: "overflow",
@@ -642,7 +645,8 @@ export function safeConvertToBigInt( value: BigNumberish | null | undefined ): b
 
     // Try to convert using existing toBigInt
     return toBigInt( value );
-  } catch {
+  } catch (error: unknown ) {
+    console.log(`[ERROR]: safeConvertToBigInt: ${error}`);
     return 0n;
   }
 }
@@ -680,6 +684,7 @@ export function getNumber(value: BigNumberish, name?: string): number {
         throw new Error("invalid numeric value");
     }
   } catch (error: unknown) {
+    console.log(`[ERROR]: getNumber: ${error}`);
     if (error instanceof Error) {
       throw makeError(error.message, "INVALID_ARGUMENT", {
         argument: name || "value",
@@ -735,6 +740,7 @@ export function toBeHex(_value: BigNumberish, _width?: Numeric): string {
     return "0x" + result;
   } catch (error: unknown) {
     if (error instanceof Error) {
+      console.log(`[ERROR]: toBeHex: ${error}`);
       throw makeError(error.message, "NUMERIC_FAULT", {
         operation: "toBeHex",
         fault: "overflow",

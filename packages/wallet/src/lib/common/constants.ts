@@ -12,6 +12,8 @@ export const NUM_OF_SPLASH_IMAGES = 3;
 export const SPLASH_DELAY = 3000; //milliseconds
 export const ALERT_DELAY = 3000; //milliseconds
 export const IDLE_AUTO_LOCK_CYCLE = 1; // minutes
+export const TOKEN_PRICE_CYCLE_TIME = 30000; //milliseconds (30 seconds)
+export const DEBUG_ALL_LOGS = true; // NOTE: Make sure it is set to false for production
 
 // Retry and backoff constants
 export const DEV_MAX_RETRIES = 5;

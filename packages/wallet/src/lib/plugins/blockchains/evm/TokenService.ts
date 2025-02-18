@@ -3,6 +3,7 @@ import { type BaseTransaction, type BigNumberish, type TokenData, type Transacti
 import { AbstractContract } from '$plugins/Contract';
 import { ABIs } from '$lib/plugins/contracts/evm/constants-evm';  // Only ERC20 ABI is used
 import { updateTokenBalances } from '$lib/common/tokens';
+import { log } from '$lib/plugins/Logger';
 
 export class TokenService<T extends BaseTransaction> {
   private blockchain: AbstractBlockchain<T> | null = null;
@@ -31,7 +32,7 @@ export class TokenService<T extends BaseTransaction> {
 
       return { name, symbol, decimals, totalSupply };
     } catch ( error ) {
-      console.log( 'Contract - getTokenInfo - error', error );
+      log.error( 'Contract - getTokenInfo:', error );
       return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
     }
   }
@@ -44,7 +45,7 @@ export class TokenService<T extends BaseTransaction> {
       if ( !contract ) return 0n;
       return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
-      console.log('Contract - getBalance - error', error);
+      log.error('Contract - getBalance - error', error);
       return 0n;
     }
   }
@@ -56,7 +57,7 @@ export class TokenService<T extends BaseTransaction> {
       // Since this is the only function within the method then no need for await
       updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() ?? undefined );
     } catch ( error ) {
-      console.log( 'Error updating token balances:', error );
+      log.error( 'Error updating token balances:', error );
     }
   }
 
@@ -74,7 +75,7 @@ export class TokenService<T extends BaseTransaction> {
       return await this.blockchain!.sendTransaction( tx );
     }
     catch ( error ) {
-      console.log( 'Contract - transfer - error', error );
+      log.error( 'Contract - transfer - error', error );
       throw new Error(`Error transferring tokens: ${error}`);
     }
   }

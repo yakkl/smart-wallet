@@ -5,6 +5,7 @@ import { browser_ext } from "$lib/common/environment";
 import { handleLockDown } from "$lib/common/handlers";
 import type { Preferences } from "$lib/common/interfaces";
 import { getObjectFromLocalStorage } from "$lib/common/storage";
+import { log } from "$lib/plugins/Logger";
 
 
 export async function onStateChangedListener(state: string): Promise<void> {
@@ -34,6 +35,6 @@ export async function onStateChangedListener(state: string): Promise<void> {
       break;
     }
   } catch (error) {
-    console.log('[ERROR]: onStateChangedListener:', error);
+    log.error('onStateChangedListener:', error);
   }
 }

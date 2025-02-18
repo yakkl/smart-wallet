@@ -3,6 +3,7 @@
   import * as yup from 'yup';
   import Modal from './Modal.svelte';
   import { VERSION, type TokenData } from '$lib/common';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     show?: boolean;
@@ -64,7 +65,7 @@
         resetForm();
         show = false;
       } catch (error) {
-        console.log('TokenForm: Error:', error);
+        log.error('TokenForm: Error:', error);
       }
     },
   });

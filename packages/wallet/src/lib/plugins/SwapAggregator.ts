@@ -2,6 +2,7 @@
 import type { SwapManager } from './SwapManager';
 import type { Token } from '$plugins/Token';
 import type { BigNumberish, SwapPriceData, TransactionResponse, SwapParams } from '$lib/common';
+import { log } from '$plugins/Logger';
 
 export class SwapAggregator {
   private swapManagers: SwapManager[];
@@ -22,7 +23,7 @@ export class SwapAggregator {
         try {
           return await manager.getQuote( tokenIn, tokenOut, amountIn, fundingAddress, isExactIn );
         } catch ( error ) {
-          console.log( `Error getting quote from ${ manager.getName() }:`, error );
+          log.error( `Error getting quote from ${ manager.getName() }:`, error );
           return null;
         }
       } )
@@ -33,7 +34,7 @@ export class SwapAggregator {
     );
 
     if ( validQuotes.length === 0 ) {
-      console.warn( 'No valid quotes received' );
+      log.warn( 'No valid quotes received' );
       return null;
     }
 

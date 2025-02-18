@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { PriceData, PriceProvider } from '$lib/common/interfaces';
+import { log } from "$lib/plugins/Logger";
 
 // Response Fields (trading pairs, ex. tBTCUSD)
 // Index	Field	Type	Description
@@ -20,7 +21,7 @@ import type { PriceData, PriceProvider } from '$lib/common/interfaces';
 
 export class BitfinexPriceProvider implements PriceProvider {
   getAPIKey(): string {
-    return '';  //import.meta.env.VITE_BITFINEX_API_KEY_PROD;    
+    return '';  //import.meta.env.VITE_BITFINEX_API_KEY_PROD;
   }
 
   getName() {
@@ -48,8 +49,8 @@ export class BitfinexPriceProvider implements PriceProvider {
       };
     }
     catch ( e: any ) {
-      console.log( 'BitfinexPriceProvider - getPrice - error', e );
-      
+      log.error( 'BitfinexPriceProvider - getPrice - error', e );
+
       let status = 404;  // Default status
       let message = `Error - ${ e }`;
 

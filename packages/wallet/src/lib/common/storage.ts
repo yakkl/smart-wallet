@@ -6,7 +6,7 @@ export const clearObjectsFromLocalStorage = async (): Promise<void> => {
   try {
     await browser_ext.storage.local.clear();
   } catch (error) {
-    console.log('Error clearing local storage', error);
+    console.log('[ERROR]: Error clearing local storage', error);
     throw error;
   }
 };
@@ -49,6 +49,7 @@ export const getObjectFromLocalStorage = async <T>(key: string, timeoutMs = 2000
 
     return result[key] as T;
   } catch (error) {
+    console.log('[ERROR]: Error getting object from local storage', error);
     return null;
   }
 };
@@ -57,7 +58,7 @@ export const setObjectInLocalStorage = async <T extends Record<string, any>>(key
   try {
     await browser_ext.storage.local.set({ [key]: obj });
   } catch (error) {
-    console.log('Error setting object in local storage', error);
+    console.log('[ERROR]: Error setting object in local storage', error);
     throw error;
   }
 };
@@ -66,7 +67,7 @@ export const removeObjectFromLocalStorage = async (keys: string): Promise<void> 
   try {
     await browser_ext.storage.local.remove(keys);
   } catch (error) {
-    console.log('Error removing object from local storage', error);
+    console.log('[ERROR]: Error removing object from local storage', error);
     throw error;
   }
 };

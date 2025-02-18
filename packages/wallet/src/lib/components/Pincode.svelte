@@ -6,6 +6,7 @@
   import { deepCopy } from '$lib/utilities/utilities';
   import { isEncryptedData, isProfileData, type CurrentlySelectedData, type EncryptedData, type Profile, type ProfileData, type YakklCurrentlySelected } from '$lib/common';
   import Modal from './Modal.svelte';
+	import { log } from "$lib/plugins/Logger";
 
   interface Props {
     show?: boolean;
@@ -78,7 +79,7 @@
 
       show = false;
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -112,7 +113,7 @@
         element.type = "password";
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 </script>

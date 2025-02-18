@@ -1,16 +1,15 @@
 <script lang="ts">
   // Import statements
   import { goto } from '$app/navigation';
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
   import { yakklPricingStore, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected, getMiscStore, yakklCurrentlySelectedStore, yakklAccountsStore, yakklCombinedTokenStore } from '$lib/common/stores';
-  import { PATH_LOGOUT, PATH_LOCK, PATH_LOGIN } from '$lib/common/constants';
+  import { PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
   import { onDestroy, onMount } from 'svelte';
   import { truncate, timeoutClipboard } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { checkPricesCallback, startCheckPrices, startPricingChecks, stopCheckPrices } from '$lib/tokens/prices';
+  import { checkPricesCallback, startPricingChecks, stopCheckPrices } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-  import { NetworkType, debug_log, getInstances, isEncryptedData, type CurrentlySelectedData, type Network, type TokenData, type YakklAccount } from '$lib/common';
+  import { NetworkType, getInstances, isEncryptedData, type CurrentlySelectedData, type Network, type TokenData, type YakklAccount } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';
   import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';
@@ -26,12 +25,17 @@
 	import type { Provider } from '$lib/plugins/Provider';
 	import EyeIcon from './icons/EyeIcon.svelte';
 	import ProtectedValue from './ProtectedValue.svelte';
-	import { PriceManager } from '$lib/plugins/PriceManager';
-	import { createPriceUpdater } from '$lib/common/createPriceUpdater';
-	import { tokenManager } from '$lib/common/stores/tokenManager';
-	import { get } from 'svelte/store';
 	import { tokenTotals } from '$lib/common/stores/tokenTotals';
-	import { isEqual } from 'lodash-es';
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
+	import { handleOnMessageForPricing } from '$lib/common/listeners/ui/uiListeners';
+  import { log } from "$plugins/Logger";
+
+  // import { PriceManager } from '$lib/plugins/PriceManager';
+	// import { createPriceUpdater } from '$lib/common/createPriceUpdater';
+	// import { tokenManager } from '$lib/common/stores/tokenManager';
+	// import { get } from 'svelte/store';
+	// import { isEqual } from 'lodash-es';
+	// import type { Runtime } from 'webextension-polyfill';
 
   interface Props {
     id?: string;
@@ -82,13 +86,13 @@
   // let serialNumber = $state('');
   // let promoCode = 'BETA';
   // let step1 = $state(false);
+  // let checkPricesProvider: string = 'coinbase';
+  // let checkPricesInterval: number = 10; // Seconds
 
   let price: number = 0;
   let prevPrice: number = 0;
   let direction: string = $state('fl');
   let showTestNetworks = true;
-  // let checkPricesProvider: string = 'coinbase';
-  // let checkPricesInterval: number = 10; // Seconds
   let error = $state(false);
   let errorValue: string = $state();
   let assetPriceValue: BigNumberish = $state(0n);
@@ -104,8 +108,7 @@
   let formattedEtherValue: string = $state();
   let isDropdownOpen = $state(false);
 
-  let priceManager = new PriceManager();
-  let priceUpdater = createPriceUpdater(priceManager, 30000);
+  // let priceUpdater = createPriceUpdater(new PriceManager(), 30000);
   let tokens: TokenData[] = [];
   // let effectTimeout: NodeJS.Timeout;
 
@@ -131,10 +134,19 @@
   $effect(() => {
     (async () => {
       if ($yakklPricingStore) {
-        price = $yakklPricingStore?.price ?? 0;
+        // if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
+        //   return; // No change
+        // }
+        price = $yakklPricingStore.price ?? 0;
+        const prevPrice = $yakklPricingStore.prevPrice ?? 0;
         if (price) {
-          await updateValuePriceFiat();
-          await updateWithCurrentlySelected();
+
+          log.debug('Card.svelte - price, prevPrice:', price, prevPrice);
+
+          if (price !== prevPrice) {
+            await updateValuePriceFiat();
+            await updateWithCurrentlySelected();
+          }
         }
       }
     })();
@@ -144,7 +156,10 @@
     if (assetPriceValue) {
       const newAssetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
       if (assetPrice !== newAssetPrice) {
+        log.debug('Card.svelte - assetPrice, newAssetPrice - changed:', assetPrice, newAssetPrice);
         assetPrice = newAssetPrice; // Only update if the value changes
+      } else {
+        log.debug('Card.svelte - assetPrice, newAssetPrice - no change:', assetPrice, newAssetPrice);
       }
     }
   });
@@ -161,45 +176,32 @@
   // });
 
   $effect.root(() => {
-    const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
-      // Only update if the tokens have actually changed
-      if (!isEqual(tokens, allTokens)) {
-        tokens = allTokens;
-        if (tokens.length > 0) {
-          priceUpdater.fetchPrices(tokens).catch(console.error);
-        }
-      }
-    });
+    log.debug('<=========================== Card.svelte - $effect.root =================================>');
 
-    const unsubscribePriceUpdater = priceUpdater.subscribe((updatedTokens = []) => {
-      // Only update if the values have actually changed
-      const currentTokens = get(yakklCombinedTokenStore);
-      if (!isEqual(currentTokens, updatedTokens)) {
-        tokens = updatedTokens;
-        yakklCombinedTokenStore.set(updatedTokens);
-      }
+    // Subscribe to token store updates
+    const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
+      tokens = updatedTokens;
+      log.debug('Card.svelte - updated token prices:', tokens); // JSON.stringify(tokens, null, 2));
     });
 
     return () => {
-      unsubscribeTokenManager();
-      unsubscribePriceUpdater();
-      priceUpdater.destroy();
+      unsubscribeYakklStore();
     };
   });
 
   onMount(async () => {
     try {
       if (browserSvelte) {
-        // try {
-        //   if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForPricing)) {
-        //     browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
-        //     browser_ext.runtime.onMessage.addListener(handleOnMessageForPricing);
-        //   }
-        // } catch (error) {
-        //   console.log('[ERROR]: background.js - onMessage error. Continuing',error);
-        // }
+        try {
+          if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForPricing)) {
+            browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
+            browser_ext.runtime.onMessage.addListener(handleOnMessageForPricing);
+          }
+        } catch (error) {
+          log.error('Card - onMount - onMessage error. Continuing',error);
+        }
 
-        // startPricingChecks();
+        startPricingChecks();
 
         toastStatus = false;
         if (!$yakklCurrentlySelectedStore) yakklCurrentlySelectedStore.set(await getYakklCurrentlySelected());
@@ -237,7 +239,7 @@
         }
       }
     } catch (e) {
-      console.log(`[ERROR]: onMount: ${e}`);
+      log.error(`onMount: ${e}`);
     }
   });
 
@@ -261,7 +263,7 @@
   //       }
   //     }
   //   } catch (e: any) {
-  //     console.log('[ERROR]: Error handling message:', e);
+  //     log.error('Error handling message:', e);
   //     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
   //     return true; // Indicate asynchronous response
   //   }
@@ -281,17 +283,9 @@
       shortcutsValue = EthereumBigNumber.from(value) ?? EthereumBigNumber.from(0); // .value is the amount of a given token the address holds
       chainId = network?.chainId ?? 1;
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
     }
   }
-
-  // async function startPricingChecks() {
-  //   try {
-  //     await startCheckPrices(checkPricesProvider, checkPricesInterval); // This should call the price and update the store before the interval if the first time
-  //   } catch (e) {
-  //     console.log(`[ERROR]: startPricingChecks: ${e}`);
-  //   }
-  // }
 
   onDestroy(async () => {
     // browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing); // No need to check if it exists
@@ -308,7 +302,7 @@
   async function updateValuePriceFiat(): Promise<void> {
     try {
       if (!$yakklCurrentlySelectedStore) {
-        console.log("No currently selected account.");
+        log.info("No currently selected account.");
         resetPriceData();
         return;
       }
@@ -316,7 +310,6 @@
       let { address, value, network } = $yakklCurrentlySelectedStore.shortcuts;
 
       // Avoid unnecessary balance fetch
-      // if (EthereumBigNumber.from(value).toBigInt() <= 0n) {
       const val = await getBalance(network.chainId, address);
       if ($yakklCurrentlySelectedStore.shortcuts.value !== val) {
         // This will force a reactivity update
@@ -325,30 +318,36 @@
           shortcuts: { ...current.shortcuts, value: val ?? 0n },
         }));
       }
-      // }
 
       // Update fiat and ether values only if necessary
-      const etherValue = parseFloat(formatEther($yakklCurrentlySelectedStore.shortcuts.value ?? 0n));
-      if (!isNaN(etherValue) && $yakklPricingStore?.price) {
-        const fiatValue = etherValue * $yakklPricingStore.price;
-        const etherValueString = etherValue.toFixed(5);
+      const price = EthereumBigNumber.from($yakklPricingStore?.price ?? 0);
+      if ($yakklCurrentlySelectedStore.shortcuts.value !== price) {
+        const etherValue = parseFloat(formatEther($yakklCurrentlySelectedStore.shortcuts.value ?? 0n));
+        if (!isNaN(etherValue) && $yakklPricingStore?.price) {
+          const fiatValue = etherValue * $yakklPricingStore.price;
+          const etherValueString = etherValue.toFixed(5);
 
-        if (formattedEtherValue !== etherValueString) {
-          formattedEtherValue = etherValueString;
+          if (formattedEtherValue !== etherValueString) {
+            formattedEtherValue = etherValueString;
+          }
+
+          const newFiatValue = currency ? currency.format(fiatValue) : "0.00";
+
+          if (valueFiat !== newFiatValue) {
+            valueFiat = newFiatValue;
+          }
+
+          updatePriceDirection($yakklPricingStore.price);
+
+          log.info("updateValuePriceFiat - Value updated.");
+        } else {
+          resetPriceData();
         }
-
-        const newFiatValue = currency ? currency.format(fiatValue) : "0.00";
-
-        if (valueFiat !== newFiatValue) {
-          valueFiat = newFiatValue;
-        }
-
-        updatePriceDirection($yakklPricingStore.price);
       } else {
-        resetPriceData();
+        log.info("updateValuePriceFiat - Value NOT updated.");
       }
     } catch (error) {
-      console.log("[ERROR]: Error in updateValuePriceFiat:", error);
+      log.errorStack("Error in updateValuePriceFiat:", error);
       resetPriceData();
     }
   }
@@ -364,7 +363,7 @@
       }
       resetPriceData();
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -388,7 +387,7 @@
   async function handleAccounts(account: YakklAccount): Promise<void> {
     try {
       if (!account) {
-        console.log("[WARNING]: Account is not defined.");
+        log.warn("Account is not defined.");
         return;
       }
 
@@ -419,7 +418,12 @@
         ),
       };
 
-      await setYakklCurrentlySelectedStorage(updatedCurrentlySelected); // This will force a reactive update
+      // if (isEqual(updatedCurrentlySelected, $yakklCurrentlySelectedStore)) {
+      //   debug_log("[INFO]: Currently selected count has not changed.");
+      //   return;
+      // }
+
+      await setYakklCurrentlySelectedStorage(updatedCurrentlySelected); // This will force a reactive update due to store update in function
 
       // Update price and UI
       await updateWithCurrentlySelected();
@@ -427,8 +431,10 @@
       if (wallet && provider && blockchain && tokenService) {
         await tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
       }
+
+      log.info("Currently selected account updated.");
     } catch (error) {
-      console.log("[ERROR]: Error in handleAccounts:", error);
+      log.error("Error in handleAccounts:", error);
       showAccountsModal = false;
     }
   }
@@ -437,6 +443,11 @@
     try {
       if ($yakklCurrentlySelectedStore) {
         isDropdownOpen = false;
+        if (net.chainId === $yakklCurrentlySelectedStore.shortcuts.chainId ) {
+          log.info("Network type has not changed.");
+          return;
+        }
+
         const currentlySelected = $yakklCurrentlySelectedStore; // Could just use $yakklCurrentlySelectedStore directly since the assignment is not reactive and only a reference
         $yakklCurrentlySelectedStore.shortcuts.chainId = net.chainId;
         chainId = net.chainId;
@@ -466,7 +477,7 @@
         isDropdownOpen = false;
       }
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
       errorValue = e as string;
       error = true;
     }
@@ -477,7 +488,7 @@
       showAccountImportModal = false;
       updateValuePriceFiat();
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
     }
   }
 
@@ -486,15 +497,15 @@
       showAccountImportModal = false; // ?????????
       updateValuePriceFiat();
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
     }
   }
 
   async function handleImport() {
     try {
-      console.log('handleImport - Not implemented');
+      log.info('handleImport - Not implemented');
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
     }
   }
 
@@ -502,13 +513,15 @@
   async function getBalance(chainId: number, address: string): Promise<bigint | null> {
     try {
       if (chainId && wallet) {
-        await wallet.setChainId(chainId);
+        if (wallet.getChainId() !== chainId) {
+          await wallet.setChainId(chainId);
+        }
         const val = await wallet.getBalance(address);
         return val;
       }
       return null;
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
       errorValue = e as string;
       error = true;
       return null;
@@ -526,7 +539,7 @@
       // Convert from Wei to Ether and get string representation
       return val.toEtherString();
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
       return '0.00000';
     }
   }

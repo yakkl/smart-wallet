@@ -4,6 +4,8 @@ import type { Settings } from "./interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "./storage";
 import { isBrowserEnv } from "./environment";
 import { stopLockIconTimer } from "$lib/extensions/chrome/iconTimer";
+import { yakklCurrentlySelectedStore } from "./stores";
+import { get } from "svelte/store";
 
 // Handlers / Callbacks that are not used as listeners in the extension
 
@@ -18,6 +20,9 @@ export async function handleLockDown() {
         yakklSettings.isLockedHow = 'window_exit';
         yakklSettings.updateDate = dateString();
         await setObjectInLocalStorage('settings', yakklSettings);
+        const yakklCurrentlySelected = get(yakklCurrentlySelectedStore);
+        yakklCurrentlySelected.shortcuts.isLocked = true;
+        yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
         // stopLockIconTimer();
       }
     } else {

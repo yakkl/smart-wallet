@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { log } from '$lib/plugins/Logger';
   import { formData, formErrors, validateForm } from './validation';
 
   let data = {
@@ -15,10 +16,10 @@
   async function handleSubmit() {
     const isValid = await validateForm(data);
     if (isValid) {
-      console.log('Form is valid, submitting:', data);
+      log.info('Form is valid, submitting:', data);
       // Perform the transaction here
     } else {
-      console.log('Form validation failed:', errors);
+      log.error('Form validation failed:', errors);
     }
   }
 </script>

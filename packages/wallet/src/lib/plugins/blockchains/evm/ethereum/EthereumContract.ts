@@ -6,6 +6,7 @@ import type { Provider } from '$plugins/Provider';
 import { ethers as ethersv6 } from 'ethers-v6';
 import { EthersConverter } from '$plugins/utilities/EthersConverter';
 import type { FunctionFragment, EventFragment } from 'ethers-v6';
+import { log } from '$lib/plugins/Logger';
 
 export class EthereumContract extends AbstractContract {
   private contract: ethersv6.Contract;
@@ -39,7 +40,7 @@ export class EthereumContract extends AbstractContract {
 
       return await this.contract[ functionName ]( ...args );
     } catch ( error ) {
-      console.log( `Error calling ${ functionName }:`, error );
+      log.error( `Error calling ${ functionName }:`, error );
       throw error;
     }
   }
@@ -59,7 +60,7 @@ export class EthereumContract extends AbstractContract {
       const estimation = await contractFunction.estimateGas( ...args );
       return BigInt( estimation.toString() );
     } catch ( error ) {
-      console.log( `Error estimating gas for ${ functionName }:`, error );
+      log.error( `Error estimating gas for ${ functionName }:`, error );
       throw error;
     }
   }
@@ -80,7 +81,7 @@ export class EthereumContract extends AbstractContract {
       if ( !tx ) throw new Error( 'Invalid transaction from populate transaction' );
       return EthersConverter.ethersTransactionRequestToTransactionRequest( tx );
     } catch ( error ) {
-      console.log( `Error populating transaction for ${ functionName }:`, error );
+      log.error( `Error populating transaction for ${ functionName }:`, error );
       throw error;
     }
   }
@@ -96,7 +97,7 @@ export class EthereumContract extends AbstractContract {
 
       return EthersConverter.ethersTransactionResponseToTransactionResponse( tx );
     } catch ( error ) {
-      console.log( `Error sending transaction for ${ functionName }:`, error );
+      log.error( `Error sending transaction for ${ functionName }:`, error );
       throw error;
     }
   }
@@ -181,7 +182,7 @@ export class EthereumContract extends AbstractContract {
   //   try {
   //     await permitAndApprove( tokenAddress, owner, spender, value, nonce, deadline, v, r, s, signer );
   //   } catch ( error ) {
-  //     console.log( 'Permit failed, falling back to approve:', error );
+  //     log.error( 'Permit failed, falling back to approve:', error );
   //     await tokenContract.approve( spender, value );
   //   }
   // } else {

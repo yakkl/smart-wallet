@@ -1,3 +1,4 @@
+import { log } from "$lib/plugins/Logger";
 import { isOnline } from "$lib/utilities/utilities";
 
 const API_ENDPOINT = 'https://api.openai.com/v1/engines/gpt-4/completions';
@@ -32,7 +33,7 @@ export async function fetchGPT4Response(prompt: string) {
 
     return data.choices[0].text.trim();
   } catch (error) {
-    console.log('Error fetching GPT-4 response:', error);
+    log.error('Error fetching GPT-4 response:', error);
     throw error;
   }
 }

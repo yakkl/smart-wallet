@@ -1,10 +1,11 @@
 import { STORAGE_YAKKL_CURRENTLY_SELECTED, STORAGE_YAKKL_SETTINGS } from "./constants";
+import { dateString } from "./datetime";
 import type { Settings, YakklCurrentlySelected } from "./interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "./storage";
 import { yakklCurrentlySelectedStore, yakklSettingsStore } from "./stores";
 
 
-export async function setLocks(locked: boolean = true) {
+export async function setLocks(locked: boolean = true, registration: string = '') {
   try {
     let dirty = false;
 
@@ -14,12 +15,16 @@ export async function setLocks(locked: boolean = true) {
       if (locked) {
         if (!yakklSettings.isLocked) {
           yakklSettings.isLocked = true;
+          yakklSettings.lastAccessDate = dateString();
+          if (registration) yakklSettings.registeredType = registration;
           await setObjectInLocalStorage('settings', yakklSettings);
           dirty = true;
         }
       } else {
         if (yakklSettings.isLocked) {
           yakklSettings.isLocked = false;
+          yakklSettings.lastAccessDate = dateString();
+          if (registration) yakklSettings.registeredType = registration;
           await setObjectInLocalStorage('settings', yakklSettings);
           dirty = true;
         }

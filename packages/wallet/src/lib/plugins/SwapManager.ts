@@ -3,11 +3,11 @@
 import type { Blockchain } from './Blockchain';
 import type { Provider } from './Provider';
 import type { Token } from './Token';
-import { error_log, YAKKL_FEE_BASIS_POINTS, type BigNumberish, type TransactionResponse } from '$lib/common';
+import { YAKKL_FEE_BASIS_POINTS, type BigNumberish, type TransactionResponse } from '$lib/common';
 import type { PoolInfoData, SwapParams, SwapPriceData, SwapToken, TransactionReceipt, TransactionRequest } from '$lib/common/interfaces';
 import { PriceManager } from './PriceManager';
 import { calculateFeeAmount } from '$lib/utilities';
-
+import { log } from '$plugins/Logger';
 
 export abstract class SwapManager {
   protected blockchain: Blockchain;
@@ -30,7 +30,7 @@ export abstract class SwapManager {
   }
 
   getMarketPrice( pair: string ) {
-    return this.priceManager.getMarketPrice( pair ); //By default, this will cycle through all specified providers and return the first successful response unless 
+    return this.priceManager.getMarketPrice( pair ); //By default, this will cycle through all specified providers and return the first successful response unless
   }
 
   getProvider(): Provider {
@@ -50,7 +50,7 @@ export abstract class SwapManager {
       if ( amount === 0n || this.feeBasisPoints <= 0 ) return 0n;  // No fee if amount is zero or fee is <= zero
       return calculateFeeAmount( amount, this.feeBasisPoints );
     } catch ( error ) {
-      error_log( 'Error calculating fee:', error );
+      log.error( 'Error calculating fee:', error );
       return 0n;
     }
   }

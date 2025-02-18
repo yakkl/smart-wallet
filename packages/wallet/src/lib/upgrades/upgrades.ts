@@ -4,6 +4,7 @@
 import { DEFAULT_TITLE } from '$lib/common/constants';
 import { getObjectFromLocalStorage, removeObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
 import type { Preferences } from '$lib/common';
+import { log } from '$lib/plugins/Logger';
 
 // TODO: Review and update where needed due to global changes for typescript conversion!!
 
@@ -21,6 +22,9 @@ const yakklUpdateStorage = [
   'yakklSecurity',
   'settings',
   'yakklWatchList',
+
+// NOTE: Add new storage areas here
+
 ];
 
 // NOTE: This file changes with each version upgrade!!
@@ -34,10 +38,10 @@ export function upgrade(fromVersion: string, toVersion: string) {
     // }
 
     latest(toVersion);
-    console.log(`Upgraded from ${fromVersion} to ${toVersion}`);
+    log.info(`Upgraded from ${fromVersion} to ${toVersion}`);
 
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -83,7 +87,7 @@ export async function checkVersion(toVersion: string) {
     }
     return true;
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -120,11 +124,11 @@ export async function updateVersion(toVersion: string) {
 
         await setObjectInLocalStorage(dataFile, data);
       } else {
-        console.log(`INFO: No data found for ${dataFile}. May not have been initialized yet.`);
+        log.info(`No data found for ${dataFile}. May not have been initialized yet.`);
       }
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -139,6 +143,6 @@ export async function removeBackups() {
     // removeObjectFromLocalStorage('yakklProvidersBackup');
     // removeObjectFromLocalStorage('yakklConnectedDomainsBackup');
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }

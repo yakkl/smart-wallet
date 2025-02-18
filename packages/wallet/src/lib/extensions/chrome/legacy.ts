@@ -1,3 +1,4 @@
+import { log } from '$lib/plugins/Logger';
 import type { Deferrable } from '@ethersproject/properties';
 import { Alchemy, Network, type TransactionRequest, type BlockTag } from 'alchemy-sdk';
 
@@ -10,10 +11,9 @@ export async function estimateGas(chainId: any, params: Deferrable<TransactionRe
     const provider = new Alchemy(getProviderConfig(chainId, kval));
     return await provider.transact.estimateGas(params);
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return undefined;
   }
-  return undefined;
 }
 
 export async function getBlock(chainId: any, block: BlockTag | Promise<BlockTag>, kval: string | undefined) {
@@ -21,7 +21,7 @@ export async function getBlock(chainId: any, block: BlockTag | Promise<BlockTag>
     const provider = new Alchemy(getProviderConfig(chainId, kval));
     return await provider.core.getBlock(block);
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return undefined;
   }
 }
@@ -51,7 +51,7 @@ function getProviderConfig(chainId: any, kval: any) {
       network: network,
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return undefined;
   }
 }

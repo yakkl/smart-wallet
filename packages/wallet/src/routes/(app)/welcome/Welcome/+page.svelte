@@ -8,47 +8,28 @@
   import { setIconLock } from '$lib/utilities';
   import Import from '$lib/components/Import.svelte';
   import TokenViews from "$lib/components/TokenViews.svelte";
-	import { yakklCombinedTokenStore, yakklCurrentlySelectedStore, yakklInstancesStore } from "$lib/common/stores";
-	import { debug_log, getInstances } from '$lib/common';
-	import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
-	// import { setStateStore, stateStore } from '$lib/common/stores/stateStore';
-	// import { routeCheckWithSettings } from '$lib/common/routes';
+	import { yakklCombinedTokenStore } from "$lib/common/stores";
+  import { log } from '$plugins/Logger';
+  // import { updateTokenPrices } from '$lib/common/tokenPriceManager';
 
-  // let wallet: Wallet | null = null;
-  // let provider: Provider | null = null;
-  // let blockchain: Blockchain | null = null;
-  let tokenService: TokenService<any> | null = null;
+  // let tokenService: TokenService<any> | null = null;
 
   let error = false;
   let errorValue: any = null;
   let showImportOption = false;
 
-  onMount(async () => {
-    try {
-      if (browserSvelte) {
-        // if (!$stateStore) {
-          const yakklInstances = await getInstances();
+  // onMount(async () => {
+  //   try {
+  //     if (browserSvelte) {
+  //       // Been able to reduce onMount to this - empty
+  //       log.info('Welcome page: onMount');
 
-          debug_log('Welcome page $yakklInstancesStore:', yakklInstances);
-          if (yakklInstances) {
-            tokenService = yakklInstances[3];
-            if (tokenService) {
-              debug_log('Welcome page all instances:', yakklInstancesStore);
-
-              tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
-
-              debug_log('Welcome page after updating token service-------------------------->>>>');
-            }
-          } else {
-            error = true;
-            errorValue = '[ERROR]: No wallet provider found.';
-          }
-        }
-      // }
-    } catch (e) {
-      console.log('[ERROR]:', e);
-    }
-  });
+  //       updateTokenPrices();
+  //     }
+  //   } catch (e) {
+  //     log.error(e);
+  //   }
+  // });
 
   onDestroy(() => {
     try {
@@ -56,18 +37,16 @@
         setIconLock();
       }
     } catch (e) {
-      console.log('[ERROR]:', e);
+      log.error(e);
     }
   });
-
-  // routeCheckWithSettings();
 
   function handleImports() {
     showImportOption = true;
   }
 
   function onImportComplete(imported: string) {
-    console.log('Imported:', imported);
+    log.info(imported);
   }
 </script>
 
@@ -99,6 +78,6 @@
   <TokenViews />
 {:else}
   <div class="flex items-center justify-center w-full h-full">
-    <p class="text-lg text-gray-500">No additional tokens found</p>
+    <p class="text-lg text-gray-400">No additional tokens found</p>
   </div>
 {/if}

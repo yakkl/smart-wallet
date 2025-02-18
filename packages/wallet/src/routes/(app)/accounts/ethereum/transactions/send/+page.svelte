@@ -1103,7 +1103,8 @@
 
 			// $yakklGasTransStore and $yakklPricingStore are used to get the gas prices and the current price of ether or other crypto used for gas fees.
 			// These types of stores can be used as is and do not need to be set in the store. They are used to get the values from the store. The others do need to be set due to the way the store is used.
-			unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
+			// unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
+      unitPrice = $yakklPricingStore?.price ?? 0;
 
 			if (valueState.valueType !== 'fiat') {
 				valueState.valueUSD = Number(Number($form.toAddressValue) * unitPrice).toFixed(2); // Fixed to 2 decimal places but may need to pull from locale

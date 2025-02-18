@@ -8,7 +8,6 @@ import { yakklStoredObjects } from '$lib/models/dataModels';
 import { setObjectInLocalStorage } from '$lib/common/storage';
 import { setLocalObjectStorage } from '$lib/extensions/chrome/storage';
 import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
-import { debug_log } from '$lib/common/debug-error';
 import { VERSION } from '$lib/common/constants';
 import { onRuntimeMessageListener } from './runtimeListeners';
 import { onAlarmListener } from './alarmListeners';
@@ -16,6 +15,7 @@ import { onStateChangedListener } from './stateListeners';
 import { onPortConnectListener, onPortDisconnectListener } from './portListeners';
 import { onTabRemovedListener, onTabUpdatedListener } from './tabListeners';
 import { globalListenerManager } from '$lib/plugins/GlobalListenerManager';
+import { log } from '$lib/plugins/Logger';
 
 type RuntimePlatformInfo = Runtime.PlatformInfo;
 
@@ -37,7 +37,7 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
           try {
             await setObjectInLocalStorage(element.key, element.value);
           } catch (error) {
-            console.log(`[ERROR]: Error setting default for ${element.key}:`, error);
+            log.error(`Error setting default for ${element.key}:`, error);
           }
         });
 
@@ -56,15 +56,15 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
       loadDefaultTokens();
     }
   } catch (e) {
-    console.log('[ERROR]:', e);
+    log.error(e);
   }
 }
 
 export function onEthereumListener(event: any) {
   try {
-    debug_log('background.js -', `yakkl-eth port: ${event}`);
+    log.debug('Background:', `yakkl-eth port: ${event}`);
   } catch (error) {
-    console.log('[ERROR]: onEthereumListener', error);
+    log.error('Background: onEthereumListener', error);
   }
 }
 

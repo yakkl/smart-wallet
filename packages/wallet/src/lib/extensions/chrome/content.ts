@@ -11,6 +11,7 @@ import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 import { getIcon } from '$lib/common/icon';
 import { extractFQDN } from '$lib/common/misc';
 import type { MetaDataParams } from '$lib/common/interfaces';
+import { log } from '$lib/plugins/Logger';
 // import { PortManager } from './ports';
 
 // EIP-6963
@@ -21,7 +22,7 @@ class PortDuplexStream extends Duplex {
   constructor(port: RuntimePort) {
     super({ objectMode: true });
 
-    // console.log('PortDuplexStream constructor', port);
+    // log.error('PortDuplexStream constructor', port);
     this.port = port;
     this.port.onMessage.addListener(this._onMessage.bind(this));
     this.port.onDisconnect.addListener(() => this.destroy());
@@ -49,7 +50,7 @@ class PortDuplexStream extends Duplex {
 
 const browser_ext = getBrowserExt();
 
-// NOTE: console.log output will only show up in the dApp console. Background.js only shows up in the YAKKL® Smart Wallet console!
+// NOTE: log.error output will only show up in the dApp console. Background.js only shows up in the YAKKL® Smart Wallet console!
 type RuntimePort = Runtime.Port;
 
 // We only want to recieve events from the inpage (injected) script
@@ -75,7 +76,7 @@ function createPort( name: string ) {
       portExternal.onDisconnect.addListener( onDisconnectListener );
     }
   } catch ( error ) {
-    console.log( error );
+    log.error( 'Content: createPort:', error );
   }
 }
 
@@ -88,7 +89,7 @@ function onMessageListener () {
         window.postMessage(response, windowOrigin); // This is the response back to the dApp!
       }
     } catch (error) {
-      console.log(error); // General error handling
+      log.error('onMessageListener:', error); // General error handling
       window.postMessage({id: response.id, method: response.method, error: error, type: 'YAKKL_RESPONSE'}, windowOrigin);
     }
   };
@@ -100,7 +101,7 @@ function onMessageListener () {
 function onDisconnectListener( event ) {
   try {
     if ( !browser_ext && browser_ext.runtime.lastError ) {
-      console.log( 'content.js - lastError:', browser_ext.runtime.lastError );
+      log.error( 'onDisconnectListener - lastError:', browser_ext.runtime.lastError );
     }
     if ( portExternal ) {
       if ( portExternal.onMessage ) {
@@ -113,8 +114,8 @@ function onDisconnectListener( event ) {
     portExternal = undefined;
     createPort(YAKKL_EXTERNAL); // May want to reload the port here. This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code
     // This is here due to manifest v3+ will disconnect the background after the browser shuts down the running background code
-  } catch ( error ) {
-    console.log( 'content.js - error', error );
+  } catch (error) {
+    log.error(error);
   }
 }
 
@@ -183,7 +184,7 @@ try {
         }
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
       window.postMessage({id: event.id, method: event.method, error: e, type: 'YAKKL_RESPONSE'}, windowOrigin); // General error handling
     }
   }
@@ -205,6 +206,6 @@ try {
   });
 
 } catch ( e ) {
-  console.log( 'content.js - YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e );
+  log.error( 'content - YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e );
 }
 

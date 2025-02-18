@@ -33,7 +33,7 @@
       if (! loadedAt) return true;
 
       const now = Date.now();
-      console.log(now - loadedAt.getDate());
+      // console.log(now - loadedAt.getDate());
       return (now - loadedAt.getTime()) < 10_000; // ready after 10 seconds
   }
 
@@ -66,7 +66,7 @@
 
 {#if popupActive}
 
-  <div transition:fade class="fixed inset-0 bg-base-200 bg-opacity-95 overflow-y-auto h-full w-full z-20 flex 
+  <div transition:fade class="fixed inset-0 bg-base-200 bg-opacity-95 overflow-y-auto h-full w-full z-20 flex
 
   justify-center items-center">
 

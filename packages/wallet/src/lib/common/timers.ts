@@ -1,5 +1,6 @@
 import { stopLockIconTimer } from "$lib/extensions/chrome/iconTimer";
 import { TimerManager } from "$lib/plugins/TimerManager";
+import { log } from "$plugins/Logger";
 
 export async function stopTimers() {
   try {
@@ -11,11 +12,11 @@ export async function stopTimers() {
     }
 
   } catch (error) {
-    console.log('[ERROR]: Error stopping timers:', error);
+    log.error('Error stopping timers:', error);
   }
 }
 
-export async function removeTimers() {
+export function removeTimers() {
   try {
     const timerManager = TimerManager.getInstance();
     if (timerManager) {
@@ -23,6 +24,6 @@ export async function removeTimers() {
     }
 
   } catch (error) {
-    console.log('[ERROR]: Error removing timers:', error);
+    log.error('Error removing timers:', error);
   }
 }

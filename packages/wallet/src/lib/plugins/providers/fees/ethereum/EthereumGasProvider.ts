@@ -4,6 +4,7 @@
 
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
+import { debug_log } from '$lib/common/debug-error';
 // import { ETH_BASE_UNISWAP_GAS_UNITS } from '$lib/common/constants';
 import type {
   GasProvider,
@@ -15,6 +16,7 @@ import type {
 import type { PriceProvider, SwapToken, TransactionRequest } from '$lib/common/interfaces';
 import type { Blockchain, Wallet } from '$lib/plugins';
 import { Ethereum } from '$lib/plugins/blockchains/evm/ethereum/Ethereum';
+import { log } from '$lib/plugins/Logger';
 import type { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
 import type { Provider } from '$plugins/Provider';
 import { ethers as ethersv6 } from 'ethers-v6';
@@ -59,9 +61,8 @@ export class EthereumGasProvider implements GasProvider {
         feeEstimate: feeEstimate
       };
     } catch ( error ) {
-      console.log('Error estimating gas gasLimit, feeEstimate, feeData :==>>', { gasLimit, feeEstimate, feeData });
-
-      console.log( 'Error estimating gas:', error );
+      log.error('Error estimating gas gasLimit, feeEstimate, feeData :==>>', { gasLimit, feeEstimate, feeData });
+      log.error('Error estimating gas:', error );
       throw error;
     }
   }
@@ -84,7 +85,7 @@ export class EthereumGasProvider implements GasProvider {
         priorityFee: item.priorityFeePerGas
       } ) );
     } catch ( error ) {
-      console.log( 'Error fetching historical gas data:', error );
+      log.error( 'Error fetching historical gas data:', error );
       throw error;
     }
   }
@@ -107,7 +108,7 @@ export class EthereumGasProvider implements GasProvider {
 
       return predictions;
     } catch ( error ) {
-      console.log( 'Error predicting future gas fees:', error );
+      log.error( 'Error predicting future gas fees:', error );
       throw error;
     }
   }
@@ -151,7 +152,7 @@ export class EthereumGasProvider implements GasProvider {
 
       return `$${ gasCostUsd.toFixed( 2 ) } (${ gasCostEth } ETH)`;
     } catch ( error ) {
-      console.log( 'Gas estimation error:', error );
+      log.error( 'Gas estimation error:', error );
       return 'Unable to estimate gas';
     }
   }
@@ -202,7 +203,7 @@ export class EthereumGasProvider implements GasProvider {
   //         totalGasEstimate += 46000n;
   //       }
   //     } catch {
-  //       console.log( 'Gas estimation failed, using default.' );
+  //       log.error( 'Gas estimation failed, using default.' );
   //       totalGasEstimate = ( tokenIn.isNative ? 150000n : 196000n );
   //     }
 
@@ -216,7 +217,7 @@ export class EthereumGasProvider implements GasProvider {
 
   //     return `$${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
   //   } catch ( error ) {
-  //     console.log( 'Error estimating swap gas fee:', error );
+  //     log.error( 'Error estimating swap gas fee:', error );
   //     return 'N/A';
   //   }
   // }
@@ -267,8 +268,8 @@ export class EthereumGasProvider implements GasProvider {
   //         }
   //       }
   //     } catch ( error ) {
-  //       // console.log( 'Gas estimation failed, using default:', error );
-  //       console.log( 'Gas estimation failed, using defaults...');
+  //       // log.error( 'Gas estimation failed, using default:', error );
+  //       log.error( 'Gas estimation failed, using defaults...');
 
   //       // Use default estimates
   //       totalGasEstimate = DEFAULT_GAS_ESTIMATES.SWAP_EXACT_IN;
@@ -291,7 +292,7 @@ export class EthereumGasProvider implements GasProvider {
 
   //     return `$${ gasFeeUsd.toFixed( 2 ) } (${ gasFeeEth } ETH)`;
   //   } catch ( error ) {
-  //     console.log( 'Error estimating swap gas fee:', error );
+  //     log.error( 'Error estimating swap gas fee:', error );
   //     // Even if everything fails, return a conservative estimate
   //     const conservativeGasEstimate = DEFAULT_GAS_ESTIMATES.SWAP_EXACT_IN +
   //       ( !tokenIn.isNative ? DEFAULT_GAS_ESTIMATES.ERC20_APPROVE : 0n );
@@ -313,10 +314,12 @@ export class EthereumGasProvider implements GasProvider {
 
   async getEthPrice(): Promise<number> {
     try {
+      debug_log('getEthPrice - priceProvider', this.priceProvider);
+
       const marketPrice = this.priceProvider.getMarketPrice( 'ETH-USD' );
       return ( await marketPrice ).price;
     } catch ( error ) {
-      console.log( 'Error fetching ETH price:', error );
+      log.error( 'Error fetching ETH price:', error );
       // throw error;
       return 0;
     }
@@ -348,17 +351,17 @@ export class EthereumGasProvider implements GasProvider {
 
     if ( factor <= 0 ) {
       factor = 1;
-      console.log( 'Warning: Factor must be greater than 0 - set to 1' );
+      log.warn( 'Factor must be greater than 0 - set to 1' );
     }
 
     if ( gasPriceInGwei < 0 ) {
       gasPriceInGwei = 0;
-      console.log( 'Warning: Gas price must be greater than or equal to 0 - set to 0' );
+      log.warn( 'Gas price must be greater than or equal to 0 - set to 0' );
     }
 
     if ( ethPriceInUsd <= 0 ) {
       ethPriceInUsd = 0;
-      console.log( 'Warning: ETH price must be greater than 0 - set to 0' );
+      log.warn( 'ETH price must be greater than 0 - set to 0' );
     }
 
     if ( gasPriceInGwei === 0 ) {
