@@ -3,7 +3,7 @@ export * from '$lib/common/types';
 export * from '$lib/common/constants';
 export * from '$lib/common/errors';
 export * from '$lib/common/encryption';
-export * from '$lib/common/color.log';
+export * from '$lib/common/loggerColor';
 export * from '$lib/common/math';
 export * from '$lib/common/misc';
 export * from '$lib/common/network';

@@ -6,7 +6,7 @@
   import { goto } from '$app/navigation';
   import { identicon } from '$lib/utilities';
   import { getMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
-  import { PATH_LOCK, PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
+  import { PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
   import Card from '$lib/components/Card.svelte';
   import ImageBar from '$lib/components/ImageBar.svelte';
   import { handleOpenInTab } from '$lib/utilities';
@@ -143,7 +143,7 @@
           <li class="relative" data-bs-dismiss="offcanvas" >
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_interactive_supports_focus -->
-            <div role="button" onclick={() => goto(PATH_LOCK)}
+            <div role="button" onclick={() => goto(PATH_LOGOUT)}
               class="flex items-center text-sm py-4 px-6 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded text-base-content hover:text-base-300 hover:bg-primary-100/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24"

@@ -1,4 +1,4 @@
-
+import { log } from "$lib/plugins/Logger";
 
 export type Timestamp = string | number | Date | undefined;
 
@@ -42,7 +42,7 @@ export function formatTimestamp(
 
     return new Intl.DateTimeFormat(locale, options).format(date);
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return placeholder;
   }
 }

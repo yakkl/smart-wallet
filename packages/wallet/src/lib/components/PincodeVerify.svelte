@@ -44,9 +44,10 @@
       }
 
       const digestedPincode = await digestMessage(pincode);
-      if (isProfileData(profile.data) && profile.data.pincode === digestedPincode) {
-        onVerified(digestedPincode); // Send the digested pincode and not the actual pincode
+      if (isProfileData(profile.data) && (profile.data as ProfileData)?.pincode === digestedPincode) {
+        onVerified(digestedPincode); // Send the verified digested pincode and not the actual pincode
       } else {
+        log.debug("Invalid pincode(s):", (profile.data as ProfileData)?.pincode, digestedPincode);
         alert("Invalid pincode");
       }
 
@@ -55,10 +56,11 @@
     } catch (e) {
       log.error(e);
       onRejected("Pincode verification failed");
-    } finally {
-      show = false;
-      onRejected("Pincode verification failed");
     }
+    // finally {
+    //   show = false;
+    //   onRejected("Pincode verification failed");
+    // }
   }
 
   function closeModal() {

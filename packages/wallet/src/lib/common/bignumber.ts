@@ -35,7 +35,7 @@ export interface IBigNumber {
 export class BigNumber implements IBigNumber {
   protected _value: BigNumberish;
 
-  constructor(value: BigNumberish = null) {  
+  constructor(value: BigNumberish = null) {
     this._value = value;
   }
 
@@ -59,9 +59,9 @@ export class BigNumber implements IBigNumber {
     if (a > b) return 1;
     return 0;
   }
-  
+
   // Type guard to check if value is BigNumber
-  private static isBigNumber(value: any): value is BigNumber {
+  static isBigNumber(value: any): value is BigNumber {
     return value instanceof BigNumber;
   }
 
@@ -153,7 +153,7 @@ export class BigNumber implements IBigNumber {
   sub(other: BigNumberish): BigNumber {
     return this.subtract(other);
   }
-  
+
   // Instance method to divide the current value by another BigNumberish value
   div(other: BigNumberish): BigNumber {
     return BigNumber.div(this._value, other);
@@ -244,7 +244,7 @@ export class BigNumber implements IBigNumber {
     if (value === null) {
       return null;
     }
-  
+
     if (typeof value === 'number') {
       if (!Number.isInteger(value)) {
         const factor = Math.pow(10, decimals);
@@ -253,7 +253,7 @@ export class BigNumber implements IBigNumber {
         return BigInt(value);
       }
     }
-  
+
     if (typeof value === 'string') {
       // Handle cases where the string value may contain decimals
       if (value.includes('.')) {
@@ -265,22 +265,22 @@ export class BigNumber implements IBigNumber {
         return BigInt(value);
       }
     }
-  
+
     if (typeof value === 'bigint') {
       return value;
     }
-  
+
     if (BigNumber.isBigNumber(value)) {
       return value.toBigInt();
     }
-  
+
     if (BigNumber.isHexObject(value)) {
       return BigInt(value.hex);
     }
-  
+
     return null;
   }
-  
+
   // Static method to get the maximum of two BigNumberish values
   static max(value1: BigNumberish, value2: BigNumberish): BigNumber {
     const bigint1 = BigNumber.toBigInt(value1);

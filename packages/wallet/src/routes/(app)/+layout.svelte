@@ -43,15 +43,15 @@
   // $effect(() => { yakklPrimaryAccounts = $yakklPrimaryAccountsStore; });
 
   // Effect: Check Lock Status & Redirect - This should be the first thing that runs on every page. It will need to be put into any layout that is used.
-  $effect(() => {
-    if (!browserSvelte) return; // Ensure this only runs on the client
-    // Use store OR localStorage to check if locked
-    const isLocked = $yakklSettingsStore?.isLocked ?? JSON.parse(localStorage.getItem('settings') || '{}')?.isLocked;
-    if (isLocked && !EXCLUDED_PATHS.includes(page.url.pathname)) {
-      log.info('Locked: Redirecting to login...from', page.url.pathname);
-      // goto(PATH_LOGIN);
-    }
-  });
+  // $effect(() => {
+  //   if (!browserSvelte) return; // Ensure this only runs on the client
+  //   // Use store OR localStorage to check if locked
+  //   const isLocked = $yakklSettingsStore?.isLocked ?? JSON.parse(localStorage.getItem('settings') || '{}')?.isLocked;
+  //   if (isLocked && !EXCLUDED_PATHS.includes(page.url.pathname)) {
+  //     log.info('Locked: Redirecting to login...from', page.url.pathname);
+  //     goto(PATH_LOGIN);
+  //   }
+  // });
 
   // Effect: Handle Internet Connection Status
   $effect(() => {

@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { PATH_LEGAL, PATH_LOGIN, PATH_REGISTER } from '$lib/common/constants';
 import { yakklSettingsStore } from '$lib/common/stores';
+import { log } from '$plugins/Logger';
 
 // Routes based on init or isLocked settings else go to register or nothing
 export async function routeCheckWithSettings() {
@@ -10,15 +11,15 @@ export async function routeCheckWithSettings() {
     const yakklSettings = get(yakklSettingsStore);
     if (yakklSettings !== null) {
       if (yakklSettings?.legal?.termsAgreed !== true) {
-        console.log('Terms not agreed - 1');
+        log.warn('Terms not agreed - 1');
         return await goto(PATH_LEGAL);
       }
       if (yakklSettings.init === false) {
-        console.log('register');
+        log.warn('register');
         return await goto(PATH_REGISTER);
       }
       if (yakklSettings.isLocked === true) {
-        console.log('login');
+        log.warn('login');
         return await goto(PATH_LOGIN);
       }
     }

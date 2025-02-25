@@ -10,8 +10,6 @@ import { setLocalObjectStorage } from '$lib/extensions/chrome/storage';
 import { loadDefaultTokens } from '$lib/plugins/tokens/loadDefaultTokens';
 import { VERSION } from '$lib/common/constants';
 import { onRuntimeMessageListener } from './runtimeListeners';
-import { onAlarmListener } from './alarmListeners';
-import { onStateChangedListener } from './stateListeners';
 import { onPortConnectListener, onPortDisconnectListener } from './portListeners';
 import { onTabRemovedListener, onTabUpdatedListener } from './tabListeners';
 import { globalListenerManager } from '$lib/plugins/GlobalListenerManager';
@@ -48,7 +46,7 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
       if (details && details.reason === "update") {
         if (details.previousVersion !== browser_ext.runtime.getManifest().version) {
           await initializeDatabase(true); // This will clear the db and then import again
-          await setLocalObjectStorage(platform, false); //true); // Beta version to 1.0.0 will not upgrade due to complete overhaul of the extension. After 1.0.0, upgrades will be handled.
+          await setLocalObjectStorage(platform, false); // After 1.0.0, upgrades will be handled.
         }
       }
 
@@ -62,7 +60,7 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
 
 export function onEthereumListener(event: any) {
   try {
-    log.debug('Background:', `yakkl-eth port: ${event}`);
+    // log.debug('Background:', `yakkl-eth port: ${event}`);
   } catch (error) {
     log.error('Background: onEthereumListener', error);
   }
@@ -74,13 +72,15 @@ globalListenerManager.registerContext('background', backgroundListenerManager);
 // TODO: Review these against background.ts
 export function addBackgroundListeners() {
   backgroundListenerManager.add(browser_ext.runtime.onMessage, onRuntimeMessageListener);
-  backgroundListenerManager.add(browser_ext.alarms.onAlarm, onAlarmListener);
   backgroundListenerManager.add(browser_ext.runtime.onInstalled, onInstalledUpdatedListener);
   backgroundListenerManager.add(browser_ext.runtime.onConnect, onPortConnectListener);
   backgroundListenerManager.add(browser_ext.runtime.onConnect, onPortDisconnectListener);
-  backgroundListenerManager.add(browser_ext.idle.onStateChanged, onStateChangedListener);
   backgroundListenerManager.add(browser_ext.tabs.onUpdated, onTabUpdatedListener);
   backgroundListenerManager.add(browser_ext.tabs.onRemoved, onTabRemovedListener);
+
+  // These are now handled in the UI due to the new architecture
+  // backgroundListenerManager.add(browser_ext.alarms.onAlarm, onAlarmListener);
+  // backgroundListenerManager.add(browser_ext.idle.onStateChanged, onStateChangedListener);
 }
 
 export function removeBackgroundListeners() {

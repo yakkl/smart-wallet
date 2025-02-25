@@ -49,7 +49,7 @@ export class CoinbasePriceProvider implements PriceProvider {
 
       const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
 
-      log.debugStack( 'CoinbasePriceProvider - getPrice - json', json );
+      // log.debug( 'CoinbasePriceProvider - getPrice - json', json );
 
       if ( json.num_products <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
@@ -75,7 +75,7 @@ export class CoinbasePriceProvider implements PriceProvider {
         message = 'Too Many Requests - Rate limit exceeded';
       }
 
-      log.debug( 'CoinbasePriceProvider - getPrice - error', status, message );
+      // log.debug( 'CoinbasePriceProvider - getPrice - error', status, message );
 
       return {
         provider: this.getName(),

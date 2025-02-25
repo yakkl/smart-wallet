@@ -1,11 +1,8 @@
-import { stopLockIconTimer } from "$lib/extensions/chrome/iconTimer";
 import { TimerManager } from "$lib/plugins/TimerManager";
 import { log } from "$plugins/Logger";
 
 export async function stopTimers() {
   try {
-    // await stopLockIconTimer();
-
     const timerManager = TimerManager.getInstance();
     if (timerManager) {
       timerManager.stopAll();

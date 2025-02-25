@@ -75,7 +75,7 @@ export class GasToken extends Token {
         throw new Error("Invalid pair for market price check");
       }
 
-      log.debug('GasToken - getMarketPrice - pair', pair);
+      // log.debug('GasToken - getMarketPrice - pair', pair);
 
       const price = await this.priceManager.getMarketPrice( pair );
       this.lastPrice = price;

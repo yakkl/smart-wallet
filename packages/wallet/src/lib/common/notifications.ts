@@ -1,6 +1,120 @@
+import type { BasicNotificationOptions, CreateNotificationOptions, ImageNotificationOptions, ListNotificationOptions, NotificationOptions, ProgressNotificationOptions } from './types';
 import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
 import { isBrowserEnv, browser_ext } from './environment';
 import { log } from '$plugins/Logger';
+
+const DEFAULT_ICON = '/images/logoBullLock48x48.png';
+
+// Simple notication functions - below
+
+// Flexible notification service class
+export class NotificationService {
+  private static readonly DEFAULT_ID = 'yakkl-notification';
+  private static readonly DEFAULT_ICON = '/images/logoBullLock48x48.png';
+
+  private static async createNotification(
+    options: NotificationOptions,
+    id?: string
+  ): Promise<void> {
+    try {
+      const notificationOptions: CreateNotificationOptions = {
+        ...options,
+        iconUrl: browser_ext.runtime.getURL(this.DEFAULT_ICON),
+      };
+
+      await browser_ext.notifications.create(
+        id || this.DEFAULT_ID,
+        notificationOptions
+      );
+    } catch (error) {
+      log.error('Error creating notification:', error);
+    }
+  }
+
+  static async sendBasic(
+    title: string,
+    message: string,
+    options: Partial<Omit<BasicNotificationOptions, 'type' | 'title' | 'message'>> = {},
+    id?: string
+  ): Promise<void> {
+    await this.createNotification({
+      type: 'basic',
+      title,
+      message,
+      ...options,
+    } as BasicNotificationOptions, id);
+  }
+
+  static async sendList(
+    title: string,
+    message: string,
+    items: Array<{ title: string; message: string }>,
+    options: Partial<Omit<ListNotificationOptions, 'type' | 'title' | 'message' | 'items'>> = {},
+    id?: string
+  ): Promise<void> {
+    await this.createNotification({
+      type: 'list',
+      title,
+      message,
+      items,
+      ...options,
+    } as ListNotificationOptions, id);
+  }
+
+  static async sendImage(
+    title: string,
+    message: string,
+    imageUrl: string,
+    options: Partial<Omit<ImageNotificationOptions, 'type' | 'title' | 'message' | 'imageUrl'>> = {},
+    id?: string
+  ): Promise<void> {
+    await this.createNotification({
+      type: 'image',
+      title,
+      message,
+      imageUrl,
+      ...options,
+    } as ImageNotificationOptions, id);
+  }
+
+  static async sendProgress(
+    title: string,
+    message: string,
+    progress: number,
+    options: Partial<Omit<ProgressNotificationOptions, 'type' | 'title' | 'message' | 'progress'>> = {},
+    id?: string
+  ): Promise<void> {
+    await this.createNotification({
+      type: 'progress',
+      title,
+      message,
+      progress: Math.max(0, Math.min(100, progress)),
+      ...options,
+    } as ProgressNotificationOptions, id);
+  }
+  
+  // Convenience methods for specific notifications
+  static async sendSecurityAlert(
+    message: string,
+    options: Partial<Omit<BasicNotificationOptions, 'type' | 'title' | 'message'>> = {},
+    id?: string
+  ): Promise<void> {
+    await this.sendBasic(
+      '🔒 Security Alert',
+      message,
+      {
+        requireInteraction: true,
+        priority: 2,
+        silent: false,  // Ensure audio notification
+        ...options  // Allow overriding defaults if needed
+      },
+      id || 'security-alert'  // Default ID for security alerts
+    );
+  }
+}
+
+
+// Functions to send notifications to the browser extension
 
 /**
  * Utility function to validate the `browser_ext` object.

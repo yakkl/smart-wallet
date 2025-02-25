@@ -228,6 +228,8 @@ export function setDefinedProperty<T extends object, K extends keyof T>(
 export function blockContextMenu() {
   // Blocks the context menu from popping up
   window.addEventListener("contextmenu", function (e) {
+    log.debug('Context menu blocked');
+    e.stopPropagation(); // Allow event propagation but prevent menu
     e.preventDefault();
   });
 
@@ -252,12 +254,20 @@ export function blockContextMenu() {
     if((e.ctrlKey || e.altKey) && e.code == "KeyU") { //keyCode == 85) {
         return false;
     }
+
+    e.stopPropagation();
   }
 }
 
+let resizeTimeout: NodeJS.Timeout | undefined = undefined;
+
 export function blockWindowResize(width: number, height: number) {
   window.addEventListener("resize", function () {
-    window.resizeTo(width, height);
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      console.log("🔲 Resizing window");
+      window.resizeTo(width, height);
+    }, 500); // Debounce resizing
   });
 }
 
@@ -292,15 +302,7 @@ export function getNetworkInfo(chainId: number) {
   let type;
   let explorer;
 
-  switch(chainId) { //chainIdToHex(chainId)) {
-    // case "0x5":
-    // case "0x05":
-    // case 5:
-    //   blockchain = 'Ethereum';
-    //   type = 'Goerli';
-    //   explorer = 'https://goerli.etherscan.io';
-    //   break;
-    // case "0xaa36a7":
+  switch(chainId) { 
     case 1301:
       blockchain = 'Unichain';
       type = 'Testnet';
@@ -311,8 +313,6 @@ export function getNetworkInfo(chainId: number) {
       type = 'Sepolia';
       explorer = 'https://sepolia.etherscan.io';
       break;
-    // case "0x1":
-    // case "0x01":
     case 1:
     default:
         blockchain = 'Ethereum';

@@ -6,6 +6,7 @@ import { isBrowserEnv } from "./environment";
 import { stopLockIconTimer } from "$lib/extensions/chrome/iconTimer";
 import { yakklCurrentlySelectedStore } from "./stores";
 import { get } from "svelte/store";
+import { log } from "$plugins/Logger";
 
 // Handlers / Callbacks that are not used as listeners in the extension
 
@@ -23,13 +24,13 @@ export async function handleLockDown() {
         const yakklCurrentlySelected = get(yakklCurrentlySelectedStore);
         yakklCurrentlySelected.shortcuts.isLocked = true;
         yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
-        // stopLockIconTimer();
+        stopLockIconTimer();
       }
     } else {
-      console.log('[INFO]: handleLockDown: Does not believe to be in a browser environment.');
+      log.info('handleLockDown: Does not believe to be in a browser environment.');
     }
   } catch (error) {
-    console.log('[ERROR]: Error in unload handler:', error);
+    log.error('Error in unload handler:', error);
   }
 }
 

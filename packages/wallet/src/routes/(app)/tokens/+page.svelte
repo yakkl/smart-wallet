@@ -126,7 +126,7 @@
 
 
   function onSwap(fundingAddress: string, fromToken: Token, toToken: Token, fromAmount: BigNumberish, toAmount: BigNumberish) {
-    log.debug(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
+    // log.debug(`onSwap-Testing: fundingAddress=${fundingAddress}, fromToken=${fromToken}, toToken=${toToken}, fromAmount=${fromAmount}, toAmount=${toAmount}`);
   }
 
   function openSendModal() {
@@ -139,62 +139,62 @@
 
   function handleAccounts(selectedAccount: YakklAccount) {
     // Handle the selected account here
-    log.debug('Selected account:', selectedAccount);
+    // log.debug('Selected account:', selectedAccount);
   }
 
   function handleContact(selectedContact: YakklContact) {
     // Handle the selected contact here
-    log.debug('Selected contact:', selectedContact);
+    // log.debug('Selected contact:', selectedContact);
   }
 
   function handleImport(account: YakklAccount) {
     // Handle the imported account here
-    log.debug('Imported account:', account);
+    // log.debug('Imported account:', account);
   }
 
   function handleVerifyModal(pincode: string) {
     // Handle the pincode here
-    log.debug('Pincode:', pincode);
+    // log.debug('Pincode:', pincode);
   }
 
   function handleVerify(pincodeOld: string, pincodeNew: string) {
     // Handle the pincode here
-    log.debug('Pincode - old and new:', pincodeOld, pincodeNew);
+    // log.debug('Pincode - old and new:', pincodeOld, pincodeNew);
   }
 
   function handleImportWatch(account: YakklWatch) {
     // Handle the import watch account here
-    log.debug('Import watch account');
+    // log.debug('Import watch account');
   }
 
   function handleExportPrivateKey() {
     // Handle the export private key here
-    log.debug('Export private key');
+    // log.debug('Export private key');
   }
 
   function handleImportPhrase() {
     // Handle the import phrase here
-    log.debug('Import phrase account:', account);
+    // log.debug('Import phrase account:', account);
   }
 
   function handleEmergencyKit(success: boolean, message: string) {
     // Handle the emergency kit here
     showEmergencyKit = false;
-    log.debug('Emergency kit:', success, message);
+    // log.debug('Emergency kit:', success, message);
   }
 
   function handleCreateAccount() {
-    log.debug('Create initial account - actual implementation not provided');
+    // log.debug('Create initial account - actual implementation not provided');
     // Add your logic here
   }
 
   function handleImportPrivateKey() {
-    log.debug('Import an existing account - actual implementation not provided');
+    // log.debug('Import an existing account - actual implementation not provided');
     // Add your logic here
   }
 
   function handleRestore() {
-    log.debug('Restore from Emergency Kit - actual implementation not provided');
+    // log.debug('Restore from Emergency Kit - actual implementation not provided');
     // Add your logic here
   }
 

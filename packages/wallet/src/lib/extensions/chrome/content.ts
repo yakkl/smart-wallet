@@ -47,7 +47,6 @@ class PortDuplexStream extends Duplex {
   }
 }
 
-
 const browser_ext = getBrowserExt();
 
 // NOTE: log.error output will only show up in the dApp console. Background.js only shows up in the YAKKL® Smart Wallet console!
@@ -56,7 +55,6 @@ type RuntimePort = Runtime.Port;
 // We only want to recieve events from the inpage (injected) script
 const windowOrigin = window.location.origin;
 let portExternal: RuntimePort | undefined = undefined;
-
 
 // Usage: (WIP)
 // const portManager = new PortManager("YAKKL_EXTERNAL");

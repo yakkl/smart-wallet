@@ -53,7 +53,7 @@
       }
 
       const digestedOriginalPincode = await digestMessage(pincodeOriginal);
-      if (isProfileData(profile.data) && profile.data.pincode !== digestedOriginalPincode) {
+      if (isProfileData(profile.data) && (profile.data as ProfileData)?.pincode !== digestedOriginalPincode) {
         alert("Invalid current pincode");
         return;
       }

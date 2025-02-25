@@ -3,7 +3,7 @@ import { dateString } from "./datetime";
 import type { Settings, YakklCurrentlySelected } from "./interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "./storage";
 import { yakklCurrentlySelectedStore, yakklSettingsStore } from "./stores";
-
+import { log } from "$plugins/Logger";
 
 export async function setLocks(locked: boolean = true, registration: string = '') {
   try {
@@ -51,6 +51,6 @@ export async function setLocks(locked: boolean = true, registration: string = ''
       if (dirty) yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
     }
   } catch (error) {
-    console.log("[ERROR]: Error setting locks:", error);
+    log.error("Error setting locks:", error);
   }
 }

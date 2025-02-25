@@ -4,6 +4,7 @@ import { ethers } from 'ethers-v6';
 import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage, updateCombinedTokenStore, yakklCombinedTokenStore } from '$lib/common/stores';
 import { isEqual } from 'lodash-es';
 import { log } from "$plugins/Logger";
+import { computeTokenValue } from './computeTokenValue';
 
 // Helper functions to get balance for a token
 
@@ -38,6 +39,8 @@ export async function getTokenBalance(
     try {
       const balance = await tokenContract.balanceOf(userAddress);
       const decimals = await tokenContract.decimals();
+
+      // log.debug(`tokens.ts: Token: ${token.name} | Address: ${token.address} | Balance: ${balance.toString()} | Decimals: ${decimals}`);
 
       return ethers.formatUnits(balance, decimals);
     } catch {
@@ -85,6 +88,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
+            value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
           log.error(`Error fetching balance for token ${token.symbol}:`, balanceError);
@@ -111,6 +115,8 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
   try {
     const customTokens = get(yakklTokenDataCustomStore);
 
+    // log.debug('updateTokenDataCustomBalances: customTokens', customTokens);
+
     if (!customTokens || customTokens.length === 0) {
       log.warn('No custom tokens available to update balances');
       return [];
@@ -124,6 +130,7 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
+            value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
           log.error(`Error fetching balance for custom token ${token.symbol}:`, balanceError);
@@ -135,6 +142,9 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
     // Update the store only if the data has changed
     const currentCustomTokens = get(yakklTokenDataCustomStore);
     if (!isEqual(currentCustomTokens, updatedCustomTokens)) {
+
+      // log.debug('updateTokenDataCustomBalances: Updating custom tokens in storage');
+
       await setYakklTokenDataCustomStorage(updatedCustomTokens);
     }
 
@@ -145,11 +155,14 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
   }
 }
 
+// For memory store only
 export function updateTokenValues() {
+  // log.debugStack('updateTokenValues: Updating token values', yakklCombinedTokenStore);
+
   yakklCombinedTokenStore.update(tokens =>
-    tokens.map(token => ({
-      ...token,
-      value: (Number(token.balance) ?? 0) * (token.price?.price ?? 0)
-    }))
+    tokens.map(token => {
+      const { value } = computeTokenValue(token);
+      return { ...token, value };
+    })
   );
 }
