@@ -66,9 +66,13 @@ export class PriceManager {
 
       provider = this.getWeightedRandomProvider( providersToUse );
 
-      log.debug( 'PriceManager - getMarketPrice - pair, providers, provider ============================||', pair, availableProviders, provider );
+      // log.debug( 'PriceManager - getMarketPrice - pair, providers, provider ||||', pair, providersToUse, provider );
 
-      return await provider.getMarketPrice( pair );
+      const price = await provider.getMarketPrice( pair );
+
+      // log.debug( 'PriceManager - getMarketPrice - price ||||', price );
+
+      return price;
     } catch ( error ) {
       log.error( `Error fetching price from ${ provider.getName() }:`, error );
       // Retry with a different provider

@@ -68,7 +68,7 @@ import { walletStore, type Wallet } from '$plugins/Wallet';
 import type { Blockchain, Provider } from '$lib/plugins';
 import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
 import { tokens } from './stores/tokens';
-import { timerManagerStore } from '$lib/plugins/TimerManager';
+// import { timerManagerStore } from '$lib/plugins/TimerManager';
 import { log } from "$plugins/Logger";
 
 // Svelte writeable stores
@@ -236,7 +236,7 @@ export function resetStores() {
 
     tokens.set([]);
     walletStore.set(null);
-    timerManagerStore.set(null);
+    // timerManagerStore.set(null);
 
     priceStore.set(null);
   } catch (error) {
@@ -292,7 +292,7 @@ export function storageChange(changes: any) {
 	}
 }
 
-export async function syncStoresToStorage() {
+export async function syncStorageToStore() {
   try {
     const [
       preferences,

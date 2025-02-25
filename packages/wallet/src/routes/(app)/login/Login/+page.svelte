@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { createForm } from "svelte-forms-lib";
-  import { setProfileStorage, yakklDappConnectRequestStore, yakklCurrentlySelectedStore, yakklSettingsStore, yakklPreferencesStore, yakklPrimaryAccountsStore, syncStoresToStorage, yakklMiscStore, getMiscStore, yakklCombinedTokenStore } from '$lib/common/stores';
+  import { setProfileStorage, yakklDappConnectRequestStore, yakklCurrentlySelectedStore, yakklSettingsStore, yakklPreferencesStore, yakklPrimaryAccountsStore, syncStorageToStore, yakklMiscStore, getMiscStore, yakklCombinedTokenStore, yakklTokenDataCustomStore } from '$lib/common/stores';
   import { yakklVersionStore, yakklUserNameStore } from '$lib/common/stores';
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
@@ -21,7 +21,9 @@
   import { log } from '$plugins/Logger';
 	import { sendNotificationStartLockIconTimer } from '$lib/common/notifications';
 	import { updateTokenPrices } from '$lib/common/tokenPriceManager';
+	import { resetTokenDataStoreValues } from '$lib/common/resetTokenDataStoreValues';
 
+	// import { updateTokenDataCustomBalances } from '$lib/common/tokens';
 	// import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
 	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
 	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
@@ -81,22 +83,17 @@
       if (browserSvelte) {
         yakklCombinedTokenStore.set([]); // Reset the token store - ????
         if (!yakklSettings || !yakklSettings.legal.termsAgreed) {
-          log.debug('Login: Redirecting to:', PATH_LEGAL);
           return await goto(PATH_LEGAL);
         }
         if (yakklSettings.init === false) {
-          log.debug('Login: Redirecting to:', PATH_REGISTER);
           return await goto(PATH_REGISTER);
         }
 
-        await setIconLock(); // make sure it shows locked
-
+        await setIconLock(); // Make sure it shows locked and is locked
         setLocks(true);
 
-        if (yakklPreferences) {
-          // Sets the default of 60 seconds but can be changed by setting the properties to another integer.
-          browser_ext.idle.setDetectionInterval(yakklPreferences.idleDelayInterval || 60); // System idle time is 2 minutes. This adds 1 minute to that. If any movement or activity is detected then it resets.
-        }
+        // Sets the default of 60 seconds but can be changed by setting the properties to another integer.
+        browser_ext.idle.setDetectionInterval(yakklPreferences ? yakklPreferences?.idleDelayInterval ?? 60 : 60); // System idle time is 2 minutes. This adds 1 minute to that. If any movement or activity is detected then it resets.
 
         registeredType = yakklSettings.registeredType as string;
         // if (!checkUpgrade()) { // The checkUpgrade is not valid until after user is validated
@@ -196,7 +193,7 @@
             // Must be a dapp - now doing load in +page.ts
             if (requestId) { // Don't want to truely unlock with dapps
               if (yakklSettings && yakklSettings.init === true) {
-                await syncStoresToStorage();  // This sets up the memory stores from the physical store
+                await syncStorageToStore();  // This sets up the memory stores from the physical store
               }
             }
           } else {
@@ -206,9 +203,10 @@
 
           // Make sure there is at least one Primary or Imported account
           if (await checkAccountRegistration()) {
+            // resetTokenDataStoreValues();
             await updateTokenPrices();
             await sendNotificationStartLockIconTimer();
-            goto(redirect, {replaceState: true, invalidateAll: false});
+            goto(redirect, {replaceState: true, invalidateAll: true});
           } else {
             showRegistrationOption = true;
           }
@@ -248,7 +246,7 @@
     showRegistrationOption = false;
     showEmergencyKit = false;
     showImportAccount = false;
-    await goto(PATH_LOGOUT);
+    goto(PATH_LOGOUT);
   }
 
   // async function onCompleteImportPrivateKey(account: YakklAccount) {
@@ -317,12 +315,6 @@
 	<title>{DEFAULT_TITLE}</title>
 </svelte:head>
 
-<!-- Here, we don't need to close anything so no need for onClose or onCancel -->
-<!-- <RegistrationOptionModal bind:show={showRegistrationOption} onCreate={() => {showRegistrationOption=false; goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);}} onImport={() => {showRegistrationOption=false; showImportAccount=true;}} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}} />
-<ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} />
-<ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  />
-<ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}}/>
-<EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit}/> -->
 <!-- <ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." /> -->
 <ErrorNoAction bind:show={error} title="ERROR!" value={errorValue} handle={handleCustomAction} />
 
@@ -454,7 +446,6 @@
     <!-- {/if} -->
 
     <Copyright registeredType={registeredType} />
-
   </main>
 </div>
 

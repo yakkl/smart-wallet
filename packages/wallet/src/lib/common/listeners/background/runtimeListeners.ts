@@ -1,6 +1,5 @@
 import { isBrowserEnv, browser_ext } from '$lib/common/environment';
 import type { Runtime } from 'webextension-polyfill';
-import { debug_log } from '$lib/common/debug-error';
 import { startLockIconTimer, stopLockIconTimer } from '$lib/extensions/chrome/iconTimer';
 import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
 import { log } from '$lib/plugins/Logger';

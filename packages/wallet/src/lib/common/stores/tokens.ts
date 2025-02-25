@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { SwapToken } from '$lib/common/interfaces';
 import { ADDRESSES } from '$lib/plugins/contracts/evm/constants-evm';
+import { log } from '$lib/plugins/Logger';
 
 // Writable store to hold all tokens
 export const tokens = writable<SwapToken[]>([]);
@@ -57,6 +58,6 @@ export async function loadTokens() {
     // Update the tokens store
     tokens.set(loadedTokens);
   } catch (error) {
-    console.log('Error loading tokens:', error);
+    log.error('Error loading tokens:', error);
   }
 }

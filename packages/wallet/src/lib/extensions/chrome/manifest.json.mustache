@@ -7,15 +7,27 @@
   "author": "YAKKL Inc",
   "default_locale": "en",
   "homepage_url": "https://yakkl.com/?utm_source=chrome_store",
+  "host_permissions": [
+    "http://localhost:8545/",
+    "file://*/*",
+    "http://*/*",
+    "https://*/*",
+    "ws://*/*",
+    "wss://*/*"
+  ],
   "permissions": [
     "storage",
     "unlimitedStorage",
     "notifications",
+    "clipboardWrite",
     "background",
     "idle",
     "alarms",
     "tabs"
   ],
+  "sandbox": {
+    "pages": ["sandbox.html"]
+  },
   "action": {
     "default_icon": {
       "16": "/images/logoBullLock16x16.png",
@@ -82,11 +94,14 @@
         "/ext/content.js"
       ],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": true
     }
   ],
   "web_accessible_resources": [{
     "resources": [
+      "/sidepanel.html",
+      "/sandbox.thml",
+      "background.js",
       "/ext/inpage.js",
       "/js/data/lists.json",
       "/data/uniswap.json",
@@ -117,12 +132,14 @@
     }
   },
  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-ancestors 'none';"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-ancestors 'none';",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none'; default-src 'none'; connect-src *; font-src 'self';"
   },
   "externally_connectable": {
     "matches": [
       "https://yakkl.com/*"
     ],
     "ids": ["*"]
-  }
+  },
+  "minimum_chrome_version": "131"
 }

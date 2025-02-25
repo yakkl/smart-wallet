@@ -142,7 +142,7 @@ export async function showDappPopup(request: string) {
 
     const popupId = openPopups.get('popupId');
 
-    log.debug('yakkl - background - showDappPopup', request, popupId);
+    // log.debug('yakkl - background - showDappPopup', request, popupId);
 
     if (popupId) {
       browser_ext.windows.get(popupId).then(async (_result: any) => {

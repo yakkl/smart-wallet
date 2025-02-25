@@ -28,6 +28,7 @@
   <!-- Sort Dropdown -->
   <div class="relative w-fit cursor-pointer">
     <select
+      id="sortby"
       class="bg-gray-500 rounded-full px-2 py-1 text-sm cursor-pointer text-white"
       onchange={(e) => onSortChange((e.target as HTMLSelectElement).value)}
       title="Sort Tokens"

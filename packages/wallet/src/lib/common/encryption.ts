@@ -3,6 +3,7 @@ export const prerender = false;
 
 import {type SaltedKey } from "$lib/common";
 import type { EncryptedData } from "$lib/common";
+import { log } from "$lib/plugins/Logger";
 // import { encodeJSON } from '$lib/utilities/utilities';
 import { Buffer } from "buffer";
 
@@ -117,7 +118,7 @@ export async function encryptData( data: any, passwordOrSaltedKey: string | Salt
       salt,
     } as EncryptedData;
   } catch (error) {
-    console.log('[ERROR]: Error encrypting data:', error);
+    log.error('Error encrypting data:', error);
     throw error;
   }
 }
@@ -143,7 +144,7 @@ export async function decryptData<T>( encryptedData: EncryptedData, passwordOrSa
     const txtDecoder = new TextDecoder().decode(plaintext);
     return JSON.parse(txtDecoder) as T;
   } catch (error) {
-    console.log('[ERROR]: Error decrypting data:', error);
+    log.error('Error decrypting data:', error);
     throw error;
   }
 }

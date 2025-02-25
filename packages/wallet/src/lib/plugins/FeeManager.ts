@@ -46,8 +46,6 @@ export class BaseFeeManager implements FeeManager {
       return estimates.filter( ( estimate ): estimate is GasEstimate => estimate !== null );
     } );
 
-    // console.log('Gas estimates:', estimates);
-
     const gasLimits = estimates.map(e => BigNumber.from(e.gasLimit)).sort((a, b) => a.compare(b));
     const baseFees = estimates.map(e => BigNumber.from(e.feeEstimate.baseFee)).sort((a, b) => a.compare(b));
     const priorityFees = estimates.map(e => BigNumber.from(e.feeEstimate.priorityFee)).sort((a, b) => a.compare(b));
@@ -61,8 +59,6 @@ export class BaseFeeManager implements FeeManager {
       priorityFee: medianPriorityFee.toString(),
       totalFee: medianBaseFee.add(medianPriorityFee).toString()
     };
-
-    // console.log('Gas estimate:', { gasLimit: medianGasLimit.toString(), feeEstimate });
 
     return {
       gasLimit: medianGasLimit.toString(),

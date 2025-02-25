@@ -1,8 +1,7 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
-  import { PATH_IMPORT_EMERGENCYKIT, PATH_LOCK, PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";
+  import { PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";
   import Back from "$lib/components/Back.svelte";
   import Pincode from "$lib/components/Pincode.svelte";
   import ComingSoon from "$lib/components/ComingSoon.svelte";

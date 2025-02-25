@@ -64,3 +64,16 @@ function validateToken(token: any): boolean {
     typeof token.logoURI === 'string'
   );
 }
+
+
+// Example default token JSON structure for ChainLink
+// {
+//   "name": "ChainLink Token",
+//   "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+//   "symbol": "LINK",
+//   "decimals": 18,
+//   "chainId": 1,
+//   "isNative": false,
+//   "isStablecoin": false,
+//   "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x514910771AF9Ca656af840dff83E8264EcF986CA/logo.png"
+// },

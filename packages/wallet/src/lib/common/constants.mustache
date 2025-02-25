@@ -11,9 +11,12 @@ export const TIMELINES = ['1h', '24h', '7d', '30d'] as const;
 export const NUM_OF_SPLASH_IMAGES = 3;
 export const SPLASH_DELAY = 3000; //milliseconds
 export const ALERT_DELAY = 3000; //milliseconds
-export const IDLE_AUTO_LOCK_CYCLE = 1; // minutes
-export const TOKEN_PRICE_CYCLE_TIME = 30000; //milliseconds (30 seconds)
+export const IDLE_AUTO_LOCK_CYCLE = 2; // multiplier of seconds (e.g., 60000*1 = 1 minute)
+export const IDLE_AUTO_LOCK_CYCLE_TIME = 60000; //milliseconds
 export const DEBUG_ALL_LOGS = true; // NOTE: Make sure it is set to false for production
+export const TIMER_TOKEN_PRICE_CYCLE_TIME = 30000; //milliseconds (30 seconds)
+export const TIMER_SWAP_FETCH_PRICES_TIME = 60000;
+export const TIMER_ICON_CHECK_TIME = 60000;
 
 // Retry and backoff constants
 export const DEV_MAX_RETRIES = 5;

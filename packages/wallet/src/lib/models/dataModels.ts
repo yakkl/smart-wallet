@@ -465,6 +465,7 @@ export let sampleWatch: YakklWatch[] = [
   }
 ];
 
+// NOTE: May want to add other default data...
 export const yakklStoredObjects = [
   { key: "preferences", value: yakklPreferences },
   { key: "settings", value: yakklSettings },

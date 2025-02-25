@@ -21,12 +21,12 @@
   let sortBy = 'name';
 
   onMount(() => {
-    log.debug('<=========================== TokenViews: onMount =================================>');
+    // log.debug('<=========================== TokenViews: onMount =================================>');
 
     // Subscribe to token store updates
     const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
       tokens = updatedTokens;
-      log.debug('TokenViews: updated token prices:', tokens); // JSON.stringify(tokens, null, 2));  // Added JSON.stringify for better readability
+      // log.debug('TokenViews: updated token prices:', tokens); // JSON.stringify(tokens, null, 2));  // Added JSON.stringify for better readability
       handleSortChange(sortBy);
     });
 

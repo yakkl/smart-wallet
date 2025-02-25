@@ -7,7 +7,7 @@
   import SwapSettings from './SwapSettings.svelte';
   import SwapSummary from './SwapSummary.svelte';
   import Modal from './Modal.svelte';
-  import { BigNumber, decryptData, ETH_BASE_SWAP_GAS_UNITS, isEncryptedData, parseAmount, YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
+  import { BigNumber, decryptData, ETH_BASE_SWAP_GAS_UNITS, isEncryptedData, parseAmount, TIMER_SWAP_FETCH_PRICES_TIME, YAKKL_FEE_BASIS_POINTS, type BigNumberish } from '$lib/common';
   import { ethers as ethersv6 } from 'ethers-v6';
   import { UniswapSwapManager } from '$lib/plugins/UniswapSwapManager';
   import { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
@@ -207,13 +207,13 @@
       if (gasToken) {
         const price = await gasToken.getMarketPrice(); //.then(price => {
 
-        log.debug('Swap - onMount - gasToken - price:', price);
+        // log.debug('Swap - onMount - gasToken - price:', price);
 
         updateSwapPriceData( { marketPriceGas: price.price });
         // });
       }
       // Add and start timer
-      timerManager.addTimer("swap_fetchPrices", fetchPrices, 60000);
+      timerManager.addTimer("swap_fetchPrices", fetchPrices, TIMER_SWAP_FETCH_PRICES_TIME);
       timerManager.startTimer("swap_fetchPrices");
     } catch (err) {
       log.error('Error initializing swap:', err);
@@ -277,7 +277,7 @@
 
         if (gasToken && $swapPriceDataStore.marketPriceGas === 0) {
 
-          log.debug('Swap - $effect - gasToken:', gasToken);
+          // log.debug('Swap - $effect - gasToken:', gasToken);
 
           await debouncedGetGasTokenPrice();
           // gasToken.getMarketPrice().then(price => {
@@ -300,7 +300,7 @@
         // Only need to update if we have a tokenOut and the market price is 0
         if ($swapStateStore.tokenOut.symbol && $swapPriceDataStore.marketPriceOut === 0) {
 
-          log.debug('Swap - $effect - swapStateStore.tokenOut.symbol:', $swapStateStore.tokenOut.symbol);
+          // log.debug('Swap - $effect - swapStateStore.tokenOut.symbol:', $swapStateStore.tokenOut.symbol);
 
           await debouncedGetMarketPrice($swapStateStore.tokenOut);
 
@@ -340,7 +340,7 @@
 
   // Function to fetch the gas price
   async function fetchPrices() {
-    log.debug('Swap - fetchPrices - gasToken:', gasToken);
+    // log.debug('Swap - fetchPrices - gasToken:', gasToken);
 
     if (gasToken) {
       try {

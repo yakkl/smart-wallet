@@ -23,7 +23,7 @@ export async function onTabUpdatedListener(tabId: number, changeInfo: any, tab: 
       }
     }
   } catch (error) {
-      console.log('[ERROR]: Error in OnTabUpdatedListener - error:', error);
+    log.error('[ERROR]: Error in OnTabUpdatedListener - error:', error);
   }
 }
 

@@ -124,7 +124,7 @@
     // showEmergencyKit = false;
     // showImportAccount = false;
     // The above is commented out since we no longer show the registration option modal
-    await goto(PATH_LOGOUT);
+    goto(PATH_LOGOUT);
   }
 
   // async function checkRegistration() {

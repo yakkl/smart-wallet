@@ -16,13 +16,9 @@ export function createPriceUpdater(priceManager: PriceManager) {
   const tokens = writable<TokenData[]>([]);
   const { subscribe, set } = tokens;
 
-  log.debug('createPriceUpdater - Initializing price updater...');
-
   async function fetchPrices(tokensArray: TokenData[]): Promise<TokenData[]> {
-    const BATCH_SIZE = 6; // Adjust batch size for performance
+    const BATCH_SIZE = 8; // Adjust batch size for performance
     const updatedTokens: TokenData[] = [];
-
-    log.debug('fetchPrices - Received tokensArray:', tokensArray);
 
     if (!tokensArray || tokensArray.length === 0) {
       log.error('fetchPrices - No tokens to process. Exiting early.');
@@ -31,23 +27,21 @@ export function createPriceUpdater(priceManager: PriceManager) {
 
     for (let i = 0; i < tokensArray.length; i += BATCH_SIZE) {
       const batch = tokensArray.slice(i, i + BATCH_SIZE);
-      log.debug(`fetchPrices - Processing batch ${i / BATCH_SIZE + 1}:`, batch);
 
       try {
         const batchResults = await Promise.all(
           batch.map(async (token) => {
-            log.debug(`fetchPrices - Calling fetchTokenData for ${token.symbol}`);
             return fetchTokenData(token, priceManager);
           })
         );
 
         updatedTokens.push(...batchResults);
       } catch (error) {
-        log.errorStack('fetchPrices - Error processing batch:', batch, error);
+        log.error('fetchPrices - Error processing batch:', batch, error);
       }
     }
 
-    log.debug('fetchPrices - Final updated tokens:', updatedTokens);
+    // log.debug('createPriceUpdater: fetchPrices - Final updated tokens:', updatedTokens);
 
     return updatedTokens;
   }
@@ -62,6 +56,8 @@ export function createPriceUpdater(priceManager: PriceManager) {
       // Fix for handling decimals in calculations
       const adjustedBalance = token.balance ? Number(token.balance) / (10 ** token.decimals) : 0;
       const value = adjustedBalance * price;
+
+      // log.debug(`^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ createPriceUpdater: fetchTokenData - Updated token ${token.symbol} with price: ${price} and value: ${value} and ${marketPrice}`);
 
       return {
         ...token,
@@ -85,8 +81,6 @@ export function createPriceUpdater(priceManager: PriceManager) {
       };
     }
   }
-
-
 
   // Debounced fetch to reduce frequent updates
   const debouncedFetchPrices = debounce(fetchPrices, 5000);

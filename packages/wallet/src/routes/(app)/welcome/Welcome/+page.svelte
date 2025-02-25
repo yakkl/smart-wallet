@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/common/environment';
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy } from "svelte";
   import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
   import ErrorNoAction from "$components/ErrorNoAction.svelte";
   import ButtonGridItem from "$components/ButtonGridItem.svelte";
@@ -10,21 +10,16 @@
   import TokenViews from "$lib/components/TokenViews.svelte";
 	import { yakklCombinedTokenStore } from "$lib/common/stores";
   import { log } from '$plugins/Logger';
-  // import { updateTokenPrices } from '$lib/common/tokenPriceManager';
 
-  // let tokenService: TokenService<any> | null = null;
-
-  let error = false;
-  let errorValue: any = null;
-  let showImportOption = false;
+  let error = $state(false);
+  let errorValue: any = $state(null);
+  let showImportOption = $state(false);
 
   // onMount(async () => {
   //   try {
   //     if (browserSvelte) {
   //       // Been able to reduce onMount to this - empty
   //       log.info('Welcome page: onMount');
-
-  //       updateTokenPrices();
   //     }
   //   } catch (e) {
   //     log.error(e);

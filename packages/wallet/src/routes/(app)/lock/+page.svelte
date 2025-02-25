@@ -1,17 +1,17 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/common/environment';
   import { goto } from '$app/navigation';
-  import { resetStores, setMiscStore, syncStoresToStorage, yakklCurrentlySelectedStore, yakklSettingsStore } from '$lib/common/stores';
+  import { resetStores, setMiscStore, setYakklTokenDataCustomStorage, syncStorageToStore, yakklCurrentlySelectedStore, yakklSettingsStore, yakklTokenDataCustomStore } from '$lib/common/stores';
   import { PATH_LOGIN, PATH_LOGOUT } from '$lib/common/constants';
 
 	import type { Settings, YakklCurrentlySelected } from '$lib/common/interfaces';
 	import { setIconLock } from '$lib/utilities';
-	import { setStateStore } from '$lib/common/stores/stateStore';
 	import { setLocks } from '$lib/common/locks';
 	import { removeTimers } from '$lib/common/timers';
 	import { removeListeners } from '$lib/common/listeners';
-	import { TimerManager, timerManager } from '$lib/plugins/TimerManager';
+	import { timerManager } from '$lib/plugins/TimerManager';
   import { log } from '$plugins/Logger';
+	import { resetTokenDataStoreValues } from '$lib/common/resetTokenDataStoreValues';
 
   // Reactive State
   let yakklCurrentlySelected: YakklCurrentlySelected | null = $state(null);
@@ -30,34 +30,28 @@
       if (browserSvelte) {
         // Update lock icon
         await setIconLock();
-
         await setLocks(true);
 
-        log.debug('(before) Showing timer list:', timerManager.listTimers());
-        log.debug('(before) Showing running timers:', timerManager.getRunningTimers());
-
-        // Reset stores
-        removeTimers();
-        TimerManager.clearInstance();
-        removeListeners();
-        setStateStore(false); // Don't use this at the moment and may remove it
+        // Reset items
+        // removeTimers();
+        // removeListeners();
         setMiscStore('');
-        resetStores();
-
-        await syncStoresToStorage();
-
-        log.debug('(after) Showing timer list:', timerManager.listTimers());
-        log.debug('(after) Showing running timers:', timerManager.getRunningTimers());
+        // resetTokenDataStoreValues();
+        // setYakklTokenDataCustomStorage($yakklTokenDataCustomStore); // Zero out values in custom token storage
+        // resetStores();
+        // await syncStorageToStore();
 
         // Navigate to the login screen
-        goto(PATH_LOGIN, { replaceState: true, invalidateAll: true });
+        // goto(PATH_LOGIN, { replaceState: true, invalidateAll: true });
 
+        // For security reasons, we force a logout. If the customer wants to continue, they must log in again.
+        goto(PATH_LOGOUT);
       }
     } catch (e: any) {
       log.error('Locking error:', e, e?.stack);
       if (browserSvelte) {
         try {
-          await goto(PATH_LOGOUT);
+          goto(PATH_LOGOUT);
         } catch (err) {
           log.error('Navigation to logout failed:', err);
         }

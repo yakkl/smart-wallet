@@ -15,6 +15,7 @@
 	import WalletManager from "$lib/plugins/WalletManager";
 	import { getYakklCurrentlySelectedAccountKey } from "$lib/common/security";
 	import { log } from "$lib/plugins/Logger";
+	import { browserSvelte } from "$lib/common/environment";
 
 
   interface Props {
@@ -116,6 +117,27 @@
     goto(path);
   }
 
+  // Used for testing side panel version
+  async function handleAI() {
+    try {
+      // Get the current active tab
+      log.debug("Opening side panel...");
+      if (typeof chrome !== "undefined") {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        log.debug("Tabs:", tabs);
+
+        if (tabs[0]) {
+          await chrome.sidePanel.open({ tabId: tabs[0].id }); // Open side panel on active tab
+          log.debug("Side panel opened!");
+        }
+      }
+      log.debug("Side panel opened - I hope!");
+    } catch (error) {
+      log.error("Error opening side panel:", error);
+    }
+  }
+
   async function buy() {
     let path;
 
@@ -184,6 +206,7 @@
       <div class="relative bg-gray-300/75 rounded-full m-1 h-[39px] drop-shadow-lg hover:drop-shadow-xl">
         <!-- fill-indigo-700 hover:fill-indigo-400 text-purple-900 hover:text-purple-700 -->
         <!-- svelte-ignore a11y_interactive_supports_focus -->
+        <!-- <div role="button" onclick={handleAI} -->
         <div role="button" onclick={() => {showChat=true}}
           class="relative m-1 w-[40px] h-[40px] fill-primary hover:fill-primary/50 text-primary hover:text-primary/50"
           data-bs-toggle="tooltip" data-bs-placement="top" title="Ring for Help" aria-label="help">

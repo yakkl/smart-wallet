@@ -2,7 +2,7 @@ import type { Settings, YakklCurrentlySelected } from "$lib/common/interfaces";
 import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
 import { setIconLock, setIconUnlock } from "$lib/utilities";
 import { browser_ext } from "$lib/common/environment";
-import { STORAGE_YAKKL_CURRENTLY_SELECTED, STORAGE_YAKKL_SETTINGS } from "$lib/common/constants";
+import { STORAGE_YAKKL_CURRENTLY_SELECTED, STORAGE_YAKKL_SETTINGS, TIMER_ICON_CHECK_TIME } from "$lib/common/constants";
 import { yakklCurrentlySelectedStore } from "$lib/common/stores";
 import { timerManager } from "$lib/plugins/TimerManager";
 import { log } from "$plugins/Logger";
@@ -29,7 +29,7 @@ export function startLockIconTimer() {
       } catch (error) {
         log.error('Error in lock icon timer interval:', error);
       }
-    }, 10000);
+    }, TIMER_ICON_CHECK_TIME);
     timerManager.startTimer('iconTimer_lockIcon');
   } catch (error: any) {
     log.error('Error starting lock icon timer:', error, error?.stack);

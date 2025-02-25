@@ -16,8 +16,9 @@ async function checkGasPricesCB() {
     // if (gasPriceIntervalID) {
     if (timerManager.isRunning('gas_checkGasPrices')) {
       if (get(yakklConnectionStore) === true) {
+        // log.debug('Gas price timer running for gas_checkGasPrices');
         const results = await fetchBlocknativeData();
-        yakklGasTransStore.set({ provider: providerGasCB, id: timerManager.getIntervalID('gas_checkGasPrices'), results });
+        yakklGasTransStore.set({ provider: providerGasCB, id: timerManager.getTimeoutID('gas_checkGasPrices'), results });
       }
     }
   } catch (error) {
@@ -33,6 +34,7 @@ export function stopCheckGasPrices() {
   try {
     // if (gasPriceIntervalID) {
       // clearInterval(gasPriceIntervalID);
+      // log.debug('Gas price timer stopped for gas_checkGasPrices');
       timerManager.stopTimer('gas_checkGasPrices');
       setGasCBProvider(null);
       // gasPriceIntervalID = undefined;
@@ -42,18 +44,24 @@ export function stopCheckGasPrices() {
   }
 }
 
-export function startCheckGasPrices(provider = 'blocknative', seconds = 5) {
+export function startCheckGasPrices(provider = 'blocknative', seconds = 10) {
   try {
     if (seconds > 0) {
       // if (gasPriceIntervalID) {
       if (timerManager.isRunning('gas_checkGasPrices')) {
+        // log.debug('Gas price timer is already running for gas_checkGasPrices');
         return; // Already running
       }
+
+      // log.debug('Gas price timer checked if already started for gas_checkGasPrices');
+
       setGasCBProvider(provider);
       // if (!gasPriceIntervalID) {
-      if (timerManager.isRunning('gas_checkGasPrices')) {
+      if (!timerManager.isRunning('gas_checkGasPrices')) {
         // gasPriceIntervalID = setInterval(checkGasPricesCB, 1000 * seconds);
         timerManager.addTimer('gas_checkGasPrices', checkGasPricesCB, 1000 * seconds);
+        timerManager.startTimer('gas_checkGasPrices');
+        // log.debug('Gas price timer started for gas_checkGasPrices');
       }
     }
   } catch (error) {

@@ -4,7 +4,7 @@ import { log } from "$lib/plugins/Logger";
 import { setIconLock } from "$lib/utilities/utilities";
 
 export async function onPortInternalListener(event: any): Promise<void> {
-  log.debug('yakkl - background - onPortInternalListener', event);
+  // log.debug('yakkl - background - onPortInternalListener', event);
 
   if (event && event.method) {
     switch(event.method) {

@@ -1,12 +1,12 @@
 <script lang="ts">
   // import { onMount } from 'svelte';
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  import type { Browser } from 'webextension-polyfill';
-	import { browserSvelte } from '$lib/utilities/browserSvelte';
+  // import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
+  // import type { Browser } from 'webextension-polyfill';
+	// import { browserSvelte } from '$lib/utilities/browserSvelte';
 	// import { onMessageUnloadAdd, onMessageUnloadRemove } from '$lib/common/listeners/ui/windowListeners';
 
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+  // let browser_ext: Browser;
+  // if (browserSvelte) browser_ext = getBrowserExt();
 
   interface Props {
     children?: import('svelte').Snippet;

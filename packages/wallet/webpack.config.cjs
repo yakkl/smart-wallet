@@ -9,7 +9,8 @@ module.exports = {
   entry: {
     background: ['./src/lib/extensions/chrome/background.ts'],
     content: ['./src/lib/extensions/chrome/content.ts'],
-    inpage: ['./src/lib/extensions/chrome/inpage.ts']
+    inpage: ['./src/lib/extensions/chrome/inpage.ts'],
+    sandbox: ['./src/lib/extensions/chrome/sandbox.ts'],
   },
   mode: 'production',
   output: {
@@ -22,7 +23,7 @@ module.exports = {
     minimizer: [
       new TerserPlugin({
         terserOptions: {
-          mangle: true, //false,
+          mangle: false, //true, -
           compress: false,
           keep_classnames: true,
           keep_fnames: true,

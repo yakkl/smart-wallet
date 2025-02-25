@@ -30,7 +30,7 @@ const priceManager = new PriceManager([
 // The new code is in the plugins folder - priceManager
 export async function checkPricesCallback(symbol: string = 'ETH-USD') {
   try {
-    log.debug('checkPricesCallback - priceManager:', priceManager);
+    // log.debug('checkPricesCallback - priceManager:', priceManager);
 
     if (get(yakklConnectionStore) === true) {
       const result = await priceManager.getMarketPrice( symbol );
@@ -42,7 +42,7 @@ export async function checkPricesCallback(symbol: string = 'ETH-USD') {
           price: result.price,
           prevPrice: prevPrice,
         } );
-        log.debug(`Updated yakklPricingStore: New Price = ${result.price}, Previous Price = ${prevPrice}`);
+        // log.debug(`Updated yakklPricingStore: New Price = ${result.price}, Previous Price = ${prevPrice}`);
       }
     } else {
       log.error('checkPrices:', 'Internet connection may be down.'); // Comment this out later
@@ -70,26 +70,20 @@ export function startCheckPrices(provider = 'coinbase', seconds = 15, symbol: st
   stopCheckPrices();
   if (!providerCallback) setProviderCallback(provider);
 
-  return new Promise((resolve, reject) => {
-    try {
-      if (seconds > 0) {
-        if ( timerManager.isRunning('prices_checkPrices') ) {
-          return resolve(); // Already running
-        }
-        timerManager.addTimer('prices_checkPrices', () => {checkPricesCallback(symbol)}, 1000 * seconds);
-        timerManager.startTimer('prices_checkPrices');
-        resolve();
-      } else {
-        timerManager.stopTimer('prices_checkPrices');
-        resolve();
+  try {
+    if (seconds > 0) {
+      if ( timerManager.isRunning('prices_checkPrices') ) {
+        return; // Already running
       }
-    } catch (e) {
-      log.errorStack(`startCheckPrices: ${e}`);
-      timerManager.stopTimer('prices_checkPrices');
-      setProviderCallback('');
-      reject(e);
+      timerManager.addTimer('prices_checkPrices', () => {checkPricesCallback(symbol)}, 1000 * seconds);
+      timerManager.startTimer('prices_checkPrices');
     }
-  });
+  } catch (e) {
+    log.error(`startCheckPrices: ${e}`);
+    timerManager.stopTimer('prices_checkPrices');
+    setProviderCallback('');
+  }
+
 }
 
 // export async function getPrices(pairs: [string]) {

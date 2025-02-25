@@ -5,61 +5,53 @@ import { PriceManager } from "$lib/plugins/PriceManager";
 import { createPriceUpdater } from "./createPriceUpdater";
 import { timerManager } from "$lib/plugins/TimerManager";
 import type { TokenData } from "$lib/common/interfaces";
-import { TOKEN_PRICE_CYCLE_TIME } from "./constants";
+import { TIMER_TOKEN_PRICE_CYCLE_TIME } from "./constants";
+
+let priceManager: PriceManager | null = null;
+let priceUpdater: any | null = null;
 
 const fetchingActive = writable(false); // Prevents duplicate fetches
 
+// NOTE: May want to pass in priceManager as a parameter to allow for different configurations
 export async function updateTokenPrices() {
-  let priceManager = new PriceManager();
-  let priceUpdater = createPriceUpdater(priceManager);
 
   if (get(fetchingActive)) return; // Prevent concurrent fetches
-
-  log.debug("updateTokenPrices - Starting price update...");
   fetchingActive.set(true);
 
   try {
     const tokens: TokenData[] = get(yakklCombinedTokenStore);  // Ensure we're working with the correct store
-    log.debug("updateTokenPrices: Token List Before Fetch", tokens);
-
     if (tokens.length === 0) {
-      log.debug("updateTokenPrices: No tokens to fetch prices for.");
       return;
     }
-
-    log.debug("updateTokenPrices: Fetching prices for tokens...", tokens);
 
     const updatedTokens: TokenData[] = await priceUpdater.fetchPrices(tokens);
-
     if (!updatedTokens || updatedTokens.length === 0) {
-      log.warn("updateTokenPrices: Fetched prices returned empty.");
+      log.warn("*** updateTokenPrices: Fetched prices returned empty.");
       return;
     }
 
-    log.debug("Before updating store:", get(yakklCombinedTokenStore));
-
     yakklCombinedTokenStore.update(() => updatedTokens);
-
-    log.debug("After updating store:", get(yakklCombinedTokenStore));
-
   } catch (error) {
-    log.error("updateTokenPrices: Failed to update token prices", error);
+    log.error("*** updateTokenPrices: Failed to update token prices", error);
   } finally {
     fetchingActive.set(false);
   }
 }
 
-log.debug("Setting up token price updater timer...");
+if (timerManager && !timerManager.hasTimer("tokenPriceUpdater")) {
+  if (!priceManager) {
+    priceManager = new PriceManager();
+  }
+  if (!priceUpdater) {
+    priceUpdater = createPriceUpdater(priceManager);
+  }
+  // Setup a timer to call `updateTokenPrices()` every 30s
+  timerManager.addTimer("tokenPriceUpdater", async () => {
+    await updateTokenPrices();
+  }, TIMER_TOKEN_PRICE_CYCLE_TIME); // Every 30 seconds
+}
 
-// Setup a timer to call `updateTokenPrices()` every 30s
-timerManager.addTimer("tokenPriceUpdater", async () => {
-  log.debug("Executing tokenPriceUpdater...");
-  await updateTokenPrices();
-}, TOKEN_PRICE_CYCLE_TIME); // Every 30 seconds
-
-if (!timerManager.isRunning("tokenPriceUpdater")) {
-  log.debug("Restarting token price updater timer...");
+if (timerManager && !timerManager.isRunning("tokenPriceUpdater")) {
   timerManager.startTimer("tokenPriceUpdater");
 }
 
-log.debug("Token price updater timer started.");

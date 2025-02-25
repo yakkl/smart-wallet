@@ -28,25 +28,21 @@
 
   async function updatePrice() {
     try {
-      log.debug('PriceTracker: providers:', providers);
-
       for (const provider of providers) {
         try {
-          log.debug('PriceTracker: fetching price from: ****************', provider.getName());
-
           const priceData = await provider.getMarketPrice(`${symbol}-${currency}`);
           if (priceData === null) {
-            log.info(`PriceTracker failed to fetch price from ${provider.getName()}: ${symbol}-${currency}`);
+            log.info(`PriceTracker - fetched no price from ${provider.getName()}: ${symbol}-${currency}`);
             continue;
           }
           priceStore.set(priceData);
           break;
         } catch (error) {
-          log.errorStack(`Error fetching price from ${provider.getName()}:`, error);
+          log.error(`Error fetching price from ${provider.getName()}:`, error);
         }
       }
     } catch (error) {
-      log.errorStack('PriceTracker:', error);
+      log.error('PriceTracker:', error);
     }
   }
 

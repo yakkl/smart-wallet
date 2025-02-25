@@ -2,7 +2,7 @@
   import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_IMPORT_PRIVATEKEY, PATH_EXPORT, PATH_IMPORT_WATCH, YAKKL_ZERO_ADDRESS, PATH_ACCOUNT_MAINTENANCE, PATH_LOCK } from "$lib/common/constants";
+  import { PATH_ACCOUNTS_ETHEREUM_CREATE_DERIVED, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, YAKKL_ZERO_ADDRESS } from "$lib/common/constants";
   import { getYakklCurrentlySelected } from '$lib/common/stores';
   import ErrorNoAction from "$lib/components/ErrorNoAction.svelte";
   import Back from "$lib/components/Back.svelte";
@@ -15,7 +15,7 @@
 	import type { YakklAccount, YakklCurrentlySelected, YakklWatch } from '$lib/common';
 	import ImportWatchAccount from '$lib/components/ImportWatchAccount.svelte';
 	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
-	import type { Yakkl } from '$lib/plugins/providers';
+	// import type { Yakkl } from '$lib/plugins/providers';
 	import ExportPrivateKey from '$lib/components/ExportPrivateKey.svelte';
 	import Accounts from '$lib/components/Accounts.svelte';
   let browser_ext: Browser;
@@ -117,9 +117,12 @@
 
 </script>
 
-<ErrorNoAction bind:show={error} value={errorValue} title="ERROR"/>
-
 <Back defaultClass="left-3 top-[.8rem] absolute" href='' />
+<ImportWatchAccount bind:show={showImportWatch} onComplete={handleImportWatch} className="text-gray-600 z-[999]"/>
+<ImportPrivateKey bind:show={showImportAccount} onComplete={handleImport} className="text-gray-600 z-[999]"/>
+<ExportPrivateKey bind:show={showExportPrivateKey} onVerify={handleExportPrivateKey} className="text-gray-600 z-[999]"/>
+<Accounts bind:show={showAccounts} onAccountSelect={handleAccountMaintenance} className="text-gray-600"/>
+<ErrorNoAction bind:show={error} value={errorValue} title="ERROR"/>
 
 <div class="text-center text-base-content">
   <div class="bg-secondary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2"></div>
@@ -128,14 +131,6 @@
   </h1>
   <br>
 </div>
-
-<ImportWatchAccount bind:show={showImportWatch} onComplete={handleImportWatch} className="text-gray-600 z-[999]"/>
-
-<ImportPrivateKey bind:show={showImportAccount} onComplete={handleImport} className="text-gray-600 z-[999]"/>
-
-<ExportPrivateKey bind:show={showExportPrivateKey} onVerify={handleExportPrivateKey} className="text-gray-600 z-[999]"/>
-
-<Accounts bind:show={showAccounts} onAccountSelect={handleAccountMaintenance} className="text-gray-600"/>
 
 <ButtonGrid>
 

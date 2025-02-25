@@ -30,6 +30,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "types": [
+      "chrome",
       "svelte",
       "webextension-polyfill",
       "vite/client",
