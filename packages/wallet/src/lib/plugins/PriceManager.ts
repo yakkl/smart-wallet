@@ -1,8 +1,9 @@
 import type { PriceData, PriceProvider, WeightedProvider } from '$lib/common/interfaces';
-import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
+// import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
 // import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
+import { log } from "$plugins/Logger";
 
 export class PriceManager {
   private weightedProviders: WeightedProvider[];
@@ -54,45 +55,64 @@ export class PriceManager {
   }
 
   async getMarketPrice( pair: string, availableProviders?: PriceProvider[] ): Promise<PriceData> {
-    const providersToUse = availableProviders || this.getAvailableProviders();
+    let provider: PriceProvider | null = null;
+    let providersToUse: PriceProvider[] = [];
 
-    if ( providersToUse.length === 0 ) {
-      throw new Error( "No providers available to fetch market price" );
-    }
-
-    const provider = this.getWeightedRandomProvider( providersToUse );
     try {
-      return await provider.getMarketPrice( pair );
+      providersToUse = availableProviders || this.getAvailableProviders();
+      if ( providersToUse.length === 0 ) {
+        throw new Error( "No providers available to fetch market price" );
+      }
+
+      provider = this.getWeightedRandomProvider( providersToUse );
+
+      // log.debug( 'PriceManager - getMarketPrice - pair, providers, provider ||||', pair, providersToUse, provider );
+
+      const price = await provider.getMarketPrice( pair );
+
+      // log.debug( 'PriceManager - getMarketPrice - price ||||', price );
+
+      return price;
     } catch ( error ) {
-      console.log( `Error fetching price from ${ provider.getName() }:`, error );
+      log.error( `Error fetching price from ${ provider.getName() }:`, error );
       // Retry with a different provider
       return this.getMarketPrice( pair, providersToUse.filter( p => p !== provider ) ); // Avoid circular error by excluding failed provider
     }
   }
 
   private getWeightedRandomProvider( providers: PriceProvider[] ): PriceProvider {
+    if ( !providers || providers.length === 0 ) {
+      log.error( "No providers available to fetch market price" );
+      throw new Error( "No providers available to fetch market price" );
+    }
+
     if ( providers.length === 1 ) {
       return providers[ 0 ];
     }
 
-    const weightedProviders = this.weightedProviders.filter( wp => providers.includes( wp.provider ) );
-    const totalWeight = weightedProviders.reduce( ( sum, wp ) => sum + wp.weight, 0 );
+    try {
+      const weightedProviders = this.weightedProviders.filter( wp => providers.includes( wp.provider ) );
+      const totalWeight = weightedProviders.reduce( ( sum, wp ) => sum + wp.weight, 0 );
 
-    if ( weightedProviders.every( wp => wp.weight === weightedProviders[ 0 ].weight ) ) {
-      // If all weights are equal, choose randomly
-      return weightedProviders[ Math.floor( Math.random() * weightedProviders.length ) ].provider;
-    }
-
-    let random = Math.random() * totalWeight;
-
-    for ( const wp of weightedProviders ) {
-      if ( random < wp.weight ) {
-        return wp.provider;
+      if ( weightedProviders.every( wp => wp.weight === weightedProviders[ 0 ].weight ) ) {
+        // If all weights are equal, choose randomly
+        return weightedProviders[ Math.floor( Math.random() * weightedProviders.length ) ].provider;
       }
-      random -= wp.weight;
-    }
 
-    // This should never happen if weights are set correctly
-    return weightedProviders[ 0 ].provider;
+      let random = Math.random() * totalWeight;
+
+      for ( const wp of weightedProviders ) {
+        if ( random < wp.weight ) {
+          return wp.provider;
+        }
+        random -= wp.weight;
+      }
+
+      // This should never happen if weights are set correctly
+      return weightedProviders[ 0 ].provider;
+    } catch ( error ) {
+      log.error( "Error selecting weighted random provider:", error );
+      throw error;
+    }
   }
 }

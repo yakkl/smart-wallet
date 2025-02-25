@@ -1,5 +1,91 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { EventFilter, Addressable, YakklAccount, YakklChat, YakklConnectedDomain, YakklPrimaryAccount, YakklContact, Network, BigNumberish } from '$lib/common';
+import type { EventFilter, Addressable, YakklAccount, YakklChat, YakklConnectedDomain, YakklPrimaryAccount, YakklContact, Network, BigNumberish, TokenData } from '$lib/common';
+
+export type NotificationType = 'basic' | 'image' | 'list' | 'progress';
+
+export interface NotificationBase {
+  type: NotificationType;
+  title: string;
+  message: string;
+  requireInteraction?: boolean;
+  silent?: boolean;
+  priority?: -2 | -1 | 0 | 1 | 2;
+  contextMessage?: string;
+  buttons?: Array<{ title: string; iconUrl?: string }>;
+  eventTime?: number;
+}
+
+export interface BasicNotificationOptions extends NotificationBase {
+  type: 'basic';
+}
+
+export interface ListNotificationOptions extends NotificationBase {
+  type: 'list';
+  items: Array<{ title: string; message: string }>;
+}
+
+export interface ImageNotificationOptions extends NotificationBase {
+  type: 'image';
+  imageUrl: string;
+}
+
+export interface ProgressNotificationOptions extends NotificationBase {
+  type: 'progress';
+  progress: number;
+}
+
+export type NotificationOptions =
+  | BasicNotificationOptions
+  | ListNotificationOptions
+  | ImageNotificationOptions
+  | ProgressNotificationOptions;
+
+export type CreateNotificationOptions = NotificationOptions & {
+  iconUrl: string;
+};
+
+export interface NotificationOptionsExample {
+  // Priority affects how the notification is displayed (-2 to 2)
+  priority?: number;
+  // -2: Lowest priority - might be hidden in notification center
+  // -1: Low priority - shown in notification center
+  //  0: Default priority
+  //  1: High priority - more prominent display
+  //  2: Highest priority - most prominent, might bypass "quiet hours"
+
+  // If true, notification stays visible until user interacts
+  requireInteraction?: boolean;
+  // false (default): Notification may auto-dismiss
+  // true: Notification persists until clicked/dismissed
+
+  // For progress notifications (0 to 100)
+  progress?: number;
+  // Shows a progress bar, useful for operations like:
+  // - Loading/saving data
+  // - Download progress
+  // - Operation completion percentage
+
+  // If true, notification appears without sound
+  silent?: boolean;
+  // false (default): Play system notification sound
+  // true: No sound on notification
+
+  // Additional context shown below main message
+  contextMessage?: string;
+  // Smaller text below the main message
+  // Example: "Last updated: 2 minutes ago"
+
+  // Action buttons (max 2 buttons)
+  buttons?: Array<{
+    title: string;    // Button text
+    iconUrl?: string  // Button icon
+  }>;
+
+  // Timestamp for the notification
+  eventTime?: number;
+  // Unix timestamp in milliseconds
+  // Shows when the event occurred
+}
 
 export type AccountType = YakklAccount | YakklPrimaryAccount;
 export type YakklAccounts = [YakklAccount];
@@ -55,6 +141,7 @@ export type PricingStore = {
   id: string; // profile id
   pair?: string;   // e.g. "ETH/USD"
   price: number; // e.g. 2000
+  prevPrice?: number; // e.g. 1990 - set prevPrice = price before getting new price
 }
 
 // Sub-classes of Signer may optionally extend this interface to indicate
@@ -130,3 +217,19 @@ export type URL = string;
 export type DomainName = string;
 
 export type IMAGEPATH = string; // This is a path to a file or directory, URL, or base64 encoded string of an image
+
+import type { YakklCurrentlySelected, Settings, Preferences } from '$lib/common';
+import type { Blockchain } from '$lib/plugins/Blockchain';
+import type { TokenService } from '$lib/plugins/blockchains/evm/TokenService';
+import type { Provider } from '$lib/plugins/Provider';
+import type { Wallet } from '$lib/plugins/Wallet';
+
+export interface LayoutData {
+  currentlySelected: YakklCurrentlySelected | null;
+  yakklSettings: Settings | null;
+  yakklMiscStore: string;
+  yakklPrimaryAccountsStore: YakklPrimaryAccount[];
+  yakklPreferences: Preferences | null;
+  instances: [Wallet | null, Provider | null, Blockchain | null, TokenService<any> | null];
+  yakklTokenDataStore: TokenData[];
+}

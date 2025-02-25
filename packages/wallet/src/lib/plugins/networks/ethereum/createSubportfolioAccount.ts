@@ -8,6 +8,7 @@ import { deepCopy, getSymbol } from '$lib/utilities';
 import type { AccountData, CurrentlySelectedData, EncryptedData, PrimaryAccountData, ProfileData, YakklAccount, YakklPrimaryAccount, Profile, Preferences, Settings, YakklCurrentlySelected } from '$lib/common';
 import { AccountTypeCategory, NetworkType } from '$lib/common/types';
 import { dateString } from '$lib/common/datetime';
+import { log } from '$lib/plugins/Logger';
 
 // TODO: May want to have all of the .data encrypted in the catch block or final block to ensure that the data is encrypted before returning it. This requires moving the variables to here instead of the try block.
 
@@ -237,6 +238,7 @@ export async function createSubportfolioAccount(yakklMiscStore: string, currentl
 
     return Promise.resolve(currentlySelected);
   } catch (e) {
+    log.error(`createSubportfolioAccount: ${e}`);
     return Promise.reject(e);
   }
 }

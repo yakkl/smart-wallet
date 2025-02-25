@@ -16,6 +16,7 @@
   import { dateString } from '$lib/common/datetime';
   import PincodeVerify from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     show?: boolean;
@@ -332,7 +333,7 @@
         throw new Error('Browser environment not available');
       }
     } catch (e) {
-      console.log(`Your Wallet did not initialize for the following reason: ${e}`);
+      log.error(`Your Wallet did not initialize for the following reason: ${e}`);
       throw e;
     }
   }
@@ -360,7 +361,7 @@
           throw new Error('Your Secret Phrase does not seem to be correct. Check the formatting. You can enter each word and it MUST BE IN ORDER -OR- paste the whole phrase after copying from your backup into any field.');
         }
       } catch (e) {
-        console.log(e);
+        log.error(e);
         error = String(e);
         resetForm();
       }

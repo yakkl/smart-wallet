@@ -1,6 +1,5 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-	// import { browser as browserSvelte } from '$app/environment';
 	import { goto } from "$app/navigation";
 	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
 	import { decryptData } from '$lib/common/encryption';
@@ -17,23 +16,17 @@
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
 	import { isEthereum } from '$lib/plugins/BlockchainGuards';
-	import { BigNumber, debug_log, isEncryptedData, toBigInt, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
-	import PincodeModal from '$lib/components/PincodeVerify.svelte';
+	import { BigNumber, isEncryptedData, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-  import { handleOnMessage } from '$lib/common/handlers';
-
   import type { TransactionState, GasState, UIState, ValueState, ConfigState } from '$lib/common/stateInterfaces';
-
-	import type { Browser } from 'webextension-polyfill';
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+  import { log } from '$plugins/Logger';
 
 	// Toast
 	import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';
 	import Contacts from '$lib/components/Contacts.svelte';
+	import PincodeVerify from '$lib/components/PincodeVerify.svelte';
   // Toast
 
 // EIP-6969 - A proposal of giving back some of the gas fees to developers.
@@ -52,7 +45,6 @@
 	let activityTab;
 
 	let pincode = '';
-	let pincodeVerified = false;
 
   let toAddress: string;
   let toAddressValue = 0n;
@@ -218,7 +210,6 @@
     riskFactorPriorityFee: 0,
   });
 
-
 	//////// Toast
 	let toastStatus = $state(false);
   let toastCounter = 3;
@@ -252,50 +243,50 @@
 				transactionState.blockchain = currentlySelected!.shortcuts.network.blockchain;
 				transactionState.address = currentlySelected!.shortcuts.address;
 
+        // log.debug('onMount: transactionState', transactionState);
+        // log.debug('onMount: currentlySelected', currentlySelected);
+
 				checkSettings(); // If all good then returns else redirects to logout. This will force a new login.
 				startGasPricingChecks();
 				handleRecycle();
 				loadContacts();
-
-				browser_ext.runtime.onMessage.addListener(handleOnMessage);
 
 				checkValue();
 
 				// May can remove this later if we still want to enable all tabs
 				amountTab = document.getElementById("amount") as HTMLButtonElement;
 				amountTab.disabled = false;
-				feesTab = document.getElementById("fees") as HTMLButtonElement;
-				feesTab.disabled = false; //true;
-				activityTab = document.getElementById("activity") as HTMLButtonElement;
+
+        activityTab = document.getElementById("activity") as HTMLButtonElement;
 				activityTab.disabled = false;
+
+        feesTab = document.getElementById("fees") as HTMLButtonElement;
+				feesTab.disabled = false; //true;
 
 				valueState.valueType = 'crypto';
 				(document.getElementById("showCrypto") as HTMLInputElement).checked = true;
 				(document.getElementById("showUSD") as HTMLInputElement).checked = false;
 			}
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			uiState.errorValue = e as string;
 			uiState.error = true;  // This 'should' show an error message but being in the onMount it may not.
 		}
 	});
 
-
 	onDestroy(() => {
 		try {
-			if (browserSvelte) {
-				browser_ext.runtime.onMessage.removeListener(handleOnMessage);
-			}
 			clearValues(); // Clear all values
 			stopCheckGasPrices();
 		} catch(e) {
-			console.log(`Send: onDestroy: ${e}`);
+			log.error(`Send: onDestroy: ${e}`);
 		}
 	});
 
-
   function startGasPricingChecks() {
 		try {
+      // log.debug('startGasPricingChecks', checkGasPricesProvider, checkGasPricesInterval);
+
 			startCheckGasPrices(checkGasPricesProvider, checkGasPricesInterval);
 
 			// if (currentlySelected && currentlySelected!.shortcuts.value?.valueOf() as bigint > 0n) {
@@ -304,11 +295,10 @@
 			// 	stopCheckGasPrices();
 			// }
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
   }
-
 
 	// Allows for dynamic update on changes to value fields
 	async function onBlur(e: any) {
@@ -334,7 +324,7 @@
 			valueState.toAddressValueUSD = valueState.valueUSD;
 			valueState.totalUSD = valueState.currencyFormat ? valueState.currencyFormat.format(Number(valueState.valueUSD) + gasTotalEstimateUSDNumber) : '0.00';
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
@@ -372,9 +362,9 @@
 		}),
 		onSubmit: async (data) => {
 			try {
-				validate(data);
+        uiState.showVerify = true; // Show the PincodeVerify modal and let it follow the process from there
 			} catch (e) {
-        console.log(e);
+        log.error(e);
 				uiState.errorValue = e as string;
 				uiState.error = true;
 			}
@@ -389,50 +379,24 @@
 					return element.checked;
 				}
 			} catch(e) {
-				console.log(e);
+				log.error(e);
 				return false
 			}
 			return false;
 		}
 	}
 
-	// $form validation
+	// $form validation - not pincode validation
 	async function validate(data: any) {
 		try {
 			let address = data.toAddress;
 			let resolvedAddr = null;
-			let pin;
 
 			// Always need to verify verification values to be safe
 			let profile = await getProfile();
 			if (!profile) {
 				throw 'No profile found';
 			}
-
-			// if (isEncryptedData(profile.data)) {
-			// 	let result = await decryptData(profile.data, yakklMiscStore);
-			// 	const profileData = result as ProfileData;
-
-      //   debug_log('validate: profileData', profileData);
-
-      //   debug_log('validate: pincode', profileData.pincode);
-
-			// 	if (profileData.pincode) {
-			// 		pin = profileData.pincode;
-
-      //     debug_log('validate: pin', pin);
-
-			// 		if (pin === pincode) {
-			// 			pincodeVerified = true;
-			// 		} else {
-			// 			pincodeVerified = false;
-			// 		}
-			// 	} else {
-			// 		pincodeVerified = false;
-			// 	}
-			// } else {
-			// 	console.log("Profile data is not encrypted", profile.data);
-			// }
 
 			maxPriorityFeePerGasOverride = BigNumber.from(data.maxPriorityFeePerGasOverride);
 			maxFeePerGasOverride = BigNumber.from(data.maxFeePerGasOverride);
@@ -493,23 +457,21 @@
 				}
 			}
 		} catch (e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 			uiState.errorValue = e as string;
 			uiState.error = true;
 		}
 	}
 
-
 	async function loadContacts() {
 		try {
 			$yakklContactsStore = await getYakklContacts(); // Don't really need this now. The $yakklContactsStore is already set in the store
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
 	}
-
 
 	async function loadTransactionHistory(networkType: string, address: string, historyCount: number) {
     try {
@@ -532,10 +494,10 @@
       } else if (contentType && contentType.includes('text/html')) {
         data = await response.text();
         // throw new Error(`Received HTML instead of JSON: ${data}`);
-        console.log(`Received HTML instead of JSON: ${data}`);
+        log.error(`Received HTML instead of JSON: ${data}`);
       } else {
         // throw new Error('Unsupported content type: ' + contentType);
-        console.log('Unsupported content type: ' + contentType);
+        log.error('Unsupported content type: ' + contentType);
       }
 
       // Throw error if there is an error in the data - later
@@ -597,7 +559,7 @@
         transactionState.txHistoryTransactions.push(yakklHistory);
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
       uiState.errorValue = e as string;
       uiState.error = true;
       clearVerificationValues();
@@ -611,7 +573,7 @@
 					goto(PATH_LOGOUT); // This will reset.
 			}
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			goto(PATH_LOGOUT); // This is a catch all for now
 		}
 	}
@@ -634,7 +596,7 @@
 				}
 			}
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
@@ -646,51 +608,45 @@
 			// clearValues();
 			// goto(PATH_WELCOME);
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
+  // Returns the profile if the pincode is correct or null if it is not
+	async function verifyWithPin(pin: string): Promise<Profile | null>{
+		try {
+      // If no pin passed then it has not be set by the user yet via PincodeVerify.
+      if (!pin) {
+        return null;
+      }
 
-	// async function verifyWithPin(pin: string, pincodeVerified: boolean): Promise<Profile | null>{
-	// 	try {
-	// 		let profile: Profile | null = await getProfile();
-	// 		if (profile === null) {
-	// 			throw 'Profile was not found.';
-	// 		}
+			let profile: Profile | null = await getProfile();
+			if (profile === null) {
+				throw 'Profile was not found.';
+			}
 
-	// 		let profileEncrypted = null;
+			let profileEncrypted = null;
 
-	// 		if (isEncryptedData(profile.data)) {
-	// 			profileEncrypted = deepCopy(profile);
-	// 			await decryptData(profile?.data, yakklMiscStore).then(result => {
-	// 				(profile as Profile).data = result as ProfileData;
-	// 			});
-	// 		}
+			if (isEncryptedData(profile.data)) {
+				profileEncrypted = deepCopy(profile);
+				await decryptData(profile?.data, yakklMiscStore).then(result => {
+					(profile as Profile).data = result as ProfileData;
+				});
+			}
 
-  //     debug_log('verifyWithPin: profile.data', profile.data);
-  //     debug_log('verifyWithPin: profile.data.pincode',(profile.data as ProfileData).pincode);
-  //     debug_log('verifyWithPin: pincodeVerified', pincodeVerified);
-
-	// 		if ((profile.data as ProfileData).pincode !== pincode && pincodeVerified === false) {
-	// 			throw 'PINCODE was not verified.';
-	// 		}
-
-	// 		if (pincode === (profile.data as ProfileData).pincode) {
-	// 			profile = null;
-
-  //       debug_log('verifyWithPin: profile', profileEncrypted);
-
-	// 			return profileEncrypted;
-	// 		} else {
-	// 			throw 'PINCODE did not match.';
-	// 		}
-	// 	} catch(e) {
-	// 		console.log(e);
-	// 		uiState.errorValue = e as string;
-	// 		uiState.error = true;
-	// 		return null;
-	// 	}
-	// }
+			if (pin === (profile.data as ProfileData).pincode) {
+				profile = null;
+				return profileEncrypted;
+			} else {
+				throw 'PINCODE did not match. Please try again.';
+			}
+		} catch(e) {
+			log.error(e);
+			uiState.errorValue = e as string;
+			uiState.error = true;
+			return null;
+		}
+	}
 
 	// unblockIncrease is a percentage increase (100 is added to it and then multiplied)
 	// It MUST be as an integer and not a float. Example, 10% increase would be 10 and not .10
@@ -699,10 +655,10 @@
 		try {
 			currentlySelected = deepCopy($yakklCurrentlySelectedStore); // Allows for a deep copy of the store that does not impact the actual store
 
-			// profile = await verifyWithPin(deepCopy(pincode), pincodeVerified); // Verifies one more time. deepCopy is used to ensure that the pincode is not changed
-			// if (!profile) {
-			// 	throw 'Unable to verify your PINCODE. Please try again.'; //YAKKL pincode not valid. Please try again.';
-			// }
+			profile = await verifyWithPin(deepCopy(pincode)); // Verifies one more time. deepCopy is used to ensure that the pincode has not changed
+			if (!profile) {
+				throw 'Unable to verify your PINCODE. Please try again.'; //YAKKL pincode not valid. Please try again.';
+			}
 
 			// Create a transaction object
 			// Override values are set at submit time so we use those
@@ -795,9 +751,9 @@
       // Verify if the error is a response error and if so, process it for a more accurate error message
 			uiState.errorValue = e?.message ?? e;
 			uiState.error = true;
-      console.log(e);
+      log.error(e);
 		} finally {
-			console.log('processTransaction: finally. Clearing verification values.');
+			log.info('processTransaction: Clearing verification values.');
 			clearVerificationValues();
 		}
   }
@@ -862,7 +818,7 @@
 		try {
 			$form.toAddressValue = EthereumBigNumber.toEtherString($yakklCurrentlySelectedStore!.shortcuts.value) ?? '0.0';
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
 	}
@@ -871,7 +827,7 @@
 		try {
 		} catch(e) {
 			clearValues();
-			console.log(e);
+			log.error(e);
 		}
 	}
 
@@ -905,7 +861,7 @@
 			transactionState.txHistoryTransactions = [];
 			valueState.valueType = 'crypto';
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
@@ -914,9 +870,8 @@
 		if (browserSvelte) {
 			try {
 				pincode = '';
-				pincodeVerified = false;
 			} catch(e) {
-				console.log(e);
+				log.error(e);
 			}
 		}
 	}
@@ -946,7 +901,7 @@
 				gasState.maxFeePerGas = gasState.marketGas;
 			}
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
 	}
@@ -956,7 +911,7 @@
 			toAddress = $form.toAddress = contact.address;
 			uiState.showContacts = false;
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
   }
@@ -964,12 +919,12 @@
 	// increase is a percent like 10% = 10 and not .10
 	async function handleSpeedUp(increase=10, nonce: number, hash: string) {
 		try {
-			console.log('handleSpeedUp', increase, nonce, hash);
+			// log.debug('handleSpeedUp', increase, nonce, hash);
 
 			await processTransaction(increase, nonce, hash, false);
 			// processTransaction - keep from and to the same, keep value the same and raise maxFeePerGas & raise maxPriorityFeePerGas (optional for priorityfee) higher so that the validators take it! NOTE: Gas fee is ALWAYS charged!!
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
 	}
@@ -978,11 +933,11 @@
 	// Default is 20 = (10 * 2)
 	function handleCancel(increase=10, nonce: number, hash: string) {
 		try {
-			// console.log('handleCancel', increase*2, nonce, hash);
+			// log.debug('handleCancel', increase*2, nonce, hash);
 
 			processTransaction(increase*2, nonce, hash, true); // setting cancel = true (last param) will send a cancel transaction
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 			clearVerificationValues();
 		}
 	}
@@ -999,7 +954,7 @@
 			}
 			handleOpenInTab(URL);
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		} finally {
 			clearVerificationValues();
 		}
@@ -1012,33 +967,13 @@
 			loadTransactionHistory($yakklCurrentlySelectedStore!.shortcuts.network.type, $yakklCurrentlySelectedStore!.shortcuts.address, historyCount);
 		} catch(e) {
 			clearVerificationValues();
-			console.log(e);
+			log.error(e);
 		}
 	});
 
 	function handleSendRequest() {
 		uiState.showVerify = true;
-	}
-
-	function handleReject() {
-		try {
-			uiState.showVerify = false;
-			uiState.warning = true;
-			uiState.warningValue = 'Transaction failed - You have rejected or Pincode was not validated. No transaction was sent.';
-		} catch(e) {
-			console.log(e);
-			clearValues(); // Clear everything out on reject. Leave the values so the user can try again.
-		}
-	}
-
-	async function handleApprove() {
-		try {
-			uiState.showVerify = false;
-			await validate($form); // Validates form data and then calls processTransaction
-		} catch(e) {
-			console.log(e);
-			clearVerificationValues();
-		}
+    // Pincode is disabled for now
 	}
 
 	// The calling function should compute the increase and then call this function. For example, count the wordsin the data field, multiply by 68 and then call this function
@@ -1049,22 +984,39 @@
 				gasLimit = gasLimit + transactionState.txGasLimitIncrease;
 			}
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	}
 
 	// First verfication for the pincode. The second verification is done in the processTransaction function
 	function handlePin(pin: string) {
 		try {
-			pincode = pin;
-			pincodeVerified = true; // We changed the dialog and it now does the verification. So, we can set this to true for downward compatibility!
-			if (pincodeVerified) {
-				handleApprove();
-			} else {
-				handleReject();
-			}
+			pincode = pin; // Set global pincode
+      handleApprove();
 		} catch(e) {
-			console.log(e);
+			log.error(e);
+      handleReject();
+		}
+	}
+
+	async function handleApprove() {
+		try {
+			uiState.showVerify = false;
+			await validate($form); // Validates form data and then calls processTransaction
+		} catch(e) {
+			log.error(e);
+			clearVerificationValues();
+		}
+	}
+
+	function handleReject() {
+		try {
+			uiState.showVerify = false;
+			uiState.warning = true;
+			uiState.warningValue = 'Transaction failed - You have rejected or Pincode was not validated. No transaction was sent.';
+		} catch(e) {
+			log.error(e);
+			clearValues(); // Clear everything out on reject. Leave the values so the user can try again.
 		}
 	}
 
@@ -1109,7 +1061,8 @@
 
 			// $yakklGasTransStore and $yakklPricingStore are used to get the gas prices and the current price of ether or other crypto used for gas fees.
 			// These types of stores can be used as is and do not need to be set in the store. They are used to get the values from the store. The others do need to be set due to the way the store is used.
-			unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
+			// unitPrice = $yakklPricingStore?.price.valueOf() as number ?? 0;
+      unitPrice = $yakklPricingStore?.price ?? 0;
 
 			if (valueState.valueType !== 'fiat') {
 				valueState.valueUSD = Number(Number($form.toAddressValue) * unitPrice).toFixed(2); // Fixed to 2 decimal places but may need to pull from locale
@@ -1147,7 +1100,7 @@
 						gasState.maxFeePerGas = gasState.lowGas;
 						gasState.maxPriorityFeePerGas = gasState.lowPriorityFee;
 						break;
-					default:
+					default: // market
 						gasState.maxFeePerGas = gasState.marketGas;
 						gasState.maxPriorityFeePerGas = gasState.marketPriorityFee;
 						break;
@@ -1187,17 +1140,15 @@
 			}
 
 		} catch(e) {
-			console.log(e);
+			log.error(e);
 		}
 	});
 </script>
 
-<!-- <PincodeModal bind:show={uiState.showVerify} onVerified={handlePin} className="text-gray-600"/> -->
+<PincodeVerify bind:show={uiState.showVerify} onVerified={handlePin} onRejected={handleReject} className="text-gray-600"/>
 
 <ErrorNoAction bind:show={uiState.error} value={uiState.errorValue} handle={handleClose}/>
-
 <Warning bind:show={uiState.warning} value={uiState.warningValue} />
-
 <Contacts bind:show={uiState.showContacts} onContactSelect={handleContact} />
 
 <Toast color="indigo" transition={slide} bind:toastStatus>
@@ -1521,7 +1472,7 @@
 				</TabItem>
 
 				<TabItem id="fees" open={uiState.feesTabOpen} on:click={() => {handleCurrentTab("feesTab")}} style={$errors.maxPriorityFeePerGasOverride? "color:red" : $errors.maxFeePerGasOverride ? "color:red": ""} title="Fees">
-					<Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGas" placement="top">
+					<Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGasOverride" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Estimated Gas Fee</h3>
 						<div class="grid grid-cols-4 gap-2">
 								<div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
@@ -1532,7 +1483,7 @@
 						<p class="py-2">The default value is the estimated Gas Fee from the blockchain. The Gas Fee is a transaction cost that can vary based on network traffic and validators. This fee can be edited if you desired. Any lower fee entered could poorly impact the transaction processing time.</p>
 					</Popover>
 
-					<Popover class="text-sm z-10" triggeredBy="#maxFeePerGas" placement="top">
+					<Popover class="text-sm z-10" triggeredBy="#maxFeePerGasOverride" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Gas Fee Limit (MAX)</h3>
 						<div class="grid grid-cols-4 gap-2">
 								<div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
@@ -1734,7 +1685,10 @@
 					</div>
 
 				</TabItem>
+
 		</Tabs>
+
 	</form>
+
 </div>
 

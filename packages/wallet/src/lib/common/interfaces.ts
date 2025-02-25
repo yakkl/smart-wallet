@@ -305,7 +305,7 @@ export interface GasFeeTrend {
 
 export interface GasTransStore {
   provider: string | null;
-  id: NodeJS.Timeout | undefined;
+  id: NodeJS.Timeout | null | undefined;
   results: {
     blockNumber: number;
     estimatedTransactionCount: number;

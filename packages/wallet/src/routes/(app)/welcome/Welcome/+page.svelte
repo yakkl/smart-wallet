@@ -1,89 +1,55 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from "$app/environment";
-  import { onMount, onDestroy } from "svelte";
+  import { browserSvelte } from '$lib/common/environment';
+  import { onDestroy } from "svelte";
   import { PATH_ACCOUNTS, PATH_SECURITY } from "$lib/common/constants";
-  import ComingSoon from "$components/ComingSoon.svelte";
   import ErrorNoAction from "$components/ErrorNoAction.svelte";
   import ButtonGridItem from "$components/ButtonGridItem.svelte";
   import ButtonGrid from "$components/ButtonGrid.svelte";
-  import { routeCheckWithSettings } from '$lib/common/routes';
-  import { handleOnMessage } from '$lib/common/handlers';
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-  import type { Browser } from 'webextension-polyfill';
   import { setIconLock } from '$lib/utilities';
   import Import from '$lib/components/Import.svelte';
   import TokenViews from "$lib/components/TokenViews.svelte";
-  import { Wallet } from '$lib/plugins/Wallet';
-  import { getInstances } from "$lib/common/wallet";
-  import type { Provider } from "$lib/plugins/Provider";
-  import type { Blockchain } from "$lib/plugins/Blockchain";
-  import type { TokenService } from "$lib/plugins/blockchains/evm/TokenService";
-  import { loadDefaultTokens } from "$lib/plugins/tokens/loadDefaultTokens";
-	import { getYakklCurrentlySelectedStore, yakklTokenDataStore, yakklCombinedTokenStore, yakklTokenDataCustomStore } from "$lib/common/stores";
+	import { yakklCombinedTokenStore } from "$lib/common/stores";
+  import { log } from '$plugins/Logger';
 
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+  let error = $state(false);
+  let errorValue: any = $state(null);
+  let showImportOption = $state(false);
 
-  let error = false;
-  let errorValue: any = null;
-  let showComingSoon = false;
-  let showImportOption = false;
-  let wallet: Wallet | null = null;
-  let provider: Provider | null = null;
-  let blockchain: Blockchain | null = null;
-  let tokenService: TokenService<any> | null = null;
-
-  onMount(async () => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.addListener(handleOnMessage);
-        if ($yakklTokenDataStore.length === 0) await loadDefaultTokens(); // Ensure default tokens are loaded.
-
-        const instances = await getInstances();
-        if (instances.length > 0) {
-          wallet = instances[0];
-          provider = instances[1];
-          blockchain = instances[2];
-          tokenService = instances[3];
-          if (wallet && provider && blockchain && tokenService) {
-            const currentlySelected = getYakklCurrentlySelectedStore();
-            tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
-          }
-        }
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
+  // onMount(async () => {
+  //   try {
+  //     if (browserSvelte) {
+  //       // Been able to reduce onMount to this - empty
+  //       log.info('Welcome page: onMount');
+  //     }
+  //   } catch (e) {
+  //     log.error(e);
+  //   }
+  // });
 
   onDestroy(() => {
     try {
       if (browserSvelte) {
         setIconLock();
-        browser_ext.runtime.onMessage.removeListener(handleOnMessage);
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
     }
   });
-
-  routeCheckWithSettings();
 
   function handleImports() {
     showImportOption = true;
   }
 
   function onImportComplete(imported: string) {
-    console.log('Imported:', imported);
+    log.info(imported);
   }
 </script>
 
 <Import bind:show={showImportOption} onComplete={onImportComplete}/>
 <ErrorNoAction bind:show={error} title="Error" value={errorValue} />
-<ComingSoon bind:show={showComingSoon} />
 
-<div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2"></div>
+<div class="bg-primary absolute top-[0.1rem] left-[.1rem] rounded-tl-xl rounded-tr-xl w-[99%] h-2">
+</div>
 
 <ButtonGrid>
   <ButtonGridItem path={PATH_ACCOUNTS} title="Wallet Accounts">
@@ -107,6 +73,6 @@
   <TokenViews />
 {:else}
   <div class="flex items-center justify-center w-full h-full">
-    <p class="text-lg text-gray-500">No additional tokens found</p>
+    <p class="text-lg text-gray-400">No additional tokens found</p>
   </div>
 {/if}

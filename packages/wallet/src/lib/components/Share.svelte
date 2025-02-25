@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { log } from '$lib/plugins/Logger';
   import { handleOpenInTab } from '$lib/utilities';
   import { Popover } from 'flowbite-svelte';
 
@@ -15,7 +16,7 @@
     const id = target?.dataset?.id;
 
     if (!id) {
-      console.log('No ID found');
+      log.error('No ID found');
       return;
     }
 

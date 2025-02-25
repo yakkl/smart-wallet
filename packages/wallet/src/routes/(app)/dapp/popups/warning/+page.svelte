@@ -1,8 +1,9 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { YAKKL_DAPP } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
+  import { log } from '$plugins/Logger';
 
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
@@ -19,7 +20,7 @@
   let requestId: string;
 
   if (browserSvelte) {
-    requestId = $page.url.searchParams.get('requestId') ?? '';
+    requestId = page.url.searchParams.get('requestId') ?? '';
   }
 
   onMount(() => {
@@ -41,7 +42,7 @@
         port.postMessage({method: 'get_warning', id: requestId ?? 0}); // request is not currently used but we may want to later
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -64,7 +65,7 @@ function handleReject() {
       browser_ext.action.setIcon({path: "/images/logoBullLock48x48.png"}); // Just incase login changed it
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   } finally {
     window.close();
   }

@@ -1,36 +1,29 @@
 <!-- Must be here - prerender -->
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
   import { PATH_REGISTER } from '$lib/common';
   import type { Settings } from '$lib/common';
 
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+	import { getSettings, setSettingsStorage } from '$lib/common/stores';
+	import { goto } from '$app/navigation';
+  import { log } from '$plugins/Logger';
 
-
-  let yakklSettings: Settings;
+  let yakklSettings: Settings | null = null;
 
   async function update() {
     try {
       if (browserSvelte) {
-        await getObjectFromLocalStorage("settings").then((value) => {
-          yakklSettings = value as Settings;
-          if (yakklSettings) {
-            yakklSettings.legal.privacyViewed = true;
-            yakklSettings.legal.termsAgreed = true;
-
-            setObjectInLocalStorage('settings', yakklSettings).then(() => {
-              location.href = PATH_REGISTER+".html"; // This will force header/footer to show. If we use 'goto' then no new page rendering will occur to reset header/footer
-              return;
-            });
-          }
-        });
+        yakklSettings = await getSettings();
+        if (yakklSettings) {
+          yakklSettings.legal.privacyViewed = true;
+          yakklSettings.legal.termsAgreed = true;
+          yakklSettings.isLocked = true;
+          await setSettingsStorage(yakklSettings);
+          await goto(PATH_REGISTER);
+        }
       }
     } catch (error) {
-      console.log(error);
+      log.error(error);
     }
   }
 
@@ -38,14 +31,14 @@
       try {
         await update();
       } catch (error) {
-        console.log(error);
+        log.error(error);
       }
   }
 
   function handleLink(e: { srcElement: { href: any; }; }) {
     // send link to new tab
     if (browserSvelte) {
-      console.log(e);
+      log.info(e);
       browser_ext.tabs.create({url: e.srcElement.href});
     }
   }

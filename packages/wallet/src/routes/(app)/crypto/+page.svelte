@@ -7,8 +7,7 @@
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
-	import { routeCheckWithSettings } from '$lib/common/routes';
-  import { handleOnMessage } from "$lib/common/handlers";
+	// import { routeCheckWithSettings } from '$lib/common/routes';
 
   let browser_ext: Browser;
   if (browserSvelte) browser_ext = getBrowserExt();
@@ -19,12 +18,7 @@
   let showComingSoon = false;
   let yakklSettings;
 
-  if (browserSvelte) {
-    //@ts-ignore
-    browser_ext.runtime.onMessage.addListener(handleOnMessage);
-  }
-
-  routeCheckWithSettings();
+  // routeCheckWithSettings();
 
   function handleComingSoon() {
     showComingSoon = true;

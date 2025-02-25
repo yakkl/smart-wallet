@@ -79,7 +79,7 @@ export default defineConfig( {
       keep_classnames: true,
       keep_fnames: true,
       format: {
-        beautify: true,
+        beautify: false, //true,
       },
     },
     commonjsOptions: {

@@ -1,14 +1,14 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { yakklConnectedDomainsStore, getSettings, yakklDappConnectRequestStore } from '$lib/common/stores';
   import { PATH_LOGIN, YAKKL_DAPP, PATH_DAPP_ACCOUNTS, WEB3_SVG_DATA, DEFAULT_TITLE } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
 	import { wait } from '$lib/common/utils';
 	import Copyright from '$lib/components/Copyright.svelte';
-	// import Confirm from '$lib/components/Confirm.svelte';
 	import Failed from '$lib/components/Failed.svelte';
+  import { log } from '$plugins/Logger';
 
   import type { Browser, Runtime } from 'webextension-polyfill';
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
@@ -34,7 +34,7 @@
 
   if (browserSvelte) {
     try {
-      requestId = $page.url.searchParams.get('requestId');
+      requestId = page.url.searchParams.get('requestId');
       $yakklDappConnectRequestStore = requestId;
     } catch(e) {
       console.log(e);
@@ -105,7 +105,7 @@
     }
 
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   }
 
@@ -127,7 +127,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -142,7 +142,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -170,7 +170,7 @@
         }
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     } finally {
       await close();
     }

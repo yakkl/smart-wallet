@@ -11,7 +11,7 @@
   import { createPortfolioAccount } from '$lib/plugins/networks/ethereum/createPortfolioAccount';
 	import { onMount } from 'svelte';
 	import { EmergencyKitManager } from '$lib/plugins/EmergencyKitManager';
-	import { sendNotification } from '$lib/common/notifications';
+	import { sendNotificationMessage } from '$lib/common/notifications';
   // import ErrorModal from '$lib/components/ErrorModal.svelte';
   // import { jsPDF } from "jspdf";
 
@@ -120,7 +120,7 @@
             derivedPath = (primaryData as PrimaryAccountData).path as string;
             displayDate = new Date(createDate);
 
-            sendNotification("Primary Address Created!", "Your primary address has been created. Please print and store your emergency kit in a safe place.  🔐 DO NOT share this information with anyone! Thank you.");
+            sendNotificationMessage("Primary Address Created!", "Your primary address has been created. Please print and store your emergency kit in a safe place.  🔐 DO NOT share this information with anyone! Thank you.");
             successDialog = true;
           } catch (e) {
             throw `Wallet was created but the following occured: ${e}`;

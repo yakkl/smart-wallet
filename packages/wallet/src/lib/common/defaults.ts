@@ -5,6 +5,7 @@ import { getProfile, yakklMiscStore } from '$lib/common/stores';
 import { decryptData, digestMessage } from '$lib/common/encryption';
 import type { ProfileData } from '$lib/common/interfaces';
 import { isEncryptedData } from '$lib/common/misc';
+import { log } from '$lib/plugins/Logger';
 
 
 // Verifies the profile using the provided id and decrypts data if necessary.
@@ -31,7 +32,7 @@ export async function verify(id: string) {
       return profile;
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return undefined;
   }
 }

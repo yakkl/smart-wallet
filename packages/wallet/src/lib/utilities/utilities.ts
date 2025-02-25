@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /* eslint-disable no-debugger */
-import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
+// import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
 
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
@@ -15,12 +15,8 @@ import type { BigNumberish } from '$lib/common/bignumber';
 import { yakklVersionStore } from '$lib/common/stores';
 import { Utils } from "alchemy-sdk";
 import { ethers as ethersv6 } from 'ethers-v6';
-
-import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-import type { Browser } from 'webextension-polyfill';
-let browser_ext: Browser;
-if (browserSvelte) browser_ext = getBrowserExt();
-
+import { browserSvelte, browser_ext } from '$lib/common/environment';
+import { log } from "$plugins/Logger";
 
 export function getTokenChange(
   changeArray: TokenChange[],
@@ -100,7 +96,7 @@ export function formatPrice( price: number ): string {
 
     return formattedPrice;
   } catch ( error ) {
-    console.log( 'formatPrice - SwapTokenPrice and price to format:', error, price );
+    log.error( 'formatPrice - SwapTokenPrice and price to format:', error, price );
     return price.toString();
   }
 }
@@ -156,16 +152,16 @@ export function incrementProperty<T extends object, K extends keyof T>(obj: T, p
 
 /** Example usage for incrementProperty
 incrementProperty(profile, 'subIndex');  // Increments by 1 by default
-console.log(profile.subIndex); // Should print 6
+log.error(profile.subIndex); // Should print 6
 
 incrementProperty(profile, 'subIndex', -2);  // Increments by 2 (absolute value)
-console.log(profile.subIndex); // Should print 8
+log.error(profile.subIndex); // Should print 8
 
 incrementProperty(profile, 'subIndex', 5, 10);  // Attempts to increment by 5, should respect max value of 10
-console.log(profile.subIndex); // Should print 10
+log.error(profile.subIndex); // Should print 10
 
 incrementProperty(profile, 'subIndex', 5, -1);  // Attempts to increment by 5, no max value limit
-console.log(profile.subIndex); // Should print 15
+log.error(profile.subIndex); // Should print 15
 **/
 
 // Decrements a property on an object safely. If ensureNonNegative is true, the property will not be decremented below 0.
@@ -184,17 +180,17 @@ export function decrementProperty<T extends object, K extends keyof T>(obj: T, p
 
 /** Example usage for decrementProperty
  ecrementProperty(profile, 'subIndex');  // Decrements by 1 by default
-console.log(profile.subIndex); // Should print 14
+log.error(profile.subIndex); // Should print 14
 
 decrementProperty(profile, 'subIndex', -2);  // Decrements by 2 (absolute value)
-console.log(profile.subIndex); // Should print 12
+log.error(profile.subIndex); // Should print 12
 
 decrementProperty(profile, 'subIndex', 5);  // Attempts to decrement by 5, should ensure non-negative value
-console.log(profile.subIndex); // Should print 7
+log.error(profile.subIndex); // Should print 7
 
 // Decrementing without ensuring non-negative value
 decrementProperty(profile, 'subIndex', 10, false);  // Decrements by 10, allows negative value
-console.log(profile.subIndex); // Should print -3
+log.error(profile.subIndex); // Should print -3
 **/
 
 // Ensures that the object has all the properties from the defaults object, and sets them to the default value if they are missing.
@@ -232,6 +228,8 @@ export function setDefinedProperty<T extends object, K extends keyof T>(
 export function blockContextMenu() {
   // Blocks the context menu from popping up
   window.addEventListener("contextmenu", function (e) {
+    log.debug('Context menu blocked');
+    e.stopPropagation(); // Allow event propagation but prevent menu
     e.preventDefault();
   });
 
@@ -256,12 +254,20 @@ export function blockContextMenu() {
     if((e.ctrlKey || e.altKey) && e.code == "KeyU") { //keyCode == 85) {
         return false;
     }
+
+    e.stopPropagation();
   }
 }
 
+let resizeTimeout: NodeJS.Timeout | undefined = undefined;
+
 export function blockWindowResize(width: number, height: number) {
   window.addEventListener("resize", function () {
-    window.resizeTo(width, height);
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      console.log("🔲 Resizing window");
+      window.resizeTo(width, height);
+    }, 500); // Debounce resizing
   });
 }
 
@@ -296,15 +302,7 @@ export function getNetworkInfo(chainId: number) {
   let type;
   let explorer;
 
-  switch(chainId) { //chainIdToHex(chainId)) {
-    // case "0x5":
-    // case "0x05":
-    // case 5:
-    //   blockchain = 'Ethereum';
-    //   type = 'Goerli';
-    //   explorer = 'https://goerli.etherscan.io';
-    //   break;
-    // case "0xaa36a7":
+  switch(chainId) { 
     case 1301:
       blockchain = 'Unichain';
       type = 'Testnet';
@@ -315,8 +313,6 @@ export function getNetworkInfo(chainId: number) {
       type = 'Sepolia';
       explorer = 'https://sepolia.etherscan.io';
       break;
-    // case "0x1":
-    // case "0x01":
     case 1:
     default:
         blockchain = 'Ethereum';
@@ -369,7 +365,7 @@ export function getChainId(type: string) {
 //         yakklProvidersStore.set(yakklProv);
 //       });
 //   } catch (e) {
-//     console.log(e);
+//     log.error(e);
 //   }
 // }
 
@@ -389,6 +385,7 @@ export async function createHash(val: string) {
 }
 
 // Ideal for JSON Serialization and Deserialization that handles BigInt. If more complex objects need cloning then use a library like lodash (cloneDeep) or rfdc
+// Another option is to use the structuredClone function when it is available natively in the browser.
 // Do not use this for objects that have functions or circular references.
 // Do not use this on boolean - it will return null.
 export function deepCopy<T>(obj: T) {
@@ -451,7 +448,7 @@ export function getSymbol(blockchain: string): string {
   //     }
   //  }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 
   return symbol;
@@ -493,7 +490,7 @@ export async function isOnline(url=window.location.origin) {
 
     value = response.ok;
   } catch (e) {
-    console.log(e);
+    log.error(e);
     value = false;
   }
 
@@ -509,7 +506,7 @@ export function changeBackground(id: string, image: { src: string; }) {
     // document.getElementById('display').style.backgroundSize="cover";
     // document.getElementById('display').style.backgroundPosition="center center";
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -522,7 +519,7 @@ export function timeoutClipboard(seconds: number) {
       }, seconds*1000);
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -532,7 +529,7 @@ export async function setIconLock() {
       await browser_ext.action.setIcon({path: {16: "/images/logoBullLock16x16.png", 32: "/images/logoBullLock32x32.png", 48: "/images/logoBullLock48x48.png", 128: "/images/logoBullLock128x128.png"}});
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -542,7 +539,7 @@ export async function setIconUnlock() {
       await browser_ext.action.setIcon({path: {16: "/images/logoBull16x16.png", 32: "/images/logoBull32x32.png", 48: "/images/logoBull48x48.png", 128: "/images/logoBull128x128.png"}});
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -574,7 +571,7 @@ export function getCurrencyCode(locale: string) {
     }
     return null;
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return null;
   }
 }
@@ -592,7 +589,7 @@ const getCountryCode = function(localeString: string) {
     }
     return localeString;
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return null;
   }
 }
@@ -610,7 +607,7 @@ export function hexToString(str1: string, Ox = true)
     }
     return str;
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return null;
   }
 }
@@ -621,7 +618,7 @@ export function hexToBigInt(str1: string) {
     // @ts-ignore
     return BigInt(hexToString(str1));
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return null;
   }
 }

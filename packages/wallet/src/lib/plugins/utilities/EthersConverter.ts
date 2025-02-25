@@ -8,6 +8,7 @@ import type {
   TransactionRequest,
   AccessList,
 } from '$lib/common';
+import { log } from '../Logger';
 
 export class EthersConverter {
   static toEthersHex(value: BigNumberish | null | undefined): string | null | undefined {
@@ -118,7 +119,7 @@ export class EthersConverter {
         type: tx.type,
       };
     } catch ( error ) {
-      console.log( 'Error converting ethers transaction request to transaction request:', error );
+      log.error( 'Error converting ethers transaction request to transaction request:', error );
       return null;
     }
   }

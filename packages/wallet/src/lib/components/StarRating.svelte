@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { log } from '$lib/plugins/Logger';
   import { handleOpenInTab } from '$lib/utilities/utilities';
   import { Popover } from 'flowbite-svelte';
   interface Props {
@@ -10,7 +11,7 @@
   async function handleShare(event: MouseEvent): Promise<any> {
     const id = (event.currentTarget as HTMLElement).dataset.id;
     if (!id) {
-      console.log('No ID found');
+      log.error('No ID found');
       return;
     }
     // Popup share button for twitter, fb, linkedin, reddit

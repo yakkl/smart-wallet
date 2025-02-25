@@ -8,6 +8,7 @@ import { Alchemy as AlchemyAPI, Network as AlchemyNetwork, type AlchemySettings,
 import type { Signer } from '$lib/plugins/Signer';
 import { EthersConverter } from '$lib/plugins/utilities/EthersConverter';
 import { ethers as ethersv6 } from 'ethers-v6';
+import { log } from '$lib/plugins/Logger';
 
 interface AlchemyOptions {
   apiKey?: string | null;
@@ -121,6 +122,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('call', { transaction: resolvedTransaction, blockTag: resolvedBlockTag, result });
       return result;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'call', error });
       throw error;
     }
@@ -140,6 +142,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('estimateGas', { transaction: resolvedTransaction, gasEstimate });
       return BigInt(gasEstimate.toString());
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'estimateGas', error });
       throw error;
     }
@@ -177,6 +180,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('blockNumber', { blockNumber });
       return blockNumber;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getBlockNumber', error });
       throw error;
     }
@@ -196,6 +200,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('gasPrice', { price: price.toBigInt() });
       return price.toBigInt(); // as unknown as bigint;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getGasPrice', error });
       throw error;
     }
@@ -211,6 +216,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('feeData', { feeData });
       return feeData as unknown as FeeData;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getFeeData', error });
       throw error;
     }
@@ -235,7 +241,7 @@ export class Alchemy extends AbstractProvider {
       return balance.toBigInt(); // as unknown as bigint;
     } catch (error) {
       eventManager.emit('error', { provider: this.name, method: 'getBalance', error });
-      console.log('Alchemy: Error:', error);
+      log.error('Alchemy:', error);
       throw error;
     }
   }
@@ -256,6 +262,7 @@ export class Alchemy extends AbstractProvider {
       const code = await this.alchemy.core.getCode(addressOrName, blockTagish);
       return code;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getCode', error });
       throw error;
     }
@@ -284,6 +291,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('getStorageAt', { addressOrName, position, blockTag: resolvedBlockTag, storage });
       return storage;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getStorageAt', error });
       throw error;
     }
@@ -305,6 +313,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('sendRawTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'sendRawTransaction', error });
       throw error;
     }
@@ -340,6 +349,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('sendTransaction', { signedTransaction, response });
       return response as unknown as TransactionResponse;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'sendTransaction', error });
       throw error;
     }
@@ -361,6 +371,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('block', { blockTagish, block });
       return block as unknown as Block;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getBlock', error });
       throw error;
     }
@@ -382,6 +393,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('blockWithTransactions', { blockTagish, block });
       return block as unknown as BlockWithTransactions;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getBlockWithTransactions', error });
       throw error;
     }
@@ -401,6 +413,7 @@ export class Alchemy extends AbstractProvider {
       const trans = await this.alchemy.core.getTransaction(transactionHash);
       return trans as unknown as TransactionResponse;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getTransaction', error });
       throw error;
     }
@@ -422,6 +435,7 @@ export class Alchemy extends AbstractProvider {
       const count = await this.alchemy.core.getTransactionCount(addressOrName, blockTagish);
       return count as unknown as number;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getTransactionCount', error });
       throw error;
     }
@@ -441,6 +455,7 @@ export class Alchemy extends AbstractProvider {
       const trans = await this.alchemy.core.getTransaction( transactionHash );
       return trans as unknown as TransactionResponse;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getTransactionHistory', error });
       throw error;
     }
@@ -460,6 +475,7 @@ export class Alchemy extends AbstractProvider {
       const receipt = await this.alchemy.core.getTransactionReceipt(transactionHash);
       return receipt as unknown as TransactionReceipt;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getTransactionReceipt', error });
       throw error;
     }
@@ -497,6 +513,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('getLogs', { filter, logs: convertedLogs });
       return convertedLogs;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'getLogs', error });
       throw error;
     }
@@ -547,6 +564,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('resolveName', { name, address });
       return address;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'resolveName', error });
       throw error;
     }
@@ -567,6 +585,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('lookupAddress', { address, name });
       return name;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method: 'lookupAddress', error });
       throw error;
     }
@@ -588,6 +607,7 @@ export class Alchemy extends AbstractProvider {
       eventManager.emit('requestMade', { provider: this.name, method, params, result });
       return result;
     } catch (error) {
+      log.error('Alchemy:', error);
       eventManager.emit('error', { provider: this.name, method, error });
       throw error;
     }
@@ -680,7 +700,7 @@ function getConfig(chainId: number, kval: any = undefined): AlchemySettings | un
       network: network,
     };
   } catch (e) {
-    console.log(e);
+    log.error('[ERROR]:', e);
     return undefined;
   }
 }

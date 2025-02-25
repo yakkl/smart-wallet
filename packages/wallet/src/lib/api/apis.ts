@@ -1,3 +1,4 @@
+import { log } from "$lib/plugins/Logger";
 
 // Fetch a given key using the API
 export async function apiKeyFetch(apiUrl: string, keyId: string) {
@@ -6,7 +7,7 @@ export async function apiKeyFetch(apiUrl: string, keyId: string) {
     const data = await response.json();
     return data.key;
   } catch (error) {
-    console.log("Error fetching key:", keyId);
+    log.error("Error fetching key:", keyId);
     throw error;
   }
 }

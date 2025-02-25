@@ -6,15 +6,16 @@
   import { goto } from '$app/navigation';
   import { identicon } from '$lib/utilities';
   import { getMiscStore, getYakklCurrentlySelected } from '$lib/common/stores';
-  import { PATH_EXPORT, PATH_IMPORT_PRIVATEKEY, PATH_LOCK, PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
+  import { PATH_LOGOUT, DEFAULT_POPUP_WIDTH, type YakklCurrentlySelected } from '$lib/common';
   import Card from '$lib/components/Card.svelte';
   import ImageBar from '$lib/components/ImageBar.svelte';
   import { handleOpenInTab } from '$lib/utilities';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import Share from '$lib/components/Share.svelte';
-  import CommingSoon from '$lib/components/ComingSoon.svelte';
+  // import CommingSoon from '$lib/components/ComingSoon.svelte';
 	import { onMount } from 'svelte';
 	import EmergencyKitModal from './EmergencyKitModal.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     id?: string;
@@ -24,8 +25,8 @@
   let { id = "header", containerWidth = DEFAULT_POPUP_WIDTH }: Props = $props();
 
   let currentlySelected: YakklCurrentlySelected;
-  let yakklMiscStore: string | null = $state(getMiscStore());
-  let showComingSoon = $state(false);
+  let yakklMiscStore: string | null = getMiscStore();
+  // let showComingSoon = $state(false);
   let showInfo = $state(false);
 
   let address: string;
@@ -37,39 +38,37 @@
   onMount(async () => {
     try {
       currentlySelected = await getYakklCurrentlySelected();
-      yakklMiscStore = getMiscStore();
+      // yakklMiscStore = getMiscStore();
       address = currentlySelected.shortcuts.address;
       imageSRC = identicon(address ? address : 'default');
     } catch (e) {
-      console.log(`Header: onMount - ${e}`);
+      log.error(`Header: onMount - ${e}`);
     }
   });
 
-
-  function handleDelete() {
-    try {
-      document.getElementById('collapseSidenavSecEx2')?.classList?.remove('show');
-      document.getElementById('offcanvasSettings')?.classList?.remove('show');
-      let id = document.getElementsByClassName('offcanvas-backdrop')[0];
-    id.remove();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
+  // function handleDelete() {
+  //   try {
+  //     document.getElementById('collapseSidenavSecEx2')?.classList?.remove('show');
+  //     document.getElementById('offcanvasSettings')?.classList?.remove('show');
+  //     let id = document.getElementsByClassName('offcanvas-backdrop')[0];
+  //   id.remove();
+  //   } catch (error) {
+  //     log.error(error);
+  //   }
+  // }
 
   function handleUniversity() {
     try {
       handleOpenInTab('https://yakkl.com/university/support?utm_source=yakkl&utm_medium=extension&utm_campaign=extension&utm_content=university&utm_term=extension');
     } catch (error) {
-      console.log(error);
+      log.error(error);
     }
   }
 
 </script>
 
 <NotEnabled bind:show={showInfo} value="This feature is not yet available. It will be released soon!"/>
-<CommingSoon bind:show={showComingSoon} value="This feature is not yet available. It will be released soon!"/>
+<!-- <CommingSoon bind:show={showComingSoon} value="This feature is not yet available. It will be released soon!"/> -->
 <EmergencyKitModal bind:show={showEmergencyKit} mode={showEmergencyKitExport ? 'export' : showEmergencyKitImport ? 'import' : 'export'} />
 
 <ImageBar>
@@ -144,7 +143,7 @@
           <li class="relative" data-bs-dismiss="offcanvas" >
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_interactive_supports_focus -->
-            <div role="button" onclick={() => goto(PATH_LOCK)}
+            <div role="button" onclick={() => goto(PATH_LOGOUT)}
               class="flex items-center text-sm py-4 px-6 h-10 overflow-hidden text-ellipsis whitespace-nowrap rounded text-base-content hover:text-base-300 hover:bg-primary-100/50 transition duration-300 ease-in-out"
               data-mdb-ripple="true" data-mdb-ripple-color="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-2" fill="none" viewBox="0 0 24 24"

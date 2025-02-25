@@ -2,7 +2,7 @@ import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
 import { YAKKL_FEE_BASIS_POINTS } from '$lib/common/constants';
 import type { SwapToken } from '$lib/common/interfaces';
 import { Token } from '@uniswap/sdk-core';
-
+import { log } from '../Logger';
 
 export function getTickSpacing( fee: number ): number {
   switch ( fee ) {
@@ -92,7 +92,7 @@ export function tokenInNetAmount( tokenOut: SwapToken, tokenOutAmount: BigNumber
 
     return tokenInAmount;
   } catch ( error ) {
-    console.log( 'Error calculating net amount:', error );
+    log.error( 'Error calculating net amount:', error );
     return 0n;
   }
 }

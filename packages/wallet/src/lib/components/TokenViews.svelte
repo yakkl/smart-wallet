@@ -6,41 +6,32 @@
   import TokenNewsTradingView from './TokenNewsTradingView.svelte';
   import TokenTechnicalView from './TokenTechnicalView.svelte';
   import TokenSymbolView from './TokenSymbolView.svelte';
-  import { tokenManager } from '$lib/common/stores/tokenManager';
-  import { createPriceUpdater } from '$lib/common/createPriceUpdater';
-  import { PriceManager } from '$lib/plugins/PriceManager';
+  // import { tokenManager } from '$lib/common/stores/tokenManager';
+  // import { createPriceUpdater } from '$lib/common/createPriceUpdater';
+  // import { PriceManager } from '$lib/plugins/PriceManager';
   import { onMount } from 'svelte';
   import type { TokenData } from '$lib/common/interfaces';
+  import { log } from '$plugins/Logger';
+	// import { TimerManager } from '$lib/plugins/TimerManager';
+	import { yakklCombinedTokenStore } from '$lib/common/stores';
 
   let tokens: TokenData[] = [];
-  let sortedTokens: TokenData[] = [];
-  let currentView = 'grid';
+  let sortedTokens: TokenData[] = $state([]);
+  let currentView = $state('grid');
   let sortBy = 'name';
 
-  let priceManager = new PriceManager();
-  let priceUpdater = createPriceUpdater(priceManager, 30000);
-
   onMount(() => {
-    // Subscribe to the combined token store
-    const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
-      tokens = allTokens;
-      handleSortChange(sortBy);
-      if (tokens.length > 0) {
-        priceUpdater.fetchPrices(tokens).catch(console.log);
-      }
-    });
+    // log.debug('<=========================== TokenViews: onMount =================================>');
 
-    // Subscribe to the price updater
-    const unsubscribePriceUpdater = priceUpdater.subscribe((updatedTokens = []) => {
+    // Subscribe to token store updates
+    const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
       tokens = updatedTokens;
+      // log.debug('TokenViews: updated token prices:', tokens); // JSON.stringify(tokens, null, 2));  // Added JSON.stringify for better readability
       handleSortChange(sortBy);
     });
 
-    // Cleanup subscriptions
     return () => {
-      unsubscribeTokenManager();
-      unsubscribePriceUpdater();
-      priceUpdater.destroy();
+      unsubscribeYakklStore();
     };
   });
 
@@ -76,7 +67,7 @@
   <!-- Dynamic Views -->
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
     {#if currentView === 'grid'}
-      <TokenGridView tokens={sortedTokens} onTokenClick={(token) => console.log('Clicked:', token)} /> <!-- default onTokenClick for future -->
+      <TokenGridView tokens={sortedTokens} onTokenClick={(token) => log.info('Clicked:', token)} /> <!-- default onTokenClick for future -->
     {:else if currentView === 'chart'}
       <TokenChartsView />
     {:else if currentView === 'news'}

@@ -97,6 +97,8 @@ export interface Provider {
    */
   getCode( addressOrName: string | Promise<string>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
 
+  getName(): string;
+
   /**
    * Gets the storage at a position.
    * @param addressOrName - The address or ENS name to get the storage for.
@@ -361,6 +363,10 @@ export abstract class AbstractProvider implements Provider {
    */
   abstract getStorageAt( addressOrName: string | Promise<string>, position: BigNumberish | Promise<BigNumberish>, blockTag?: BlockTag | Promise<BlockTag> ): Promise<string>;
   abstract initializeProvider(): Promise<any | null>;
+
+  getName(): string {
+    return this.name;
+  }
 
   getProvider(): any | null {
     if ( !this.provider ) {

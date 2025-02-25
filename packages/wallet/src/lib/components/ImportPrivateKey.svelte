@@ -18,6 +18,7 @@
   import { onMount } from 'svelte';
   import { dateString } from '$lib/common/datetime';
   import Modal from './Modal.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   let wallet: Wallet;
   let currentlySelected: YakklCurrentlySelected;
@@ -42,11 +43,13 @@
 
   onMount(async () => {
     try {
-      currentlySelected = await getYakklCurrentlySelected();
       yakklMiscStore = getMiscStore();
-      wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+      if ( yakklMiscStore) {
+        currentlySelected = await getYakklCurrentlySelected();
+        wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected.shortcuts.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_PROD);
+      }
     } catch (e) {
-      console.log(`Error decrypting data: ${e}`);
+      log.error(`Error decrypting data: ${e}`);
     }
   });
 
@@ -62,7 +65,7 @@
         await handleImport(data.accountName, data.alias, data.prvKey);
       } catch (e) {
         error = `Following error occurred: ${e}`;
-        console.log(error);
+        log.error(error);
       }
     },
   });
@@ -150,7 +153,7 @@
           if (result) yakklAccount.value = result;
         })
         .catch((e) => {
-          console.log(`Import: error getting balance: ${e}`);
+          log.error(`Import: error getting balance: ${e}`);
         });
 
       yakklAccount.index = -1;
@@ -168,7 +171,7 @@
             yakklAccount.data = result;
           })
           .catch((e) => {
-            console.log(`Import: error encrypting account data: ${e}`);
+            log.error(`Import: error encrypting account data: ${e}`);
           });
       }
 

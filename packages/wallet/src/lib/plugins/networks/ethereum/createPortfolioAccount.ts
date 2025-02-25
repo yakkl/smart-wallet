@@ -10,11 +10,12 @@ import { isEncryptedData, isMetaData, isProfileData, isString } from '$lib/commo
 import { dateString } from '$lib/common/datetime';
 import { AccountTypeCategory, NetworkType } from '$lib/common/types';
 import { VERSION } from '$lib/common/constants';
+import { log } from '$lib/plugins/Logger';
 
 export async function createPortfolioAccount(yakklMiscStore: string, profile: Profile) {
   try {
     if (!yakklMiscStore) {
-      throw 'The yakklMiscStore is not defined.';
+      throw 'The User was not defined.';
     }
 
     let yakklSettings = await getSettings();
@@ -274,7 +275,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
     });
 
   } catch (e) {
-    console.log('The Portfolio Account was not able to be created.', e);
+    log.error('The Portfolio Account was not able to be created.', e);
     return Promise.reject(e);
   }
 }

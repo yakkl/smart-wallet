@@ -9,7 +9,8 @@ module.exports = {
   entry: {
     background: ['./src/lib/extensions/chrome/background.ts'],
     content: ['./src/lib/extensions/chrome/content.ts'],
-    inpage: ['./src/lib/extensions/chrome/inpage.ts']
+    inpage: ['./src/lib/extensions/chrome/inpage.ts'],
+    sandbox: ['./src/lib/extensions/chrome/sandbox.ts'],
   },
   mode: 'production',
   output: {
@@ -18,21 +19,24 @@ module.exports = {
     publicPath: '/'
   },
   optimization: {
-    minimize: false,
+    minimize: true, //false
     minimizer: [
       new TerserPlugin({
         terserOptions: {
-          mangle: false,
+          mangle: false, //true, -
           compress: false,
           keep_classnames: true,
           keep_fnames: true,
           output: {
-            beautify: true,
+            beautify: false, //true,
             indent_level: 2,
           },
         },
       }),
     ],
+    // splitChunks: {
+    //   chunks: 'all', // Splits common dependencies into separate files
+    // },
   },
   module: {
     rules: [

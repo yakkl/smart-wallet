@@ -10,7 +10,7 @@
   import { setDefinedProperty } from '$lib/common/gets';
   import { Dropdown, DropdownItem, Button, Helper } from 'flowbite-svelte';
   // import * as Icon from 'flowbite-svelte-icons';
-  import ChevronDoubleUpOutline from '$lib/components/ChevronDoubleUpOutline.svelte';
+  // import ChevronDoubleUpOutline from '$lib/components/ChevronDoubleUpOutline.svelte.tmp';
   import Back from '$lib/components/Back.svelte';
   import type { YakklContact, YakklCurrentlySelected } from '$lib/common';
   import WalletManager from '$lib/plugins/WalletManager';
@@ -234,7 +234,7 @@
   <hr class="mb-0.5 mt-0.5" />
 
   <div class="justify-center mb-4 mt-2">
-    <Button>Contact List<ChevronDoubleUpOutline name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button>
+    <Button>Contact List </Button><!--<ChevronDoubleUpOutline name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button> -->
     <Dropdown class="overflow-y-auto px-3 pb-3 text-sm h-44" bind:open={dropdownOpen}>
       <div slot="header" class="p-3">
         Contact List

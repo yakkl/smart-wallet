@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
+import { log } from "$lib/plugins/Logger";
 
 
 export class AlchemyPriceProvider implements PriceProvider {
   getAPIKey(): string {
-    return import.meta.env.VITE_ALCHEMY_API_KEY_PROD;  
+    return import.meta.env.VITE_ALCHEMY_API_KEY_PROD;
   }
 
   getName() {
     return 'Alchemy';
   }
 
-  // pair - 'ETH' or generic 'ETH-USD'. If generic then use up to first '-' and ignore the rest. 
+  // pair - 'ETH' or generic 'ETH-USD'. If generic then use up to first '-' and ignore the rest.
   async getMarketPrice( pair: string ): Promise<MarketPriceData> {
     try {
       // Kept variable name as pair for consistency with other providers
@@ -28,8 +29,8 @@ export class AlchemyPriceProvider implements PriceProvider {
           'Accept': 'application/json',
           'Authorization': `Bearer ${ this.getAPIKey() }`
         }
-      } ); 
-      
+      } );
+
       if ( !json.data || json.data.length <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
       }
@@ -43,7 +44,7 @@ export class AlchemyPriceProvider implements PriceProvider {
       };
     }
     catch ( e: any ) {
-      console.log( 'AlchemyPriceProvider - getPrice - error', e );
+      log.error( 'AlchemyPriceProvider - getPrice - error', e );
 
       let status = 404;  // Default status
       let message = `Error - ${ e }`;

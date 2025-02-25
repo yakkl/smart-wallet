@@ -1,103 +1,58 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
-/* eslint-disable no-debugger */
-
 export const prerender = true;
 
-// import { yakklSettingsStore } from "$lib/common/stores";
-import { browserSvelte } from '$lib/utilities/browserSvelte';
-// import { getObjectFromLocalStorage, setObjectInLocalStorage } from "$lib/common/storage";
-import { setIconLock } from '$lib/utilities/utilities.js';
-import { YAKKL_INTERNAL } from "$lib/common/constants";
-import { wait } from "$lib/common/utils";
-// import type { Settings } from '$lib/common/interfaces';
+import { browserSvelte, browser_ext } from '$lib/common/environment';
+import { YAKKL_INTERNAL } from '$lib/common/constants';
+import { wait } from '$lib/common/utils';
+import type { Runtime } from 'webextension-polyfill';
+import { handleLockDown } from '$lib/common/handlers';
+import { log } from '$plugins/Logger';
 
-import type { Browser, Runtime } from 'webextension-polyfill';
-import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-import type { Settings } from '$lib/common/interfaces';
-import { getObjectFromLocalStorage, setObjectInLocalStorage } from '$lib/common/storage';
-import { dateString } from '$lib/common/datetime';
-// import { dateString } from '$lib/common/datetime';
+let port: Runtime.Port | undefined;
 
-let browser_ext: Browser;
-if (browserSvelte) {
-  browser_ext = getBrowserExt();
+async function connectPort(): Promise<boolean> {
+  if (!browser_ext) return false;
+
+  try {
+    port = browser_ext.runtime.connect({ name: YAKKL_INTERNAL });
+
+    if (port) {
+      port.onDisconnect.addListener(async (event) => {
+        handleLockDown();
+        port = undefined;
+        if (event?.error) {
+          log.error('Port disconnect:', event.error?.message);
+        }
+      });
+      return true;
+    }
+  } catch (error) {
+    log.error('Port connection failed:', error);
+  }
+  return false;
 }
 
-type RuntimePort = Runtime.Port;
-let port: RuntimePort | undefined = undefined;
-
 async function initializeExtension() {
+  if (!browserSvelte) return;
+
   try {
-    if (browserSvelte) {
-      port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
-      if (port) {
-        port.onDisconnect.addListener(async (event: any) => {
-          await setIconLock();
-          const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-          if (yakklSettings) {
-            yakklSettings.isLocked = true;
-            yakklSettings.isLockedHow = 'port_disconnect';
-            yakklSettings.updateDate = dateString();
-            await setObjectInLocalStorage('settings', yakklSettings);
-          }
-          port = undefined;
-          if (event?.error) {
-            console.log(event.error?.message);
-          }
-        });
-      } else {
-        console.log('Port is trying again 1 second...');
-        wait(1000).then();
-        port = browser_ext.runtime.connect({name: YAKKL_INTERNAL}); // Can look at being more efficient later here!
-        if (port) {
-          port.onDisconnect.addListener(async (event: any) => {
-            await setIconLock();
-            const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-            if (yakklSettings) {
-              yakklSettings.isLocked = true;
-              yakklSettings.isLockedHow = 'port_disconnect';
-              yakklSettings.updateDate = dateString();
-              await setObjectInLocalStorage('settings', yakklSettings);
-            }
-            port = undefined;
-            if (event?.error) {
-              console.log(event.error?.message);
-            }
-          });
-        } else {
-          console.log('Internal port was unable to connect and is exiting...');
-          browser_ext.runtime.reload(); // This is here to try and fix the issue of the port not connecting
-        }
-      }
+    let connected = await connectPort();
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      // window.addEventListener('beforeunload', async function () {
-      //   try {
-      //     if (port) {
-      //       port.postMessage('close');
-      //       port.disconnect();
-      //     }
-      //     setIconLock();
+    log.info('ROOT: (route) +layout.ts - Port connected:', connected);
 
-      //     const yakklSettings: Settings | null | string = await getObjectFromLocalStorage("settings") as Settings;
-      //     yakklSettings.isLocked = true;
-      //     yakklSettings.isLockedHow = 'window_exit';
-      //     yakklSettings.updateDate = dateString();
-      //     yakklSettingsStore.set(yakklSettings);
-      //     await setObjectInLocalStorage('settings', yakklSettings);
-
-      //   } catch (e) {
-      //     console.log(e);
-      //   } finally {
-      //     setIconLock();
-      //   }
-      // });
+    if (!connected) {
+      log.info('Port connection failed, retrying in 1 second...');
+      await wait(1000);
+      connected = await connectPort();
     }
-  } catch(e) {
-    console.log(e);
+
+    if (!connected) {
+      log.info('Internal port was unable to connect, reloading...');
+      browser_ext?.runtime.reload();
+    }
+  } catch (error) {
+    log.error('Extension initialization failed:', error);
   }
 }
 
-if (browserSvelte) initializeExtension();
+initializeExtension();
+

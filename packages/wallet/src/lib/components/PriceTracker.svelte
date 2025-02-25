@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { writable } from 'svelte/store';
-  import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
+  import type { PriceProvider } from '$lib/common/interfaces';
   import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
+	import { timerManager } from '$lib/plugins/TimerManager';
+	import { priceStore } from '$lib/common/stores';
+  import { log } from "$plugins/Logger";
 
   interface Props {
     symbol: string; // In a swap this would be the fromToken
@@ -15,49 +17,54 @@
   let {
     symbol,
     currency,
-    providers = $bindable([new CoinbasePriceProvider()]),
+    providers = $bindable([new CoinbasePriceProvider()]),  // Defaults to Coinbase but the passed in providers should have priority with more than one
     updateInterval = 10000,
     children
   }: Props = $props();
 
-  const priceStore = writable<MarketPriceData | null>(null);
-  let interval: NodeJS.Timeout;
+  // priceStore is passed to the children layout below - export is not needed but adding it for clarity and possible clean up
+  // export const priceStore = writable<MarketPriceData | null>(null);
+  // let interval: NodeJS.Timeout;
 
   async function updatePrice() {
     try {
       for (const provider of providers) {
         try {
-            const priceData = await provider.getMarketPrice(`${symbol}-${currency}`);
-            if (priceData === null) {
-              console.log(`PriceTracker failed to fetch price from ${provider.getName()}: ${symbol}-${currency}`);
-              continue;
-            }
-            priceStore.set(priceData);
+          const priceData = await provider.getMarketPrice(`${symbol}-${currency}`);
+          if (priceData === null) {
+            log.info(`PriceTracker - fetched no price from ${provider.getName()}: ${symbol}-${currency}`);
+            continue;
+          }
+          priceStore.set(priceData);
           break;
         } catch (error) {
-          console.log(`Error fetching price from ${provider.getName()}:`, error);
+          log.error(`Error fetching price from ${provider.getName()}:`, error);
         }
       }
     } catch (error) {
-      console.log('PriceTracker:', error);
+      log.error('PriceTracker:', error);
     }
   }
 
   onMount(() => {
     try {
       if (providers.length === 0) {
-        providers = [new CoinbasePriceProvider()];
+        providers = [new CoinbasePriceProvider()]; // Fallback to Coinbase if no providers are passed
       }
 
       updatePrice();
-      interval = setInterval(updatePrice, updateInterval);
+      // Add and start timer
+      timerManager.addTimer("priceTracker_updatePrice", updatePrice, updateInterval);
+      timerManager.startTimer("priceTracker_updatePrice");
+
     } catch (error) {
-      console.log('PriceTracker:', error);
+      log.error(error);
     }
   });
 
   onDestroy(() => {
-    clearInterval(interval);
+    timerManager.stopTimer("priceTracker_updatePrice");
+    priceStore.set(null);
   });
 </script>
 

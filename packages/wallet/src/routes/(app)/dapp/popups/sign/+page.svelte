@@ -1,9 +1,9 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
-  import { getYakklCurrentlySelected, yakklDappConnectRequestStore, getYakklAccounts, getMiscStore, getDappConnectRequestStore, setDappConnectRequestStore } from '$lib/common/stores';
-  import { isEncryptedData, type AccountData, type TypedDataDomain, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
+  import { getYakklCurrentlySelected, getYakklAccounts, getMiscStore, getDappConnectRequestStore, setDappConnectRequestStore } from '$lib/common/stores';
+  import { isEncryptedData, type AccountData, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
   import { YAKKL_DAPP } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
   import { wait } from '$lib/common/utils';
@@ -11,6 +11,7 @@
   import { Spinner } from 'flowbite-svelte';
   import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
+  import { log } from '$plugins/Logger';
 
   let wallet: Wallet;
 
@@ -75,7 +76,7 @@
         currentlySelected = await getYakklCurrentlySelected();
         yakklMiscStore = getMiscStore();
         yakklDappConnectRequest = getDappConnectRequestStore(); // Not required any longer but keep for now
-        yakklDappConnectRequest = requestId = $page.url.searchParams.get('requestId') as string;
+        yakklDappConnectRequest = requestId = page.url.searchParams.get('requestId') as string;
         setDappConnectRequestStore(yakklDappConnectRequest);
         chainId = currentlySelected.shortcuts.chainId as number;
 
@@ -129,7 +130,7 @@
           port.postMessage({method: 'get_params', id: requestId}); // request is not currently used but we may want to later
       }
     } catch(e) {
-      console.log(e);
+      log.error(e);
     }
   });
 
@@ -151,7 +152,7 @@ async function handleReject() {
     showSuccess = false;
     await bail();
   } catch(e) {
-    console.log(e);
+    log.error(e);
   }
 }
 
@@ -164,7 +165,7 @@ async function bail() {
       port = undefined;
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   } finally {
     if (browserSvelte) {
       if (port) {
@@ -220,7 +221,7 @@ async function handleApprove() {
     showSuccess = false; //true;
     handleClose();
   } catch(e) {
-    console.log(e);
+    log.error(e);
     errorValue = e as string;
     showFailure = true;
   }
@@ -290,7 +291,7 @@ async function handleClose() {
       // }
     }
   } catch(e) {
-    console.log(e);
+    log.error(e);
   } finally {
     await close();
   }

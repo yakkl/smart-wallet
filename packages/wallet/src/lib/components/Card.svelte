@@ -1,29 +1,15 @@
 <script lang="ts">
   // Import statements
   import { goto } from '$app/navigation';
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { createForm } from "svelte-forms-lib";
-  // import * as yup from 'yup';
   import { SpeedDial, SpeedDialButton } from 'flowbite-svelte';
-  import {
-    yakklPricingStore,
-    getYakklPrimaryAccounts, setYakklCurrentlySelectedStorage,
-    getYakklCurrentlySelected, getMiscStore,
-    yakklCurrentlySelectedStore, yakklAccountsStore,
-		yakklCombinedTokenStore,
-		yakklTokenDataStore,
-		yakklTokenDataCustomStore
-  } from '$lib/common/stores';
-  import {YAKKL_ZERO_ADDRESS, PATH_LOGOUT, PATH_LOCK } from '$lib/common/constants';
-  import ClipboardJS from 'clipboard';
-  // import QR from '$lib/components/QR.svelte';
+  import { yakklPricingStore, setYakklCurrentlySelectedStorage, getYakklCurrentlySelected, getMiscStore, yakklCurrentlySelectedStore, yakklAccountsStore, yakklCombinedTokenStore } from '$lib/common/stores';
+  import { PATH_LOGOUT } from '$lib/common/constants';
   import { onDestroy, onMount } from 'svelte';
   import { truncate, timeoutClipboard } from "$lib/utilities/utilities";
   import { encryptData, decryptData } from '$lib/common/encryption';
-  import { startCheckPrices, stopCheckPrices } from '$lib/tokens/prices';
+  import { checkPricesCallback, startPricingChecks, stopCheckPrices } from '$lib/tokens/prices';
   import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
-  import { NetworkType, debug_log, getInstances, isEncryptedData,
-    type CurrentlySelectedData, type Network, type TokenData, type YakklAccount, type YakklCurrentlySelected } from '$lib/common';
+  import { NetworkType, getInstances, isEncryptedData, type CurrentlySelectedData, type Network, type TokenData, type YakklAccount } from '$lib/common';
   import type { BigNumberish } from '$lib/common/bignumber';
   import { Toast } from 'flowbite-svelte';
   import { slide } from 'svelte/transition';
@@ -39,12 +25,17 @@
 	import type { Provider } from '$lib/plugins/Provider';
 	import EyeIcon from './icons/EyeIcon.svelte';
 	import ProtectedValue from './ProtectedValue.svelte';
-	import { PriceManager } from '$lib/plugins/PriceManager';
-	import { createPriceUpdater } from '$lib/common/createPriceUpdater';
-	import { tokenManager } from '$lib/common/stores/tokenManager';
-	import { get } from 'svelte/store';
 	import { tokenTotals } from '$lib/common/stores/tokenTotals';
-	import { isEqual } from 'lodash-es';
+  import { browserSvelte, browser_ext } from '$lib/common/environment';
+	import { handleOnMessageForPricing } from '$lib/common/listeners/ui/uiListeners';
+  import { log } from "$plugins/Logger";
+
+  // import { PriceManager } from '$lib/plugins/PriceManager';
+	// import { createPriceUpdater } from '$lib/common/createPriceUpdater';
+	// import { tokenManager } from '$lib/common/stores/tokenManager';
+	// import { get } from 'svelte/store';
+	// import { isEqual } from 'lodash-es';
+	// import type { Runtime } from 'webextension-polyfill';
 
   interface Props {
     id?: string;
@@ -95,34 +86,31 @@
   // let serialNumber = $state('');
   // let promoCode = 'BETA';
   // let step1 = $state(false);
+  // let checkPricesProvider: string = 'coinbase';
+  // let checkPricesInterval: number = 10; // Seconds
 
   let price: number = 0;
   let prevPrice: number = 0;
   let direction: string = $state('fl');
   let showTestNetworks = true;
-  // let yakklSettings: Settings;
-  let checkPricesProvider: string = 'coinbase';
-  let checkPricesInterval: number = 10; // Seconds
   let error = $state(false);
   let errorValue: string = $state();
   let assetPriceValue: BigNumberish = $state(0n);
   let assetPrice: string = $state('');
   let card = 'ethereum-background.png';
-  let clipboard: ClipboardJS;
 
   let yakklMiscStore: string = getMiscStore();
   let symbolLabel: string = $state();
   let currencyLabel: string = $state();
   let currency: Intl.NumberFormat = $state();
-  let shortcutsValue: EthereumBigNumber = $state(EthereumBigNumber.from(0));
+  let shortcutsValue: EthereumBigNumber = $state(EthereumBigNumber.from(0)); // .value is the amount of a given token the address holds
   let chainId: number = $state(1);
   let formattedEtherValue: string = $state();
-  let currentlySelected: YakklCurrentlySelected = $state();
   let isDropdownOpen = $state(false);
 
-  let priceManager = new PriceManager();
-  let priceUpdater = createPriceUpdater(priceManager, 30000);
+  // let priceUpdater = createPriceUpdater(new PriceManager(), 30000);
   let tokens: TokenData[] = [];
+  // let effectTimeout: NodeJS.Timeout;
 
   //////// Toast
   let toastStatus = $state(false);
@@ -136,101 +124,83 @@
     toastMessage = msg;
     timeout();
   }
+  //////// Toast
 
   function timeout(): NodeJS.Timeout | void {
     if (--toastCounter > 0) return setTimeout(timeout, 1000);
     toastStatus = false;
   }
 
-  // $effect(() => {
-  //   try {
-  //     currentlySelected = $yakklCurrentlySelectedStore;
-  //     assetPriceValue = $yakklPricingStore?.price ?? 0n;
-  //     chainId = currentlySelected.shortcuts.network.chainId ?? 1;
-  //     networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
-  //     shortcutsValue = EthereumBigNumber.from(currentlySelected.shortcuts.value ?? 0n);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // });
+  $effect(() => {
+    (async () => {
+      if ($yakklPricingStore) {
+        // if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
+        //   return; // No change
+        // }
+        price = $yakklPricingStore.price ?? 0;
+        const prevPrice = $yakklPricingStore.prevPrice ?? 0;
+        if (price) {
 
-  // const totalTokenValue = derived(yakklCombinedTokenStore, (tokens) =>
-  //   tokens.reduce((sum, token) => sum + (token.value ?? 0), 0)
-  // );
+          // log.debug('Card.svelte - price, prevPrice:', price, prevPrice);
+
+          if (price !== prevPrice) {
+            await updateValuePriceFiat();
+            await updateWithCurrentlySelected();
+          }
+        }
+      }
+    })();
+  });
 
   $effect(() => {
     if (assetPriceValue) {
-      assetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
-    }
-  });
-
-  $effect(()=> {
-      startPricingChecks(); // Here because of different accounts with different values
-      updateValuePriceFiat();
-  });
-
-  $effect(() => {
-    try {
-      let selected = $yakklCurrentlySelectedStore;
-      if (!selected || selected.shortcuts.value === 0n) {
-        console.log("Reactive trigger skipped for zero or undefined value.");
-        return;
+      const newAssetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
+      if (assetPrice !== newAssetPrice) {
+        // log.debug('Card.svelte - assetPrice, newAssetPrice - changed:', assetPrice, newAssetPrice);
+        assetPrice = newAssetPrice; // Only update if the value changes
+      } else {
+        // log.debug('Card.svelte - assetPrice, newAssetPrice - no change:', assetPrice, newAssetPrice);
       }
-
-      updateCurrentlySelected(selected);
-    } catch (error) {
-      console.log("Reactive block error:", error);
     }
   });
 
-  // Using $effect for setup and cleanup
+  // $effect(()=> {
+  //   clearTimeout(effectTimeout);
+  //     effectTimeout = setTimeout(() => {
+  //     startPricingChecks(); // Here because of different accounts with different values
+  //     (async () => {
+  //       await updateValuePriceFiat();
+  //       await updateWithCurrentlySelected();
+  //     })();
+  //   }, 200); // 200ms delay
+  // });
+
   $effect.root(() => {
-    const unsubscribeTokenManager = tokenManager.subscribe((allTokens = []) => {
-      // Only update if the tokens have actually changed
-      if (!isEqual(tokens, allTokens)) {
-        tokens = allTokens;
-        if (tokens.length > 0) {
-          priceUpdater.fetchPrices(tokens).catch(console.error);
-        }
-      }
-    });
+    // log.debug('<=========================== Card.svelte - $effect.root =================================>');
 
-    const unsubscribePriceUpdater = priceUpdater.subscribe((updatedTokens = []) => {
-      // Only update if the values have actually changed
-      const currentTokens = get(yakklCombinedTokenStore);
-      if (!isEqual(currentTokens, updatedTokens)) {
-        tokens = updatedTokens;
-        yakklCombinedTokenStore.set(updatedTokens);
-      }
+    // Subscribe to token store updates
+    const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
+      tokens = updatedTokens;
+      // log.debug('Card.svelte - updated token prices:', tokens); // JSON.stringify(tokens, null, 2));
     });
 
     return () => {
-      unsubscribeTokenManager();
-      unsubscribePriceUpdater();
-      priceUpdater.destroy();
+      unsubscribeYakklStore();
     };
   });
-
-  async function updateCurrentlySelected(currentlySelected: YakklCurrentlySelected) {
-    const { address, accountName, network, value } = currentlySelected.shortcuts;
-
-    addressShow = truncate(address, 6) + address.substring(address.length - 4);
-    name = accountName;
-    nameShow = truncate(accountName, 20);
-    networkLabel = currentlySelected.shortcuts.network.name ?? network.name;
-    assetPriceValue = $yakklPricingStore?.price ?? 0n;
-
-    currencyLabel = currentlySelected.preferences.currency.code ?? "USD";
-
-    // TODO: Need to reflect balance changes immediately without impacting reactivity depth! This is an eventual consistency issue.
-
-    shortcutsValue = EthereumBigNumber.from(value) ?? EthereumBigNumber.from(0);
-    chainId = network?.chainId ?? 1;
-  }
 
   onMount(async () => {
     try {
       if (browserSvelte) {
+        try {
+          if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForPricing)) {
+            browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
+            browser_ext.runtime.onMessage.addListener(handleOnMessageForPricing);
+          }
+        } catch (error) {
+          log.error('Card - onMount - onMessage error. Continuing',error);
+        }
+
         startPricingChecks();
 
         toastStatus = false;
@@ -238,9 +208,8 @@
         if (!yakklMiscStore) yakklMiscStore = getMiscStore();
 
         if ($yakklCurrentlySelectedStore) {
-          currentlySelected = $yakklCurrentlySelectedStore;
+          const currentlySelected = $yakklCurrentlySelectedStore;
           currentlySelected.shortcuts.networks = networks;
-          yakklCurrentlySelectedStore.set(currentlySelected);
 
           currencyLabel = currentlySelected.preferences.currency.code ?? 'USD';
           currency = new Intl.NumberFormat('en-US', { style: "currency", currency: currencyLabel });
@@ -259,131 +228,72 @@
             }
           }
 
+          // These are for the initial load and the intervals take over after this
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
-          $yakklCurrentlySelectedStore.shortcuts.value = val ?? 0n;
-          // updateValuePriceFiat(); // this is async so let it update whenever it can
+          currentlySelected.shortcuts.value = val ?? 0n;
+          checkPricesCallback(); // Simple onetime price update for initial load
 
-          clipboard = new ClipboardJS('.clip');
-          if ($yakklCurrentlySelectedStore.shortcuts.value) updateValuePriceFiat();
-
+          await setYakklCurrentlySelectedStorage(currentlySelected); // This updates the store and local storage
+          if ($yakklCurrentlySelectedStore.shortcuts.value) await updateValuePriceFiat();
           // updateUpgradeButton();
         }
       }
     } catch (e) {
-      console.log(`onMount: ${e}`);
+      log.error(`onMount: ${e}`);
     }
   });
 
-  async function startPricingChecks() {
-    // Keep checking the prices
-    await startCheckPrices(checkPricesProvider, checkPricesInterval);
+  // // Message handler for starting and stopping price checks. This is primarily sent by active, idle, locked states.
+  // export async function handleOnMessageForPricing(
+  //   message: any,
+  //   sender: Runtime.MessageSender,
+  //   sendResponse: (response?: any) => void
+  // ): Promise<boolean | void>  {
+  //   try {
+  //     switch(message.type) {
+  //       case 'startPricingChecks': {
+  //         startPricingChecks();
+  //         sendResponse({ success: true, message: 'Price checks initiated.' });
+  //         return true;  // return type - asynchronous
+  //       }
+  //       case 'stopPricingChecks': {
+  //         stopCheckPrices();
+  //         sendResponse({ success: true, message: 'Stop price checks initiated.' });
+  //         return true;  // return type - asynchronous
+  //       }
+  //     }
+  //   } catch (e: any) {
+  //     log.error('Error handling message:', e);
+  //     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
+  //     return true; // Indicate asynchronous response
+  //   }
+  // }
+
+  async function updateWithCurrentlySelected() {
+    try {
+      const { address, accountName, network, value } = $yakklCurrentlySelectedStore.shortcuts;
+
+      addressShow = truncate(address, 6) + address.substring(address.length - 4);
+      name = accountName;
+      nameShow = truncate(accountName, 20);
+      networkLabel = $yakklCurrentlySelectedStore.shortcuts.network.name ?? network.name;
+      assetPriceValue = $yakklPricingStore?.price ?? 0;
+      currencyLabel = $yakklCurrentlySelectedStore.preferences.currency.code ?? "USD";
+
+      shortcutsValue = EthereumBigNumber.from(value) ?? EthereumBigNumber.from(0); // .value is the amount of a given token the address holds
+      chainId = network?.chainId ?? 1;
+    } catch (e) {
+      log.error(e);
+    }
   }
 
   onDestroy(async () => {
+    // browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing); // No need to check if it exists
     if ($yakklCurrentlySelectedStore) {
-      currentlySelected = $yakklCurrentlySelectedStore;
-      if (currentlySelected) {
-        await setYakklCurrentlySelectedStorage(currentlySelected);
-      }
+      await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
     }
     stopCheckPrices();
   });
-
-  // function updateUpgradeButton() {
-  //   if (checkUpgrade()) {
-  //     if (browserSvelte) {
-  //       const upgradeButton = document.getElementById('upgrade');
-  //       if (upgradeButton) {
-  //         upgradeButton.style.display = 'none';
-  //       }
-  //     }
-  //   }
-  // }
-
-  // async function updateValuePriceFiat(): Promise<void> {
-  //   try {
-  //     if ($yakklCurrentlySelectedStore?.shortcuts.address === YAKKL_ZERO_ADDRESS) {
-  //       if ($yakklCurrentlySelectedStore) {
-  //         let updatedCurrentlySelected: YakklCurrentlySelected = {
-  //           ...$yakklCurrentlySelectedStore,
-  //           shortcuts: {
-  //             ...$yakklCurrentlySelectedStore.shortcuts,
-  //             value: EthereumBigNumber.from(0),
-  //           },
-  //           preferences: $yakklCurrentlySelectedStore.preferences,
-  //           data: $yakklCurrentlySelectedStore.data,
-  //         };
-
-  //         // Set the modified copy back to the store
-  //         yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-  //         await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
-  //       }
-  //       return;
-  //     }
-
-  //     if (!$yakklCurrentlySelectedStore?.shortcuts.value || $yakklCurrentlySelectedStore.shortcuts.value === EthereumBigNumber.from(0)) {
-  //       if ($yakklCurrentlySelectedStore) {
-  //         let updatedCurrentlySelected: YakklCurrentlySelected = {
-  //           ...$yakklCurrentlySelectedStore,
-  //           shortcuts: {
-  //             ...$yakklCurrentlySelectedStore.shortcuts,
-  //             value: EthereumBigNumber.from(0),
-  //           },
-  //           preferences: $yakklCurrentlySelectedStore.preferences,
-  //           data: $yakklCurrentlySelectedStore.data,
-  //         };
-
-  //         // Set the modified copy back to the store
-  //         yakklCurrentlySelectedStore.set(updatedCurrentlySelected);
-  //         await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
-  //       }
-  //       return;
-  //     }
-
-  //     currentlySelected = $yakklCurrentlySelectedStore;
-
-  //     if (currentlySelected.shortcuts.address) {
-  //       startPricingChecks(); // Start the price checks if not already started else it will just return
-  //       if (!$yakklPricingStore?.price) {
-  //         checkPricesCB(); // Checks the price if anything changed. The normal price checking is done in the background
-  //       }
-
-  //       // Convert the value to EthereumBigNumber
-  //       // Convert from Wei to Ether and get string representation
-  //       const etherValueString = formatEther(currentlySelected.shortcuts.value);
-  //       if ($yakklPricingStore && $yakklPricingStore.price) {
-  //         price = $yakklPricingStore.price;
-  //       } else {
-  //         price = 0;
-  //       }
-
-  //       if (prevPrice > price) {
-  //         direction = 'dn';
-  //       } else if (prevPrice < price) {
-  //         direction = 'up';
-  //       } else {
-  //         direction = 'fl'; // flat
-  //       }
-
-  //       prevPrice = price;
-
-  //       const etherValue = parseFloat(etherValueString);
-  //       if (!isNaN(etherValue)) {
-  //         valueFiat = currency ? currency.format(etherValue * price) : '0.00';
-  //         // Format Ether value to display up to 5 decimal places
-  //         formattedEtherValue = etherValue.toFixed(5);
-  //       } else {
-  //         valueFiat = '0.00';
-  //       }
-  //     } else {
-  //       valueFiat = '0.00';
-  //       stopCheckPrices();
-  //     }
-  //   } catch (e) {
-  //     console.log(`updateValuePriceFiat: ${e}`);
-  //   }
-  //   updateCurrentlySelected();
-  // }
 
   function toggleDropdown() {
     isDropdownOpen = !isDropdownOpen;
@@ -391,49 +301,70 @@
 
   async function updateValuePriceFiat(): Promise<void> {
     try {
-      const currentlySelected = $yakklCurrentlySelectedStore;
-
-      if (!currentlySelected) {
-        console.log("No currently selected account.");
+      if (!$yakklCurrentlySelectedStore) {
+        log.info("No currently selected account.");
         resetPriceData();
         return;
       }
 
-      const { address, value, network } = currentlySelected.shortcuts;
+      let { address, value, network } = $yakklCurrentlySelectedStore.shortcuts;
 
-      // If the address is the zero address or balance is zero
-      if (address === YAKKL_ZERO_ADDRESS || !value || value === 0n) {
-        setDefaultsForZeroAddress();
-        return;
+      // Avoid unnecessary balance fetch
+      const val = await getBalance(network.chainId, address);
+      if ($yakklCurrentlySelectedStore.shortcuts.value !== val) {
+        // This will force a reactivity update
+        yakklCurrentlySelectedStore.update((current) => ({
+          ...current,
+          shortcuts: { ...current.shortcuts, value: val ?? 0n },
+        }));
       }
 
-      // Calculate fiat and ether values
-      const etherValue = parseFloat(formatEther(value));
-      if (!isNaN(etherValue) && $yakklPricingStore?.price) {
-        const fiatValue = etherValue * $yakklPricingStore.price;
+      // Update fiat and ether values only if necessary
+      const price = EthereumBigNumber.from($yakklPricingStore?.price ?? 0);
+      if ($yakklCurrentlySelectedStore.shortcuts.value !== price) {
+        const etherValue = parseFloat(formatEther($yakklCurrentlySelectedStore.shortcuts.value ?? 0n));
+        if (!isNaN(etherValue) && $yakklPricingStore?.price) {
+          const fiatValue = etherValue * $yakklPricingStore.price;
+          const etherValueString = etherValue.toFixed(5);
 
-        formattedEtherValue = etherValue.toFixed(5);
-        valueFiat = currency ? currency.format(fiatValue) : "0.00";
+          if (formattedEtherValue !== etherValueString) {
+            formattedEtherValue = etherValueString;
+          }
 
-        updatePriceDirection($yakklPricingStore.price);
+          const newFiatValue = currency ? currency.format(fiatValue) : "0.00";
+
+          if (valueFiat !== newFiatValue) {
+            valueFiat = newFiatValue;
+          }
+
+          updatePriceDirection($yakklPricingStore.price);
+
+          // log.info("updateValuePriceFiat - Value updated.");
+        } else {
+          resetPriceData();
+        }
       } else {
-        resetPriceData();
+        log.info("updateValuePriceFiat - Value NOT updated.");
       }
     } catch (error) {
-      console.log("Error in updateValuePriceFiat:", error);
+      log.error("Error in updateValuePriceFiat:", error);
       resetPriceData();
     }
   }
 
   function setDefaultsForZeroAddress() {
-    yakklCurrentlySelectedStore.update((current) => ({
-      ...current,
-      shortcuts: { ...current.shortcuts, value: EthereumBigNumber.from(0) },
-    }));
-
-    valueFiat = "0.00";
-    formattedEtherValue = "0.00000";
-    direction = "fl"; // flat
+    try {
+      // Dont want to trigger reactivity if the value is zero unless the previous value was something other than 0
+      if (yakklCurrentlySelectedStore && ($yakklCurrentlySelectedStore.shortcuts?.value !== 0n)) {
+        yakklCurrentlySelectedStore.update((current) => ({
+          ...current,
+          shortcuts: { ...current.shortcuts, value: EthereumBigNumber.from(0) },
+        }));
+      }
+      resetPriceData();
+    } catch (e) {
+      log.error(e);
+    }
   }
 
   function updatePriceDirection(newPrice: number) {
@@ -453,33 +384,14 @@
     direction = "fl"; // flat
   }
 
-  // function updateCurrentlySelected() {
-  //   try {
-  //     if ($yakklCurrentlySelectedStore) {
-  //       address = $yakklCurrentlySelectedStore.shortcuts.address;
-  //       addressShow = truncate($yakklCurrentlySelectedStore.shortcuts.address, 6) + address.substring(address.length - 4);
-  //       name = $yakklCurrentlySelectedStore.shortcuts.accountName;
-  //       currencyLabel = $yakklCurrentlySelectedStore.preferences.currency.code ?? 'USD';
-
-  //       if (address === YAKKL_ZERO_ADDRESS) {
-  //         nameShow = '0x0000...0000';
-  //       } else {
-  //         nameShow = truncate(name, 20);
-  //       }
-  //     }
-  //   } catch (e) {
-  //     console.log(`updateCurrentlySelected: ${e}`);
-  //   }
-  // }
-
   async function handleAccounts(account: YakklAccount): Promise<void> {
     try {
       if (!account) {
-        console.log("Account is not defined.");
+        log.warn("Account is not defined.");
         return;
       }
 
-      let updatedCurrentlySelected = $yakklCurrentlySelectedStore;
+      let updatedCurrentlySelected = $yakklCurrentlySelectedStore; // Could just use $yakklCurrentlySelectedStore directly since the assignment is not reactive and only a reference
 
       if (updatedCurrentlySelected && isEncryptedData(updatedCurrentlySelected.data)) {
         updatedCurrentlySelected.data = (await decryptData(updatedCurrentlySelected.data, yakklMiscStore)) as CurrentlySelectedData;
@@ -506,170 +418,24 @@
         ),
       };
 
-      await setYakklCurrentlySelectedStorage(updatedCurrentlySelected);
+      // if (isEqual(updatedCurrentlySelected, $yakklCurrentlySelectedStore)) {
+      //   debug_log("[INFO]: Currently selected count has not changed.");
+      //   return;
+      // }
+
+      await setYakklCurrentlySelectedStorage(updatedCurrentlySelected); // This will force a reactive update due to store update in function
 
       // Update price and UI
-      updateValuePriceFiat();
+      await updateWithCurrentlySelected();
+      await updateValuePriceFiat();
       if (wallet && provider && blockchain && tokenService) {
-        tokenService.updateTokenBalances(updatedCurrentlySelected.shortcuts.address);
+        await tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
       }
+
+      // log.info("Currently selected account updated.");
     } catch (error) {
-      console.log("Error in handleAccounts:", error);
+      log.error("Error in handleAccounts:", error);
       showAccountsModal = false;
-    }
-  }
-
-  // async function getUserName(email: string) {
-  //   try {
-  //     if ($yakklUserNameStore) {
-  //       userName = $yakklUserNameStore;
-  //       return $yakklUserNameStore;
-  //     }
-
-  //     if (!yakklMiscStore) {
-  //       return undefined;
-  //     }
-
-  //     getProfile().then(async result => {
-  //       let profile = result as Profile;
-
-  //       if (isEncryptedData(profile.data)) {
-  //         await decryptData(profile.data, yakklMiscStore).then(async (result) => {
-  //           profile.data = result as ProfileData;
-  //           userName = profile.userName;
-  //           yakklUserNameStore.set(userName);
-  //         });
-  //       } else {
-  //         userName = profile.userName;
-  //         yakklUserNameStore.set(userName);
-  //       }
-
-  //       (profile.data as ProfileData).email = email;
-  //       await encryptData(profile.data, yakklMiscStore).then(async (result) => {
-  //         profile.data = result;
-  //         await setProfileStorage(profile);
-  //       });
-  //     });
-  //   } catch (e) {
-  //     console.log(`getUserName: ${e}`);
-  //     return undefined;
-  //   }
-  // }
-
-  // async function getRegistrationKey(email: string): Promise<string | undefined> {
-  //   try {
-  //     if (!yakklMiscStore) {
-  //       return Promise.reject(undefined);
-  //     }
-
-  //     const profile = await getProfile();
-  //     if (profile) {
-  //       if (isEncryptedData(profile.data)) {
-  //         await decryptData(profile.data, yakklMiscStore).then(async (result) => {
-  //           profile.data = result as ProfileData;
-
-  //           let key = profile.data?.registered?.key;
-  //           let regType = profile.data?.registered?.type;
-
-  //           if (profile.data.email !== email) {
-  //             profile.data.email = email;
-  //             await encryptData(profile.data, yakklMiscStore).then(data => {
-  //               profile.data = data;
-  //             });
-
-  //             await setProfileStorage(profile);
-  //           }
-
-  //           if (key && regType !== RegistrationType.STANDARD) {
-  //             return Promise.resolve(key);
-  //           } else {
-  //             return Promise.reject(undefined);
-  //           }
-  //         });
-  //       }
-  //     } else {
-  //       return Promise.reject(undefined);
-  //     }
-  //   } catch (e) {
-  //     console.log(`getRegistrationKey: ${e}`);
-  //     throw e;
-  //   }
-  //   return Promise.reject(undefined);
-  // }
-
-  // async function handleAccounts(account: YakklAccount) {
-  //   try {
-  //     if (!account) {
-  //       console.log('Account is not defined.');
-  //       return;
-  //     }
-
-  //     if ($yakklCurrentlySelectedStore) currentlySelected = $yakklCurrentlySelectedStore;
-
-  //     if (currentlySelected && isEncryptedData(currentlySelected.data)) {
-  //       const decryptedData = await decryptData(currentlySelected.data, yakklMiscStore);
-  //       currentlySelected.data = decryptedData as CurrentlySelectedData;
-  //     }
-
-  //     if (currentlySelected) {
-  //       currentlySelected.shortcuts.accountType = account.accountType;
-  //       currentlySelected.shortcuts.address = account.address;
-  //       currentlySelected.shortcuts.primary = account.primaryAccount;
-  //       currentlySelected.shortcuts.accountName = account.name;
-
-  //       if (account.accountType === AccountTypeCategory.PRIMARY) {
-  //         let primaryAccounts = await getYakklPrimaryAccounts();
-  //         let primaryAccount = primaryAccounts.find(primary => primary.address === account.address);
-  //         (currentlySelected.data as CurrentlySelectedData).primaryAccount = primaryAccount as YakklPrimaryAccount;
-  //       }
-
-  //       (currentlySelected.data as CurrentlySelectedData).account = account;
-  //       if (!isEncryptedData(currentlySelected.data)) {
-  //         const encryptedData = await encryptData(currentlySelected.data, yakklMiscStore);
-  //         currentlySelected.data = encryptedData;
-  //       }
-
-  //       currentlySelected.shortcuts.value = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
-  //       await setYakklCurrentlySelectedStorage(currentlySelected);
-  //       showAccountsModal = false;
-  //       updateValuePriceFiat();
-
-  //       // if (wallet && provider && blockchain && tokenService) {
-  //       //   tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
-  //       // }
-
-  //       goto(PATH_WELCOME);
-  //     }
-  //   } catch (e) {
-  //     console.log('handleAccounts:', e);
-  //     showAccountsModal = false;
-  //   }
-  //   showAccountsModal = false;
-  // }
-
-  async function handleContact() {
-    try {
-      showAccountImportModal = false;
-      updateValuePriceFiat();
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  async function handleToken() {
-    try {
-      showAccountImportModal = false; // ?????????
-      updateValuePriceFiat();
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  async function handleImport() {
-    try {
-      // debug_log('handleImport - selected');
-    } catch (e) {
-      console.log(e);
     }
   }
 
@@ -677,11 +443,16 @@
     try {
       if ($yakklCurrentlySelectedStore) {
         isDropdownOpen = false;
-        currentlySelected = $yakklCurrentlySelectedStore;
-        currentlySelected.shortcuts.chainId = net.chainId;
+        if (net.chainId === $yakklCurrentlySelectedStore.shortcuts.chainId ) {
+          // log.info("Network type has not changed.");
+          return;
+        }
+
+        const currentlySelected = $yakklCurrentlySelectedStore; // Could just use $yakklCurrentlySelectedStore directly since the assignment is not reactive and only a reference
+        $yakklCurrentlySelectedStore.shortcuts.chainId = net.chainId;
         chainId = net.chainId;
         network = net;
-        currentlySelected.shortcuts.network = net;
+        $yakklCurrentlySelectedStore.shortcuts.network = net;
 
         if (wallet) await wallet.setChainId(chainId);
 
@@ -698,19 +469,43 @@
         }
 
         await setYakklCurrentlySelectedStorage(currentlySelected); // Only want one update
-
-        updateValuePriceFiat();
+        await updateValuePriceFiat();
         if (wallet && provider && blockchain && tokenService) {
-          tokenService.updateTokenBalances(currentlySelected.shortcuts.address);
+          tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
         }
-
         // Close the dropdown
         isDropdownOpen = false;
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
       errorValue = e as string;
       error = true;
+    }
+  }
+
+  async function handleContact() {
+    try {
+      showAccountImportModal = false;
+      updateValuePriceFiat();
+    } catch (e) {
+      log.error(e);
+    }
+  }
+
+  async function handleToken() {
+    try {
+      showAccountImportModal = false; // ?????????
+      updateValuePriceFiat();
+    } catch (e) {
+      log.error(e);
+    }
+  }
+
+  async function handleImport() {
+    try {
+      log.info('handleImport - Not implemented');
+    } catch (e) {
+      log.error(e);
     }
   }
 
@@ -718,16 +513,34 @@
   async function getBalance(chainId: number, address: string): Promise<bigint | null> {
     try {
       if (chainId && wallet) {
-        await wallet.setChainId(chainId);
+        if (wallet.getChainId() !== chainId) {
+          await wallet.setChainId(chainId);
+        }
         const val = await wallet.getBalance(address);
         return val;
       }
       return null;
     } catch (e) {
-      console.log(e);
+      log.error(e);
       errorValue = e as string;
       error = true;
       return null;
+    }
+  }
+
+  function handleCopy(e: any) {
+    toastTrigger(3, 'Copied to clipboard');
+    timeoutClipboard(20);
+  }
+
+  function formatEther(value: BigNumberish): string {
+    try {
+      const val = EthereumBigNumber.from(value);
+      // Convert from Wei to Ether and get string representation
+      return val.toEtherString();
+    } catch (e) {
+      log.error(e);
+      return '0.00000';
     }
   }
 
@@ -802,17 +615,16 @@
   //     console.log(e);
   //   }
   // }
-
-  function handleCopy(e: any) {
-    toastTrigger(3, 'Copied to clipboard');
-    timeoutClipboard(20);
-  }
-
-  function formatEther(value: BigNumberish): string {
-    const val = EthereumBigNumber.from(value);
-    // Convert from Wei to Ether and get string representation
-    return val.toEtherString();
-  }
+  // function updateUpgradeButton() {
+  //   if (checkUpgrade()) {
+  //     if (browserSvelte) {
+  //       const upgradeButton = document.getElementById('upgrade');
+  //       if (upgradeButton) {
+  //         upgradeButton.style.display = 'none';
+  //       }
+  //     }
+  //   }
+  // }
 
 </script>
 
@@ -943,13 +755,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
         </SpeedDialButton>
-        <SpeedDialButton name="Logout" on:click={() => goto(PATH_LOCK)} class="w-16">
+        <!-- <SpeedDialButton name="Lock" on:click={() => goto(PATH_LOCK)} class="w-16">
           <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h10.5A2.25 2.25 0 0118 4.25v10.5A2.25 2.25 0 0115.75 18h-10.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M8.704 10.943l1.048.943H3.75a.75.75 0 000 1.5h6.002l-1.048.943a.75.75 0 101.004 1.114l2.5-2.25a.75.75 0 000-1.114l-2.5-2.25a.75.75 0 10-1.004 1.114z" clip-rule="evenodd" />
           </svg>
-        </SpeedDialButton>
-        <SpeedDialButton name="EXIT" on:click={() => goto(PATH_LOGOUT)} class="w-16">
+        </SpeedDialButton> -->
+        <SpeedDialButton name="Lock/Exit" on:click={() => goto(PATH_LOGOUT)} class="w-16">
           <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" stroke="currentColor" class="w-6 h-6">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />

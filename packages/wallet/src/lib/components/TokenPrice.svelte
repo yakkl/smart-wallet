@@ -6,12 +6,13 @@
   import PriceTracker from './PriceTracker.svelte';
   import { formatPrice } from '$lib/utilities';
   import { formatDate } from '$lib/common/datetime';
-	
+	import { log } from '$lib/plugins/Logger';
+
 
   interface Props {
     // import { getCurrencyCodeForUserLocale } from '$lib/utilities';
     symbol: string;
-    currency?: string; //getCurrencyCodeForUserLocale() ?? 'USD'; 
+    currency?: string; //getCurrencyCodeForUserLocale() ?? 'USD';
     showLastUpdated?: boolean;
     quantity?: number;
     customClass?: string;
@@ -39,7 +40,7 @@
         .map(name => providersMap.get(name))
         .filter((provider): provider is PriceProvider => provider !== undefined);
     } catch(error) {
-      console.log('TokenPrice:', error);
+      log.error('TokenPrice:', error);
     }
   });
 

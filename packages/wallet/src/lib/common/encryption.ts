@@ -3,6 +3,7 @@ export const prerender = false;
 
 import {type SaltedKey } from "$lib/common";
 import type { EncryptedData } from "$lib/common";
+import { log } from "$lib/plugins/Logger";
 // import { encodeJSON } from '$lib/utilities/utilities';
 import { Buffer } from "buffer";
 
@@ -40,7 +41,7 @@ export async function digestMessage(message: string) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
   const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-  return hashHex;  
+  return hashHex;
 }
 
 
@@ -117,12 +118,12 @@ export async function encryptData( data: any, passwordOrSaltedKey: string | Salt
       salt,
     } as EncryptedData;
   } catch (error) {
-    console.log('Error encrypting data:', error);
-    throw error;  
+    log.error('Error encrypting data:', error);
+    throw error;
   }
 }
 
-// Return json 
+// Return json
 export async function decryptData<T>( encryptedData: EncryptedData, passwordOrSaltedKey: string | SaltedKey ): Promise<T> {
   try {
     if (!passwordOrSaltedKey) {
@@ -143,7 +144,7 @@ export async function decryptData<T>( encryptedData: EncryptedData, passwordOrSa
     const txtDecoder = new TextDecoder().decode(plaintext);
     return JSON.parse(txtDecoder) as T;
   } catch (error) {
-    console.log('Error decrypting data:', error);
-    throw error;  
+    log.error('Error decrypting data:', error);
+    throw error;
   }
 }

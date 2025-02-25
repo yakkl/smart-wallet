@@ -16,6 +16,7 @@ import {
   type YakklPrimaryAccount,
 } from '.';
 import { BigNumber, type BigNumberish } from '$lib/common/bignumber';
+import { log } from "$plugins/Logger";
 // import { getYakklPrimaryAccounts } from '$lib/common/stores';  // TODO: This generates an error from webpack due to not finding dataModels.ts?????????????????????????
 
 // export function toBigInt( value: BigNumberish, decimals: number = 18 ): bigint {
@@ -235,7 +236,7 @@ export function parseJsonOrObject<T>(value: any): T | null {
         return parsed;
       }
     } catch (e) {
-      console.log('Error parsing JSON string:', e);
+      log.error('Error parsing JSON string:', e);
       return null;
     }
   }
@@ -251,7 +252,7 @@ export async function resolveProperties<T>(object: Readonly<Deferrable<T>>): Pro
 
   const results = await Promise.all( promises );
 
-  console.log('resolveProperties results', results);
+  // log.debug('resolveProperties results', results);
 
   return results.reduce((accum, result) => {
       accum[<keyof T>(result.key)] = result.value;
@@ -262,13 +263,11 @@ export async function resolveProperties<T>(object: Readonly<Deferrable<T>>): Pro
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function checkProperties(object: any, properties: { [ name: string ]: boolean }): void {
   if (!object || typeof(object) !== "object") {
-      // logger.throwArgumentError("invalid object", "object", object);
       throw new Error("invalid object", object);
   }
 
   Object.keys(object).forEach((key) => {
       if (!properties[key]) {
-          // logger.throwArgumentError("invalid object key - " + key, "transaction:" + key, object);
           throw new Error("invalid object key - " + key, object);
       }
   });
@@ -525,7 +524,7 @@ export function extractFQDN(url: string): string {
     const parsedUrl = new URL(url);
     return parsedUrl.hostname;
   } catch (e) {
-    console.log(e);
+    log.error(e);
     return '';
   }
 }

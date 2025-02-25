@@ -23,6 +23,7 @@
   } from '$lib/common/stores';
   import { VERSION, type EmergencyKitMetaData } from '$lib/common';
   import Confirmation from './Confirmation.svelte';
+	import { log } from '$lib/plugins/Logger';
 
   interface Props {
     mode?: 'import' | 'export';
@@ -46,7 +47,7 @@
         metadata = await EmergencyKitManager.readBulkEmergencyKitMetadata(file);
       } catch (err) {
         error = 'Failed to read emergency kit metadata';
-        console.log(err);
+        log.error(err);
       }
     }
   }
@@ -95,7 +96,7 @@
       onComplete(true, 'Emergency kit exported successfully as ' + fileName);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to export emergency kit';
-      console.log(err);
+      log.error(err);
       onComplete(false, error);
     } finally {
       loading = false;
@@ -124,7 +125,7 @@
       onComplete(true, `Emergency kit imported successfully for: ${file!.name}`);
     } catch (err) {
       error = `Failed to import emergency kit for: ${file!.name}`;
-      console.log(err);
+      log.error(err);
       onComplete(false, `Failed to import emergency kit for: ${file!.name}`);
     } finally {
       loading = false;
@@ -157,10 +158,10 @@
             if (typeof VERSION !== 'undefined' && typeof VERSION === 'string' && VERSION.trim() !== '') {
               data['version'] = VERSION;
             } else {
-              console.log("VERSION is not properly defined.");
+              log.error("VERSION is not properly defined.");
             }
           } else {
-            console.log("Invalid 'data' object. Cannot assign 'version'.");
+            log.error("Invalid 'data' object. Cannot assign 'version'.");
           }
         }
 

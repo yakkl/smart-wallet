@@ -1,38 +1,50 @@
 <script lang="ts">
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
   import { page } from '$app/state';
   import { createForm } from "svelte-forms-lib";
-  import { getSettings, getYakklCurrentlySelected, setYakklCurrentlySelectedStorage, setSettings, getPreferences, setPreferencesStorage, getYakklPrimaryAccounts, setSettingsStorage, setProfileStorage, yakklDappConnectRequestStore, getMiscStore } from '$lib/common/stores';
-  import { syncStoresToStorage, yakklVersionStore, yakklUserNameStore } from '$lib/common/stores';
+  import { setProfileStorage, yakklDappConnectRequestStore, yakklCurrentlySelectedStore, yakklSettingsStore, yakklPreferencesStore, yakklPrimaryAccountsStore, syncStorageToStore, yakklMiscStore, getMiscStore, yakklCombinedTokenStore, yakklTokenDataCustomStore } from '$lib/common/stores';
+  import { yakklVersionStore, yakklUserNameStore } from '$lib/common/stores';
   import { goto } from '$app/navigation';
   import { Popover } from 'flowbite-svelte';
-  import { PATH_WELCOME, PATH_REGISTER, PATH_DAPP_ACCOUNTS, DEFAULT_TITLE, PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY, PATH_LOGOUT } from '$lib/common/constants';
+  import { PATH_WELCOME, PATH_REGISTER, PATH_DAPP_ACCOUNTS, DEFAULT_TITLE, PATH_LOGOUT, PATH_LEGAL } from '$lib/common/constants';
   import { setIconLock, setIconUnlock } from '$lib/utilities/utilities';
   import { decryptData, encryptData } from '$lib/common/encryption';
   import { onMount } from 'svelte';
   import Copyright from '$lib/components/Copyright.svelte';
-  import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Welcome from '$lib/components/Welcome.svelte';
-	import { RegistrationType, checkAccountRegistration, isEncryptedData, type ProfileData, type YakklAccount, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
-	import { dateString } from '$lib/common/datetime';
+	import { RegistrationType, checkAccountRegistration, isEncryptedData, type Preferences, type ProfileData, type Settings, type YakklCurrentlySelected, type YakklPrimaryAccount } from '$lib/common';
 	import { verify } from '$lib/common/security';
 
-  import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
-	import type { Browser } from 'webextension-polyfill';
-	import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
-	import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
-	import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
-	import ImportPhrase from '$lib/components/ImportPhrase.svelte';
-	import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	import { deepCopy } from '@ethersproject/properties';
+  import { browser_ext, browserSvelte } from '$lib/common/environment';
+	import { setLocks } from '$lib/common/locks';
+  import { log } from '$plugins/Logger';
 	import { sendNotificationStartLockIconTimer } from '$lib/common/notifications';
+	import { updateTokenPrices } from '$lib/common/tokenPriceManager';
+	import { resetTokenDataStoreValues } from '$lib/common/resetTokenDataStoreValues';
 
-  let browser_ext: Browser;
-  if (browserSvelte) browser_ext = getBrowserExt();
+	// import { updateTokenDataCustomBalances } from '$lib/common/tokens';
+	// import RegistrationOptionModal from '$lib/components/RegistrationOptionModal.svelte';
+	// import ImportPrivateKey from '$lib/components/ImportPrivateKey.svelte';
+	// import EmergencyKitModal from '$lib/components/EmergencyKitModal.svelte';
+	// import ImportPhrase from '$lib/components/ImportPhrase.svelte';
+	// import ImportOptionModal from '$lib/components/ImportOptionModal.svelte';
+	// import { stateStore } from '$lib/common/stores/stateStore';
+	// import { setLocks } from '$lib/common/locks';
+	// import { sendNotificationStartLockIconTimer } from '$lib/common/notifications';
+  // import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 
-  let currentlySelected: YakklCurrentlySelected;
-  let yakklMiscStore: string;
-  let yakklPrimaryAccountsStore: YakklPrimaryAccount[];
+  // let yakklTokenData: TokenData[] = $state([]);
+  // let yakklInstances: [Wallet, Provider, Blockchain, TokenService<any>] | [null, null, null, null] = $state([null, null, null, null]);
+  // let showImportOption = $state(false);
+  // let showImportPhrase = $state(false);
+
+  // Reactive State
+  let yakklCurrentlySelected: YakklCurrentlySelected | null = $state(null);
+  let yakklMisc: string = $state('');
+  let yakklSettings: Settings | null = $state(null);
+  let yakklPreferences: Preferences | null = $state(null);
+  let yakklPrimaryAccounts: YakklPrimaryAccount[] = $state([]);
 
   let error = $state(false);
   let errorValue: any = $state();
@@ -46,9 +58,7 @@
 
   let showRegistrationOption = $state(false);
   let showEmergencyKit = $state(false);
-  let showImportOption = $state(false);
   let showImportAccount = $state(false);
-  let showImportPhrase = $state(false);
 
   if (browserSvelte) {
     requestId = page.url.searchParams.get('requestId') as string ?? '';
@@ -60,61 +70,59 @@
 
   $yakklVersionStore = ''; // This will get set AFTER user validation
 
+  $effect(() => { yakklCurrentlySelected = $yakklCurrentlySelectedStore; });
+  $effect(() => { yakklMisc = $yakklMiscStore; });
+  $effect(() => { yakklSettings = $yakklSettingsStore; });
+  $effect(() => { yakklPreferences = $yakklPreferencesStore; });
+  $effect(() => { yakklPrimaryAccounts = $yakklPrimaryAccountsStore; });
+  // $effect(() => { yakklTokenData = $yakklTokenDataStore; });
+  // $effect(() => { yakklInstances = $yakklInstancesStore; });
+
   onMount(async () => {
     try {
       if (browserSvelte) {
-        if (requestId) {
-          redirect = PATH_DAPP_ACCOUNTS + '.html?requestId=' + requestId;
+        yakklCombinedTokenStore.set([]); // Reset the token store - ????
+        if (!yakklSettings || !yakklSettings.legal.termsAgreed) {
+          return await goto(PATH_LEGAL);
+        }
+        if (yakklSettings.init === false) {
+          return await goto(PATH_REGISTER);
         }
 
-        currentlySelected = await getYakklCurrentlySelected();
+        await setIconLock(); // Make sure it shows locked and is locked
+        setLocks(true);
 
-        pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement;
-        pweyeClosedId = document.getElementById("pweye-closed") as HTMLButtonElement;
-        pweyeOpenId.setAttribute('tabindex', '-1');
-        pweyeClosedId.setAttribute('tabindex', '-1');
-        pweyeOpenId.setAttribute('hidden', 'hidden');
+        // Sets the default of 60 seconds but can be changed by setting the properties to another integer.
+        browser_ext.idle.setDetectionInterval(yakklPreferences ? yakklPreferences?.idleDelayInterval ?? 60 : 60); // System idle time is 2 minutes. This adds 1 minute to that. If any movement or activity is detected then it resets.
 
-        let namHelp = document.getElementById("nam-help");
-        namHelp?.setAttribute('tabindex', '-1');
-
-        let pwdHelp = document.getElementById("pwd-help");
-        pwdHelp?.setAttribute('tabindex', '-1');
-
-        setIconLock(); // make sure it shows locked
-
-        const yakklPreferences = await getPreferences();
-        if (yakklPreferences) {
-          // Sets the default of 60 seconds but can be changed by setting the properties to another integer.
-          browser_ext.idle.setDetectionInterval(yakklPreferences.idleDelayInterval); // System idle time is 2 minutes. This adds 1 minute to that. If any movement or activity is detected then it resets.
+        registeredType = yakklSettings.registeredType as string;
+        // if (!checkUpgrade()) { // The checkUpgrade is not valid until after user is validated
+        if (registeredType !== RegistrationType.PRO) {
+          registeredType = RegistrationType.STANDARD;
         }
 
-        const yakklSettings = await getSettings();
-        if (yakklSettings) {
-          registeredType = yakklSettings.registeredType as string;
-          // if (!checkUpgrade()) { // The checkUpgrade is not valid until after user is validated
-          if (registeredType !== RegistrationType.PRO) {
-            registeredType = RegistrationType.STANDARD;
-          }
-
-          // PROMO
-          // let promoDate = new Date('2026-01-01T00:00:00');  // TODO: May want to remove this altogether later...
-          // let date = new Date();
-          // if (date < promoDate) {
-            registeredType = RegistrationType.PRO;
-          // }
-          ////
-
-          yakklSettings.isLocked = true; // This forces a lock
-          await setSettingsStorage(yakklSettings);
-
-          if (yakklSettings.init === false) {
-            await goto(PATH_REGISTER);
-          }
-        }
+        // PROMO
+        // let promoDate = new Date('2026-01-01T00:00:00');
+        // let date = new Date();
+        // if (date < promoDate) {
+          registeredType = RegistrationType.PRO;
+        // }
+        ////
       }
-    } catch(e) {
-      console.log(`onMount: Login - ${e}`);
+
+      pweyeOpenId = document.getElementById("pweye-open") as HTMLButtonElement;
+      pweyeClosedId = document.getElementById("pweye-closed") as HTMLButtonElement;
+      pweyeOpenId.setAttribute('tabindex', '-1');
+      pweyeClosedId.setAttribute('tabindex', '-1');
+      pweyeOpenId.setAttribute('hidden', 'hidden');
+
+      let namHelp = document.getElementById("nam-help");
+      namHelp?.setAttribute('tabindex', '-1');
+
+      let pwdHelp = document.getElementById("pwd-help");
+      pwdHelp?.setAttribute('tabindex', '-1');
+    } catch(e: any) {
+      log.error(`onMount: Login - ${e}`, e?.stack);
     }
   });
 
@@ -122,8 +130,7 @@
     initialValues: { userName: "", password: "" },
     onSubmit: async data => {
       // Verify password by decrypting data!
-      let uName = data.userName;
-      await login(uName, data.password);
+      await login(data.userName, data.password);
       $form.userName = "";
       $form.password = "";
       data.password = "";
@@ -134,34 +141,24 @@
   async function login(userName: string, password: string): Promise<void> {
     if (browserSvelte) {
       try {
-        showProgress = true;
-
+        // showProgress = true;
         let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
         if (!profile) {
+          log.error(`User [ --------- ] was not found OR password is not correct no primary account was not found. Please try again or register if not already registered`);
           throw `User [ ${userName} ] was not found OR password is not correct OR no primary account was not found. Please try again or register if not already registered`;
         } else {
-          if (!yakklMiscStore) yakklMiscStore = getMiscStore(); // This should be set by the verify function
-          if (!yakklMiscStore) {
+
+          yakklMisc = getMiscStore(); // This should be set by the verify function
+          if (!yakklMisc) {
+            log.error(`User [ --------- ] was not found OR password is not correct. Please try again or register if not already registered`);
             throw `User [ ${userName} ] was not found OR password is not correct. Please try again or register if not already registered`;
           }
           $yakklUserNameStore = userName;
 
-          if (!currentlySelected) currentlySelected = await getYakklCurrentlySelected();
-
-          currentlySelected.shortcuts.isLocked = false;
-
-          if (!isEncryptedData(currentlySelected.data)) {
-            encryptData(currentlySelected.data, yakklMiscStore).then(result => {
-              currentlySelected.data = result;
-            });
-          }
-          await setYakklCurrentlySelectedStorage(currentlySelected);
-          checkRegistration(); // Checks to see if settings have been init
+          setLocks(false, registeredType);
 
           if (isEncryptedData(profile.data)) {
-            decryptData(profile.data, yakklMiscStore).then(result => {
-              profile.data = result as ProfileData;
-            });
+            profile.data = await decryptData(profile.data, yakklMisc);
           }
           if ((profile.data as ProfileData).registered?.key) {
             let key = (profile.data as ProfileData).registered.key;
@@ -177,70 +174,46 @@
             (profile.data as ProfileData).registered.key = '';
             (profile.data as ProfileData).registered.type = RegistrationType.STANDARD;
           }
+
+          if (yakklPrimaryAccounts.length > 0) {
+            if (!isEncryptedData(profile.data) && (profile.data as ProfileData).primaryAccounts.length !== yakklPrimaryAccounts.length) {
+              (profile.data as ProfileData).primaryAccounts = deepCopy(yakklPrimaryAccounts);
+            }
+          }
+
           if (!isEncryptedData(profile.data)) {
-            encryptData(profile.data, yakklMiscStore).then(result => {
-              profile.data = result;
-            });
+            profile.data = await encryptData(profile.data, yakklMisc);
           }
           await setProfileStorage(profile);
 
-          //// May not need this with new plugins...
-          // const port = browser_ext.runtime.connect({name: YAKKL_INTERNAL});
-          // port.onMessage.addListener(async(event: any) => {
-          //   console.log(event);
-          // });
-
-          // if (port) {  // Add the others later...
-          //   let params = [];
-          //   params[0] = PROVIDERS.ALCHEMY;
-          //   // params[1] = (currentlySelected.data as CurrentlySelectedData).providerKey;
-          //   port.postMessage({method: 'providers', params: params});
-          // }
-          //// End of may not need...
-          //// May not need this with new plugins...
-          // if (port) port.disconnect();
-          //// End of may not need...
-
-          let settings = await getSettings();
-          if (settings) {
-            settings.lastAccessDate = dateString();
-            settings.isLocked = false;
-            settings.registeredType = registeredType;
-            setSettings(settings);
-          }
-
-          let preferences = await getPreferences();
-          if (preferences) {
-            preferences.screenWidth = screen.width;
-            preferences.screenHeight = screen.height;
-            setPreferencesStorage(preferences);
-          }
-
-          yakklPrimaryAccountsStore = await getYakklPrimaryAccounts();
-
           if (redirect !== PATH_WELCOME) {
-            // Must be a dapp
+
+            log.debug('Login: Redirecting dapp to:', redirect);
+
+            // Must be a dapp - now doing load in +page.ts
             if (requestId) { // Don't want to truely unlock with dapps
-              if (settings && settings.init === true) {
-                syncStoresToStorage();  // This sets up the memory stores from the physical store
+              if (yakklSettings && yakklSettings.init === true) {
+                await syncStorageToStore();  // This sets up the memory stores from the physical store
               }
             }
           } else {
-            setIconUnlock(); // Set the unlock icon and sync will occur in welcome (next step)
+            await setIconUnlock(); // Set the unlock icon and sync will occur in welcome (next step)
           }
           showProgress = false;
 
           // Make sure there is at least one Primary or Imported account
           if (await checkAccountRegistration()) {
+            // resetTokenDataStoreValues();
+            await updateTokenPrices();
             await sendNotificationStartLockIconTimer();
-            goto(redirect);
+            goto(redirect, {replaceState: true, invalidateAll: true});
           } else {
             showRegistrationOption = true;
           }
         }
-      } catch(e) {
+      } catch(e: any) {
         showProgress = false;
-        console.log(`Login login: ${e}`);
+        log.error(`Login: ${e}`, e?.stack);
         error = true;
         errorValue = e;
       }
@@ -269,79 +242,70 @@
     }
   }
 
-  async function checkRegistration() {
-    if (browserSvelte) {
-      await getSettings().then((settings) => {
-        if (settings && settings.init !== true) {
-          goto(PATH_REGISTER);
-        }
-      });
-    }
-  }
-
-  function onCompleteImportPrivateKey(account: YakklAccount) {
-    showImportAccount = false;
-    goto(PATH_WELCOME)
-  }
-
-  function onCancelImportPrivateKey() {
-    showImportAccount = false;
-    showRegistrationOption = true;
-  }
-
-  function onCompleteEmergenyKit(success: boolean, message: string) {
-    showEmergencyKit = false;
-    goto(PATH_WELCOME)
-  }
-
-  function onCancelEmergencyKit() {
-    showEmergencyKit = false;
-    showRegistrationOption = true;
-  }
-
-  function onCancelRegistrationOption() {
+  async function onCancelRegistrationOption() {
     showRegistrationOption = false;
     showEmergencyKit = false;
     showImportAccount = false;
     goto(PATH_LOGOUT);
   }
 
-  function onCancelImportOption() {
-    showImportOption = false;
-    showEmergencyKit = false;
-    showImportAccount = false;
-    showImportPhrase = false;
-    showRegistrationOption = true; // Go back to the registration option
-  }
+  // async function onCompleteImportPrivateKey(account: YakklAccount) {
+  //   showImportAccount = false;
+  //   await goto(PATH_WELCOME)
+  // }
 
-  function onImportKey() {
-    showRegistrationOption = false;
-    showImportOption = false;
-    showImportPhrase = false;
-    showEmergencyKit = false;
-    showImportAccount = true;
-  }
+  // function onCancelImportPrivateKey() {
+  //   showImportAccount = false;
+  //   showRegistrationOption = true;
+  // }
 
-  function onImportPhrase() {
-    showRegistrationOption = false;
-    showImportOption = false;
-    showEmergencyKit = false;
-    showImportAccount = false;
-    showImportPhrase = true;
-  }
+  // async function onCompleteEmergenyKit(success: boolean, message: string) {
+  //   showEmergencyKit = false;
+  //   await goto(PATH_WELCOME)
+  // }
 
-  // May want to add parameters of what changed later but not currently needed
-  function onCompleteImportPhrase() {
-    showImportPhrase = false;
-    goto(PATH_WELCOME)
-  }
+  // function onCancelEmergencyKit() {
+  //   showEmergencyKit = false;
+  //   showRegistrationOption = true;
+  // }
 
-  function onCancelImportPhrase() {
-    showImportAccount = false;
-    showRegistrationOption = true;
-  }
+  // function onCancelImportOption() {
+  //   showImportOption = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = false;
+  //   showImportPhrase = false;
+  //   showRegistrationOption = true; // Go back to the registration option
+  // }
+
+  // function onImportKey() {
+  //   showRegistrationOption = false;
+  //   showImportOption = false;
+  //   showImportPhrase = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = true;
+  // }
+
+  // function onImportPhrase() {
+  //   showRegistrationOption = false;
+  //   showImportOption = false;
+  //   showEmergencyKit = false;
+  //   showImportAccount = false;
+  //   showImportPhrase = true;
+  // }
+
+  // // May want to add parameters of what changed later but not currently needed
+  // async function onCompleteImportPhrase() {
+  //   showImportPhrase = false;
+  //   await goto(PATH_WELCOME)
+  // }
+
+  // function onCancelImportPhrase() {
+  //   showImportAccount = false;
+  //   showRegistrationOption = true;
+  // }
 
   // Here as a reference for ErrorNoAction
+
   function handleCustomAction() {
     errorValue = '';
   }
@@ -351,25 +315,8 @@
 	<title>{DEFAULT_TITLE}</title>
 </svelte:head>
 
-<!-- Here, we don't need to close anything so no need for onClose or onCancel -->
-<RegistrationOptionModal bind:show={showRegistrationOption} onCreate={() => {showRegistrationOption=false; goto(PATH_ACCOUNTS_ETHEREUM_CREATE_PRIMARY);}} onImport={() => {showRegistrationOption=false; showImportAccount=true;}} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}} />
-<ImportPrivateKey bind:show={showImportAccount} onComplete={onCompleteImportPrivateKey} onCancel={onCancelImportPrivateKey} />
-<ImportPhrase bind:show={showImportPhrase} onComplete={onCompleteImportPhrase} onCancel={onCancelImportPhrase}  />
-<ImportOptionModal bind:show={showImportOption} onCancel={onCancelImportOption} {onImportKey} {onImportPhrase} onRestore={() => {showRegistrationOption=false; showEmergencyKit=true;}}/>
-<EmergencyKitModal bind:show={showEmergencyKit} onComplete={onCompleteEmergenyKit} onCancel={onCancelEmergencyKit}/>
-<ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." />
+<!-- <ProgressWaiting bind:show={showProgress} title="Verifying" value="Credentials and Loading..." /> -->
 <ErrorNoAction bind:show={error} title="ERROR!" value={errorValue} handle={handleCustomAction} />
-
-<Popover class="text-sm z-10 w-60" triggeredBy="#register" placement="top">
-  <h3 class="font-semibold">If NOT registered</h3>
-  <div class="grid grid-cols-4 gap-2">
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-      <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
-  </div>
-  <p class="py-2 whitespace-normal">If you have not already register then click this. It will take you to the registration screen.</p>
-</Popover>
 
 <Popover class="text-sm z-10" triggeredBy="#nam-help" placement="left">
   <h3 class="font-semibold">Username</h3>
@@ -395,9 +342,7 @@
 
 <!-- relative bg-gradient-to-b from-indigo-700 to-indigo-500/15 m-1 ml-2 mr-2 dark:bg-gray-900 rounded-t-xl overflow-hidden -->
 <div class="relative h-[98vh] text-base-content">
-
   <main class="px-4 text-center">
-
     <Welcome />
 
     <div class="mt-5">
@@ -473,6 +418,7 @@
             </div>
           </button>
         </div>
+
       </form>
 
     </div>
@@ -500,7 +446,6 @@
     <!-- {/if} -->
 
     <Copyright registeredType={registeredType} />
-
   </main>
 </div>
 

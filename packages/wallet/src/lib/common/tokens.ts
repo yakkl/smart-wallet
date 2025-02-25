@@ -1,11 +1,12 @@
 import type { TokenData } from './interfaces';
 import { get } from 'svelte/store';
 import { ethers } from 'ethers-v6';
-import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage, getYakklTokenData, updateCombinedTokenStore, yakklCombinedTokenStore } from '$lib/common/stores';
+import { yakklTokenDataStore, yakklTokenDataCustomStore, setYakklTokenDataCustomStorage, setYakklTokenDataStorage, updateCombinedTokenStore, yakklCombinedTokenStore } from '$lib/common/stores';
 import { isEqual } from 'lodash-es';
+import { log } from "$plugins/Logger";
+import { computeTokenValue } from './computeTokenValue';
 
-
-  // Helper function to get balance for a token
+// Helper functions to get balance for a token
 
 export async function getTokenBalance(
   token: TokenData,
@@ -14,7 +15,7 @@ export async function getTokenBalance(
 ): Promise<string | undefined> {
   try {
     if (!ethers.isAddress(token.address)) {
-      // console.log(`Invalid token address: ${token.address}`);
+      log.error(`Invalid token address: ${token.address}`);
       return undefined;
     }
 
@@ -39,13 +40,15 @@ export async function getTokenBalance(
       const balance = await tokenContract.balanceOf(userAddress);
       const decimals = await tokenContract.decimals();
 
+      // log.debug(`tokens.ts: Token: ${token.name} | Address: ${token.address} | Balance: ${balance.toString()} | Decimals: ${decimals}`);
+
       return ethers.formatUnits(balance, decimals);
     } catch {
-      console.log('The contract does not implement balanceOf or it reverted.');
+      log.error('The contract does not implement balanceOf or it reverted.');
       return undefined;
     }
   } catch (error) {
-    console.log(`Failed to get balance for token: ${token.name}`, error);
+    log.error(`Failed to get balance for token: ${token.name}`, error);
     return undefined;
   }
 }
@@ -63,7 +66,7 @@ export async function updateTokenBalances(userAddress: string, provider: ethers.
     ]);
     updateCombinedTokenStore();
   } catch (error) {
-    console.log('Error updating token balances:', error);
+    log.error('Error updating token balances:', error);
   }
 }
 
@@ -73,7 +76,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
     const tokens = get(yakklTokenDataStore); // Fetch default tokens from storage or store
 
     if (!tokens || tokens.length === 0) {
-      console.log('No tokens available to update balances');
+      log.warn('No tokens available to update balances');
       return [];
     }
 
@@ -82,13 +85,13 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
       tokens.map(async (token) => {
         try {
           const balance = await getTokenBalance(token, userAddress, provider);
-          // const price = await getTokenPrice(token, provider);
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
+            value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
-          console.log(`Error fetching balance for token ${token.symbol}:`, balanceError);
+          log.error(`Error fetching balance for token ${token.symbol}:`, balanceError);
           return token; // Return token unchanged on error
         }
       })
@@ -102,7 +105,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 
     return updatedTokens;
   } catch (error) {
-    console.log('Error updating token balances:', error);
+    log.error('Error updating token balances:', error);
     return []; // Return an empty array on error
   }
 }
@@ -112,8 +115,10 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
   try {
     const customTokens = get(yakklTokenDataCustomStore);
 
+    // log.debug('updateTokenDataCustomBalances: customTokens', customTokens);
+
     if (!customTokens || customTokens.length === 0) {
-      console.log('No custom tokens available to update balances');
+      log.warn('No custom tokens available to update balances');
       return [];
     }
 
@@ -125,9 +130,10 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
           return {
             ...token,
             balance: balance !== undefined ? balance : token.balance,
+            value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
-          console.log(`Error fetching balance for custom token ${token.symbol}:`, balanceError);
+          log.error(`Error fetching balance for custom token ${token.symbol}:`, balanceError);
           return token; // Return token unchanged on error
         }
       })
@@ -136,62 +142,27 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
     // Update the store only if the data has changed
     const currentCustomTokens = get(yakklTokenDataCustomStore);
     if (!isEqual(currentCustomTokens, updatedCustomTokens)) {
+
+      // log.debug('updateTokenDataCustomBalances: Updating custom tokens in storage');
+
       await setYakklTokenDataCustomStorage(updatedCustomTokens);
     }
 
     return updatedCustomTokens;
   } catch (error) {
-    console.log('Error updating custom token balances:', error);
+    log.error('Error updating custom token balances:', error);
     return []; // Return an empty array on error
   }
 }
 
+// For memory store only
 export function updateTokenValues() {
+  // log.debugStack('updateTokenValues: Updating token values', yakklCombinedTokenStore);
+
   yakklCombinedTokenStore.update(tokens =>
-    tokens.map(token => ({
-      ...token,
-      value: (Number(token.balance) ?? 0) * (token.price?.price ?? 0)
-    }))
+    tokens.map(token => {
+      const { value } = computeTokenValue(token);
+      return { ...token, value };
+    })
   );
 }
-
-// {
-//     "chainId": 1,
-//     "address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
-//     "name": "Shiba Inu",
-//     "symbol": "SHIB",
-//     "decimals": 18,
-//     "isNative": false,
-//     "isStablecoin": false,
-//     "logoURI": "https://assets.coingecko.com/coins/images/11939/thumb/shiba.png?1622619446"
-// },
-// {
-//     "chainId": 1,
-//     "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
-//     "name": "Pepe",
-//     "symbol": "PEPE",
-//     "decimals": 18,
-//     "isNative": false,
-//     "isStablecoin": false,
-//     "logoURI": "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1682922725"
-//   },
-//   {
-//     "chainId": 1,
-//     "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
-//     "name": "PayPal USD",
-//     "symbol": "PYUSD",
-//     "decimals": 6,
-//     "isNative": false,
-//     "isStablecoin": true,
-//     "logoURI": "https://assets.coingecko.com/coins/images/31212/large/PYUSD_Logo_%282%29.png?1691458314"
-//   },
-//   {
-//     "chainId": 1,
-//     "name": "Coinbase Wrapped BTC",
-//     "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-//     "symbol": "cbBTC",
-//     "decimals": 8,
-//     "isNative": false,
-//     "isStablecoin": false,
-//     "logoURI": "https://assets.coingecko.com/coins/images/40143/standard/cbbtc.webp"
-//   }

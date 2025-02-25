@@ -2,21 +2,27 @@
 // GPT Added //
 import { Wallet, walletStore } from '$lib/plugins/Wallet';
 import { get } from 'svelte/store';
+import { log } from "$plugins/Logger";
 
 class WalletManager {
   private static instance: Wallet | null = null;
 
   public static getInstance(providerNames: string[], blockchainNames: string[] = ['Ethereum'], chainId: number = 1, apiKey: string | null = null, privateKey: string | null = null): Wallet {
-    if (!WalletManager.instance) {
-      WalletManager.instance = new Wallet(providerNames, blockchainNames, chainId, apiKey, privateKey);
-      walletStore.set(WalletManager.instance);
-    } else {
-      if (WalletManager.instance.getSigner() === null && privateKey) { // If the signer is not set and a private key is provided then update the signer
-        WalletManager.instance.setSigner(privateKey);
+    try {
+      if (!WalletManager.instance) {
+        WalletManager.instance = new Wallet(providerNames, blockchainNames, chainId, apiKey, privateKey);
         walletStore.set(WalletManager.instance);
+      } else {
+        if (!WalletManager.instance.getSigner() && privateKey) {
+          WalletManager.instance.setSigner(privateKey);
+          walletStore.set(WalletManager.instance);
+        }
       }
+      return WalletManager.instance;
+    } catch (error) {
+      log.error("Failed to get Wallet instance:", error);
+      throw error;
     }
-    return WalletManager.instance; // This can return with no signer set if the private key is not provided. It will be up to the developer to call the setSigner method with a valid private key.
   }
 
   public static clearInstance(): void {
@@ -25,13 +31,14 @@ class WalletManager {
   }
 
   public static setInstance(instance: Wallet): void {
+    this.clearInstance();
     WalletManager.instance = instance;
     walletStore.set(instance);
   }
 
   public static get wallet(): Wallet | null {
     return get(walletStore);
-  }  
+  }
 
 }
 

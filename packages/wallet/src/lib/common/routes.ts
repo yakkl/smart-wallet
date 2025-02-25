@@ -1,28 +1,28 @@
-  import { browserSvelte } from '$lib/utilities/browserSvelte';
+import { browserSvelte } from '$lib/common/environment';
 import { goto } from '$app/navigation';
-import { getSettings } from '$lib/common/stores';
-import { PATH_LOGIN, PATH_REGISTER } from '$lib/common/constants';
-import type { Settings } from '$lib/common/interfaces';
-
-let yakklSettings: Settings | null;
+import { get } from 'svelte/store';
+import { PATH_LEGAL, PATH_LOGIN, PATH_REGISTER } from '$lib/common/constants';
+import { yakklSettingsStore } from '$lib/common/stores';
+import { log } from '$plugins/Logger';
 
 // Routes based on init or isLocked settings else go to register or nothing
-export function routeCheckWithSettings() {
+export async function routeCheckWithSettings() {
   if (browserSvelte) {
-    getSettings().then(result => {
-      yakklSettings = result;
-
-      if (yakklSettings !== null) {
-        if (yakklSettings.init === false) {
-          goto(PATH_REGISTER);
-        }
-        if (yakklSettings.isLocked === true) {
-          goto(PATH_LOGIN);
-        }
-      } else {
-        goto(PATH_REGISTER);
+    const yakklSettings = get(yakklSettingsStore);
+    if (yakklSettings !== null) {
+      if (yakklSettings?.legal?.termsAgreed !== true) {
+        log.warn('Terms not agreed - 1');
+        return await goto(PATH_LEGAL);
       }
-    });
+      if (yakklSettings.init === false) {
+        log.warn('register');
+        return await goto(PATH_REGISTER);
+      }
+      if (yakklSettings.isLocked === true) {
+        log.warn('login');
+        return await goto(PATH_LOGIN);
+      }
+    }
   }
-  // nothing
+  // Would default a goto but you can't do that except in a browser
 }

@@ -3,28 +3,29 @@
 // UniswapSwapManager.ts
 import { toBigInt, YAKKL_FEE_BASIS_POINTS, YAKKL_GAS_ESTIMATE_MIN_USD, YAKKL_GAS_ESTIMATE_MULTIHOP_SWAP_DEFAULT, YAKKL_GAS_ESTIMATE_MULTIPLIER_BASIS_POINTS, type BigNumberish, type PoolInfoData, type PriceData, type SwapParams, type SwapPriceData, type SwapToken, type TransactionReceipt, type TransactionRequest, type TransactionResponse } from '$lib/common';
 import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
-import { debug_log, error_log } from '$lib/common/debug-error';
 import type { ExactInputParams, ExactInputSingleParams } from '$lib/common/ISwapRouter';
-// import { getToken, type TokenPair } from '$lib/common/tokens';
-// import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
-// import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import { abi as ISwapRouterABI } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json';
 import IQuoterV2ABI from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json';
-// import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
-// import JSBI from 'jsbi';
-// import JSBI from '@uniswap/sdk-core/node_modules/jsbi';
 import { ethers as ethersv6 } from 'ethers-v6';
 import { ethers as ethersv5 } from 'ethers';
-import { formatFeeToUSD, formatPrice, safeConvertBigIntToNumber } from '../utilities/utilities';
+import { formatFeeToUSD, formatPrice } from '../utilities/utilities';
 import type { Ethereum } from './blockchains/evm/ethereum/Ethereum';
 import { ADDRESSES } from './contracts/evm/constants-evm';
 import type { Provider } from './Provider';
 import { SwapManager } from './SwapManager';
 import { Token } from './Token';
 import { EVMToken } from './tokens/evm/EVMToken';
-// import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
 import { EthersConverter } from './utilities/EthersConverter';
+import { log } from '$plugins/Logger';
+
+// import { getToken, type TokenPair } from '$lib/common/tokens';
+// import { CurrencyAmount, Token as UniswapToken } from '@uniswap/sdk-core';
+// import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+// import { Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
+// import JSBI from 'jsbi';
+// import JSBI from '@uniswap/sdk-core/node_modules/jsbi';
+// import { convertToUniswapToken, sqrtPriceX96ToPrice } from './utilities/uniswap';
 // import { AlphaRouterService } from '@yakkl/uniswap-alpha-router-service';
 
 const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
@@ -37,7 +38,7 @@ const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 //   const quote = await service.getQuote( tokenIn, tokenOut, amount, fundingAddress );
 //   // Use quote data
 // } catch ( error ) {
-//   console.log( 'Quote error:', error );
+//   log.error( 'Quote error:', error );
 // } finally {
 //   service.dispose();
 // }
@@ -130,7 +131,7 @@ export class UniswapSwapManager extends SwapManager {
       data.tokens.unshift( eth );
       return data.tokens;
     } catch ( error ) {
-      console.log( 'Error fetching token list:', error );
+      log.error( 'Error fetching token list:', error );
       return [];
     }
   }
@@ -471,7 +472,7 @@ export class UniswapSwapManager extends SwapManager {
       try {
         return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
       } catch ( error ) {
-        error_log( 'Multi-hop quote failed:', error );
+        log.error( 'Multi-hop quote failed:', error );
         throw new Error( 'No valid route exists for the provided tokens and amount' );
       }
     }
@@ -517,14 +518,14 @@ export class UniswapSwapManager extends SwapManager {
         );
       }
     } catch ( error ) {
-      console.log( 'Direct pool quote failed, trying multi-hop:', error );
+      log.error( 'Direct pool quote failed, trying multi-hop:', error );
     }
 
     // If direct pool fails, attempt multi-hop anyway
     try {
       return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
     } catch ( error ) {
-      console.log( 'Multi-hop quote failed:', error );
+      log.error( 'Multi-hop quote failed:', error );
       throw new Error( 'No valid route exists for the provided tokens and amount' );
     }
   }
@@ -547,7 +548,7 @@ export class UniswapSwapManager extends SwapManager {
           availablePools.push( fee );
         }
       } catch ( error ) {
-        console.log( `Pool not found for tokens ${ tokenA.symbol }/${ tokenB.symbol } with fee ${ fee }` );
+        log.error( `Pool not found for tokens ${ tokenA.symbol }/${ tokenB.symbol } with fee ${ fee }` );
       }
     }
     return availablePools;
@@ -580,7 +581,7 @@ export class UniswapSwapManager extends SwapManager {
   //     const availablePools = await this.getAvailablePools( actualTokenIn, actualTokenOut );
 
   //     if ( availablePools.length === 0 ) {
-  //       console.log( `No pools exist for ${ tokenIn.symbol } and ${ tokenOut.symbol }` );
+  //       log.error( `No pools exist for ${ tokenIn.symbol } and ${ tokenOut.symbol }` );
   //       // Handle multi-hop or throw an error if no valid routes exist
   //       return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn );
   //     }
@@ -592,7 +593,7 @@ export class UniswapSwapManager extends SwapManager {
   //     for ( const fee of availablePools ) {
   //       const liquidity = await this.getPoolLiquidity( actualTokenIn, actualTokenOut, fee );
   //       if ( liquidity === null ) {
-  //         console.log( `Liquidity data unavailable for pool with fee ${ fee }` );
+  //         log.error( `Liquidity data unavailable for pool with fee ${ fee }` );
   //         continue;
   //       }
 
@@ -610,7 +611,7 @@ export class UniswapSwapManager extends SwapManager {
 
   //     // If no suitable pool was found based on the threshold, use the first available pool
   //     const fee = selectedFee ? selectedFee : availablePools[ 0 ];
-  //     console.log( `Using fee tier ${ fee } with liquidity ${ maxLiquidity.toString() }` );
+  //     log.error( `Using fee tier ${ fee } with liquidity ${ maxLiquidity.toString() }` );
 
   //     // Step 3: Create quote parameters
   //     const params = {
@@ -660,13 +661,13 @@ export class UniswapSwapManager extends SwapManager {
   //         );
   //       }
   //     } catch ( error ) {
-  //       console.log( 'Direct pool quote failed, trying multi-hop:', error );
+  //       log.error( 'Direct pool quote failed, trying multi-hop:', error );
   //     }
 
   //     // Step 4: If no direct pool works, attempt a multi-hop route
   //     return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn );
   //   } catch ( error ) {
-  //     console.log( 'Error in getQuoteWithLiquidityConsideration:', error );
+  //     log.error( 'Error in getQuoteWithLiquidityConsideration:', error );
   //     throw error;
   //   }
   // }
@@ -675,7 +676,7 @@ export class UniswapSwapManager extends SwapManager {
   //   try {
   //     const poolAddress = await this.getPoolAddress( tokenA, tokenB, fee );
   //     if ( poolAddress === ethersv6.ZeroAddress ) {
-  //       console.log( `No pool exists for the token pair ${ tokenA.symbol }/${ tokenB.symbol } at fee ${ fee }` );
+  //       log.error( `No pool exists for the token pair ${ tokenA.symbol }/${ tokenB.symbol } at fee ${ fee }` );
   //       return null;
   //     }
 
@@ -683,7 +684,7 @@ export class UniswapSwapManager extends SwapManager {
   //     const liquidity = await poolContract.liquidity();
   //     return liquidity;
   //   } catch ( error ) {
-  //     console.log( 'Error fetching pool liquidity:', error );
+  //     log.error( 'Error fetching pool liquidity:', error );
   //     return null;
   //   }
   // }
@@ -947,7 +948,7 @@ export class UniswapSwapManager extends SwapManager {
   //     try {
   //       validTick = safeConvertBigIntToNumber( validTickBigInt );
   //     } catch ( error ) {
-  //       console.log( 'Error converting tick to number:', error );
+  //       log.error( 'Error converting tick to number:', error );
   //       // Fallback to a default tick value or handle the error as appropriate for your use case
   //       validTick = 0; // or some other default value
   //     }
@@ -1098,7 +1099,7 @@ export class UniswapSwapManager extends SwapManager {
   //       debug_log( 'token1Price:', token1Price );
 
   //     } catch ( error ) {
-  //       console.log( 'Error calculating prices:', error );
+  //       log.error( 'Error calculating prices:', error );
   //       token0Price = '0';
   //       token1Price = '0';
   //     }
@@ -1132,7 +1133,7 @@ export class UniswapSwapManager extends SwapManager {
   //       tvl
   //     };
   //   } catch ( error ) {
-  //     console.log( 'Error in getPoolInfo:', error );
+  //     log.error( 'Error in getPoolInfo:', error );
   //     throw error;
   //   }
   // }
@@ -1218,7 +1219,7 @@ export class UniswapSwapManager extends SwapManager {
       const price = await this.getMarketPrice( token.symbol + '-USD' );
       return price.price;
     } catch ( error ) {
-      console.log( 'Error getting token price. Defaulting to 0:', error );
+      log.error( 'Error getting token price. Defaulting to 0:', error );
       return 0;
     }
   }
@@ -1367,7 +1368,7 @@ export class UniswapSwapManager extends SwapManager {
       );
       return toBigInt( allowance );
     } catch ( err ) {
-      error_log( 'Error checking allowance:', err );
+      log.error( 'Error checking allowance:', err );
       return 0n;
     }
   }
@@ -1439,7 +1440,7 @@ export class UniswapSwapManager extends SwapManager {
 
       return EthersConverter.ethersTransactionReceiptToTransactionReceipt(receipt);
     } catch ( error ) {
-      error_log( 'Token approval error:', error );
+      log.error( 'Token approval error:', error );
       throw error;
     }
   }
@@ -1497,7 +1498,7 @@ export class UniswapSwapManager extends SwapManager {
 
       return await this.provider.sendTransaction( tx );
     } catch ( error ) {
-      error_log( 'Error executing swap:', error );
+      log.error( 'Error executing swap:', error );
       throw error;
     }
   }
@@ -1521,7 +1522,7 @@ export class UniswapSwapManager extends SwapManager {
       // Return both receipts as an array, as expected by the function return type
       return [ swapReceipt, feeReceipt ];
     } catch ( error ) {
-      error_log( 'Error executing FULL swap:', error );
+      log.error( 'Error executing FULL swap:', error );
       throw error;
     }
   }
@@ -1583,12 +1584,12 @@ export class UniswapSwapManager extends SwapManager {
           const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
           const gasCost = gasUsed * effectiveGasPrice;
         } catch ( error ) {
-          error_log( 'Error calculating gas cost (informational-transaction):', error );
+          log.error( 'Error calculating gas cost (informational-transaction):', error );
         }
         return receipt;
 
       } catch ( error ) {
-        error_log( 'Fee distribution failed (transaction):', error );
+        log.error( 'Fee distribution failed (transaction):', error );
         throw error;
       }
     }
@@ -1621,12 +1622,12 @@ export class UniswapSwapManager extends SwapManager {
         const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
         const gasCost = gasUsed * effectiveGasPrice;
       } catch ( error ) {
-        error_log( 'Error calculating gas cost (informational-transfer):', error );
+        log.error( 'Error calculating gas cost (informational-transfer):', error );
       }
 
       return receipt;
     } catch ( error ) {
-      error_log( 'Fee distribution failed (transfer):', error );
+      log.error( 'Fee distribution failed (transfer):', error );
       throw error;
     }
   }
@@ -1664,7 +1665,7 @@ export class UniswapSwapManager extends SwapManager {
       const receipt = await tx.wait();
       return await EthersConverter.ethersTransactionReceiptToTransactionReceipt( receipt );
     } catch ( error ) {
-      error_log( 'Error wrapping ETH:', error );
+      log.error( 'Error wrapping ETH:', error );
       throw error;
     }
   }
@@ -1709,7 +1710,7 @@ export class UniswapSwapManager extends SwapManager {
         return receiptTrans; // Return the original receipt if the recipient is the signer
       }
     } catch ( error ) {
-      error_log( 'Error unwrapping WETH:', error );
+      log.error( 'Error unwrapping WETH:', error );
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import type { TokenData, MarketPriceData } from '$lib/common/interfaces'; // Assume the minimal TokenData interface is in a file
 import { setYakklTokenDataStorage } from '$lib/common/stores';
+import { log } from '../Logger';
 import defaultTokens from './defaultTokens.json';
 
 /**
@@ -45,7 +46,7 @@ export async function loadDefaultTokens(): Promise<void> {
     // Update the storage and store
     setYakklTokenDataStorage(tokens);
   } catch (error) {
-    console.log('Failed to load default tokens:', error);
+    log.error('Failed to load default tokens:', error);
   }
 }
 
@@ -63,3 +64,16 @@ function validateToken(token: any): boolean {
     typeof token.logoURI === 'string'
   );
 }
+
+
+// Example default token JSON structure for ChainLink
+// {
+//   "name": "ChainLink Token",
+//   "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+//   "symbol": "LINK",
+//   "decimals": 18,
+//   "chainId": 1,
+//   "isNative": false,
+//   "isStablecoin": false,
+//   "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x514910771AF9Ca656af840dff83E8264EcF986CA/logo.png"
+// },

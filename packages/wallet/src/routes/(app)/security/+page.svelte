@@ -1,8 +1,7 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
-  import { PATH_IMPORT_EMERGENCYKIT, PATH_LOCK, PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";
+  import { PATH_LOGIN, PATH_REGISTER } from "$lib/common/constants";
   import Back from "$lib/components/Back.svelte";
   import Pincode from "$lib/components/Pincode.svelte";
   import ComingSoon from "$lib/components/ComingSoon.svelte";
@@ -14,7 +13,6 @@
 
   import { getBrowserExt } from '$lib/browser-polyfill-wrapper';
 	import type { Browser } from 'webextension-polyfill';
-  import { handleOnMessage } from "$lib/common/handlers";
 	import EmergencyKitModal from "$lib/components/EmergencyKitModal.svelte";
 
   let browser_ext: Browser;
@@ -26,27 +24,6 @@
   let showComingSoon = $state(false);
   let showPin = $state(false);
   let showEmergencyKit = $state(false);
-
-
-  onMount(() => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.addListener(handleOnMessage);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
-
-  onDestroy(() => {
-    try {
-      if (browserSvelte) {
-        browser_ext.runtime.onMessage.removeListener(handleOnMessage);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  });
 
   if (browserSvelte) {
     getSettings().then(result => {

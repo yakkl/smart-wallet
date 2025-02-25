@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
-
+import { debug_log } from "$lib/common/debug-error";
+import { log } from "$plugins/Logger";
 
 export class CoinbasePriceProvider implements PriceProvider {
   getAPIKey(): string {
@@ -18,8 +19,10 @@ export class CoinbasePriceProvider implements PriceProvider {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
 
+      // debugger;
+
       pair = await this.getProviderPairFormat( pair );
-      
+
       const [ tokenIn, tokenOut ] = pair.split( '-' );
       if ( !tokenIn || !tokenOut ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
@@ -43,9 +46,11 @@ export class CoinbasePriceProvider implements PriceProvider {
       if ( tokenIn === 'WBTC' ) {
         pair = `BTC-${ tokenOut }`;
       }
-    
+
       const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
-    
+
+      // log.debug( 'CoinbasePriceProvider - getPrice - json', json );
+
       if ( json.num_products <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };
       }
@@ -59,7 +64,7 @@ export class CoinbasePriceProvider implements PriceProvider {
       };
     }
     catch ( e: any ) {
-      console.log( 'CoinbasePriceProvider - getPrice - error', e );
+      log.error( 'CoinbasePriceProvider - getPrice - error', e );
 
       let status = 404;  // Default status
       let message = `Error - ${ e }`;
@@ -69,6 +74,8 @@ export class CoinbasePriceProvider implements PriceProvider {
         status = 429;
         message = 'Too Many Requests - Rate limit exceeded';
       }
+
+      // log.debug( 'CoinbasePriceProvider - getPrice - error', status, message );
 
       return {
         provider: this.getName(),

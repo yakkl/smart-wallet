@@ -2,23 +2,27 @@
 import { get } from "svelte/store";
 import { yakklGasTransStore, yakklConnectionStore } from "$lib/common/stores";
 import type { GasFeeTrend, BlocknativeResponse, GasTransStore, EstimatedPrice } from '$lib/common/interfaces';
+import { timerManager } from "$lib/plugins/TimerManager";
+import { log } from "$plugins/Logger";
 
 const now = () => +Date.now() / 1000;
 
-let gasPriceIntervalID: NodeJS.Timeout | undefined = undefined;
+// let gasPriceIntervalID: NodeJS.Timeout | undefined = undefined;
 let providerGasCB: string | null = null;
 const gasFeeTrend: GasFeeTrend[] = [];
 
 async function checkGasPricesCB() {
   try {
-    if (gasPriceIntervalID) {
+    // if (gasPriceIntervalID) {
+    if (timerManager.isRunning('gas_checkGasPrices')) {
       if (get(yakklConnectionStore) === true) {
+        // log.debug('Gas price timer running for gas_checkGasPrices');
         const results = await fetchBlocknativeData();
-        yakklGasTransStore.set({ provider: providerGasCB, id: gasPriceIntervalID, results });
+        yakklGasTransStore.set({ provider: providerGasCB, id: timerManager.getTimeoutID('gas_checkGasPrices'), results });
       }
     }
   } catch (error) {
-    console.log(error);
+    log.error(error);
   }
 }
 
@@ -28,29 +32,45 @@ function setGasCBProvider(provider: string | null) {
 
 export function stopCheckGasPrices() {
   try {
-    if (gasPriceIntervalID) {
-      clearInterval(gasPriceIntervalID);
+    // if (gasPriceIntervalID) {
+      // clearInterval(gasPriceIntervalID);
+      // log.debug('Gas price timer stopped for gas_checkGasPrices');
+      timerManager.stopTimer('gas_checkGasPrices');
       setGasCBProvider(null);
-      gasPriceIntervalID = undefined;
-    }
+      // gasPriceIntervalID = undefined;
+    // }
   } catch (error) {
-    console.log(error);
+    log.error(error);
   }
 }
 
-export function startCheckGasPrices(provider = 'blocknative', seconds = 5) {
+export function startCheckGasPrices(provider = 'blocknative', seconds = 10) {
   try {
     if (seconds > 0) {
-      if (gasPriceIntervalID) {
+      // if (gasPriceIntervalID) {
+      if (timerManager.isRunning('gas_checkGasPrices')) {
+        // log.debug('Gas price timer is already running for gas_checkGasPrices');
         return; // Already running
       }
+
+      // log.debug('Gas price timer checked if already started for gas_checkGasPrices');
+
       setGasCBProvider(provider);
-      if (!gasPriceIntervalID) {
-        gasPriceIntervalID = setInterval(checkGasPricesCB, 1000 * seconds);
+      // if (!gasPriceIntervalID) {
+      if (!timerManager.isRunning('gas_checkGasPrices')) {
+        // gasPriceIntervalID = setInterval(checkGasPricesCB, 1000 * seconds);
+        timerManager.addTimer('gas_checkGasPrices', checkGasPricesCB, 1000 * seconds);
+        timerManager.startTimer('gas_checkGasPrices');
+        // log.debug('Gas price timer started for gas_checkGasPrices');
       }
     }
   } catch (error) {
-    console.log(error);
+    log.error(error);
+    timerManager.stopTimer('gas_checkGasPrices');
+    // if (gasPriceIntervalID && Number(gasPriceIntervalID) > 0) {
+    //   clearInterval(gasPriceIntervalID);
+    //   gasPriceIntervalID = undefined;
+    // }
   }
 }
 
@@ -157,7 +177,7 @@ export const fetchBlocknativeData = debounce(async () => {
       return {} as GasTransStore['results'];
     }
   } catch (error) {
-    console.log(error);
+    log.error(error);
     return {} as GasTransStore['results'];
   }
 });
@@ -174,7 +194,7 @@ export const fetchEtherscanData = debounce(async () => {
       parseInt(SafeGasPrice, 10)
     ];
   } catch (error) {
-    console.log(error);
+    log.error(error);
     return [0, 0, 0];
   }
 });
@@ -185,7 +205,7 @@ export const fetchEGSData = debounce(async () => {
 
     return [fast / 10, average / 10, safeLow / 10];
   } catch (error) {
-    console.log(error);
+    log.error(error);
     return [0, 0, 0];
   }
 });

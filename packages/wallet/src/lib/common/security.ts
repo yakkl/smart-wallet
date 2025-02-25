@@ -3,7 +3,7 @@ import { decryptData, digestMessage } from '$lib/common/encryption';
 import type { AccountData, CurrentlySelectedData, Profile, ProfileData } from '$lib/common/interfaces';
 import { isEncryptedData } from '$lib/common/misc';
 import { getProfile, setMiscStore, getYakklCurrentlySelected, getMiscStore } from '$lib/common/stores';
-import { error_log } from './debug-error';
+import { log } from '$plugins/Logger';
 
 export interface AccountKey {
   address: string;
@@ -15,27 +15,24 @@ export async function verify(id: string): Promise<Profile | undefined> {
     if (!id) {
       return undefined;
     }
-
     const profile = await getProfile();
     const digest = await digestMessage(id);
-
     if (!profile || !digest) {
       return undefined; // Don't set the store to anything here
     } else {
       if (isEncryptedData(profile.data)) {
-        await decryptData(profile.data, digest).then(result => {
-          profile.data = result as ProfileData;
+        const profileData = await decryptData(profile.data, digest) as ProfileData;
+        if (profileData) {
           setMiscStore(digest);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        }, _reason => {
-          // TODO: send reason to sentry but keep message generic
+        } else {
           throw 'Verification failed!';
-        });
+        }
       }
       return profile;
     }
   } catch(e) {
-    console.log(e);
+    // console.log('[ERROR]:', e);
+    log.error(e);
     throw `Verification failed! - ${e}`;
   }
 }
@@ -48,6 +45,9 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
     let address: string | null = null;
     let privateKey: string | null | undefined = null;
 
+    if (!yakklMiscStore || !currentlySelected) {
+      return null;
+    }
     // May want to put this in a function
     if ( isEncryptedData( currentlySelected.data ) ) {
       const result = await decryptData( currentlySelected.data, yakklMiscStore );
@@ -61,7 +61,7 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
         privateKey = data ? data.account?.data.privateKey : null;
       }
     } else {
-      privateKey = currentlySelected.data ? ( ( currentlySelected.data as CurrentlySelectedData ).account?.data as AccountData ).privateKey : null;
+      privateKey = currentlySelected.data ? ( ( currentlySelected.data as CurrentlySelectedData ).account?.data as AccountData )?.privateKey ?? null : null;
     }
 
     if ( privateKey && address) {
@@ -72,7 +72,8 @@ export async function getYakklCurrentlySelectedAccountKey(): Promise<AccountKey 
     }
     return accountKey;
   } catch(e: any) {
-    error_log(e);
+    // error_log(e);
+    log.errorStack(e);
     throw `Error getting account key - ${e}`;
   }
 }
