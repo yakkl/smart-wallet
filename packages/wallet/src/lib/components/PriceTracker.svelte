@@ -5,6 +5,7 @@
 	import { timerManager } from '$lib/plugins/TimerManager';
 	import { priceStore } from '$lib/common/stores';
   import { log } from "$plugins/Logger";
+	import { TIMER_PRICE_INTERVAL_TIME } from '$lib/common';
 
   interface Props {
     symbol: string; // In a swap this would be the fromToken
@@ -18,7 +19,7 @@
     symbol,
     currency,
     providers = $bindable([new CoinbasePriceProvider()]),  // Defaults to Coinbase but the passed in providers should have priority with more than one
-    updateInterval = 10000,
+    updateInterval = TIMER_PRICE_INTERVAL_TIME, // milliseconds
     children
   }: Props = $props();
 

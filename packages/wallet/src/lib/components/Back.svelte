@@ -11,9 +11,9 @@
   // Shim for login page - needs a better way
   function handleBack(_e: any) {
     if (href === '') {
-      if (history.length > 3) {
+      if (history.length > 2) {
         history.back();
-      } // it is assumed that it takes at least 3 pages before the welcome screen is presented for the first time. Note, if the user clicks any of the recover or import links on the login page then the length will be higher and this can fool this simple check which can reload the login page and the user has to login again. FYI
+      } // it is assumed that it takes at least 2 pages before the welcome screen is presented for the first time. Note, if the user clicks any of the recover or import links on the login page then the length will be higher and this can fool this simple check which can reload the login page and the user has to login again. FYI
     } else {
       goto(href);
     }

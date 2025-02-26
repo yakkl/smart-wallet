@@ -8,10 +8,11 @@ import { CoingeckoPriceProvider } from '$lib/plugins/providers/price/coingecko/C
 import { CoinbasePriceProvider } from '$lib/plugins/providers/price/coinbase/CoinbasePriceProvider';
 import { log } from "$plugins/Logger";
 import { timerManager } from "$lib/plugins/TimerManager";
+import { TIMER_CHECK_PRICE_INTERVAL_TIME } from '$lib/common';
 
 // Use these globally if needed
 export let checkPricesProvider: string = 'coinbase';
-export let checkPricesInterval: number = 15; // Seconds
+export let checkPricesInterval: number = TIMER_CHECK_PRICE_INTERVAL_TIME; // milliseconds
 
 // https://polygon.io/docs/crypto/get_v3_reference_exchanges - APIs to look at next (stocks and crypto)
 
@@ -30,8 +31,6 @@ const priceManager = new PriceManager([
 // The new code is in the plugins folder - priceManager
 export async function checkPricesCallback(symbol: string = 'ETH-USD') {
   try {
-    // log.debug('checkPricesCallback - priceManager:', priceManager);
-
     if (get(yakklConnectionStore) === true) {
       const result = await priceManager.getMarketPrice( symbol );
       if ( result ) {
@@ -42,13 +41,12 @@ export async function checkPricesCallback(symbol: string = 'ETH-USD') {
           price: result.price,
           prevPrice: prevPrice,
         } );
-        // log.debug(`Updated yakklPricingStore: New Price = ${result.price}, Previous Price = ${prevPrice}`);
       }
     } else {
       log.error('checkPrices:', 'Internet connection may be down.'); // Comment this out later
     }
   } catch (e) {
-    log.errorStack(`checkPricesCallback: ${e}`);
+    log.error(`checkPricesCallback: ${e}`);
   }
 }
 
@@ -66,16 +64,16 @@ export async function startPricingChecks(symbol: string = 'ETH-USD') {
   startCheckPrices(checkPricesProvider, checkPricesInterval, symbol);
 }
 
-export function startCheckPrices(provider = 'coinbase', seconds = 15, symbol: string = 'ETH-USD'): Promise<void> {
+export function startCheckPrices(provider = 'coinbase', ms = TIMER_CHECK_PRICE_INTERVAL_TIME, symbol: string = 'ETH-USD'): Promise<void> {
   stopCheckPrices();
   if (!providerCallback) setProviderCallback(provider);
 
   try {
-    if (seconds > 0) {
+    if (ms > 0) {
       if ( timerManager.isRunning('prices_checkPrices') ) {
         return; // Already running
       }
-      timerManager.addTimer('prices_checkPrices', () => {checkPricesCallback(symbol)}, 1000 * seconds);
+      timerManager.addTimer('prices_checkPrices', () => {checkPricesCallback(symbol)}, ms);
       timerManager.startTimer('prices_checkPrices');
     }
   } catch (e) {

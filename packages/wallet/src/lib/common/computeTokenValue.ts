@@ -13,7 +13,5 @@ export function computeTokenValue(token: TokenData): { balance: number, value: n
   const price = token?.price?.price ?? 0;
   const value = balance * price;
 
-  // log.debugStack(`tokenValueCompute.ts: Token: ${token.symbol} | Balance: ${balance} | Price: ${price} | Value: ${value}`);
-
   return { balance, value };
 }

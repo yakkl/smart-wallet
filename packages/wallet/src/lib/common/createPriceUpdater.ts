@@ -40,9 +40,6 @@ export function createPriceUpdater(priceManager: PriceManager) {
         log.error('fetchPrices - Error processing batch:', batch, error);
       }
     }
-
-    // log.debug('createPriceUpdater: fetchPrices - Final updated tokens:', updatedTokens);
-
     return updatedTokens;
   }
 
@@ -56,8 +53,6 @@ export function createPriceUpdater(priceManager: PriceManager) {
       // Fix for handling decimals in calculations
       const adjustedBalance = token.balance ? Number(token.balance) / (10 ** token.decimals) : 0;
       const value = adjustedBalance * price;
-
-      // log.debug(`^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ createPriceUpdater: fetchTokenData - Updated token ${token.symbol} with price: ${price} and value: ${value} and ${marketPrice}`);
 
       return {
         ...token,
