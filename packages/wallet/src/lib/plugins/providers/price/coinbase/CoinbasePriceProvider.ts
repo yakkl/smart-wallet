@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "@ethersproject/web";
 import type { MarketPriceData, PriceProvider } from '$lib/common/interfaces';
-import { debug_log } from "$lib/common/debug-error";
 import { log } from "$plugins/Logger";
 
 export class CoinbasePriceProvider implements PriceProvider {
@@ -18,8 +17,6 @@ export class CoinbasePriceProvider implements PriceProvider {
       if ( !pair ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Invalid pair - ${ pair }` };
       }
-
-      // debugger;
 
       pair = await this.getProviderPairFormat( pair );
 
@@ -48,8 +45,6 @@ export class CoinbasePriceProvider implements PriceProvider {
       }
 
       const json = await fetchJson( `https://api.coinbase.com/api/v3/brokerage/market/products?limit=1&product_ids=${ pair }` ); // WETH is not supported by Coinbase
-
-      // log.debug( 'CoinbasePriceProvider - getPrice - json', json );
 
       if ( json.num_products <= 0 ) {
         return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `No data found for - ${ pair }` };

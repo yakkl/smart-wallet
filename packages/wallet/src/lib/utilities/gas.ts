@@ -4,19 +4,17 @@ import { yakklGasTransStore, yakklConnectionStore } from "$lib/common/stores";
 import type { GasFeeTrend, BlocknativeResponse, GasTransStore, EstimatedPrice } from '$lib/common/interfaces';
 import { timerManager } from "$lib/plugins/TimerManager";
 import { log } from "$plugins/Logger";
+import { TIMER_CHECK_GAS_PRICE_INTERVAL_TIME } from "$lib/common";
 
 const now = () => +Date.now() / 1000;
 
-// let gasPriceIntervalID: NodeJS.Timeout | undefined = undefined;
 let providerGasCB: string | null = null;
 const gasFeeTrend: GasFeeTrend[] = [];
 
 async function checkGasPricesCB() {
   try {
-    // if (gasPriceIntervalID) {
     if (timerManager.isRunning('gas_checkGasPrices')) {
       if (get(yakklConnectionStore) === true) {
-        // log.debug('Gas price timer running for gas_checkGasPrices');
         const results = await fetchBlocknativeData();
         yakklGasTransStore.set({ provider: providerGasCB, id: timerManager.getTimeoutID('gas_checkGasPrices'), results });
       }
@@ -32,45 +30,29 @@ function setGasCBProvider(provider: string | null) {
 
 export function stopCheckGasPrices() {
   try {
-    // if (gasPriceIntervalID) {
-      // clearInterval(gasPriceIntervalID);
-      // log.debug('Gas price timer stopped for gas_checkGasPrices');
-      timerManager.stopTimer('gas_checkGasPrices');
-      setGasCBProvider(null);
-      // gasPriceIntervalID = undefined;
-    // }
+    timerManager.stopTimer('gas_checkGasPrices');
+    setGasCBProvider(null);
   } catch (error) {
     log.error(error);
   }
 }
 
-export function startCheckGasPrices(provider = 'blocknative', seconds = 10) {
+export function startCheckGasPrices(provider = 'blocknative', ms = TIMER_CHECK_GAS_PRICE_INTERVAL_TIME) {
   try {
-    if (seconds > 0) {
-      // if (gasPriceIntervalID) {
+    if (ms > 0) {
       if (timerManager.isRunning('gas_checkGasPrices')) {
-        // log.debug('Gas price timer is already running for gas_checkGasPrices');
         return; // Already running
       }
 
-      // log.debug('Gas price timer checked if already started for gas_checkGasPrices');
-
       setGasCBProvider(provider);
-      // if (!gasPriceIntervalID) {
       if (!timerManager.isRunning('gas_checkGasPrices')) {
-        // gasPriceIntervalID = setInterval(checkGasPricesCB, 1000 * seconds);
-        timerManager.addTimer('gas_checkGasPrices', checkGasPricesCB, 1000 * seconds);
+        timerManager.addTimer('gas_checkGasPrices', checkGasPricesCB, ms);
         timerManager.startTimer('gas_checkGasPrices');
-        // log.debug('Gas price timer started for gas_checkGasPrices');
       }
     }
   } catch (error) {
     log.error(error);
     timerManager.stopTimer('gas_checkGasPrices');
-    // if (gasPriceIntervalID && Number(gasPriceIntervalID) > 0) {
-    //   clearInterval(gasPriceIntervalID);
-    //   gasPriceIntervalID = undefined;
-    // }
   }
 }
 

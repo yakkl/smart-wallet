@@ -1,3 +1,4 @@
+import { TIMER_CONNECTION_INTERVAL_TIME } from "$lib/common";
 import { yakklConnectionStore } from "$lib/common/stores";
 import { timerManager } from "$lib/plugins/TimerManager";
 import { isOnline } from '$lib/utilities/utilities';
@@ -25,14 +26,14 @@ export function stopCheckConnection() {
   }
 }
 
-export function startCheckConnection(url='https://github.com/yakkl', seconds=30) {
+export function startCheckConnection(url='https://github.com/yakkl', ms=TIMER_CONNECTION_INTERVAL_TIME) {
   try {
-    if (seconds > 0) {
+    if (ms > 0) {
       urlCheck = url;
       if (timerManager.isRunning('connection_checkConnection')) {
         return; // Already running
       }
-      timerManager.addTimer('connection_checkConnection', checkConnectionCB, 1000 * seconds);
+      timerManager.addTimer('connection_checkConnection', checkConnectionCB, ms);
       timerManager.startTimer('connection_checkConnection');
   }
   } catch (e) {

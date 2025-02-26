@@ -12,7 +12,7 @@ window.onerror = function (message, source, lineno, colno, error) {
 };
 
 window.addEventListener('error', (event) => {
-  // console.log('Error Event Caught:', event);
+  console.log('Error Event Caught:', event);
   event.preventDefault();
 });
 

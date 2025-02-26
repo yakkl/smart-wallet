@@ -204,7 +204,7 @@
           // Make sure there is at least one Primary or Imported account
           if (await checkAccountRegistration()) {
             // resetTokenDataStoreValues();
-            await updateTokenPrices();
+            // await updateTokenPrices();
             await sendNotificationStartLockIconTimer();
             goto(redirect, {replaceState: true, invalidateAll: true});
           } else {

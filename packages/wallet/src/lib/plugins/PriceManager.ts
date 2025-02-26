@@ -1,9 +1,10 @@
 import type { PriceData, PriceProvider, WeightedProvider } from '$lib/common/interfaces';
-// import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 import { CoingeckoPriceProvider } from './providers/price/coingecko/CoingeckoPriceProvider';
-// import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
 import { log } from "$plugins/Logger";
+
+// import { AlchemyPriceProvider } from './providers/price/alchemy/AlchemyPriceProvider';
+// import { KrakenPriceProvider } from './providers/price/kraken/KrakenPriceProvider';
 
 export class PriceManager {
   private weightedProviders: WeightedProvider[];
@@ -65,13 +66,7 @@ export class PriceManager {
       }
 
       provider = this.getWeightedRandomProvider( providersToUse );
-
-      // log.debug( 'PriceManager - getMarketPrice - pair, providers, provider ||||', pair, providersToUse, provider );
-
       const price = await provider.getMarketPrice( pair );
-
-      // log.debug( 'PriceManager - getMarketPrice - price ||||', price );
-
       return price;
     } catch ( error ) {
       log.error( `Error fetching price from ${ provider.getName() }:`, error );

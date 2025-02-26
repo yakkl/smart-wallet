@@ -1,4 +1,5 @@
 // src/hooks.client.ts
+import { TIMER_IDLE_CHECK_INTERVAL, TIMER_IDLE_LOCK_DELAY, TIMER_IDLE_THRESHOLD } from '$lib/common';
 import { browser_ext } from '$lib/common/environment';
 import { handleOnMessageForExtension } from '$lib/common/listeners/ui/uiListeners';
 import { syncStorageToStore } from '$lib/common/stores';
@@ -9,9 +10,9 @@ import { log } from '$plugins/Logger';
 // Initialize the manager but don't start it yet
 const idleManager = IdleManager.initialize({
   width: 'system-wide',
-  threshold: 120000,    // 2 minutes until idle
-  lockDelay: 60000,     // +1 minute before lockdown
-  checkInterval: 15000  // Only for app-wide mode
+  threshold: TIMER_IDLE_THRESHOLD,    // 2 minutes until idle
+  lockDelay: TIMER_IDLE_LOCK_DELAY,     // +1 minute before lockdown
+  checkInterval: TIMER_IDLE_CHECK_INTERVAL  // Only for app-wide mode
 });
 
 let isInitialized = false;
@@ -21,7 +22,11 @@ export async function init() {
     // Prevent multiple initializations
     if (isInitialized) return;
 
-    log.setLevel('ERROR', 'CONTAINS', ['ERROR', 'INFO', 'WARN', 'DEBUG']);
+    if (process.env.DEV_DEBUG) {
+      log.setLevel('ERROR', 'CONTAINS', ['ERROR', 'DEBUG', 'WARN', 'INFO', 'TRACE']);
+    } else {
+      log.setLevel('ERROR', 'CONTAINS', ['ERROR']);
+    }
     log.info("[hooks.client]: Running client-side setup...");
 
     // Setup listeners first

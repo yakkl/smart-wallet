@@ -39,9 +39,6 @@ export async function getTokenBalance(
     try {
       const balance = await tokenContract.balanceOf(userAddress);
       const decimals = await tokenContract.decimals();
-
-      // log.debug(`tokens.ts: Token: ${token.name} | Address: ${token.address} | Balance: ${balance.toString()} | Decimals: ${decimals}`);
-
       return ethers.formatUnits(balance, decimals);
     } catch {
       log.error('The contract does not implement balanceOf or it reverted.');
@@ -74,7 +71,6 @@ export async function updateTokenBalances(userAddress: string, provider: ethers.
 export async function updateTokenDataBalances(userAddress: string, provider: ethers.Provider): Promise<TokenData[]> {
   try {
     const tokens = get(yakklTokenDataStore); // Fetch default tokens from storage or store
-
     if (!tokens || tokens.length === 0) {
       log.warn('No tokens available to update balances');
       return [];
@@ -114,9 +110,6 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 export async function updateTokenDataCustomBalances(userAddress: string, provider: ethers.Provider): Promise<TokenData[]> {
   try {
     const customTokens = get(yakklTokenDataCustomStore);
-
-    // log.debug('updateTokenDataCustomBalances: customTokens', customTokens);
-
     if (!customTokens || customTokens.length === 0) {
       log.warn('No custom tokens available to update balances');
       return [];
@@ -142,9 +135,6 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
     // Update the store only if the data has changed
     const currentCustomTokens = get(yakklTokenDataCustomStore);
     if (!isEqual(currentCustomTokens, updatedCustomTokens)) {
-
-      // log.debug('updateTokenDataCustomBalances: Updating custom tokens in storage');
-
       await setYakklTokenDataCustomStorage(updatedCustomTokens);
     }
 
@@ -157,8 +147,6 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
 
 // For memory store only
 export function updateTokenValues() {
-  // log.debugStack('updateTokenValues: Updating token values', yakklCombinedTokenStore);
-
   yakklCombinedTokenStore.update(tokens =>
     tokens.map(token => {
       const { value } = computeTokenValue(token);

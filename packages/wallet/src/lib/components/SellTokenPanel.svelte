@@ -8,6 +8,7 @@
   import { convertTokenToUsd, convertUsdToTokenAmount, toBigInt } from '$lib/common';
   import ToggleSwitch from './ToggleSwitch.svelte';
   import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
+	import NumericInput from './NumericInput.svelte';
 
   interface Props {
     disabled?: boolean;
@@ -58,28 +59,50 @@
   }, 300);
 
   // Handle user input changes
-  function handleAmountInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    let value = input.value;
+  // function handleAmountInput(event: Event) {
+  //   const input = event.target as HTMLInputElement;
+  //   let value = input.value;
 
-    // Allow only valid numbers
-    value = value.replace(/[^0-9.]/g, '');
+  //   // Allow only valid numbers
+  //   value = value.replace(/[^0-9.]/g, '');
 
-    // Handle decimals
-    const parts = value.split('.');
-    if (parts.length > 2) value = `${parts[0]}.${parts.slice(1).join('')}`;
+  //   // Handle decimals
+  //   const parts = value.split('.');
+  //   if (parts.length > 2) value = `${parts[0]}.${parts.slice(1).join('')}`;
 
-    // Limit decimal precision
-    if ($isUsdModeStore && parts[1]?.length > 2) {
-      value = `${parts[0]}.${parts[1].slice(0, 2)}`;
-    } else if (!$isUsdModeStore) {
-      const tokenDecimals = $swapPriceDataStore.tokenIn.decimals || 18;
-      if (parts[1]?.length > tokenDecimals) {
-        value = `${parts[0]}.${parts[1].slice(0, tokenDecimals)}`;
-      }
-    }
+  //   // Limit decimal precision
+  //   if ($isUsdModeStore && parts[1]?.length > 2) {
+  //     value = `${parts[0]}.${parts[1].slice(0, 2)}`;
+  //   } else if (!$isUsdModeStore) {
+  //     const tokenDecimals = $swapPriceDataStore.tokenIn.decimals || 18;
+  //     if (parts[1]?.length > tokenDecimals) {
+  //       value = `${parts[0]}.${parts[1].slice(0, tokenDecimals)}`;
+  //     }
+  //   }
 
-    userInput = value;
+  //   userInput = value;
+  //   if (value === '' || value === '.') {
+  //     formattedAmount = '';
+  //     debouncedAmountChange('');
+  //   } else {
+  //     formattedAmount = value;
+
+  //     if ($isUsdModeStore) {
+  //       const marketPrice = $swapPriceDataStore.marketPriceIn || 0;
+  //       if (marketPrice > 0) {
+  //         const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenIn.decimals);
+  //         debouncedAmountChange(tokenAmount.toString());
+  //       } else {
+  //         debouncedAmountChange('');
+  //       }
+  //     } else {
+  //       debouncedAmountChange(value);
+  //     }
+  //   }
+  // }
+
+  function handleAmountInput(value: string) {
+    // No need to get value from event.target anymore
     if (value === '' || value === '.') {
       formattedAmount = '';
       debouncedAmountChange('');
@@ -100,12 +123,21 @@
     }
   }
 
-  function handleBlur() {
-    if (!userInput || userInput === '.') {
+  // function handleBlur() {
+  //   if (!userInput || userInput === '.') {
+  //     userInput = '';
+  //     formattedAmount = '';
+  //   } else {
+  //     formattedAmount = userInput;
+  //   }
+  // }
+
+  function handleBlur(value: string) {
+    if (!value || value === '.') {
       userInput = '';
       formattedAmount = '';
     } else {
-      formattedAmount = userInput;
+      formattedAmount = value;
     }
   }
 </script>
@@ -113,7 +145,30 @@
 <div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800
   {disabled ? ' opacity-50 pointer-events-none' : ''}">
   <div class="flex justify-between items-center">
-    <input
+    <NumericInput
+      value={userInput || formattedAmount}
+      onChange={handleAmountInput}
+      onBlur={handleBlur}
+      disabled={disabled}
+      maxDecimals={$isUsdModeStore ? 2 : $swapPriceDataStore.tokenIn.decimals}
+      isUsdMode={$isUsdModeStore}
+      className="
+        bg-transparent
+        text-3xl
+        font-bold
+        w-1/2
+        mr-4
+        focus:outline-none
+        focus:border-b-2
+        focus:border-blue-500
+        {insufficientBalance
+          ? 'text-red-500 dark:text-red-400 '
+          : 'text-black dark:text-white '}
+        {disabled ? 'cursor-not-allowed' : ''}
+        "
+    />
+
+    <!-- <input
       type="text"
       placeholder="0"
       value={userInput || formattedAmount}
@@ -134,7 +189,7 @@
           : 'text-black dark:text-white '}
         {disabled ? 'cursor-not-allowed' : ''}
       "
-    />
+    /> -->
     <TokenDropdown
       disabled={disabled}
       selectedToken={$swapPriceDataStore.tokenIn}

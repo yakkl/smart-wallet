@@ -3,8 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /* eslint-disable no-debugger */
-// import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
-
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
 import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR, TIMELINES } from "$lib/common/constants";
@@ -302,7 +300,7 @@ export function getNetworkInfo(chainId: number) {
   let type;
   let explorer;
 
-  switch(chainId) { 
+  switch(chainId) {
     case 1301:
       blockchain = 'Unichain';
       type = 'Testnet';

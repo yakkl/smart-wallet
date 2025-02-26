@@ -25,7 +25,7 @@
 	import type { Provider } from '$lib/plugins/Provider';
 	import EyeIcon from './icons/EyeIcon.svelte';
 	import ProtectedValue from './ProtectedValue.svelte';
-	import { tokenTotals } from '$lib/common/stores/tokenTotals';
+	import { tokenTotals } from '$lib/common/stores/tokenTotals'; // Used to display portfolio value in html below
   import { browserSvelte, browser_ext } from '$lib/common/environment';
 	import { handleOnMessageForPricing } from '$lib/common/listeners/ui/uiListeners';
   import { log } from "$plugins/Logger";
@@ -134,16 +134,15 @@
   $effect(() => {
     (async () => {
       if ($yakklPricingStore) {
-        // if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
-        //   return; // No change
-        // }
+        if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
+          log.info('Price has not changed.');
+          return; // No change
+        }
         price = $yakklPricingStore.price ?? 0;
         const prevPrice = $yakklPricingStore.prevPrice ?? 0;
+        log.info('Price changed:', price, prevPrice);
         if (price) {
-
-          // log.debug('Card.svelte - price, prevPrice:', price, prevPrice);
-
-          if (price !== prevPrice) {
+          if (price !== prevPrice) { // Only update if the value changes - updateValuePriceFiat (balance update can cause a loop here so be mindful). This will be changing!
             await updateValuePriceFiat();
             await updateWithCurrentlySelected();
           }
@@ -156,10 +155,7 @@
     if (assetPriceValue) {
       const newAssetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
       if (assetPrice !== newAssetPrice) {
-        // log.debug('Card.svelte - assetPrice, newAssetPrice - changed:', assetPrice, newAssetPrice);
         assetPrice = newAssetPrice; // Only update if the value changes
-      } else {
-        // log.debug('Card.svelte - assetPrice, newAssetPrice - no change:', assetPrice, newAssetPrice);
       }
     }
   });
@@ -176,12 +172,9 @@
   // });
 
   $effect.root(() => {
-    // log.debug('<=========================== Card.svelte - $effect.root =================================>');
-
     // Subscribe to token store updates
     const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
-      tokens = updatedTokens;
-      // log.debug('Card.svelte - updated token prices:', tokens); // JSON.stringify(tokens, null, 2));
+      tokens = updatedTokens; // Only keep the latest tokens up to date
     });
 
     return () => {
@@ -194,7 +187,6 @@
       if (browserSvelte) {
         try {
           if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForPricing)) {
-            browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
             browser_ext.runtime.onMessage.addListener(handleOnMessageForPricing);
           }
         } catch (error) {
@@ -231,7 +223,7 @@
           // These are for the initial load and the intervals take over after this
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
           currentlySelected.shortcuts.value = val ?? 0n;
-          checkPricesCallback(); // Simple onetime price update for initial load
+          checkPricesCallback(); // Simple onetime price update for initial load - NOTE: Do not move this up any higher in the code or it will cause a loop. shortcuts.value is used in the updateValuePriceFiat function
 
           await setYakklCurrentlySelectedStorage(currentlySelected); // This updates the store and local storage
           if ($yakklCurrentlySelectedStore.shortcuts.value) await updateValuePriceFiat();
@@ -242,32 +234,6 @@
       log.error(`onMount: ${e}`);
     }
   });
-
-  // // Message handler for starting and stopping price checks. This is primarily sent by active, idle, locked states.
-  // export async function handleOnMessageForPricing(
-  //   message: any,
-  //   sender: Runtime.MessageSender,
-  //   sendResponse: (response?: any) => void
-  // ): Promise<boolean | void>  {
-  //   try {
-  //     switch(message.type) {
-  //       case 'startPricingChecks': {
-  //         startPricingChecks();
-  //         sendResponse({ success: true, message: 'Price checks initiated.' });
-  //         return true;  // return type - asynchronous
-  //       }
-  //       case 'stopPricingChecks': {
-  //         stopCheckPrices();
-  //         sendResponse({ success: true, message: 'Stop price checks initiated.' });
-  //         return true;  // return type - asynchronous
-  //       }
-  //     }
-  //   } catch (e: any) {
-  //     log.error('Error handling message:', e);
-  //     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
-  //     return true; // Indicate asynchronous response
-  //   }
-  // }
 
   async function updateWithCurrentlySelected() {
     try {
@@ -288,7 +254,6 @@
   }
 
   onDestroy(async () => {
-    // browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing); // No need to check if it exists
     if ($yakklCurrentlySelectedStore) {
       await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
     }
@@ -313,6 +278,7 @@
       const val = await getBalance(network.chainId, address);
       if ($yakklCurrentlySelectedStore.shortcuts.value !== val) {
         // This will force a reactivity update
+        // This can also cause a loop if not careful and using $effect to watch for changes
         yakklCurrentlySelectedStore.update((current) => ({
           ...current,
           shortcuts: { ...current.shortcuts, value: val ?? 0n },
@@ -338,8 +304,6 @@
           }
 
           updatePriceDirection($yakklPricingStore.price);
-
-          // log.info("updateValuePriceFiat - Value updated.");
         } else {
           resetPriceData();
         }
@@ -444,7 +408,6 @@
       if ($yakklCurrentlySelectedStore) {
         isDropdownOpen = false;
         if (net.chainId === $yakklCurrentlySelectedStore.shortcuts.chainId ) {
-          // log.info("Network type has not changed.");
           return;
         }
 

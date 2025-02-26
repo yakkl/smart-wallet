@@ -258,7 +258,7 @@
 
         await updateTokenPrices();
 
-        sendNotificationMessage('Welcome to YAKKL!', "Your account is set up. Start exploring swaps, low fees, and more. 🚀");
+        sendNotificationMessage('Welcome to YAKKL!', "Your account is set up. Thank you for choosing YAKKL Smart Wallet. \nStart exploring swaps, low fees, and more. 🚀");
 
         // No need to show registration option at this time. We may enable it later with other options. There must be at least one valid account
         // showRegistrationOption = true;
@@ -393,7 +393,7 @@
     </ul>
 </Popover>
 
-<Popover class="text-sm z-50" triggeredBy="#imp-help" placement="top">
+<!-- <Popover class="text-sm z-50" triggeredBy="#imp-help" placement="top">
     <h3 class="font-semibold text-gray-900 dark:text-white">Recover YAKKL®</h3>
     <div class="grid grid-cols-4 gap-2">
         <div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
@@ -408,7 +408,7 @@
             Do this ONLY if you are having to re-install and recover your previous YAKKL® settings. If you do this on a working YAKKL® version then it WILL RESET so becareful in this scenario!
         </li>
     </ul>
-</Popover>
+</Popover> -->
 
 <Popover class="text-sm z-50" triggeredBy="#nam-help" placement="top">
     <h3 class="font-semibold text-gray-900 dark:text-white">Must have at least 6 lowercase alphanumeric characters</h3>
