@@ -32,7 +32,7 @@ export class TokenService<T extends BaseTransaction> {
 
       return { name, symbol, decimals, totalSupply };
     } catch ( error ) {
-      log.error( 'Contract - getTokenInfo:', error );
+      log.error( 'Contract - getTokenInfo:', false, error );
       return { name: '', symbol: '', decimals: 0, totalSupply: 0n };
     }
   }
@@ -45,7 +45,7 @@ export class TokenService<T extends BaseTransaction> {
       if ( !contract ) return 0n;
       return await contract.call( 'balanceOf', userAddress ); // This checks the contract to see if it has the given userAddress registered and if it has a balance
     } catch (error) {
-      log.error('Contract - getBalance - error', error);
+      log.error('Contract - getBalance - error', false, error);
       return 0n;
     }
   }
@@ -57,7 +57,7 @@ export class TokenService<T extends BaseTransaction> {
       // Since this is the only function within the method then no need for await
       updateTokenBalances( userAddress, this.blockchain?.getProvider()?.getProvider() ?? undefined );
     } catch ( error ) {
-      log.error( 'Error updating token balances:', error );
+      log.error( 'Error updating token balances:', false, error );
     }
   }
 
@@ -75,7 +75,7 @@ export class TokenService<T extends BaseTransaction> {
       return await this.blockchain!.sendTransaction( tx );
     }
     catch ( error ) {
-      log.error( 'Contract - transfer - error', error );
+      log.error( 'Contract - transfer - error', false, error );
       throw new Error(`Error transferring tokens: ${error}`);
     }
   }

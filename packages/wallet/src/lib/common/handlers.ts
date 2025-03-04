@@ -30,7 +30,7 @@ export async function handleLockDown() {
       log.info('handleLockDown: Does not believe to be in a browser environment.');
     }
   } catch (error) {
-    log.error('Error in unload handler:', error);
+    log.error('Error in unload handler:', false, error);
   }
 }
 

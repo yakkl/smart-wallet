@@ -149,7 +149,7 @@ async function lookupContracts() {
             });
         }
     } catch (error) {
-        console.error("Error looking up contracts:", error);
+        console.error("Error looking up contracts:", false, error);
         process.exit(1);
     }
 }

@@ -42,7 +42,7 @@ async function getAllLogsPaginated(startBlock: number, endBlock: number, blockSt
         });
 
     } catch (error) {
-        console.error("Error gathering logs:", error);
+        console.error("Error gathering logs:", false, error);
     }
 }
 
@@ -77,7 +77,7 @@ async function getLatestBlockInfo() {
         console.log(`Finished processing block ${latestBlockNumber}. Total logs found: ${logCount}`);
         return { latestBlockNumber, logCount };
     } catch (error) {
-        console.error("Error getting latest block info:", error);
+        console.error("Error getting latest block info:", false, error);
         return undefined;
     }
 }

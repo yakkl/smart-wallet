@@ -134,7 +134,7 @@
       }
       log.debug("Side panel opened - I hope!");
     } catch (error) {
-      log.error("Error opening side panel:", error);
+      log.error("Error opening side panel:", false, error);
     }
   }
 

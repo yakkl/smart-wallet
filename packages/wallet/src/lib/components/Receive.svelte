@@ -5,7 +5,7 @@
   import { YAKKL_ZERO_ADDRESS } from '$lib/common/constants';
   import { yakklCurrentlySelectedStore } from '$lib/common/stores';
   import Modal from './Modal.svelte';
-  import { ClipboardIcon } from 'svelte-feather-icons';
+	import Copy from './Copy.svelte';
 
   interface Props {
     show?: boolean;
@@ -21,9 +21,9 @@
     }
   });
 
-  function copyAddress() {
-    navigator.clipboard.writeText(address);
-  }
+  // function copyAddress() {
+  //   navigator.clipboard.writeText(address);
+  // }
 </script>
 
 <Modal bind:show={show} title={title}>
@@ -35,9 +35,10 @@
       <div class="border border-base-300 rounded-lg w-full mb-2 p-2">
         <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 break-all" data-bs-toggle="tooltip" data-bs-placement="top" title={address}>
           {address}
-          <button class="ml-2 focus:outline-none" onclick={copyAddress} data-bs-toggle="tooltip" data-bs-placement="top" title="Copy Address">
+          <Copy target={{ value: address }} className="ml-2" />
+          <!-- <button class="ml-2 focus:outline-none" onclick={copyAddress} data-bs-toggle="tooltip" data-bs-placement="top" title="Copy Address">
             <ClipboardIcon class="h-4 w-4 stroke-base-300 hover:stroke-base-100 dark:stroke-white" />
-          </button>
+          </button> -->
         </p>
       </div>
     {:else}
@@ -45,8 +46,8 @@
     {/if}
   </div>
   {#snippet footer()}
-  
+
       <p class="text-sm font-normal text-gray-700 dark:text-gray-200">Scan the barcode for your mobile device or click the copy button so you can paste it.</p>
-    
+
   {/snippet}
 </Modal>

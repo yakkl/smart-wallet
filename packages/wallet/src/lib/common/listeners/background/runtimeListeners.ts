@@ -25,6 +25,27 @@ export async function onRuntimeMessageListener(
         sendResponse({ success: true, message: 'Pong' });
         return true; // Indicates asynchronous response
       }
+      case 'clipboard-timeout': {
+        // This wants to error out so use ClipboardJS
+        setTimeout(async () => {
+          try {
+            browser_ext.scripting.executeScript({
+              target: { tabId: message.tabId },
+              func: async () => {
+                try {
+                  await navigator.clipboard.writeText(message.redactText);
+                  log.info("Clipboard redacted!");
+                } catch (error) {
+                  log.error("Failed to write to clipboard:", false, error);
+                }
+              }
+            });
+          } catch (error) {
+            log.error('Failed to write to clipboard:', false, error);
+          }
+        }, message.timeout);
+        return true;
+      }
       case 'createNotification': {
           const { notificationId, title, messageText } = message.payload;
 
@@ -81,7 +102,7 @@ export async function onRuntimeMessageListener(
       }
     }
   } catch (error: any) {
-    log.error('Error handling message:', error);
+    log.error('Error handling message:', false, error);
     if (isBrowserEnv()) sendResponse({ success: false, error: error?.message || 'Unknown error occurred.' });
     return true; // Indicate asynchronous response
   }

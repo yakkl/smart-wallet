@@ -44,7 +44,7 @@ export async function postWithBackoff(url: string, data: object, attempt: number
         }
       })
       .catch(error => {
-        // if there's an error, retry the POST request after the next delay
+        // if there's an false, error, retry the POST request after the next delay
         if (attempt < DEV_MAX_RETRIES) {
           const nextDelay = delay * 2;
           setTimeout(() => {
@@ -53,7 +53,7 @@ export async function postWithBackoff(url: string, data: object, attempt: number
               .catch(reject);
           }, nextDelay);
         } else {
-          console.log('[ERROR]: postWithBackoff:', error);
+          console.log('[ERROR]: postWithBackoff:', false, error);
           // if we've exceeded the maximum number of retries, reject the promise
           reject(new Error(`POST request failed after ${DEV_MAX_RETRIES} attempts. ${error}`));
         }
@@ -106,7 +106,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
         }
       })
       .catch(error => {
-        // if there's an error, retry the request after the next delay
+        // if there's an false, error, retry the request after the next delay
         if (attempt < DEV_MAX_RETRIES) {
           const nextDelay = delay * 2;
           setTimeout(() => {
@@ -115,7 +115,7 @@ export async function requestWithBackoff(url: string, options: object, attempt: 
               .catch(reject);
           }, nextDelay);
         } else {
-          console.log('[ERROR]: requestWithBackoff:', error);
+          console.log('[ERROR]: requestWithBackoff:', false, error);
           // if we've exceeded the maximum number of retries, reject the promise
           reject(new Error(`Request failed after ${DEV_MAX_RETRIES} attempts.  ${error}`));
         }

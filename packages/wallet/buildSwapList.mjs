@@ -28,7 +28,7 @@ async function downloadTokenList() {
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(data, null, 2));
     console.log(`Token list saved to ${OUTPUT_FILE}`);
   } catch (error) {
-    console.error('Error downloading token list:', error);
+    console.error('Error downloading token list:', false, error);
   }
 }
 

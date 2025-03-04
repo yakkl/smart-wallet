@@ -1,4 +1,126 @@
+<!-- BuyTokenPanel.svelte -->
 <script lang="ts">
+  import type { Writable } from 'svelte/store';
+  import TokenDropdown from './TokenDropdown.svelte';
+  import SwapTokenPrice from './SwapTokenPrice.svelte';
+  import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
+  import { debounce } from 'lodash-es';
+  import { ethers as ethersv6 } from 'ethers-v6';
+  import { toBigInt } from '$lib/common';
+  import NumericInput from './NumericInput.svelte';
+  import { log } from '$plugins/Logger';
+
+  interface Props {
+    disabled?: boolean;
+    resetValues?: boolean;
+    swapPriceDataStore: Writable<SwapPriceData>;
+    onTokenSelect: (token: SwapToken) => void;
+    onAmountChange: (amount: string) => void;
+    lastModifiedPanel?: string;
+  }
+
+  let {
+    disabled = false,
+    resetValues = $bindable(false),
+    swapPriceDataStore,
+    onTokenSelect,
+    onAmountChange,
+    lastModifiedPanel = $bindable('sell'),
+  }: Props = $props();
+
+  let userInput = $state('');
+  let formattedAmount = $state('');
+
+  // Reset handling
+  $effect(() => {
+    if (resetValues) {
+      userInput = '';
+      formattedAmount = '';
+      resetValues = false;
+    }
+  });
+
+  // Update display amount when quote changes from sell panel
+  $effect(() => {
+    if (lastModifiedPanel === 'sell') {  // Removed the !userInput check
+      userInput = ''; // Clear user input when sell panel changes
+      const tokenAmount = ethersv6.formatUnits(
+        toBigInt($swapPriceDataStore.amountOut),
+        $swapPriceDataStore.tokenOut.decimals
+      );
+      formattedAmount = tokenAmount;
+    }
+  });
+
+  const debouncedAmountChange = debounce((value: string) => {
+    onAmountChange(value);
+  }, 300);
+
+  function handleAmountInput(value: string) {
+    lastModifiedPanel = 'buy';
+
+    if (!value) {
+      userInput = '';
+      formattedAmount = '';
+      debouncedAmountChange('');
+      return;
+    }
+
+    userInput = value;
+    formattedAmount = value;
+    debouncedAmountChange(value);
+  }
+
+  function handleTokenSelection(token: SwapToken) {
+    userInput = '';
+    formattedAmount = '';
+    onTokenSelect(token);
+  }
+
+  function handleBlur(value: string) {
+    if (!value) {
+      userInput = '';
+      formattedAmount = '';
+    }
+  }
+</script>
+
+<div class="border border-gray-300 shadow-md p-4 rounded-lg bg-gray-50 dark:bg-gray-800
+  {disabled ? ' opacity-50 pointer-events-none' : ''}">
+  <div class="flex justify-between items-center">
+    <NumericInput
+      value={userInput || formattedAmount}
+      onChange={handleAmountInput}
+      onBlur={handleBlur}
+      disabled={disabled}
+      className="
+        bg-transparent
+        text-3xl
+        font-bold
+        w-1/2
+        mr-4
+        focus:outline-none
+        focus:border-b-2
+        focus:border-blue-500
+        text-black dark:text-white
+        {disabled ? 'cursor-not-allowed' : ''}
+      "
+    />
+    <TokenDropdown
+      disabled={disabled}
+      selectedToken={$swapPriceDataStore.tokenOut}
+      onTokenSelect={handleTokenSelection}
+    />
+  </div>
+  <div class="flex justify-between items-center mt-2 text-sm">
+    <SwapTokenPrice {swapPriceDataStore} type="buy" />
+  </div>
+</div>
+
+
+
+
+<!-- <script lang="ts">
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
   import SwapTokenPrice from './SwapTokenPrice.svelte';
@@ -157,4 +279,4 @@
   <div class="flex justify-between items-center mt-2 text-sm">
     <SwapTokenPrice {swapPriceDataStore} type="buy" />
   </div>
-</div>
+</div> -->

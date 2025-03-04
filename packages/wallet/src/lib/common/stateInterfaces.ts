@@ -53,8 +53,10 @@ export interface UIState {
   errorFields: boolean;
   error: boolean;
   warning: boolean;
-  warningValue: string;
-  errorValue: string;
+  warningValue: string; // Deprecate
+  errorValue: string; // Deprecate
+  message: string;
+  showConfirm: boolean;
   showContacts: boolean;
   showVerify: boolean;
 }

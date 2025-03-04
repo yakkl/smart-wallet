@@ -34,8 +34,8 @@ export async function fetchGPT4Response(prompt: string) {
 
     return {"usage": response.usage, "content": response.choices[0].message.content};
   } catch (error) {
-    log.error("Error fetching GPT response:", error);
-    log.error("Response:", response);
+    log.error("Error fetching GPT response:", false, error);
+    log.error("Response:", false, response);
 
     throw {error: error, response: response};
   }

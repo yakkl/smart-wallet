@@ -56,10 +56,10 @@ export async function loadPopup(top: number = 0, left: number = 0, popupWidth: n
         // log.debug('yakkl - background - showPopup (windows):', result);
 
       }).catch((error) => {
-        log.error('Background - YAKKL: ', error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+        log.error('Background - YAKKL: ', false, error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
       });
     }
   } catch (error) {
-    log.error('Background - showPopup', error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+    log.error('Background - showPopup', false, error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
   }
 }

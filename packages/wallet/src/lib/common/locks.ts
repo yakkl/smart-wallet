@@ -51,6 +51,6 @@ export async function setLocks(locked: boolean = true, registration: string = ''
       if (dirty) yakklCurrentlySelectedStore.set(yakklCurrentlySelected);
     }
   } catch (error) {
-    log.error("Error setting locks:", error);
+    log.error("Error setting locks:", false, error);
   }
 }

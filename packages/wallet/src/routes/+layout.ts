@@ -20,13 +20,13 @@ async function connectPort(): Promise<boolean> {
         handleLockDown();
         port = undefined;
         if (event?.error) {
-          log.error('Port disconnect:', event.error?.message);
+          log.error('Port disconnect:', false, event.error?.message);
         }
       });
       return true;
     }
   } catch (error) {
-    log.error('Port connection failed:', error);
+    log.error('Port connection failed:', false, error);
   }
   return false;
 }
@@ -50,7 +50,7 @@ async function initializeExtension() {
       browser_ext?.runtime.reload();
     }
   } catch (error) {
-    log.error('Extension initialization failed:', error);
+    log.error('Extension initialization failed:', false, error);
   }
 }
 

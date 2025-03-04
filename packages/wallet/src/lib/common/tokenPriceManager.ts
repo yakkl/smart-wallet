@@ -26,13 +26,13 @@ export async function updateTokenPrices() {
 
     const updatedTokens: TokenData[] = await priceUpdater.fetchPrices(tokens);
     if (!updatedTokens || updatedTokens.length === 0) {
-      log.warn("*** updateTokenPrices: Fetched prices returned empty.");
+      log.warn("updateTokenPrices: Fetched prices returned empty.");
       return;
     }
 
     yakklCombinedTokenStore.update(() => updatedTokens);
   } catch (error) {
-    log.error("*** updateTokenPrices: Failed to update token prices", error);
+    log.error("updateTokenPrices: Failed to update token prices", false, error);
   } finally {
     fetchingActive.set(false);
   }
@@ -48,10 +48,9 @@ if (timerManager && !timerManager.hasTimer("tokenPriceUpdater")) {
   // Setup a timer to call `updateTokenPrices()` every 30s
   timerManager.addTimer("tokenPriceUpdater", async () => {
     await updateTokenPrices();
-  }, TIMER_TOKEN_PRICE_CYCLE_TIME); // Every 30 seconds
+  }, TIMER_TOKEN_PRICE_CYCLE_TIME); // Every 30 seconds or whatever you set it at
 }
 
 if (timerManager && !timerManager.isRunning("tokenPriceUpdater")) {
   timerManager.startTimer("tokenPriceUpdater");
 }
-

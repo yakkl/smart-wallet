@@ -21,7 +21,12 @@
         blockContextMenu();  // Could setup svelte:body like below with svelte if statement
         blockWindowResize(DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT);
     }
+  } else {
+    if (browserSvelte) {
+      blockWindowResize(DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT);
+    }
   }
+
 
 </script>
 

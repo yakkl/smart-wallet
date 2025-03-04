@@ -27,7 +27,7 @@ export class NotificationService {
         notificationOptions
       );
     } catch (error) {
-      log.error('Error creating notification:', error);
+      log.error('Error creating notification:', false, error);
     }
   }
 
@@ -92,7 +92,7 @@ export class NotificationService {
       ...options,
     } as ProgressNotificationOptions, id);
   }
-  
+
   // Convenience methods for specific notifications
   static async sendSecurityAlert(
     message: string,
@@ -138,12 +138,12 @@ export async function sendNotificationPing() {
     });
 
     if (isResponseWithSuccess(response)) {
-      log.info('Ping response status:', response);
+      log.info('Ping response status:', false, response);
     } else {
-      log.error('Unexpected response structure:', response);
+      log.error('Unexpected response structure:', false, response);
     }
   } catch (error) {
-    log.error('No Pong response:', error);
+    log.error('No Pong response:', false, error);
   }
 }
 
@@ -167,7 +167,7 @@ export async function sendNotificationMessage(title: string, messageText: string
     );
 
   } catch (error) {
-    log.error('Error sending notification message:', error);
+    log.error('Error sending notification message:', false, error);
   }
 }
 
@@ -179,7 +179,7 @@ export async function sendNotificationStartLockIconTimer() {
     checkBrowserExt();
     startLockIconTimer();
   } catch (error) {
-    log.error('Error starting lock icon timer:', error);
+    log.error('Error starting lock icon timer:', false, error);
   }
 }
 
@@ -191,7 +191,7 @@ export async function sendNotificationStopLockIconTimer() {
     checkBrowserExt();
     stopLockIconTimer();
   } catch (error) {
-    log.error('Error stopping lock icon timer:', error);
+    log.error('Error stopping lock icon timer:', false, error);
   }
 }
 

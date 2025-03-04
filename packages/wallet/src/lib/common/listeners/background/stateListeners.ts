@@ -32,7 +32,7 @@ export async function onStateChangedListener(state: string): Promise<void> {
     //     break;
     // }
   } catch (error) {
-    log.error('onStateChangedListener:', error);
+    log.error('onStateChangedListener:', false, error);
   }
 }
 
@@ -60,6 +60,6 @@ export async function onStateChangedListener(state: string): Promise<void> {
 //       break;
 //     }
 //   } catch (error) {
-//     log.error('onStateChangedListener:', error);
+//     log.error('onStateChangedListener:', false, error);
 //   }
 // }

@@ -3,8 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /* eslint-disable no-debugger */
-// import { browserSvelte } from '$lib/utilities/browserSvelte'; // Changed it to new way
-
 import { get } from 'svelte/store';
 import ClipboardJS from 'clipboard'; // 'clipboard?client'
 import { PLATFORM_TYPES, DEFAULT_UPGRADE_LABEL, YAKKL_FEE_BASIS_POINTS_DIVISOR, TIMELINES } from "$lib/common/constants";
@@ -96,7 +94,7 @@ export function formatPrice( price: number ): string {
 
     return formattedPrice;
   } catch ( error ) {
-    log.error( 'formatPrice - SwapTokenPrice and price to format:', error, price );
+    log.error( 'formatPrice - SwapTokenPrice and price to format:', false, error, price );
     return price.toString();
   }
 }
@@ -302,7 +300,7 @@ export function getNetworkInfo(chainId: number) {
   let type;
   let explorer;
 
-  switch(chainId) { 
+  switch(chainId) {
     case 1301:
       blockchain = 'Unichain';
       type = 'Testnet';
@@ -510,13 +508,13 @@ export function changeBackground(id: string, image: { src: string; }) {
   }
 }
 
-export function timeoutClipboard(seconds: number) {
+export function timeoutClipboard(ms: number, redactText: string = '<redacted>') {
   try {
     if (browserSvelte) {
       const timeoutID = setTimeout(() => {
-        ClipboardJS.copy('<redacted>');
+        ClipboardJS.copy(redactText);
         clearTimeout(timeoutID);
-      }, seconds*1000);
+      }, ms);
     }
   } catch (e) {
     log.error(e);

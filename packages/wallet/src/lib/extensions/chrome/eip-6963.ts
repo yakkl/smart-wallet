@@ -30,7 +30,7 @@ export function initializeEIP6963() {
       });
     });
   } catch (error) {
-    log.error('Background - EIP6963 error', error);
+    log.error('Background - EIP6963 error', false, error);
   }
 }
 

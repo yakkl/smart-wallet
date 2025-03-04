@@ -26,7 +26,7 @@ export class IdleManager {
   private async checkIdleStatus() {
     const timeSinceLastActivity = Date.now() - this.lastActivity;
 
-    log.debug('IdleManager:', `Time since last activity: ${timeSinceLastActivity}ms`, this.IDLE_THRESHOLD);
+    log.debug('IdleManager:', false, `Time since last activity: ${timeSinceLastActivity}ms`, this.IDLE_THRESHOLD);
 
     if (timeSinceLastActivity >= this.IDLE_THRESHOLD && !this.isLockdownInitiated) {
       this.isLockdownInitiated = true;
@@ -43,7 +43,7 @@ export class IdleManager {
         await sendNotificationMessage('🚨 For your protection, YAKKL has been locked!', 'You were inactive, and for maximum security, your wallet has been automatically logged out. \nUnauthorized access is now impossible. \nRe-authentication is required to continue');
         goto(PATH_LOGOUT);
       } catch (error) {
-        log.error('Error during idle lockdown:', error);
+        log.error('Error during idle lockdown:', false, error);
       }
     }
   }
@@ -59,7 +59,7 @@ export class IdleManager {
 
   start() {
     if (this.idleCheckInterval) {
-      log.debug('Idle manager already started', this.idleCheckInterval);
+      log.debug('Idle manager already started', false, this.idleCheckInterval);
       this.stop();
     }
 
@@ -79,12 +79,12 @@ export class IdleManager {
 
     // Start periodic checking
     this.idleCheckInterval = window.setInterval(this.checkIdleStatus, this.CHECK_INTERVAL);
-    log.debug('Idle manager started', this.idleCheckInterval);
+    log.debug('Idle manager started', false, this.idleCheckInterval);
   }
 
   stop() {
     if (this.idleCheckInterval) {
-      log.debug('Stopping idle check interval', this.idleCheckInterval);
+      log.debug('Stopping idle check interval', false, this.idleCheckInterval);
       clearInterval(this.idleCheckInterval);
       this.idleCheckInterval = null;
     }

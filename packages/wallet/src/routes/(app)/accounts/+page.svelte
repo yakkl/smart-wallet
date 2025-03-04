@@ -105,7 +105,7 @@
 
   function handleExportPrivateKey() {
     if (browserSvelte) {
-      showExportPrivateKey = true;
+      showExportPrivateKey = false;
     }
   }
 

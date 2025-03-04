@@ -158,7 +158,7 @@ export class AppWideIdleManager extends IdleManagerBase {
   }
 
   protected handleError(error: Error, context: string) {
-    log.error(`[AppWideIdleManager] ${context}:`, error);
+    log.error(`[AppWideIdleManager] ${context}:`, false, error);
     // Optionally reset state
     this.isLockdownInitiated = false;
     this.previousState = 'active';

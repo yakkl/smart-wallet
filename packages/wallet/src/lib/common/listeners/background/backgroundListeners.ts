@@ -35,7 +35,7 @@ export async function onInstalledUpdatedListener( details: Runtime.OnInstalledDe
           try {
             await setObjectInLocalStorage(element.key, element.value);
           } catch (error) {
-            log.error(`Error setting default for ${element.key}:`, error);
+            log.error(`Error setting default for ${element.key}:`, false, error);
           }
         });
 
@@ -62,7 +62,7 @@ export function onEthereumListener(event: any) {
   try {
     // log.debug('Background:', `yakkl-eth port: ${event}`);
   } catch (error) {
-    log.error('Background: onEthereumListener', error);
+    log.error('Background: onEthereumListener', false, error);
   }
 }
 

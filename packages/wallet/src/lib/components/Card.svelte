@@ -25,10 +25,11 @@
 	import type { Provider } from '$lib/plugins/Provider';
 	import EyeIcon from './icons/EyeIcon.svelte';
 	import ProtectedValue from './ProtectedValue.svelte';
-	import { tokenTotals } from '$lib/common/stores/tokenTotals';
+	import { tokenTotals } from '$lib/common/stores/tokenTotals'; // Used to display portfolio value in html below
   import { browserSvelte, browser_ext } from '$lib/common/environment';
 	import { handleOnMessageForPricing } from '$lib/common/listeners/ui/uiListeners';
   import { log } from "$plugins/Logger";
+	import Copy from './Copy.svelte';
 
   // import { PriceManager } from '$lib/plugins/PriceManager';
 	// import { createPriceUpdater } from '$lib/common/createPriceUpdater';
@@ -70,10 +71,10 @@
 
   let network: Network = $state(networks[0]);
   let networkLabel = $state('Mainnet');
-  let addressShow: string = $state();
-  let address: string = $state();
-  let name: string = $state();
-  let nameShow: string = $state();
+  let addressShow: string = $state('');
+  let address: string = $state('');
+  let name: string = $state('');
+  let nameShow: string = $state('');
   let valueFiat = $state('0.00');
   let showAccountsModal = $state(false);
   let showAccountImportModal = $state(false);
@@ -94,18 +95,18 @@
   let direction: string = $state('fl');
   let showTestNetworks = true;
   let error = $state(false);
-  let errorValue: string = $state();
+  let errorValue: string = $state('');
   let assetPriceValue: BigNumberish = $state(0n);
   let assetPrice: string = $state('');
   let card = 'ethereum-background.png';
 
   let yakklMiscStore: string = getMiscStore();
-  let symbolLabel: string = $state();
-  let currencyLabel: string = $state();
+  let symbolLabel: string = $state('');
+  let currencyLabel: string = $state('');
   let currency: Intl.NumberFormat = $state();
   let shortcutsValue: EthereumBigNumber = $state(EthereumBigNumber.from(0)); // .value is the amount of a given token the address holds
   let chainId: number = $state(1);
-  let formattedEtherValue: string = $state();
+  let formattedEtherValue: string = $state('');
   let isDropdownOpen = $state(false);
 
   // let priceUpdater = createPriceUpdater(new PriceManager(), 30000);
@@ -113,37 +114,36 @@
   // let effectTimeout: NodeJS.Timeout;
 
   //////// Toast
-  let toastStatus = $state(false);
-  let toastCounter = 3;
-  let toastMessage = $state('Success');
-  let toastType = 'success';
+  // let toastStatus = $state(false);
+  // let toastCounter = 3;
+  // let toastMessage = $state('Success');
+  // let toastType = 'success';
 
-  function toastTrigger(count = 3, msg = 'Success') {
-    toastStatus = true;
-    toastCounter = count;
-    toastMessage = msg;
-    timeout();
-  }
+  // function toastTrigger(count = 3, msg = 'Success') {
+  //   toastStatus = true;
+  //   toastCounter = count;
+  //   toastMessage = msg;
+  //   timeout();
+  // }
   //////// Toast
 
-  function timeout(): NodeJS.Timeout | void {
-    if (--toastCounter > 0) return setTimeout(timeout, 1000);
-    toastStatus = false;
-  }
+  // function timeout(): NodeJS.Timeout | void {
+  //   if (--toastCounter > 0) return setTimeout(timeout, 1000);
+  //   toastStatus = false;
+  // }
 
   $effect(() => {
     (async () => {
       if ($yakklPricingStore) {
-        // if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
-        //   return; // No change
-        // }
+        if ($yakklPricingStore.price === $yakklPricingStore.prevPrice) {
+          log.info('Price has not changed.');
+          return; // No change
+        }
         price = $yakklPricingStore.price ?? 0;
         const prevPrice = $yakklPricingStore.prevPrice ?? 0;
+        log.info('Price changed:', price, prevPrice);
         if (price) {
-
-          // log.debug('Card.svelte - price, prevPrice:', price, prevPrice);
-
-          if (price !== prevPrice) {
+          if (price !== prevPrice) { // Only update if the value changes - updateValuePriceFiat (balance update can cause a loop here so be mindful). This will be changing!
             await updateValuePriceFiat();
             await updateWithCurrentlySelected();
           }
@@ -156,10 +156,7 @@
     if (assetPriceValue) {
       const newAssetPrice = currency ? currency.format(Number(assetPriceValue)) : '0.00';
       if (assetPrice !== newAssetPrice) {
-        // log.debug('Card.svelte - assetPrice, newAssetPrice - changed:', assetPrice, newAssetPrice);
         assetPrice = newAssetPrice; // Only update if the value changes
-      } else {
-        // log.debug('Card.svelte - assetPrice, newAssetPrice - no change:', assetPrice, newAssetPrice);
       }
     }
   });
@@ -175,13 +172,16 @@
   //   }, 200); // 200ms delay
   // });
 
-  $effect.root(() => {
-    // log.debug('<=========================== Card.svelte - $effect.root =================================>');
+  $effect(() => {
+    if (!address) {
+      address = $yakklCurrentlySelectedStore?.shortcuts?.address ?? '';
+    }
+  });
 
+  $effect.root(() => {
     // Subscribe to token store updates
     const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
-      tokens = updatedTokens;
-      // log.debug('Card.svelte - updated token prices:', tokens); // JSON.stringify(tokens, null, 2));
+      tokens = updatedTokens; // Only keep the latest tokens up to date
     });
 
     return () => {
@@ -194,7 +194,6 @@
       if (browserSvelte) {
         try {
           if (!browser_ext.runtime.onMessage.hasListener(handleOnMessageForPricing)) {
-            browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing);
             browser_ext.runtime.onMessage.addListener(handleOnMessageForPricing);
           }
         } catch (error) {
@@ -203,7 +202,7 @@
 
         startPricingChecks();
 
-        toastStatus = false;
+        // toastStatus = false;
         if (!$yakklCurrentlySelectedStore) yakklCurrentlySelectedStore.set(await getYakklCurrentlySelected());
         if (!yakklMiscStore) yakklMiscStore = getMiscStore();
 
@@ -231,7 +230,7 @@
           // These are for the initial load and the intervals take over after this
           const val = await getBalance(currentlySelected.shortcuts.network.chainId, currentlySelected.shortcuts.address);
           currentlySelected.shortcuts.value = val ?? 0n;
-          checkPricesCallback(); // Simple onetime price update for initial load
+          checkPricesCallback(); // Simple onetime price update for initial load - NOTE: Do not move this up any higher in the code or it will cause a loop. shortcuts.value is used in the updateValuePriceFiat function
 
           await setYakklCurrentlySelectedStorage(currentlySelected); // This updates the store and local storage
           if ($yakklCurrentlySelectedStore.shortcuts.value) await updateValuePriceFiat();
@@ -242,32 +241,6 @@
       log.error(`onMount: ${e}`);
     }
   });
-
-  // // Message handler for starting and stopping price checks. This is primarily sent by active, idle, locked states.
-  // export async function handleOnMessageForPricing(
-  //   message: any,
-  //   sender: Runtime.MessageSender,
-  //   sendResponse: (response?: any) => void
-  // ): Promise<boolean | void>  {
-  //   try {
-  //     switch(message.type) {
-  //       case 'startPricingChecks': {
-  //         startPricingChecks();
-  //         sendResponse({ success: true, message: 'Price checks initiated.' });
-  //         return true;  // return type - asynchronous
-  //       }
-  //       case 'stopPricingChecks': {
-  //         stopCheckPrices();
-  //         sendResponse({ success: true, message: 'Stop price checks initiated.' });
-  //         return true;  // return type - asynchronous
-  //       }
-  //     }
-  //   } catch (e: any) {
-  //     log.error('Error handling message:', e);
-  //     if (isBrowserEnv()) sendResponse({ success: false, error: e?.message || 'Unknown error occurred.' });
-  //     return true; // Indicate asynchronous response
-  //   }
-  // }
 
   async function updateWithCurrentlySelected() {
     try {
@@ -288,7 +261,6 @@
   }
 
   onDestroy(async () => {
-    // browser_ext.runtime.onMessage.removeListener(handleOnMessageForPricing); // No need to check if it exists
     if ($yakklCurrentlySelectedStore) {
       await setYakklCurrentlySelectedStorage($yakklCurrentlySelectedStore);
     }
@@ -313,6 +285,7 @@
       const val = await getBalance(network.chainId, address);
       if ($yakklCurrentlySelectedStore.shortcuts.value !== val) {
         // This will force a reactivity update
+        // This can also cause a loop if not careful and using $effect to watch for changes
         yakklCurrentlySelectedStore.update((current) => ({
           ...current,
           shortcuts: { ...current.shortcuts, value: val ?? 0n },
@@ -338,8 +311,6 @@
           }
 
           updatePriceDirection($yakklPricingStore.price);
-
-          // log.info("updateValuePriceFiat - Value updated.");
         } else {
           resetPriceData();
         }
@@ -347,7 +318,7 @@
         log.info("updateValuePriceFiat - Value NOT updated.");
       }
     } catch (error) {
-      log.error("Error in updateValuePriceFiat:", error);
+      log.error("Error in updateValuePriceFiat:", false, error);
       resetPriceData();
     }
   }
@@ -431,10 +402,8 @@
       if (wallet && provider && blockchain && tokenService) {
         await tokenService.updateTokenBalances($yakklCurrentlySelectedStore.shortcuts.address);
       }
-
-      // log.info("Currently selected account updated.");
     } catch (error) {
-      log.error("Error in handleAccounts:", error);
+      log.error("Error in handleAccounts:", false, error);
       showAccountsModal = false;
     }
   }
@@ -444,7 +413,6 @@
       if ($yakklCurrentlySelectedStore) {
         isDropdownOpen = false;
         if (net.chainId === $yakklCurrentlySelectedStore.shortcuts.chainId ) {
-          // log.info("Network type has not changed.");
           return;
         }
 
@@ -528,10 +496,10 @@
     }
   }
 
-  function handleCopy(e: any) {
-    toastTrigger(3, 'Copied to clipboard');
-    timeoutClipboard(20);
-  }
+  // function handleCopy(e: any) {
+  //   toastTrigger(3, 'Copied to clipboard');
+  //   timeoutClipboard(20);
+  // }
 
   function formatEther(value: BigNumberish): string {
     try {
@@ -704,8 +672,7 @@
 {/if}
 {/await}
 
-<Toast color="green" transition={slide} bind:toastStatus>
-  <!-- {#snippet icon()} -->
+<!-- <Toast color="green" transition={slide} bind:toastStatus>
 
       {#if toastType === 'success'}
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -713,9 +680,8 @@
       </svg>
       {/if}
 
-  <!-- {/snippet} -->
   {toastMessage}
-</Toast>
+</Toast> -->
 
 <div class="visible print:hidden relative top-0 mx-2">
   <div style="z-index: 4; background-image: url('/images/{card}'); " class="visible print:hidden relative m-2 ml-0 mr-0 h-[261px] rounded-xl">
@@ -851,13 +817,7 @@
           <p class="text-gray-100 dark:text-white text-lg">Account:</p>
           <p class="text-gray-100 dark:text-white text-lg ml-4 -mt-1" data-bs-toggle="tooltip" data-bs-placement="top" title={name}>Name: <span class="uppercase ml-5">{nameShow}</span></p>
           <p class="text-gray-100 dark:text-white text-lg ml-4 -mt-2" data-bs-toggle="tooltip" data-bs-placement="top" title={address}>Number: <span class="ml-1">{addressShow}</span>
-            <!-- svelte-ignore a11y_consider_explicit_label -->
-            <button id="copy" onclick={handleCopy} class="clip w-6 h-6 ml-1 mt-0.5 hover:text-gray-500" data-clipboard-action="copy" data-clipboard-target="#paddress" data-yakkl-copy="yakkl">
-              <svg id="copy2" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 dark:text-white hover:stroke-gray-200" data-yakkl-copy="yakkl" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
-            </button>
-            <input id="paddress" name="address" value=":yakkl:{address}" type="hidden" data-yakkl-copy="yakkl">
+            <Copy target={{value: address}} />
           </p>
         </div>
         <div class="absolute top-[118px] left-[175px] opacity-25 -z-10">

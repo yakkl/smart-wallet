@@ -38,7 +38,7 @@ export async function setLocalObjectStorage(platform: RuntimePlatformInfo | null
       await setObjectInLocalStorage('settings', yakklSettings);
     }
   } catch (e) {
-    log.error('setLocalObjectStorage Error', e);
+    log.error('setLocalObjectStorage Error', false, e);
     throw e;
   }
 }

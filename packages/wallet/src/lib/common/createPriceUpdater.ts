@@ -37,12 +37,9 @@ export function createPriceUpdater(priceManager: PriceManager) {
 
         updatedTokens.push(...batchResults);
       } catch (error) {
-        log.error('fetchPrices - Error processing batch:', batch, error);
+        log.error('fetchPrices - Error processing batch:', false, batch, false, error);
       }
     }
-
-    // log.debug('createPriceUpdater: fetchPrices - Final updated tokens:', updatedTokens);
-
     return updatedTokens;
   }
 
@@ -56,8 +53,6 @@ export function createPriceUpdater(priceManager: PriceManager) {
       // Fix for handling decimals in calculations
       const adjustedBalance = token.balance ? Number(token.balance) / (10 ** token.decimals) : 0;
       const value = adjustedBalance * price;
-
-      // log.debug(`^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ createPriceUpdater: fetchTokenData - Updated token ${token.symbol} with price: ${price} and value: ${value} and ${marketPrice}`);
 
       return {
         ...token,
@@ -73,7 +68,7 @@ export function createPriceUpdater(priceManager: PriceManager) {
         }).format(value)
       };
     } catch (error) {
-      log.error(`fetchTokenData - Failed to fetch price for ${token.symbol}`, error);
+      log.error(`fetchTokenData - Failed to fetch price for ${token.symbol}`, false, error);
       return {
         ...token,
         price: { price: 0, provider: "", lastUpdated: new Date() }, // Ensures lastUpdated is present, status removed

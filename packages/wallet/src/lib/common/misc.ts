@@ -236,7 +236,7 @@ export function parseJsonOrObject<T>(value: any): T | null {
         return parsed;
       }
     } catch (e) {
-      log.error('Error parsing JSON string:', e);
+      log.error('Error parsing JSON string:', false, e);
       return null;
     }
   }

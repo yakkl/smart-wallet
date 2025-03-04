@@ -23,7 +23,7 @@ module.exports = {
     minimizer: [
       new TerserPlugin({
         terserOptions: {
-          mangle: false, //true, -
+          mangle: true, //true, -
           compress: false,
           keep_classnames: true,
           keep_fnames: true,

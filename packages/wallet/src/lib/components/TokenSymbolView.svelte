@@ -28,7 +28,7 @@
 
       widgetContainer.appendChild(script);
     } catch (error) {
-      log.error('Error initializing TradingView widget', error);
+      log.error('Error initializing TradingView widget', false, error);
     }
 
   };

@@ -275,7 +275,7 @@ export async function createPortfolioAccount(yakklMiscStore: string, profile: Pr
     });
 
   } catch (e) {
-    log.error('The Portfolio Account was not able to be created.', e);
+    log.error('The Portfolio Account was not able to be created.', false, e);
     return Promise.reject(e);
   }
 }

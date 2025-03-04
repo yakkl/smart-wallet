@@ -13,7 +13,7 @@ async function checkContractOnFork(contractAddress) {
             return false;
         }
     } catch (error) {
-        console.error('Error checking contract on fork:', error);
+        console.error('Error checking contract on fork:', false, error);
         return false;
     }
 }

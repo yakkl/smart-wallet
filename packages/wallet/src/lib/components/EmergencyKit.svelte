@@ -97,7 +97,7 @@
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to export emergency kit';
       log.error(err);
-      onComplete(false, error);
+      onComplete(false, false, error);
     } finally {
       loading = false;
     }

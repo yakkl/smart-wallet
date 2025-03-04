@@ -24,7 +24,7 @@
 </script>
 
 {#if show}
-  <div class="fixed inset-0 flex items-center justify-center z-[699] {className}">
+  <div class="fixed inset-0 flex items-center justify-center z-[699] {className}" aria-modal="true">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="absolute inset-0 bg-black opacity-50" onclick={onClose}></div>

@@ -43,7 +43,7 @@ export async function onSuspendListener() {
     log.info('onSuspendListener');
     globalListenerManager.removeAll();
   } catch (error) {
-    log.error('Background: onSuspendListener:', error);
+    log.error('Background: onSuspendListener:', false, error);
   }
 }
 
@@ -82,7 +82,7 @@ export async function onSuspendListener() {
 //     browser_ext.tabs.onUpdated.addListener(onTabUpdatedListener);
 //   }
 // } catch (error) {
-//   log.error('background:', error);
+//   log.error('background:', false, error);
 // }
 
 // try {

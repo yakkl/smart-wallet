@@ -1,7 +1,6 @@
 <!-- ExportPrivateKey.svelte -->
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
-  // import { browser as browserSvelte } from '$app/environment';
   import { getYakklCurrentlySelected, yakklMiscStore } from '$lib/common/stores';
   import { onMount } from 'svelte';
   import { decryptData } from '$lib/common/encryption';
@@ -9,6 +8,7 @@
   import PincodeVerify from './PincodeVerify.svelte';
   import Modal from './Modal.svelte';
 	import { log } from '$lib/plugins/Logger';
+	import Copy from './Copy.svelte';
 
   interface Props {
     show?: boolean;
@@ -18,7 +18,6 @@
 
   let { show = $bindable(false), className = 'z-[999]', onVerify = () => {} }: Props = $props();
 
-  let clipboard;
   let privateKey = $state('');
   let address: string = $state();
   let showPincodeModal = $state(false);
@@ -52,15 +51,9 @@
       privateKey = (account!.data as AccountData).privateKey;
       showPincodeModal = false;
       showPrivateKeyModal = true;
+      show = false;
 
-      // Set a timer for 20 seconds and then hide the private key modal
-      setTimeout(() => {
-        showPrivateKeyModal = false;
-        privateKey = '';
-        initClipboard(); // Clear clipboard
-      }, 20000);
-
-      onVerify();
+      onVerify(); // Call the onVerify callback - currently does not do anything except set the modal to false
     } catch (e) {
       log.error('Error verifying pincode:', e);
     }
@@ -70,13 +63,6 @@
     show = false;
   }
 
-  function closePincodeModal() {
-    showPincodeModal = false;
-  }
-
-  function initClipboard() {
-    navigator.clipboard.writeText(privateKey);
-  }
 </script>
 
 <div class="relative {className}">
@@ -98,14 +84,21 @@
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Private Key</label>
         <div class="mt-1 flex">
           <input type="text" class="flex-1 block w-full rounded-none rounded-l-md border-gray-300 bg-gray-100 cursor-not-allowed focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={privateKey} readonly />
-          <!-- svelte-ignore a11y_consider_explicit_label -->
-          <button class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 clipboard-btn" data-clipboard-text={privateKey} onclick={initClipboard}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-          </button>
+          <Copy
+            className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            target={{
+              value: privateKey,
+              timeout: 20000,
+              redactText: "PRIVATE-KEY-REDACTED"
+            }}
+          />
         </div>
       </div>
+
+      <div class="mt-6 flex justify-end space-x-4">
+        <button type="button" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" onclick={() => {showPrivateKeyModal=false}}>Close</button>
+      </div>
+
     </div>
   </Modal>
 

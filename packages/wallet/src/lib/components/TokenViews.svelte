@@ -6,44 +6,54 @@
   import TokenNewsTradingView from './TokenNewsTradingView.svelte';
   import TokenTechnicalView from './TokenTechnicalView.svelte';
   import TokenSymbolView from './TokenSymbolView.svelte';
-  // import { tokenManager } from '$lib/common/stores/tokenManager';
-  // import { createPriceUpdater } from '$lib/common/createPriceUpdater';
-  // import { PriceManager } from '$lib/plugins/PriceManager';
-  import { onMount } from 'svelte';
   import type { TokenData } from '$lib/common/interfaces';
   import { log } from '$plugins/Logger';
-	// import { TimerManager } from '$lib/plugins/TimerManager';
 	import { yakklCombinedTokenStore } from '$lib/common/stores';
+  import LoadingState from './LoadingState.svelte';
+	import { onMount } from 'svelte';
+  import { sessionInitialized } from '$lib/common/stores';
 
-  let tokens: TokenData[] = [];
-  let sortedTokens: TokenData[] = $state([]);
+  let tokens = $state<TokenData[]>([]);
+  let sortedTokens = $state<TokenData[]>([]);
   let currentView = $state('grid');
-  let sortBy = 'name';
+  let sortBy = $state('name');
+  let isLoading = $state(false); // This should only be true during initial load
 
-  onMount(() => {
-    // log.debug('<=========================== TokenViews: onMount =================================>');
-
-    // Subscribe to token store updates
-    const unsubscribeYakklStore = yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
-      tokens = updatedTokens;
-      // log.debug('TokenViews: updated token prices:', tokens); // JSON.stringify(tokens, null, 2));  // Added JSON.stringify for better readability
-      handleSortChange(sortBy);
-    });
-
-    return () => {
-      unsubscribeYakklStore();
-    };
+  // Store subscription
+  yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
+    tokens = updatedTokens;
+    handleSortChange(sortBy);
   });
 
-  // Sort tokens based on criteria
+  onMount(() => {
+    // Always start loading when component mounts
+    if (!$sessionInitialized) {
+      isLoading = true;
+
+      const timer = setTimeout(() => {
+        isLoading = false;
+        sessionInitialized.set(true); // Set to true for current session only
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  });
+
+  // Separate effect for sorting
+  $effect(() => {
+    if (tokens.length > 0) {
+      sortedTokens = [...tokens].sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'price') return (b.price?.price ?? 0) - (a.price?.price ?? 0);
+        if (sortBy === 'value') return (b.value ?? 0) - (a.value ?? 0);
+        return 0;
+      });
+    }
+  });
+
+  // Simplified sort handler
   function handleSortChange(criteria: string) {
     sortBy = criteria;
-    sortedTokens = [...tokens].sort((a, b) => {
-      if (criteria === 'name') return a.name.localeCompare(b.name);
-      if (criteria === 'price') return (b.price?.price ?? 0) - (a.price?.price ?? 0);
-      if (criteria === 'value') return (b.value ?? 0) - (a.value ?? 0);
-      return 0;
-    });
   }
 
   // Change the current view
@@ -66,6 +76,10 @@
 
   <!-- Dynamic Views -->
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
+    {#if isLoading && !$sessionInitialized}
+      <LoadingState message="Analyzing Tokens..." />
+    {/if}
+
     {#if currentView === 'grid'}
       <TokenGridView tokens={sortedTokens} onTokenClick={(token) => log.info('Clicked:', token)} /> <!-- default onTokenClick for future -->
     {:else if currentView === 'chart'}

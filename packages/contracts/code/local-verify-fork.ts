@@ -15,7 +15,7 @@ async function verifyFork() {
           console.log('This does not appear to be a mainnet fork');
       }
   } catch (error) {
-      console.error('Error verifying fork:', error);
+      console.error('Error verifying fork:', false, error);
   }
 }
 
