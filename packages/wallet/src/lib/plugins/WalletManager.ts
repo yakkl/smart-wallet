@@ -20,7 +20,7 @@ class WalletManager {
       }
       return WalletManager.instance;
     } catch (error) {
-      log.error("Failed to get Wallet instance:", error);
+      log.error("Failed to get Wallet instance:", false, error);
       throw error;
     }
   }

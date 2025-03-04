@@ -82,7 +82,7 @@ export class GasToken extends Token {
       this.lastPriceCheck = Date.now();
       return price;
     } catch ( error ) {
-      log.errorStack('GasToken - getMarketPrice', error);
+      log.errorStack('GasToken - getMarketPrice', false, error);
       throw error;
     }
   }

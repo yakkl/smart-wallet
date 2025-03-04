@@ -25,7 +25,7 @@ export async function getTokenBalance(
     token.balance = retBal;
     return retBal;
   } catch ( error ) {
-    log.error( 'getTokenBalance - error', error );
+    log.error( 'getTokenBalance - error', false, error );
     return 0n;
   }
 }

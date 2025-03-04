@@ -7,7 +7,7 @@ export async function apiKeyFetch(apiUrl: string, keyId: string) {
     const data = await response.json();
     return data.key;
   } catch (error) {
-    log.error("Error fetching key:", keyId);
+    log.error("Error fetching key:", false, keyId);
     throw error;
   }
 }

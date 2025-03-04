@@ -196,14 +196,14 @@ export interface TypedDataField {
 
 export interface BaseTransaction {
   hash?: string;
-  to: string;
-  from: string;
+  to?: string;
+  from?: string;
   nonce?: number;
   gasLimit?: BigNumberish | null | undefined;
   gasPrice?: BigNumberish | null | undefined;
   data?: BytesLike;
-  value: BigNumberish | null;
-  chainId: BigNumberish;
+  value?: BigNumberish | null;
+  chainId?: BigNumberish;
   r?: string;
   s?: string;
   v?: number;

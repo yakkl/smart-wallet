@@ -107,7 +107,7 @@
         }
       }
     } catch (error) {
-      error_log('SwapTokenPrice:', error);
+      error_log('SwapTokenPrice:', false, error);
     }
   });
 

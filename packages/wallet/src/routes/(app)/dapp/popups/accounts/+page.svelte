@@ -6,7 +6,7 @@
   import { deepCopy, truncate } from "$lib/utilities/utilities";
   import { PATH_LOGIN, YAKKL_DAPP, DEFAULT_TITLE } from '$lib/common/constants';
   import { onMount, onDestroy } from 'svelte';
-  import { navigating, page } from '$app/stores';
+  import { navigating, page } from '$app/stores'; // NOTE: address
   import { wait } from '$lib/common/utils';
 	import ProgressWaiting from '$lib/components/ProgressWaiting.svelte';
 	import type { AccountAddress, ConnectedDomainAddress, YakklAccount, YakklConnectedDomain, YakklCurrentlySelected } from '$lib/common';

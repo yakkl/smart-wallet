@@ -18,6 +18,6 @@ export async function onAlarmListener(alarm: any) {
       log.info('Yakkl may not be running as a browser extension context from the calling environment.');
     }
   } catch (error) {
-    log.error('Background - onAlarmListener:', error);
+    log.error('Background - onAlarmListener:', false, error);
   }
 }

@@ -16,6 +16,9 @@ async function checkGasPricesCB() {
     if (timerManager.isRunning('gas_checkGasPrices')) {
       if (get(yakklConnectionStore) === true) {
         const results = await fetchBlocknativeData();
+
+        log.debug('gas.ts - checkGasPricesCB', false, results);
+
         yakklGasTransStore.set({ provider: providerGasCB, id: timerManager.getTimeoutID('gas_checkGasPrices'), results });
       }
     }

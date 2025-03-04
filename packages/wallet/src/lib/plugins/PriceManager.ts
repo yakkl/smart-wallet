@@ -69,7 +69,7 @@ export class PriceManager {
       const price = await provider.getMarketPrice( pair );
       return price;
     } catch ( error ) {
-      log.error( `Error fetching price from ${ provider.getName() }:`, error );
+      log.error( `Error fetching price from ${ provider.getName() }:`, false, error );
       // Retry with a different provider
       return this.getMarketPrice( pair, providersToUse.filter( p => p !== provider ) ); // Avoid circular error by excluding failed provider
     }
@@ -106,7 +106,7 @@ export class PriceManager {
       // This should never happen if weights are set correctly
       return weightedProviders[ 0 ].provider;
     } catch ( error ) {
-      log.error( "Error selecting weighted random provider:", error );
+      log.error( "Error selecting weighted random provider:", false, error );
       throw error;
     }
   }

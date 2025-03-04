@@ -10,6 +10,7 @@ import type { AbstractContract } from './Contract';
 import { CoinbasePriceProvider } from './providers/price/coinbase/CoinbasePriceProvider';
 import type { ethers as ethersv6 } from 'ethers-v6';
 import { log } from './Logger';
+import { GasProviderFactory } from './GasProviderFactory';
 
 export interface ContractInterface {
   address: string;
@@ -168,7 +169,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   icon: IMAGEPATH;
   name: string;
   options: { [ key: string ]: MetaData; };
-  protected feeManager: FeeManager;
+  protected feeManager!: FeeManager;
 
   /**
    * Creates an instance of AbstractBlockchain. This class should be extended by specific blockchain implementations.
@@ -181,7 +182,6 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     this.name = name;
     this.providers = providers;
     if ( providers.length === 0 ) throw new Error( 'Providers list cannot be empty' );
-    this.provider = providers[ 0 ]; // Default to the first provider
     this.chainId = chainId;
     this.networks = networks; // providers, networks and chainId are critical
     this.options = options;
@@ -193,8 +193,48 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
     if ( !this.providers || this.providers.length === 0 ) throw new Error( 'Providers list cannot be empty' );
 
     this.provider = providers[ 0 ]; // Default to the first provider
-    this.feeManager = new BaseFeeManager( [ new EthereumGasProvider( this.provider, this, new CoinbasePriceProvider() ) ] );
-    if ( !this.feeManager ) throw new Error( 'Fee manager not set' );
+    // this.feeManager = new BaseFeeManager( [ new EthereumGasProvider( this.provider, this, new CoinbasePriceProvider() ) ] );
+    this.feeManager = new BaseFeeManager();
+    this.initializeBlockchain().catch(error => {
+      log.error('Failed to initialize blockchain:', false, error);
+    });
+  }
+
+  private async initializeBlockchain(): Promise<void> {
+    try {
+      if (!this.provider) {
+        throw new Error('Provider not initialized');
+      }
+
+      const gasProvider = await EthereumGasProvider.create(
+        this.provider,
+        this,
+        new CoinbasePriceProvider()
+      );
+
+      await this.feeManager.addProvider(gasProvider);
+    } catch (error) {
+      log.error('Failed to initialize blockchain:', false, false, error);
+      // Don't throw, just log the error
+    }
+  }
+
+  // Add a method to check initialization status
+  private async isInitialized(): Promise<boolean> {
+    try {
+      const providers = this.feeManager.getProviders();
+      return providers.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  // Add method to check if initialization is complete
+  private async ensureInitialized(): Promise<void> {
+    const providers = this.feeManager.getProviders();
+    if (!this.feeManager || providers.length === 0) {
+      throw new Error('Blockchain not properly initialized');
+    }
   }
 
   // abstract Contract: new (address: string, abi: any[], signerOrProvider: Provider | Signer) => ContractInterface;
@@ -207,8 +247,10 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   // }
 
   async getGasEstimate( transaction: TransactionRequest ): Promise<GasEstimate> {
-    if ( !this.feeManager || !transaction ) throw new Error( 'Fee manager or transaction not set' );
-    return await this.feeManager.getGasEstimate( transaction );
+    if (!await this.isInitialized()) {
+      throw new Error('Gas provider not initialized');
+    }
+    return this.feeManager.getGasEstimate(transaction);
   }
 
   async getHistoricalGasData( duration: number ): Promise<HistoricalGasData[]> {
@@ -276,7 +318,7 @@ export abstract class AbstractBlockchain<T extends BaseTransaction> implements B
   }
 
   getNetworks(): Network[] {
-    log.info( 'Blockchain networks', this.networks );
+    log.info( 'Blockchain networks', false, this.networks );
     return this.networks;
   }
 

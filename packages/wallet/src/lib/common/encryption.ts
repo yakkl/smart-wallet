@@ -118,7 +118,7 @@ export async function encryptData( data: any, passwordOrSaltedKey: string | Salt
       salt,
     } as EncryptedData;
   } catch (error) {
-    log.error('Error encrypting data:', error);
+    log.error('Error encrypting data:', false, error);
     throw error;
   }
 }
@@ -144,7 +144,7 @@ export async function decryptData<T>( encryptedData: EncryptedData, passwordOrSa
     const txtDecoder = new TextDecoder().decode(plaintext);
     return JSON.parse(txtDecoder) as T;
   } catch (error) {
-    log.error('Error decrypting data:', error);
+    log.error('Error decrypting data:', false, error);
     throw error;
   }
 }

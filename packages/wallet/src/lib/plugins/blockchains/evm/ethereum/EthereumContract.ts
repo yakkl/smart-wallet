@@ -40,7 +40,7 @@ export class EthereumContract extends AbstractContract {
 
       return await this.contract[ functionName ]( ...args );
     } catch ( error ) {
-      log.error( `Error calling ${ functionName }:`, error );
+      log.error( `Error calling ${ functionName }:`, false, error );
       throw error;
     }
   }
@@ -60,7 +60,7 @@ export class EthereumContract extends AbstractContract {
       const estimation = await contractFunction.estimateGas( ...args );
       return BigInt( estimation.toString() );
     } catch ( error ) {
-      log.error( `Error estimating gas for ${ functionName }:`, error );
+      log.error( `Error estimating gas for ${ functionName }:`, false, error );
       throw error;
     }
   }
@@ -81,7 +81,7 @@ export class EthereumContract extends AbstractContract {
       if ( !tx ) throw new Error( 'Invalid transaction from populate transaction' );
       return EthersConverter.ethersTransactionRequestToTransactionRequest( tx );
     } catch ( error ) {
-      log.error( `Error populating transaction for ${ functionName }:`, error );
+      log.error( `Error populating transaction for ${ functionName }:`, false, error );
       throw error;
     }
   }
@@ -97,7 +97,7 @@ export class EthereumContract extends AbstractContract {
 
       return EthersConverter.ethersTransactionResponseToTransactionResponse( tx );
     } catch ( error ) {
-      log.error( `Error sending transaction for ${ functionName }:`, error );
+      log.error( `Error sending transaction for ${ functionName }:`, false, error );
       throw error;
     }
   }
@@ -182,7 +182,7 @@ export class EthereumContract extends AbstractContract {
   //   try {
   //     await permitAndApprove( tokenAddress, owner, spender, value, nonce, deadline, v, r, s, signer );
   //   } catch ( error ) {
-  //     log.error( 'Permit failed, falling back to approve:', error );
+  //     log.error( 'Permit failed, falling back to approve:', false, error );
   //     await tokenContract.approve( spender, value );
   //   }
   // } else {

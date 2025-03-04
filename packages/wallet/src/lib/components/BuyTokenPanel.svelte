@@ -1,3 +1,4 @@
+<!-- BuyTokenPanel.svelte -->
 <script lang="ts">
   import type { Writable } from 'svelte/store';
   import TokenDropdown from './TokenDropdown.svelte';
@@ -5,9 +6,9 @@
   import type { SwapToken, SwapPriceData } from '$lib/common/interfaces';
   import { debounce } from 'lodash-es';
   import { ethers as ethersv6 } from 'ethers-v6';
-  import { convertTokenToUsd, convertUsdToTokenAmount, toBigInt } from '$lib/common';
-  import { isUsdModeStore } from '$lib/common/stores/uiStateStore';
+  import { toBigInt } from '$lib/common';
   import NumericInput from './NumericInput.svelte';
+  import { log } from '$plugins/Logger';
 
   interface Props {
     disabled?: boolean;
@@ -15,6 +16,7 @@
     swapPriceDataStore: Writable<SwapPriceData>;
     onTokenSelect: (token: SwapToken) => void;
     onAmountChange: (amount: string) => void;
+    lastModifiedPanel?: string;
   }
 
   let {
@@ -23,9 +25,9 @@
     swapPriceDataStore,
     onTokenSelect,
     onAmountChange,
+    lastModifiedPanel = $bindable('sell'),
   }: Props = $props();
 
-  // Input states
   let userInput = $state('');
   let formattedAmount = $state('');
 
@@ -38,30 +40,26 @@
     }
   });
 
-  // Sync formatted amount with store data
+  // Update display amount when quote changes from sell panel
   $effect(() => {
-    const tokenAmount = ethersv6.formatUnits(toBigInt($swapPriceDataStore.amountOut), $swapPriceDataStore.tokenOut.decimals);
-
-    // Convert token amount to USD
-    const usdAmount = $swapPriceDataStore.marketPriceOut > 0
-      ? convertTokenToUsd(Number(tokenAmount), $swapPriceDataStore.marketPriceOut)
-      : 0;
-
-    const displayAmount = $isUsdModeStore ? usdAmount.toFixed(2) : tokenAmount;
-
-    if (!userInput) {
-      formattedAmount = displayAmount;
+    if (lastModifiedPanel === 'sell') {  // Removed the !userInput check
+      userInput = ''; // Clear user input when sell panel changes
+      const tokenAmount = ethersv6.formatUnits(
+        toBigInt($swapPriceDataStore.amountOut),
+        $swapPriceDataStore.tokenOut.decimals
+      );
+      formattedAmount = tokenAmount;
     }
   });
 
-  // Debounced amount change handler
   const debouncedAmountChange = debounce((value: string) => {
     onAmountChange(value);
   }, 300);
 
-  // Handle input changes
   function handleAmountInput(value: string) {
-    if (value === '' || value === '.') {
+    lastModifiedPanel = 'buy';
+
+    if (!value) {
       userInput = '';
       formattedAmount = '';
       debouncedAmountChange('');
@@ -70,29 +68,19 @@
 
     userInput = value;
     formattedAmount = value;
-
-    if ($isUsdModeStore) {
-      // Convert USD value to token quantity
-      const marketPrice = $swapPriceDataStore.marketPriceOut || 0;
-      if (marketPrice > 0) {
-        const tokenAmount = convertUsdToTokenAmount(Number(value), marketPrice, $swapPriceDataStore.tokenOut.decimals);
-        debouncedAmountChange(tokenAmount.toString());
-      } else {
-        debouncedAmountChange('');
-      }
-    } else {
-      // Pass the token quantity directly
-      debouncedAmountChange(value);
-    }
+    debouncedAmountChange(value);
   }
 
-  // Handle blur (input losing focus)
+  function handleTokenSelection(token: SwapToken) {
+    userInput = '';
+    formattedAmount = '';
+    onTokenSelect(token);
+  }
+
   function handleBlur(value: string) {
-    if (!value || value === '.') {
+    if (!value) {
       userInput = '';
-      if (!formattedAmount || formattedAmount === '0') formattedAmount = '';
-    } else {
-      formattedAmount = value;
+      formattedAmount = '';
     }
   }
 </script>
@@ -105,8 +93,6 @@
       onChange={handleAmountInput}
       onBlur={handleBlur}
       disabled={disabled}
-      maxDecimals={$isUsdModeStore ? 2 : $swapPriceDataStore.tokenOut.decimals}
-      isUsdMode={$isUsdModeStore}
       className="
         bg-transparent
         text-3xl
@@ -123,7 +109,7 @@
     <TokenDropdown
       disabled={disabled}
       selectedToken={$swapPriceDataStore.tokenOut}
-      onTokenSelect={onTokenSelect}
+      onTokenSelect={handleTokenSelection}
     />
   </div>
   <div class="flex justify-between items-center mt-2 text-sm">

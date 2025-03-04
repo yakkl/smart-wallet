@@ -1,22 +1,22 @@
 <script lang="ts">
   import { browserSvelte } from '$lib/utilities/browserSvelte';
 	import { goto } from "$app/navigation";
-	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore } from '$lib/common/stores';
+	import { yakklGasTransStore, yakklPricingStore, yakklContactsStore, getYakklContacts, yakklConnectionStore, getProfile, getSettings, getMiscStore, yakklCurrentlySelectedStore, getYakklCurrentlySelected } from '$lib/common/stores';
 	import { decryptData } from '$lib/common/encryption';
 	import { createForm } from 'svelte-forms-lib';
 	import * as yup from 'yup';
-	import { Popover, Tabs, TabItem, Timeline, TimelineItem, Spinner, Button, Hr } from 'flowbite-svelte';
+	import { Tabs, TabItem, Timeline, TimelineItem, Spinner, Button, Hr } from 'flowbite-svelte';
 	import { handleOpenInTab, formatValue, getChainId, deepCopy } from '$lib/utilities/utilities';
 	import { getLengthInBytes, wait } from '$lib/common/utils';
   import { onDestroy, onMount } from 'svelte';
-  import { ETH_BASE_EOA_GAS_UNITS, ETH_BASE_SCA_GAS_UNITS, PATH_LOGOUT } from '$lib/common/constants';
+  import { ETH_BASE_EOA_GAS_UNITS, ETH_BASE_SCA_GAS_UNITS, PATH_LOGOUT, TIMER_CHECK_GAS_PRICE_INTERVAL_TIME } from '$lib/common/constants';
 	import { startCheckGasPrices, stopCheckGasPrices, debounce } from '$lib/utilities/gas';
 	import ErrorNoAction from '$lib/components/ErrorNoAction.svelte';
 	import Warning from '$lib/components/Warning.svelte';
 	import WalletManager from '$lib/plugins/WalletManager';
   import type { Wallet } from '$lib/plugins/Wallet';
 	import { isEthereum } from '$lib/plugins/BlockchainGuards';
-	import { BigNumber, isEncryptedData, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
+	import { BigNumber, isEncryptedData, parseJsonRpcError, toHex, type AccountData, type Currency, type CurrentlySelectedData, type Profile, type ProfileData, type TransactionRequest, type TransactionResponse, type YakklContact, type YakklCurrentlySelected } from '$lib/common';
 	import type { BigNumberish } from '$lib/common/bignumber';
 	import { EthereumBigNumber } from '$lib/common/bignumber-ethereum';
   import type { TransactionState, GasState, UIState, ValueState, ConfigState } from '$lib/common/stateInterfaces';
@@ -27,6 +27,9 @@
   import { slide } from 'svelte/transition';
 	import Contacts from '$lib/components/Contacts.svelte';
 	import PincodeVerify from '$lib/components/PincodeVerify.svelte';
+	import { EOA_FALLBACK_GAS } from '$lib/common/gas-types';
+	// import { EthereumGasProvider } from '$lib/plugins/providers/fees/ethereum/EthereumGasProvider';
+
   // Toast
 
 // EIP-6969 - A proposal of giving back some of the gas fees to developers.
@@ -57,7 +60,7 @@
 	let greaterThan0 = true;
 	let hexData: string;  // Optional hex data to send with the transfer
   let checkGasPricesProvider = 'blocknative';
-  let checkGasPricesInterval = 10; // Seconds
+  let checkGasPricesInterval = TIMER_CHECK_GAS_PRICE_INTERVAL_TIME; // ms
 	let value: BigNumberish = 0n;
 	let	txmaxPriorityFeePerGas = '0.0';
 
@@ -183,12 +186,14 @@
     feesTabOpen: false,
     activityTabOpen: false,
     errorFields: false,
+    showConfirm: false,
     showContacts: false,
     showVerify: false,
     error: false,
+    errorValue: undefined, // Deprecate
     warning: false,
-    warningValue: undefined,
-    errorValue: undefined,
+    warningValue: undefined, // Deprecate
+    message: undefined, // Use this for all messages
   });
 
   let valueState = $state<ValueState>({
@@ -229,11 +234,32 @@
     toastStatus = false;
   }
 
-	onMount(() => {
+
+  // For tracking down Heisenberg like bug from some 3rd party library
+  let mountTime: number;
+  let updateCount = 0;
+
+
+	onMount(async () => {
 		try {
+      mountTime = Date.now();
+      log.info('Send component mounted', true, {
+        timestamp: mountTime,
+        location: window.location.href
+      });
+
 			if (browserSvelte) {
 				yakklMiscStore = getMiscStore();
 				currentlySelected = $yakklCurrentlySelectedStore;
+        if (!currentlySelected) {
+          clearValues();
+          currentlySelected = await getYakklCurrentlySelected();
+          if (!currentlySelected) {
+            throw 'No currently selected account found.';
+          }
+        }
+
+        log.setBackend('localStorage');
 
 				wallet = WalletManager.getInstance(['Alchemy'], ['Ethereum'], currentlySelected!.shortcuts.network.chainId ?? 1, import.meta.env.VITE_ALCHEMY_API_KEY_ETHEREUM);
 
@@ -242,9 +268,6 @@
 
 				transactionState.blockchain = currentlySelected!.shortcuts.network.blockchain;
 				transactionState.address = currentlySelected!.shortcuts.address;
-
-        // log.debug('onMount: transactionState', transactionState);
-        // log.debug('onMount: currentlySelected', currentlySelected);
 
 				checkSettings(); // If all good then returns else redirects to logout. This will force a new login.
 				startGasPricingChecks();
@@ -268,34 +291,41 @@
 				(document.getElementById("showUSD") as HTMLInputElement).checked = false;
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - onMount', true, e);
 			uiState.errorValue = e as string;
 			uiState.error = true;  // This 'should' show an error message but being in the onMount it may not.
 		}
 	});
 
+
 	onDestroy(() => {
 		try {
+      log.info('Send component destroying', true, {
+        updateCount,
+        lifetime: Date.now() - mountTime
+      });
+
 			clearValues(); // Clear all values
 			stopCheckGasPrices();
 		} catch(e) {
-			log.error(`Send: onDestroy: ${e}`);
+			log.error('Send - onDestroy:', true, e);
 		}
 	});
 
+  function validateDOMState() {
+    // Check for any detached elements or common issues
+    const tabs = document.querySelectorAll('[role="tab"]');
+    const panels = document.querySelectorAll('[role="tabpanel"]');
+    if (tabs.length !== panels.length) {
+      throw new Error('Tab/Panel mismatch detected');
+    }
+  }
+
   function startGasPricingChecks() {
 		try {
-      // log.debug('startGasPricingChecks', checkGasPricesProvider, checkGasPricesInterval);
-
 			startCheckGasPrices(checkGasPricesProvider, checkGasPricesInterval);
-
-			// if (currentlySelected && currentlySelected!.shortcuts.value?.valueOf() as bigint > 0n) {
-			// 	startCheckGasPrices(checkGasPricesProvider, checkGasPricesInterval);
-			// } else {
-			// 	stopCheckGasPrices();
-			// }
 		} catch(e) {
-			log.error(e);
+			log.error('Send - startGasPricingChecks', true, e);
 			clearVerificationValues();
 		}
   }
@@ -324,7 +354,7 @@
 			valueState.toAddressValueUSD = valueState.valueUSD;
 			valueState.totalUSD = valueState.currencyFormat ? valueState.currencyFormat.format(Number(valueState.valueUSD) + gasTotalEstimateUSDNumber) : '0.00';
 		} catch(e) {
-			log.error(e);
+			log.error('Send - onBlur', true, e);
 		}
 	}
 
@@ -364,12 +394,23 @@
 			try {
         uiState.showVerify = true; // Show the PincodeVerify modal and let it follow the process from there
 			} catch (e) {
-        log.error(e);
+        log.error('Send - onSubmit', true, e);
 				uiState.errorValue = e as string;
 				uiState.error = true;
 			}
 		}
 	});
+
+  // Not currently used
+  // An option at a later time would be to create a confirmation stack where all confirmation where checked here and then if needed it would be added to a stack. The stack would be cycled through and any non-continuing would stop before verification to all the user to correct it
+  function checkForConfirms(data: any) {
+    if (data.toAddress === $yakklCurrentlySelectedStore.shortcuts.address) {
+      // Use the warning Values
+      uiState.message = "The 'To' address is the same as the 'From' address. This will result in a transaction cancel like transaction with no value being sent. However, gas fees are ALWAYS paid!";
+      uiState.showConfirm = true;
+      return;
+    }
+  }
 
 	function isChecked(id: string) {
 		if (browserSvelte) {
@@ -379,7 +420,7 @@
 					return element.checked;
 				}
 			} catch(e) {
-				log.error(e);
+				log.error('Send - isChecked', true, e);
 				return false
 			}
 			return false;
@@ -387,7 +428,7 @@
 	}
 
 	// $form validation - not pincode validation
-	async function validate(data: any) {
+	async function validate(data: any, bypassWarning = false) {
 		try {
 			let address = data.toAddress;
 			let resolvedAddr = null;
@@ -397,6 +438,14 @@
 			if (!profile) {
 				throw 'No profile found';
 			}
+
+      // NOTE: Need to implement the confirmation stack
+      // Warn if from and to address are the same
+      // if (address === transactionState.address && !bypassWarning) {
+      //   uiState.warningValue = "The 'To' address is the same as the 'From' address. This will result in a transaction cancel like transaction with no value being sent. However, gas fees are ALWAYS paid! Do you wish to continue?";
+      //   uiState.warning = true;
+      //   return;
+      // }
 
 			maxPriorityFeePerGasOverride = BigNumber.from(data.maxPriorityFeePerGasOverride);
 			maxFeePerGasOverride = BigNumber.from(data.maxFeePerGasOverride);
@@ -433,6 +482,16 @@
 
       toAddress = address;
 
+      // Double check the gas fees:
+      // If the gas fees are too low then we need to increase them
+      // NOTE: Once the new GasProvider is implemented, this will most likely be removed
+      if (gasState.maxFeePerGas === 0) {
+        gasState.maxFeePerGas = BigNumber.from(EOA_FALLBACK_GAS.GWEI.NORMAL.MAX_FEE).toNumber();
+      }
+      if (gasState.maxPriorityFeePerGas === 0) {
+        gasState.maxPriorityFeePerGas = BigNumber.from(EOA_FALLBACK_GAS.GWEI.NORMAL.PRIORITY_FEE).toNumber();
+      }
+
 			const feePerGas: number = BigNumber.from(gasState.maxFeePerGas).toNumber() as number;
 			if ( feePerGas < gasState.gasEstimate) {
 				uiState.warningValue = "The transaction Max Fee Per Gas Unit is LESS than the estimated Gas Fee. This may result in a slow transaction or no transaction at all. Keeping the Max Fee Per Gas Unit equal or greater than the estimated Gas Fee increases the possibility of a faster transaction time."
@@ -457,7 +516,7 @@
 				}
 			}
 		} catch (e) {
-			log.error(e);
+			log.error('Send - validate', true, e);
 			clearVerificationValues();
 			uiState.errorValue = e as string;
 			uiState.error = true;
@@ -468,7 +527,7 @@
 		try {
 			$yakklContactsStore = await getYakklContacts(); // Don't really need this now. The $yakklContactsStore is already set in the store
 		} catch(e) {
-			log.error(e);
+			log.error('Send - loadContacts', true, e);
 			clearVerificationValues();
 		}
 	}
@@ -494,10 +553,10 @@
       } else if (contentType && contentType.includes('text/html')) {
         data = await response.text();
         // throw new Error(`Received HTML instead of JSON: ${data}`);
-        log.error(`Received HTML instead of JSON: ${data}`);
+        log.error('Send - Received HTML instead of JSON:', true, data);
       } else {
         // throw new Error('Unsupported content type: ' + contentType);
-        log.error('Unsupported content type: ' + contentType);
+        log.error('Send - Unsupported content type:', true, contentType);
       }
 
       // Throw error if there is an error in the data - later
@@ -559,7 +618,7 @@
         transactionState.txHistoryTransactions.push(yakklHistory);
       }
     } catch (e) {
-      log.error(e);
+      log.error('Send - loadTransactionHistory', true, e);
       uiState.errorValue = e as string;
       uiState.error = true;
       clearVerificationValues();
@@ -573,7 +632,7 @@
 					goto(PATH_LOGOUT); // This will reset.
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - checkSettings', true, e);
 			goto(PATH_LOGOUT); // This is a catch all for now
 		}
 	}
@@ -596,7 +655,7 @@
 				}
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - checkValue', true, e);
 		}
 	}
 
@@ -604,11 +663,8 @@
 		try {
 			uiState.error=false;
 			uiState.warning=false;
-			// ???? or leave it
-			// clearValues();
-			// goto(PATH_WELCOME);
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleClose', true, e);
 		}
 	}
 
@@ -641,7 +697,7 @@
 				throw 'PINCODE did not match. Please try again.';
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - verifyWithPin', true, e);
 			uiState.errorValue = e as string;
 			uiState.error = true;
 			return null;
@@ -686,6 +742,30 @@
 				hash: hash,
 				nonce: nonce,
 			};
+
+      // Double check the gas fees:
+      // If the gas fees are too low then we need to increase them
+      // If the gas fees are too high then we need to decrease them
+      // We can do gas estimate from the provider and/or set minimums for EOAs
+
+      // const gasProvider = new EthereumGasProvider(provider, blockchain, priceProvider);
+      // const normalEstimate = await gasProvider.getEOATransferGasEstimate(
+      //       recipientAddress,
+      //       amount,
+      //       { speed: TransactionSpeed.NORMAL }
+      // );
+
+      // NOTE: In next release, add GasProvider features including new UI and the following will most likely be removed
+      // Fallback if the gas estimate is not available
+      if (!transaction.gasLimit) {
+        transaction.gasLimit = EOA_FALLBACK_GAS.LIMITS.BASE;
+      }
+      if (!transaction.maxFeePerGas) {
+        transaction.maxFeePerGas = EOA_FALLBACK_GAS.GWEI.NORMAL.MAX_FEE;
+      }
+      if (!transaction.maxPriorityFeePerGas) {
+        transaction.maxPriorityFeePerGas = EOA_FALLBACK_GAS.GWEI.NORMAL.PRIORITY_FEE;
+      }
 
 			// let hexTransaction = convertToHexStrings(transaction,['type', 'nonce']);
 			// All 'tx' prefix variables are available for the UI and misc
@@ -749,9 +829,14 @@
     	}
 		} catch(e: any) {
       // Verify if the error is a response error and if so, process it for a more accurate error message
-			uiState.errorValue = e?.message ?? e;
+
+      const errorValue = parseJsonRpcError(e);
+
+      log.warn(e);
+      log.error('Send - processTransaction', true, errorValue);
+
+			uiState.errorValue = errorValue.message; //e?.message ?? e;
 			uiState.error = true;
-      log.error(e);
 		} finally {
 			log.info('processTransaction: Clearing verification values.');
 			clearVerificationValues();
@@ -818,16 +903,16 @@
 		try {
 			$form.toAddressValue = EthereumBigNumber.toEtherString($yakklCurrentlySelectedStore!.shortcuts.value) ?? '0.0';
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleMax', true, e);
 			clearVerificationValues();
 		}
 	}
 
 	function handleCancelReset() {
 		try {
+      clearValues(); // This resets but not cancels a transaction that is already being processed
 		} catch(e) {
-			clearValues();
-			log.error(e);
+			log.error('Send - handleCancelReset', true, e);
 		}
 	}
 
@@ -861,7 +946,7 @@
 			transactionState.txHistoryTransactions = [];
 			valueState.valueType = 'crypto';
 		} catch(e) {
-			log.error(e);
+			log.error('Send - clearValues', true, e);
 		}
 	}
 
@@ -871,7 +956,7 @@
 			try {
 				pincode = '';
 			} catch(e) {
-				log.error(e);
+				log.error('Send - clearVerificationValues', true, e);
 			}
 		}
 	}
@@ -901,7 +986,7 @@
 				gasState.maxFeePerGas = gasState.marketGas;
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleGasSelect', true, e);
 			clearVerificationValues();
 		}
 	}
@@ -911,7 +996,7 @@
 			toAddress = $form.toAddress = contact.address;
 			uiState.showContacts = false;
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleContact', true, e);
 			clearVerificationValues();
 		}
   }
@@ -919,25 +1004,22 @@
 	// increase is a percent like 10% = 10 and not .10
 	async function handleSpeedUp(increase=10, nonce: number, hash: string) {
 		try {
-			// log.debug('handleSpeedUp', increase, nonce, hash);
-
 			await processTransaction(increase, nonce, hash, false);
 			// processTransaction - keep from and to the same, keep value the same and raise maxFeePerGas & raise maxPriorityFeePerGas (optional for priorityfee) higher so that the validators take it! NOTE: Gas fee is ALWAYS charged!!
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleSpeedUp', true, e);
 			clearVerificationValues();
 		}
 	}
 
 	// increase is a percent like 10% = 10 and not .10
 	// Default is 20 = (10 * 2)
+  // NOTE: This is a cancel transaction and not a speed up (see last param of processTransaction)
 	function handleCancel(increase=10, nonce: number, hash: string) {
 		try {
-			// log.debug('handleCancel', increase*2, nonce, hash);
-
 			processTransaction(increase*2, nonce, hash, true); // setting cancel = true (last param) will send a cancel transaction
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleCancel', true, e);
 			clearVerificationValues();
 		}
 	}
@@ -954,7 +1036,7 @@
 			}
 			handleOpenInTab(URL);
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleOpenAddress', true, e);
 		} finally {
 			clearVerificationValues();
 		}
@@ -967,13 +1049,12 @@
 			loadTransactionHistory($yakklCurrentlySelectedStore!.shortcuts.network.type, $yakklCurrentlySelectedStore!.shortcuts.address, historyCount);
 		} catch(e) {
 			clearVerificationValues();
-			log.error(e);
+			log.error('Send - debounce', true, e);
 		}
 	});
 
 	function handleSendRequest() {
 		uiState.showVerify = true;
-    // Pincode is disabled for now
 	}
 
 	// The calling function should compute the increase and then call this function. For example, count the wordsin the data field, multiply by 68 and then call this function
@@ -984,7 +1065,7 @@
 				gasLimit = gasLimit + transactionState.txGasLimitIncrease;
 			}
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleIncreaseGasLimit', true, e);
 		}
 	}
 
@@ -994,7 +1075,7 @@
 			pincode = pin; // Set global pincode
       handleApprove();
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handlePin', true, e);
       handleReject();
 		}
 	}
@@ -1002,9 +1083,10 @@
 	async function handleApprove() {
 		try {
 			uiState.showVerify = false;
+      uiState.showConfirm = false;
 			await validate($form); // Validates form data and then calls processTransaction
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleApprove', true, e);
 			clearVerificationValues();
 		}
 	}
@@ -1012,10 +1094,11 @@
 	function handleReject() {
 		try {
 			uiState.showVerify = false;
+      uiState.showConfirm = false;
 			uiState.warning = true;
 			uiState.warningValue = 'Transaction failed - You have rejected or Pincode was not validated. No transaction was sent.';
 		} catch(e) {
-			log.error(e);
+			log.error('Send - handleReject', true, e);
 			clearValues(); // Clear everything out on reject. Leave the values so the user can try again.
 		}
 	}
@@ -1030,8 +1113,6 @@
 		valueState.valueType = 'crypto';
 	}
 
-  //////// Toast
-
 	$effect(() => {
 		if ($errors.toAddress ||
 			$errors.hexData ||
@@ -1044,12 +1125,38 @@
 			}
 	});
 
+  $effect(() => {
+    try {
+      // Assume currently selected address changed
+      if (!transactionState) {
+        throw new Error('transactionState is not defined');
+      }
+      transactionState.address = $yakklCurrentlySelectedStore.shortcuts.address;
+      transactionState.txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
+      transactionState.txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
+    } catch(e) {
+      log.error('Send - effect', true, e);
+    }
+  });
+
 	$effect(() => {
 		try {
-			transactionState.txNetworkTypeName = $yakklCurrentlySelectedStore!.shortcuts.network.name ?? 'Mainnet';
-			transactionState.txBlockchain = $yakklCurrentlySelectedStore!.shortcuts.network.blockchain ?? 'Ethereum';
-
 			startGasPricingChecks(); // It will start the interval if not already. If it already exists then it will return
+      if (!valueState) {
+        throw new Error('valueState is not defined');
+      }
+
+      if (!gasState) {
+        throw new Error('gasState is not defined');
+      }
+
+      if (!transactionState) {
+        throw new Error('transactionState is not defined');
+      }
+
+      if (!uiState) {
+        throw new Error('uiState is not defined');
+      }
 
 			gasLimit = valueState.smartContract === true ? ETH_BASE_SCA_GAS_UNITS : ETH_BASE_EOA_GAS_UNITS; // These are the norms for gas units it takes for the different eth transactions
 			if ($form.hexData) {
@@ -1140,7 +1247,7 @@
 			}
 
 		} catch(e) {
-			log.error(e);
+			log.error('Send - effect', true, e);
 		}
 	});
 </script>
@@ -1472,7 +1579,7 @@
 				</TabItem>
 
 				<TabItem id="fees" open={uiState.feesTabOpen} on:click={() => {handleCurrentTab("feesTab")}} style={$errors.maxPriorityFeePerGasOverride? "color:red" : $errors.maxFeePerGasOverride ? "color:red": ""} title="Fees">
-					<Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGasOverride" placement="top">
+					<!-- <Popover class="text-sm z-10" triggeredBy="#maxPriorityFeePerGasOverride" placement="top">
 						<h3 class="font-semibold text-gray-900 dark:text-white">Estimated Gas Fee</h3>
 						<div class="grid grid-cols-4 gap-2">
 								<div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
@@ -1492,7 +1599,7 @@
 								<div class="h-1 bg-orange-300 dark:bg-orange-400"></div>
 						</div>
 						<p class="py-2">The default value is the same as the estimated Gas Fee from the blockchain. Any fee lower than the Gas Estimate value could poorly impact the transaction processing time or potentially reverse the transaction.</p>
-					</Popover>
+					</Popover> -->
 
 					<div class="border rounded-lg border-gray-200 p-2 mt-4 ">
 

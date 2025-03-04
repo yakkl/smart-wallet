@@ -1,6 +1,9 @@
 // This captures errors that are not caught by the application code nor third-party libraries.
 
 window.onerror = function (message, source, lineno, colno, error) {
+  if (message?.includes('ResizeObserver loop')) {
+    return; // Ignore ResizeObserver errors from chrome
+  }
   console.log('Global Error Caught:', {
     message,
     source,

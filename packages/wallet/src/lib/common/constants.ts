@@ -25,6 +25,7 @@ export const TIMER_IDLE_THRESHOLD = 120000; //milliseconds (2 minutes)
 export const TIMER_IDLE_LOCK_DELAY = 60000; //milliseconds (1 minute)
 export const TIMER_IDLE_CHECK_INTERVAL = 15000; //milliseconds (15 seconds)
 export const TIMER_IDLE_CHECK_INTERVAL_APP_WIDE = 15000; //milliseconds (15 seconds)
+export const TIMEOUT_COPY_TO_CLIPBOARD = 20000; //milliseconds - redacts the clipboard after this time
 
 // Retry and backoff constants
 export const DEV_MAX_RETRIES = 5;

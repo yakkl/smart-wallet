@@ -119,7 +119,7 @@ export class EthersConverter {
         type: tx.type,
       };
     } catch ( error ) {
-      log.error( 'Error converting ethers transaction request to transaction request:', error );
+      log.error( 'Error converting ethers transaction request to transaction request:', false, error );
       return null;
     }
   }

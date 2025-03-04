@@ -33,7 +33,7 @@ export class KrakenPriceProvider implements PriceProvider {
       };
     }
     catch ( e ) {
-      log.error( 'KrakenPriceProvider - getPrice - error', e );
+      log.error( 'KrakenPriceProvider - getPrice - error', false, e );
       return { provider: this.getName(), price: 0, lastUpdated: new Date(), status: 404, message: `Error - ${ e }` };
     }
   }

@@ -43,7 +43,7 @@ export async function checkPricesCallback(symbol: string = 'ETH-USD') {
         } );
       }
     } else {
-      log.error('checkPrices:', 'Internet connection may be down.'); // Comment this out later
+      log.error('checkPrices:', false, 'Internet connection may be down.'); // Comment this out later
     }
   } catch (e) {
     log.error(`checkPricesCallback: ${e}`);

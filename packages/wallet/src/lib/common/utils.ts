@@ -32,7 +32,7 @@ export async function checkAccountRegistration(): Promise<boolean> {
 
     return hasPrimaryOrImported;
   } catch (error) {
-    log.error('Error checking registration:', error);
+    log.error('Error checking registration:', false, error);
     return false;
   }
 }
@@ -53,7 +53,7 @@ export function parseAmount( amount: string, decimals: number ): bigint {
 
     return BigInt( fullAmount );
   } catch ( error ) {
-    log.error( 'Failed to parse amount:', error );
+    log.error( 'Failed to parse amount:', false, error );
     return 0n;
   }
 }
@@ -71,7 +71,7 @@ export function parseAmountAlternative( amount: string, decimals: number ): bigi
     // Multiply by 10^decimals and convert to bigint
     return BigInt( Math.round( numericValue * ( 10 ** decimals ) ) );
   } catch ( error ) {
-    log.error( 'Error parsing amount:', error );
+    log.error( 'Error parsing amount:', false, error );
     return 0n;
   }
 }
@@ -170,7 +170,7 @@ export function parseErrorMessageFromJSON(errorMessage: string): ParsedError {
 
     return parsedError;
   } catch (error) {
-    log.error('Failed to parse errorMessage, body or error:', error);
+    log.error('Failed to parse errorMessage, body or error:', false, error);
   }
 
   return null;

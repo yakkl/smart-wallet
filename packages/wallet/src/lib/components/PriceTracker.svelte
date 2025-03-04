@@ -39,11 +39,11 @@
           priceStore.set(priceData);
           break;
         } catch (error) {
-          log.error(`Error fetching price from ${provider.getName()}:`, error);
+          log.error(`Error fetching price from ${provider.getName()}:`, false, error);
         }
       }
     } catch (error) {
-      log.error('PriceTracker:', error);
+      log.error('PriceTracker:', false, error);
     }
   }
 

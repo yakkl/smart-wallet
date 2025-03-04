@@ -27,12 +27,12 @@ export function startLockIconTimer() {
           await setIconUnlock();
         }
       } catch (error) {
-        log.error('Error in lock icon timer interval:', error);
+        log.error('Error in lock icon timer interval:', false, error);
       }
     }, TIMER_ICON_CHECK_TIME);
     timerManager.startTimer('iconTimer_lockIcon');
   } catch (error: any) {
-    log.error('Error starting lock icon timer:', error, error?.stack);
+    log.error('Error starting lock icon timer:', false, error, error?.stack);
   }
 }
 
@@ -45,7 +45,7 @@ export async function stopLockIconTimer() {
       await browser_ext.runtime.sendMessage({type: 'lockdown',});
     }
   } catch (error: any) {
-    log.error('Error stopping lock icon timer:', error, error?.stack);
+    log.error('Error stopping lock icon timer:', false, error, error?.stack);
   }
 }
 

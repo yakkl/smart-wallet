@@ -50,7 +50,7 @@ export abstract class SwapManager {
       if ( amount === 0n || this.feeBasisPoints <= 0 ) return 0n;  // No fee if amount is zero or fee is <= zero
       return calculateFeeAmount( amount, this.feeBasisPoints );
     } catch ( error ) {
-      log.error( 'Error calculating fee:', error );
+      log.error( 'Error calculating fee:', false, error );
       return 0n;
     }
   }

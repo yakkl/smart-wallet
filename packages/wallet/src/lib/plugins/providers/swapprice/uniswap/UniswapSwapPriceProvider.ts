@@ -53,7 +53,7 @@
 
 //       // this.initialized = true;
 //     } catch ( error ) {
-//       console.log( 'Failed to initialize provider:', error );
+//       console.log( 'Failed to initialize provider:', false, error );
 //       throw error;
 //     }
 //   }
@@ -248,7 +248,7 @@
   //       gasEstimate: gasEstimate
   //     };
   //   } catch ( error ) {
-  //     console.log( 'Error in getSwapPriceOut:', error );
+  //     console.log( 'Error in getSwapPriceOut:', false, error );
   //     throw error;
   //   }
   // }
@@ -378,7 +378,7 @@
   //       gasEstimate: gasEstimate
   //     };
   //   } catch ( error ) {
-  //     console.log( 'Error in getSwapPriceIn:', error );
+  //     console.log( 'Error in getSwapPriceIn:', false, error );
   //     throw error;
   //   }
   // }
@@ -475,7 +475,7 @@
 //       try {
 //         validTick = safeConvertBigIntToNumber( validTickBigInt );
 //       } catch ( error ) {
-//         console.log( 'Error converting tick to number:', error );
+//         console.log( 'Error converting tick to number:', false, error );
 //         // Fallback to a default tick value or handle the error as appropriate for your use case
 //         validTick = 0; // or some other default value
 //       }
@@ -625,7 +625,7 @@
 //         debug_log( 'token1Price:', token1Price );
 
 //       } catch ( error ) {
-//         console.log( 'Error calculating prices:', error );
+//         console.log( 'Error calculating prices:', false, error );
 //         token0Price = '0';
 //         token1Price = '0';
 //       }
@@ -659,7 +659,7 @@
 //         tvl
 //       };
 //     } catch ( error ) {
-//       console.log( 'Error in getPoolInfo:', error );
+//       console.log( 'Error in getPoolInfo:', false, error );
 //       throw error;
 //     }
 //   }

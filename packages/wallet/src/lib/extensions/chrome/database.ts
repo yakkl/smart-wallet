@@ -31,7 +31,7 @@ export async function initializeDatabase(override = false) {
         await db.domains.bulkAdd(data.blacklist.map((domain: string) => ({ domain })));
     }
   } catch(error) {
-    log.warn("Warning initializing database", error);
+    log.warn("Warning initializing database", false, error);
   }
 }
 
@@ -40,7 +40,7 @@ export async function isBlacklisted(domain: string): Promise<boolean> {
     const result = await db.domains.get({ domain });
     return !!result;
   } catch(error) {
-    log.warn("Warning checking blacklist", error);
+    log.warn("Warning checking blacklist", false, error);
     return false;
   }
 }

@@ -65,7 +65,7 @@
         resetForm();
         show = false;
       } catch (error) {
-        log.error('TokenForm: Error:', error);
+        log.error('TokenForm: Error:', false, error);
       }
     },
   });

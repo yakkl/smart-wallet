@@ -21,6 +21,6 @@ export async function clearAlarm(alarmName: string): Promise<void> {
       log.info(`Alarm "${alarmName}" cleared successfully.`);
     }
   } catch (error) {
-    log.error('Clearing alarm:', error);
+    log.error('Clearing alarm:', false, error);
   }
 }

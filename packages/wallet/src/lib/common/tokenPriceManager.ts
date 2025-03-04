@@ -32,7 +32,7 @@ export async function updateTokenPrices() {
 
     yakklCombinedTokenStore.update(() => updatedTokens);
   } catch (error) {
-    log.error("updateTokenPrices: Failed to update token prices", error);
+    log.error("updateTokenPrices: Failed to update token prices", false, error);
   } finally {
     fetchingActive.set(false);
   }

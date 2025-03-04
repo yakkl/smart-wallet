@@ -9,7 +9,7 @@ export async function stopTimers() {
     }
 
   } catch (error) {
-    log.error('Error stopping timers:', error);
+    log.error('Error stopping timers:', false, error);
   }
 }
 
@@ -21,6 +21,6 @@ export function removeTimers() {
     }
 
   } catch (error) {
-    log.error('Error removing timers:', error);
+    log.error('Error removing timers:', false, error);
   }
 }
