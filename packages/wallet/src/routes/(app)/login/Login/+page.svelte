@@ -47,8 +47,8 @@
   let yakklPrimaryAccounts: YakklPrimaryAccount[] = $state([]);
 
   let error = $state(false);
-  let errorValue: any = $state();
-  let registeredType: string = $state();
+  let errorValue: any = $state('');
+  let registeredType: string = $state('');
   let redirect = PATH_WELCOME;
   let requestId: string = '';
   let showProgress = $state(false);
@@ -144,13 +144,11 @@
         // showProgress = true;
         let profile = await verify(userName.toLowerCase().trim().replace('.nfs.id', '')+'.nfs.id'+password);
         if (!profile) {
-          log.error(`User [ --------- ] was not found OR password is not correct no primary account was not found. Please try again or register if not already registered`);
           throw `User [ ${userName} ] was not found OR password is not correct OR no primary account was not found. Please try again or register if not already registered`;
         } else {
 
           yakklMisc = getMiscStore(); // This should be set by the verify function
           if (!yakklMisc) {
-            log.error(`User [ --------- ] was not found OR password is not correct. Please try again or register if not already registered`);
             throw `User [ ${userName} ] was not found OR password is not correct. Please try again or register if not already registered`;
           }
           $yakklUserNameStore = userName;
@@ -214,8 +212,8 @@
       } catch(e: any) {
         showProgress = false;
         log.error(`Login: ${e}`, e?.stack);
-        error = true;
         errorValue = e;
+        error = true;
       }
     }
   }
@@ -308,6 +306,8 @@
 
   function handleCustomAction() {
     errorValue = '';
+    error = false;
+    showProgress = false;
   }
 </script>
 

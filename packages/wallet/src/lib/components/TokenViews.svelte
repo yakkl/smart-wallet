@@ -11,17 +11,13 @@
 	import { yakklCombinedTokenStore } from '$lib/common/stores';
   import LoadingState from './LoadingState.svelte';
 	import { onMount } from 'svelte';
-
-  // import { tokenManager } from '$lib/common/stores/tokenManager';
-  // import { createPriceUpdater } from '$lib/common/createPriceUpdater';
-  // import { PriceManager } from '$lib/plugins/PriceManager';
-	// import { TimerManager } from '$lib/plugins/TimerManager';
+  import { sessionInitialized } from '$lib/common/stores';
 
   let tokens = $state<TokenData[]>([]);
   let sortedTokens = $state<TokenData[]>([]);
   let currentView = $state('grid');
   let sortBy = $state('name');
-  let isLoading = $state(true);
+  let isLoading = $state(false); // This should only be true during initial load
 
   // Store subscription
   yakklCombinedTokenStore.subscribe((updatedTokens = []) => {
@@ -30,12 +26,17 @@
   });
 
   onMount(() => {
-    const timer = setTimeout(() => {
-      isLoading = false;
-    }, 5000);
+    // Always start loading when component mounts
+    if (!$sessionInitialized) {
+      isLoading = true;
 
-    // Cleanup on component destruction
-    return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        isLoading = false;
+        sessionInitialized.set(true); // Set to true for current session only
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
   });
 
   // Separate effect for sorting
@@ -75,7 +76,7 @@
 
   <!-- Dynamic Views -->
   <div class="relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 shadow-lg">
-    {#if isLoading}
+    {#if isLoading && !$sessionInitialized}
       <LoadingState message="Analyzing Tokens..." />
     {/if}
 

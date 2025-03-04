@@ -23,7 +23,7 @@ export async function onTabUpdatedListener(tabId: number, changeInfo: any, tab: 
       }
     }
   } catch (error) {
-    log.error('[ERROR]: Error in OnTabUpdatedListener - error:', error);
+    log.error('[ERROR]: Error in OnTabUpdatedListener - error:', false, error);
   }
 }
 
@@ -37,6 +37,6 @@ export function onTabRemovedListener(tabId: number) {
       }
     }
   } catch (error) {
-    log.error('Background - tab error',error);
+    log.error('Background - tab error', false, error);
   }
 }

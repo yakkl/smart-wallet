@@ -107,7 +107,7 @@ async function checkUniswapPoolLiquidity(provider: ethers.Provider, tokenAAddres
 
     return { liquidityTokenA, liquidityTokenB };
   } catch (error) {
-    console.error("Error in checkUniswapPoolLiquidity:", error);
+    console.error("Error in checkUniswapPoolLiquidity:", false, error);
     throw error;
   }
 }
@@ -118,7 +118,7 @@ async function estimateGas(swapRouter: ethers.Contract, method: string, params: 
         console.log(`\nEstimated gas: ${gasEstimate.toString()}`);
         return gasEstimate;
     } catch (error: any) {
-        console.error("Gas estimation failed:", error);
+        console.error("Gas estimation failed:", false, error);
         if (error.reason) console.error("Reason:", error.reason);
         if (error.data) console.error("Error data:", error.data);
         throw error;
@@ -168,7 +168,7 @@ async function getQuote(
         priceImpact: Number(priceImpact) / 100  // Convert basis points to percentage
     };
   } catch (error: any) {
-    console.error(`\nError in getQuote:\n`, error);
+    console.error(`\nError in getQuote:\n`, false, error);
     if (error.reason) console.error("Reason:", error.reason);
     if (error.data) console.error("Error data:", error.data);
     if (error.transaction) console.error("Transaction:", error.transaction);
@@ -198,7 +198,7 @@ async function getETHQuote(
         priceImpact: Number(priceImpact) / 100  // Convert basis points to percentage
     };
   } catch (error: any) {
-    console.error(`\nError in getETHQuote:\n`, error);
+    console.error(`\nError in getETHQuote:\n`, false, error);
     if (error.reason) console.error("Reason:", error.reason);
     if (error.data) console.error("Error data:", error.data);
     if (error.transaction) console.error("Transaction:", error.transaction);
@@ -347,7 +347,7 @@ async function performSwapETHForTokens(networkName: string) {
               console.warn("Pool liquidity is below the minimum threshold. Swap may have high slippage.");
           }
       } catch (error) {
-          console.error(`\nError checking pool liquidity:`, error);
+          console.error(`\nError checking pool liquidity:`, false, error);
           if (error instanceof Error) {
               console.error("Error message:", error.message);
           }
@@ -373,7 +373,7 @@ async function performSwapETHForTokens(networkName: string) {
           console.log(`\nMinimum amount out (with ${slippageTolerance * 100}% slippage tolerance): ${ethers.formatUnits(minAmountOut, tokenOutDecimals)} ${await tokenOut.symbol()}`);
 
       } catch (error) {
-          console.error(`\nError checking slippage:`, error);
+          console.error(`\nError checking slippage:`, false, error);
           if (error instanceof Error) {
               console.error("Error message:", error.message);
           }
@@ -396,7 +396,7 @@ async function performSwapETHForTokens(networkName: string) {
           gasEstimate = await estimateGas(swapRouter, 'swapExactETHForTokens', params, amountIn);
           console.log(`Estimated gas: ${gasEstimate.toString()}`);
       } catch (error) {
-          console.error("Gas estimation failed:", error);
+          console.error("Gas estimation failed:", false, error);
       }
 
       const uniswapRouterAddress = await swapRouter.getUniswapRouterAddress();
@@ -483,7 +483,7 @@ async function performSwapETHForTokens(networkName: string) {
       console.log(`Effective exchange rate: 1 ETH = ${effectiveRate.toFixed(4)} ${await tokenOut.symbol()}\n\n`);
 
   } catch (error: any) {
-      console.error(`\nError performing swap:\n`, error);
+      console.error(`\nError performing swap:\n`, false, error);
       if (error.reason) console.error("Reason:", error.reason);
       if (error.data) console.error("Error data:", error.data);
       if (error.transaction) console.error("Transaction:", error.transaction);
@@ -585,7 +585,7 @@ async function performSwapTokensForTokens(networkName: string) {
           gasEstimate = await estimateGas(swapRouter, 'swapExactTokensForTokens', params);
           console.log(`Estimated gas: ${gasEstimate.toString()}`);
       } catch (error) {
-          console.error("Gas estimation failed:", error);
+          console.error("Gas estimation failed:", false, error);
           gasEstimate = 1000000n;
       }
 
@@ -630,7 +630,7 @@ async function performSwapTokensForTokens(networkName: string) {
       console.log(`Effective exchange rate: 1 ${await tokenIn.symbol()} = ${effectiveRate.toFixed(4)} ${await tokenOut.symbol()}\n\n`);
 
   } catch (error: any) {
-      console.error(`\nError performing swap:\n`, error);
+      console.error(`\nError performing swap:\n`, false, error);
       if (error.reason) console.error("Reason:", error.reason);
       if (error.data) console.error("Error data:", error.data);
       if (error.transaction) console.error("Transaction:", error.transaction);
@@ -667,14 +667,14 @@ async function main() {
             await performSwapTokensForTokens(networkName);
         }
     } catch (error) {
-        console.error("Error performing swap:", error);
+        console.error("Error performing swap:", false, error);
         process.exit(1);
     }
 }
 
 if (require.main === module) {
     main().catch((error) => {
-        console.error("Unhandled error:", error);
+        console.error("Unhandled error:", false, error);
         process.exit(1);
     });
 }

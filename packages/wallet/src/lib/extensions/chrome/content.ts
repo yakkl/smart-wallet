@@ -74,7 +74,7 @@ function createPort( name: string ) {
       portExternal.onDisconnect.addListener( onDisconnectListener );
     }
   } catch ( error ) {
-    log.error( 'Content: createPort:', error );
+    log.error( 'Content: createPort:', false, error );
   }
 }
 
@@ -87,7 +87,7 @@ function onMessageListener () {
         window.postMessage(response, windowOrigin); // This is the response back to the dApp!
       }
     } catch (error) {
-      log.error('onMessageListener:', error); // General error handling
+      log.error('onMessageListener:', false, error); // General error handling
       window.postMessage({id: response.id, method: response.method, error: error, type: 'YAKKL_RESPONSE'}, windowOrigin);
     }
   };
@@ -99,7 +99,7 @@ function onMessageListener () {
 function onDisconnectListener( event ) {
   try {
     if ( !browser_ext && browser_ext.runtime.lastError ) {
-      log.error( 'onDisconnectListener - lastError:', browser_ext.runtime.lastError );
+      log.warn( 'onDisconnectListener - lastError:', false, browser_ext.runtime.lastError );
     }
     if ( portExternal ) {
       if ( portExternal.onMessage ) {
@@ -204,6 +204,6 @@ try {
   });
 
 } catch ( e ) {
-  log.error( 'content - YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e );
+  log.error( 'content - YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', false, e );
 }
 

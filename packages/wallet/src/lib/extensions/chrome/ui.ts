@@ -111,11 +111,11 @@ export async function showPopup(url: string = ''): Promise<void> {
 
         openWindows.set(result.id, result);
       }).catch((error) => {
-        log.error('Background - YAKKL: ' + error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+        log.error('Background - YAKKL: ' + false, error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
       });
     }
   } catch (error) {
-    log.error('Background - showPopup',error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+    log.error('Background - showPopup',false, error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
   }
 }
 
@@ -129,10 +129,10 @@ export async function showPopupDapp(url: string): Promise<void> {
       browser_ext.windows.update(result.id, {drawAttention: true});
       openPopups.set('popupId', result.id);
     }).catch((error) => {
-      log.error('Background - YAKKL: ' + error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+      log.error('Background - YAKKL: ' + false, error);  // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
     });
   } catch (error) {
-    log.error('Background - showPopupDapp',error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
+    log.error('Background - showPopupDapp', false, error); // need to send these area back to content.ts to inpage.ts to dapp so they can respond properly
   }
 }
 
@@ -158,7 +158,7 @@ export async function showDappPopup(request: string) {
       await showPopupDapp(request);
     }
   } catch (error) {
-    log.error('Background - showDappPopup error:',error);
+    log.error('Background - showDappPopup error:', false, error);
   }
 }
 
@@ -180,7 +180,7 @@ export async function updateScreenPreferences(event: any): Promise<void> {
       log.error('yakklPreferences not found.');
     }
   } catch (error) {
-    log.error('Error updating yakklPreferences:', error);
+    log.error('Error updating yakklPreferences:', false, error);
   }
 }
 

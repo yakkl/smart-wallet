@@ -23,7 +23,7 @@ export class SwapAggregator {
         try {
           return await manager.getQuote( tokenIn, tokenOut, amountIn, fundingAddress, isExactIn );
         } catch ( error ) {
-          log.error( `Error getting quote from ${ manager.getName() }:`, error );
+          log.error( `Error getting quote from ${ manager.getName() }:`, false, error );
           return null;
         }
       } )
@@ -100,7 +100,7 @@ export class SwapAggregator {
 //         try {
 //           return await manager.getQuote( tokenIn, tokenOut, amountIn );
 //         } catch ( error ) {
-//           console.log( `Error getting quote from ${ manager.getName() }:`, error );
+//           console.log( `Error getting quote from ${ manager.getName() }:`, false, error );
 //           return null;
 //         }
 //       } )

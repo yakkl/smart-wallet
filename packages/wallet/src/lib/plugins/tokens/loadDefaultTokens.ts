@@ -46,7 +46,7 @@ export async function loadDefaultTokens(): Promise<void> {
     // Update the storage and store
     setYakklTokenDataStorage(tokens);
   } catch (error) {
-    log.error('Failed to load default tokens:', error);
+    log.error('Failed to load default tokens:', false, error);
   }
 }
 

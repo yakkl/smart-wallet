@@ -29,7 +29,7 @@ export class PortManager {
       this.port.onDisconnect.addListener(this.onDisconnectListener.bind(this));
       return true;
     } catch (error) {
-      log.error("Failed to create port:", error);
+      log.error("Failed to create port:", false, error);
       return false;
     }
   }
@@ -40,7 +40,7 @@ export class PortManager {
         window.postMessage(response, window.location.origin);
       }
     } catch (error) {
-      log.error("Error processing message:", error);
+      log.error("Error processing message:", false, error);
       window.postMessage(
         { id: response.id, method: response.method, error, type: 'YAKKL_RESPONSE' },
         window.location.origin
@@ -83,7 +83,7 @@ export function onConnect(port: RuntimePort) {
         }
         port.onDisconnect.addListener(() => onDisconnect(port));
     } catch (error) {
-        log.error("Port connection error:", error);
+        log.error("Port connection error:", false, error);
     }
 }
 

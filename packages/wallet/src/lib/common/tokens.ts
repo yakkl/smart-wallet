@@ -45,7 +45,7 @@ export async function getTokenBalance(
       return undefined;
     }
   } catch (error) {
-    log.error(`Failed to get balance for token: ${token.name}`, error);
+    log.error(`Failed to get balance for token: ${token.name}`, false, error);
     return undefined;
   }
 }
@@ -63,7 +63,7 @@ export async function updateTokenBalances(userAddress: string, provider: ethers.
     ]);
     updateCombinedTokenStore();
   } catch (error) {
-    log.error('Error updating token balances:', error);
+    log.error('Error updating token balances:', false, error);
   }
 }
 
@@ -87,7 +87,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
             value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
-          log.error(`Error fetching balance for token ${token.symbol}:`, balanceError);
+          log.error(`Error fetching balance for token ${token.symbol}:`, false, balanceError);
           return token; // Return token unchanged on error
         }
       })
@@ -101,7 +101,7 @@ export async function updateTokenDataBalances(userAddress: string, provider: eth
 
     return updatedTokens;
   } catch (error) {
-    log.error('Error updating token balances:', error);
+    log.error('Error updating token balances:', false, error);
     return []; // Return an empty array on error
   }
 }
@@ -126,7 +126,7 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
             value: 0, // Reset value after updating balance
           };
         } catch (balanceError) {
-          log.error(`Error fetching balance for custom token ${token.symbol}:`, balanceError);
+          log.error(`Error fetching balance for custom token ${token.symbol}:`, false, balanceError);
           return token; // Return token unchanged on error
         }
       })
@@ -140,7 +140,7 @@ export async function updateTokenDataCustomBalances(userAddress: string, provide
 
     return updatedCustomTokens;
   } catch (error) {
-    log.error('Error updating custom token balances:', error);
+    log.error('Error updating custom token balances:', false, error);
     return []; // Return an empty array on error
   }
 }

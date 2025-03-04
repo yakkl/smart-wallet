@@ -69,9 +69,9 @@ export abstract class IdleManagerBase {
                 browser_ext.alarms.create("yakkl-lock-alarm", {
                   when: Date.now() + this.lockDelay
                 });
-                log.info('Alarm set for lockdown in approx. ', this.lockDelay / 1000, ' seconds');
+                log.info('Alarm set for lockdown in approx. ', false, this.lockDelay / 1000, ' seconds');
               } catch (error) {
-                log.error('Error sending imminent lockdown notification:', error);
+                log.error('Error sending imminent lockdown notification:', false, error);
               }
             }
           }
@@ -93,7 +93,7 @@ export abstract class IdleManagerBase {
   }
 
   protected handleError(error: Error, context: string) {
-    log.error(`[${this.stateWidth}] ${context}:`, error);
+    log.error(`[${this.stateWidth}] ${context}:`, false, error);
     // Optionally reset state
     this.isLockdownInitiated = false;
     this.previousState = 'active';

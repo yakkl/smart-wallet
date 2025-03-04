@@ -18,7 +18,7 @@ async function getOwner() {
         const owner = await contract.owner();
         console.log('Contract owner:', owner);
     } catch (error) {
-        console.error('Error getting owner:', error);
+        console.error('Error getting owner:', false, error);
     }
 }
 
@@ -36,7 +36,7 @@ async function pauseContract() {
         await tx.wait();
         console.log('Contract paused');
     } catch (error) {
-        console.error('Error pausing contract:', error);
+        console.error('Error pausing contract:', false, error);
     }
 }
 

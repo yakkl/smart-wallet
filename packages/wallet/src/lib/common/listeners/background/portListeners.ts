@@ -106,7 +106,7 @@ export async function onPortConnectListener(port: RuntimePort) {
         throw `Message ${port.name} is not supported`;
     }
   } catch(error) {
-    log.error("onPortConnectListener:", error);
+    log.error("onPortConnectListener:", false, error);
   }
 }
 
@@ -115,7 +115,7 @@ export async function onPortDisconnectListener(port: RuntimePort): Promise<void>
     // debug_log('background - onDisconnectListener', port);
 
     if (browser_ext.runtime.lastError) {
-      log.error('Background - portListeners - lastError', browser_ext.runtime.lastError);
+      log.error('Background - portListeners - lastError', false, browser_ext.runtime.lastError);
     }
     if (port) {
       if (port.name === "yakkl") {
@@ -139,7 +139,7 @@ export async function onPortDisconnectListener(port: RuntimePort): Promise<void>
       }
     }
   } catch (error) {
-    log.error('onDisconnectListener:',error);
+    log.error('onDisconnectListener:', false, error);
   }
 }
 
@@ -323,6 +323,6 @@ export async function onPopupLaunchListener(m: { popup: string; }, p: { postMess
       });
     }
   } catch (error) {
-    log.error('onPopupLaunchListener:',error);
+    log.error('onPopupLaunchListener:', false, error);
   }
 }

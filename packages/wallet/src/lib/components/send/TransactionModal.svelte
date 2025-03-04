@@ -9,7 +9,7 @@
       const result = await sendTransaction($transaction);
       onClose();
     } catch (error) {
-      console.log('Transaction failed:', error);
+      console.log('Transaction failed:', false, error);
     }
   };
 </script>

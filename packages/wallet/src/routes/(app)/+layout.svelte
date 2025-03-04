@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { yakklSettingsStore } from "$lib/common/stores";
+  import { sessionInitialized, yakklSettingsStore } from "$lib/common/stores";
   import { DEFAULT_POPUP_HEIGHT, DEFAULT_TITLE, DEFAULT_POPUP_WIDTH, PATH_LOGIN, PATH_REGISTER, PATH_LEGAL, PATH_LOCK, PATH_LOGOUT } from '$lib/common';
   import Header from '$components/Header.svelte';
   import Footer from '$components/Footer.svelte';
@@ -8,6 +8,9 @@
   import { browserSvelte } from "$lib/common/environment";
   import { page } from '$app/state';
   import { log } from '$plugins/Logger';
+	import { onMount } from "svelte";
+	import { ErrorHandler } from "$lib/plugins/ErrorHandler";
+	import { afterNavigate, beforeNavigate } from "$app/navigation";
 
   // import type { Preferences, Settings, TokenData, YakklCurrentlySelected } from '$lib/common';
 	// import type { Wallet } from '$lib/plugins/Wallet';
@@ -72,6 +75,27 @@
     }
     if (!contextMenu) blockContextMenu();
     if (!resize) blockWindowResize(popupWidth, popupHeight);
+  });
+
+  onMount(() => {
+    // Reset session initialization state when app first loads
+    sessionInitialized.set(false);
+  });
+
+  beforeNavigate(({ from, to, cancel }) => {
+    log.info('Navigation attempted', true, {
+      from: from?.url.pathname,
+      to: to?.url.pathname,
+      time: Date.now()
+    });
+  });
+
+  afterNavigate(({ from, to }) => {
+    log.info('Navigation completed', true, {
+      from: from?.url.pathname,
+      to: to?.url.pathname,
+      time: Date.now()
+    });
   });
 
 </script>

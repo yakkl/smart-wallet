@@ -10,7 +10,7 @@ function isBrowserExtensionEnvironment(): boolean {
            (('browser' in globalThis && 'runtime' in (globalThis as any).browser) ||
             ('chrome' in globalThis && 'runtime' in (globalThis as any).chrome));
   } catch (error) {
-    log.error('Checking browser extension environment:', error);
+    log.error('Checking browser extension environment:', false, error);
     return false;
   }
 }
@@ -33,7 +33,7 @@ export function getBrowserExt(): Browser | null {
     }
     return browser_ext as Browser;
   } catch (error) {
-    log.error('Getting browser extension:', error);
+    log.error('Getting browser extension:', false, error);
     return null;
   }
 }

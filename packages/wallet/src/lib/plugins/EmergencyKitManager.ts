@@ -211,7 +211,7 @@ export class EmergencyKitManager {
         throw new Error('Download not supported in this environment');
       }
     } catch (error) {
-      console.log('[ERROR]: Error downloading bulk emergency kit:', error);
+      console.log('[ERROR]: Error downloading bulk emergency kit:', false, error);
       throw error;
     }
   }
@@ -286,7 +286,7 @@ export class EmergencyKitManager {
 
       return { newData, existingData };
     } catch (error) {
-      log.error('Error importing bulk emergency kit:', error);
+      log.error('Error importing bulk emergency kit:', false, error);
       throw error;
     }
   }
@@ -331,7 +331,7 @@ export class EmergencyKitManager {
       const bulkEmergencyKit: BulkEmergencyKitData = JSON.parse(fileContent);
       return bulkEmergencyKit.meta;
     } catch (error) {
-      log.error('Error reading bulk emergency kit metadata:', error);
+      log.error('Error reading bulk emergency kit metadata:', false, error);
       throw error;
     }
   }
@@ -368,7 +368,7 @@ export class EmergencyKitManager {
 
       return decryptedData.data;
     } catch (error) {
-      log.error('Error decrypting data:', error);
+      log.error('Error decrypting data:', false, error);
       throw error;
     }
   }
@@ -394,7 +394,7 @@ export class EmergencyKitManager {
       const encryptedData = await encryptData({ cs: checksum, data }, passwordOrSaltedKey);
       return encryptedData;
     } catch (error) {
-      log.error('Error encrypting data:', error);
+      log.error('Error encrypting data:', false, error);
       throw error;
     }
   }

@@ -12,13 +12,15 @@ import type { TransactionRequest } from '$lib/common/interfaces';
 
 export class BaseFeeManager implements FeeManager {
   private providers: Map<string, GasProvider>;
+  private initializationPromise: Promise<void>;
 
-  constructor(initialProviders: GasProvider[] = []) {
+  constructor() {
     this.providers = new Map();
-    initialProviders.forEach(provider => this.addProvider(provider));
+    this.initializationPromise = Promise.resolve();
   }
 
-  addProvider(provider: GasProvider): void {
+  async addProvider(providerPromise: GasProvider | Promise<GasProvider>): Promise<void> {
+    const provider = await providerPromise;
     this.providers.set(provider.getName(), provider);
   }
 
@@ -31,6 +33,7 @@ export class BaseFeeManager implements FeeManager {
   }
 
   async getGasEstimate(transaction: TransactionRequest): Promise<GasEstimate> {
+    await this.initializationPromise;
     if (this.providers.size === 0) {
       throw new Error('No gas providers available');
     }
@@ -38,7 +41,7 @@ export class BaseFeeManager implements FeeManager {
     const estimates: GasEstimate[] = await Promise.all(
       Array.from( this.providers.values() ).map( async ( provider ): Promise<GasEstimate | null> => {
         return provider.getGasEstimate( transaction ).catch( ( error: unknown ): GasEstimate | null => {
-          console.log( `Failed to get gas estimate from ${ provider.getName() }:`, error );
+          console.log( `Failed to get gas estimate from ${ provider.getName() }:`, false, error );
           return null; // Explicitly return `null` for failed estimates
         } );
       } )

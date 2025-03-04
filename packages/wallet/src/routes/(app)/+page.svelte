@@ -18,7 +18,7 @@
         return await goto(PATH_LOGIN);
       }
     } catch (error) {
-      log.error('+page.svelte (app level) - redirecting to legal:', error);
+      log.error('+page.svelte (app level) - redirecting to legal:', false, error);
       return await goto(PATH_LEGAL);
     }
   });

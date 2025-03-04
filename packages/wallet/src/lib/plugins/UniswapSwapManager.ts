@@ -38,7 +38,7 @@ const SUPPORTED_STABLECOINS = [ 'USDC', 'USDT', 'DAI', 'BUSD' ];
 //   const quote = await service.getQuote( tokenIn, tokenOut, amount, fundingAddress );
 //   // Use quote data
 // } catch ( error ) {
-//   log.error( 'Quote error:', error );
+//   log.error( 'Quote error:', false, error );
 // } finally {
 //   service.dispose();
 // }
@@ -131,7 +131,7 @@ export class UniswapSwapManager extends SwapManager {
       data.tokens.unshift( eth );
       return data.tokens;
     } catch ( error ) {
-      log.error( 'Error fetching token list:', error );
+      log.error( 'Error fetching token list:', false, error );
       return [];
     }
   }
@@ -218,7 +218,7 @@ export class UniswapSwapManager extends SwapManager {
 //       isExactIn
 //     );
 //   } catch ( error ) {
-//     debug_log( 'Error fetching multi-hop quote using AlphaRouter:', error );
+//     debug_log( 'Error fetching multi-hop quote using AlphaRouter:', false, error );
 //     throw new Error( 'Failed to get multi-hop quote via AlphaRouter. This means pools do not exist.' );
 //   }
 // }
@@ -472,7 +472,7 @@ export class UniswapSwapManager extends SwapManager {
       try {
         return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
       } catch ( error ) {
-        log.error( 'Multi-hop quote failed:', error );
+        log.error( 'Multi-hop quote failed:', false, error );
         throw new Error( 'No valid route exists for the provided tokens and amount' );
       }
     }
@@ -518,14 +518,14 @@ export class UniswapSwapManager extends SwapManager {
         );
       }
     } catch ( error ) {
-      log.error( 'Direct pool quote failed, trying multi-hop:', error );
+      log.error( 'Direct pool quote failed, trying multi-hop:', false, error );
     }
 
     // If direct pool fails, attempt multi-hop anyway
     try {
       return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn, newFee );
     } catch ( error ) {
-      log.error( 'Multi-hop quote failed:', error );
+      log.error( 'Multi-hop quote failed:', false, error );
       throw new Error( 'No valid route exists for the provided tokens and amount' );
     }
   }
@@ -661,13 +661,13 @@ export class UniswapSwapManager extends SwapManager {
   //         );
   //       }
   //     } catch ( error ) {
-  //       log.error( 'Direct pool quote failed, trying multi-hop:', error );
+  //       log.error( 'Direct pool quote failed, trying multi-hop:', false, error );
   //     }
 
   //     // Step 4: If no direct pool works, attempt a multi-hop route
   //     return await this.multiHopQuote( tokenIn, tokenOut, amount, fundingAddress, isExactIn );
   //   } catch ( error ) {
-  //     log.error( 'Error in getQuoteWithLiquidityConsideration:', error );
+  //     log.error( 'Error in getQuoteWithLiquidityConsideration:', false, error );
   //     throw error;
   //   }
   // }
@@ -684,7 +684,7 @@ export class UniswapSwapManager extends SwapManager {
   //     const liquidity = await poolContract.liquidity();
   //     return liquidity;
   //   } catch ( error ) {
-  //     log.error( 'Error fetching pool liquidity:', error );
+  //     log.error( 'Error fetching pool liquidity:', false, error );
   //     return null;
   //   }
   // }
@@ -948,7 +948,7 @@ export class UniswapSwapManager extends SwapManager {
   //     try {
   //       validTick = safeConvertBigIntToNumber( validTickBigInt );
   //     } catch ( error ) {
-  //       log.error( 'Error converting tick to number:', error );
+  //       log.error( 'Error converting tick to number:', false, error );
   //       // Fallback to a default tick value or handle the error as appropriate for your use case
   //       validTick = 0; // or some other default value
   //     }
@@ -1099,7 +1099,7 @@ export class UniswapSwapManager extends SwapManager {
   //       debug_log( 'token1Price:', token1Price );
 
   //     } catch ( error ) {
-  //       log.error( 'Error calculating prices:', error );
+  //       log.error( 'Error calculating prices:', false, error );
   //       token0Price = '0';
   //       token1Price = '0';
   //     }
@@ -1133,7 +1133,7 @@ export class UniswapSwapManager extends SwapManager {
   //       tvl
   //     };
   //   } catch ( error ) {
-  //     log.error( 'Error in getPoolInfo:', error );
+  //     log.error( 'Error in getPoolInfo:', false, error );
   //     throw error;
   //   }
   // }
@@ -1219,7 +1219,7 @@ export class UniswapSwapManager extends SwapManager {
       const price = await this.getMarketPrice( token.symbol + '-USD' );
       return price.price;
     } catch ( error ) {
-      log.error( 'Error getting token price. Defaulting to 0:', error );
+      log.error( 'Error getting token price. Defaulting to 0:', false, error );
       return 0;
     }
   }
@@ -1367,8 +1367,8 @@ export class UniswapSwapManager extends SwapManager {
         this.getRouterAddress()
       );
       return toBigInt( allowance );
-    } catch ( err ) {
-      log.error( 'Error checking allowance:', err );
+    } catch ( error ) {
+      log.error( 'Error checking allowance:', false, error );
       return 0n;
     }
   }
@@ -1440,7 +1440,7 @@ export class UniswapSwapManager extends SwapManager {
 
       return EthersConverter.ethersTransactionReceiptToTransactionReceipt(receipt);
     } catch ( error ) {
-      log.error( 'Token approval error:', error );
+      log.error( 'Token approval error:', false, error );
       throw error;
     }
   }
@@ -1498,7 +1498,7 @@ export class UniswapSwapManager extends SwapManager {
 
       return await this.provider.sendTransaction( tx );
     } catch ( error ) {
-      log.error( 'Error executing swap:', error );
+      log.error( 'Error executing swap:', false, error );
       throw error;
     }
   }
@@ -1522,7 +1522,7 @@ export class UniswapSwapManager extends SwapManager {
       // Return both receipts as an array, as expected by the function return type
       return [ swapReceipt, feeReceipt ];
     } catch ( error ) {
-      log.error( 'Error executing FULL swap:', error );
+      log.error( 'Error executing FULL swap:', false, error );
       throw error;
     }
   }
@@ -1584,12 +1584,12 @@ export class UniswapSwapManager extends SwapManager {
           const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
           const gasCost = gasUsed * effectiveGasPrice;
         } catch ( error ) {
-          log.error( 'Error calculating gas cost (informational-transaction):', error );
+          log.error( 'Error calculating gas cost (informational-transaction):', false, error );
         }
         return receipt;
 
       } catch ( error ) {
-        log.error( 'Fee distribution failed (transaction):', error );
+        log.error( 'Fee distribution failed (transaction):', false, error );
         throw error;
       }
     }
@@ -1622,12 +1622,12 @@ export class UniswapSwapManager extends SwapManager {
         const effectiveGasPrice = receipt.effectiveGasPrice ? toBigInt( receipt.effectiveGasPrice.toString() ) : 0n;
         const gasCost = gasUsed * effectiveGasPrice;
       } catch ( error ) {
-        log.error( 'Error calculating gas cost (informational-transfer):', error );
+        log.error( 'Error calculating gas cost (informational-transfer):', false, error );
       }
 
       return receipt;
     } catch ( error ) {
-      log.error( 'Fee distribution failed (transfer):', error );
+      log.error( 'Fee distribution failed (transfer):', false, error );
       throw error;
     }
   }
@@ -1665,7 +1665,7 @@ export class UniswapSwapManager extends SwapManager {
       const receipt = await tx.wait();
       return await EthersConverter.ethersTransactionReceiptToTransactionReceipt( receipt );
     } catch ( error ) {
-      log.error( 'Error wrapping ETH:', error );
+      log.error( 'Error wrapping ETH:', false, error );
       throw error;
     }
   }
@@ -1710,7 +1710,7 @@ export class UniswapSwapManager extends SwapManager {
         return receiptTrans; // Return the original receipt if the recipient is the signer
       }
     } catch ( error ) {
-      log.error( 'Error unwrapping WETH:', error );
+      log.error( 'Error unwrapping WETH:', false, error );
       throw error;
     }
   }

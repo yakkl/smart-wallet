@@ -94,7 +94,7 @@ export function formatPrice( price: number ): string {
 
     return formattedPrice;
   } catch ( error ) {
-    log.error( 'formatPrice - SwapTokenPrice and price to format:', error, price );
+    log.error( 'formatPrice - SwapTokenPrice and price to format:', false, error, price );
     return price.toString();
   }
 }
@@ -508,13 +508,13 @@ export function changeBackground(id: string, image: { src: string; }) {
   }
 }
 
-export function timeoutClipboard(seconds: number) {
+export function timeoutClipboard(ms: number, redactText: string = '<redacted>') {
   try {
     if (browserSvelte) {
       const timeoutID = setTimeout(() => {
-        ClipboardJS.copy('<redacted>');
+        ClipboardJS.copy(redactText);
         clearTimeout(timeoutID);
-      }, seconds*1000);
+      }, ms);
     }
   } catch (e) {
     log.error(e);

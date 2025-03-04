@@ -365,7 +365,7 @@ export class Wallet {
         throw new Error('Signer could not be created');
       }
     } catch (error) {
-      log.error('Error setting signer:', error);
+      log.error('Error setting signer:', false, error);
       return Promise.reject(error);
     }
   }

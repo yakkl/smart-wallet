@@ -19,6 +19,6 @@ export async function restartExtension() {
     // Reopen the extension popup after reload
     browser_ext.runtime.reload();
   } catch (error) {
-    log.error('Failed to restart extension:', error);
+    log.error('Failed to restart extension:', false, error);
   }
 }

@@ -40,7 +40,7 @@
         .map(name => providersMap.get(name))
         .filter((provider): provider is PriceProvider => provider !== undefined);
     } catch(error) {
-      log.error('TokenPrice:', error);
+      log.error('TokenPrice:', false, error);
     }
   });
 

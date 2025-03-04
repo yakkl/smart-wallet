@@ -684,6 +684,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // Dispatch an event to signal Ethereum provider initialization
     window.dispatchEvent(new Event('ethereum#initialized'));
     } catch (e) {
-    log.error('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', e);
+    log.error('YAKKL: Provider injection failed. This web page will not be able to connect to YAKKL.', false, e);
   }
 });

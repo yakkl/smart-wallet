@@ -73,7 +73,7 @@ export class TimerManager {
     try {
       timer.callback(); // Execute the callback
     } catch (error) {
-      log.error(`Error in timer "${id}":`, error);
+      log.error(`Error in timer "${id}":`, false, error);
     }
 
     // Ensure recursive execution

@@ -128,7 +128,7 @@ async function deployContract(
 
         return contractAddress;
     } catch (error) {
-        console.error(`Error deploying ${name}:`, error);
+        console.error(`Error deploying ${name}:`, false, error);
         throw error;
     }
 }
@@ -238,7 +238,7 @@ async function main() {
             deployedAddresses[name] = contractAddress;
         }
     } catch (error) {
-        console.error("Error in main deployment flow:", error);
+        console.error("Error in main deployment flow:", false, error);
         process.exit(1);
     }
 }

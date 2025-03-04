@@ -48,7 +48,7 @@ export async function getInstances(): Promise<[Wallet | null, Provider | null, B
     }
     return [null, null, null, null];
   } catch (error) {
-    log.error("getInstances() - Failed:", error);
+    log.error("getInstances() - Failed:", false, error);
     return [null, null, null, null];
   }
 }

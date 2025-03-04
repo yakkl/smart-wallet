@@ -58,6 +58,6 @@ export async function loadTokens() {
     // Update the tokens store
     tokens.set(loadedTokens);
   } catch (error) {
-    log.error('Error loading tokens:', error);
+    log.error('Error loading tokens:', false, error);
   }
 }
